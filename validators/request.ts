@@ -5,6 +5,20 @@ export const parseBody = async <T>(request: Request, schema: ZodType<T>) => {
   return schema.parse(body);
 };
 
+export const parseOptionalBody = async <T>(
+  request: Request,
+  schema: ZodType<T>,
+  fallback: T
+) => {
+  const rawBody = await request.text();
+
+  if (!rawBody.trim()) {
+    return schema.parse(fallback);
+  }
+
+  return schema.parse(JSON.parse(rawBody));
+};
+
 export const parseQuery = <T>(
   request: Request,
   schema: ZodType<T>

@@ -66,14 +66,6 @@ export const withAuth = <
       });
     }
 
-    if (user.status !== "ACTIVE") {
-      throw new AppError({
-        code: ERROR_CODE.FORBIDDEN,
-        message: "User is not active",
-        statusCode: 403,
-      });
-    }
-
     return handler(request, {
       ...context,
       auth: {

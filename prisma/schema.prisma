@@ -26,6 +26,7 @@ enum SessionStatus {
 }
 
 enum OtpPurpose {
+  CUSTOMER_SIGNUP
   VENDOR_SIGNUP
   LOGIN
   PASSWORD_RESET
@@ -35,6 +36,150 @@ enum IdempotencyStatus {
   IN_PROGRESS
   SUCCEEDED
   FAILED
+}
+
+enum VendorStatus {
+  ONBOARDING
+  PENDING_APPROVAL
+  ACTIVE
+  REJECTED
+  SUSPENDED
+}
+
+enum VendorOnboardingStep {
+  ACCOUNT_SETUP
+  STORE_INFORMATION
+  IDENTITY_VERIFICATION
+  ADDRESS_CONTACT
+  PAYOUT_INFORMATION
+  AGREEMENTS
+  SUBMITTED
+}
+
+enum BusinessType {
+  INDIVIDUAL
+  REGISTERED_BUSINESS
+}
+
+enum KycDocumentType {
+  PASSPORT
+  DRIVERS_LICENSE
+  NATIONAL_ID
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PayoutMethodType {
+  BANK
+  PAYPAL
+  STRIPE
+}
+
+enum ProductApprovalStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum OrderStatus {
+  CREATED
+  PAID
+  PARTIALLY_FULFILLED
+  FULFILLED
+  COMPLETED
+  CANCELLED
+}
+
+enum VendorOrderStatus {
+  NEW
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYPAL
+}
+
+enum PaymentTransactionStatus {
+  SUCCEEDED
+  FAILED
+}
+
+enum LedgerBucket {
+  HOLD
+  AVAILABLE
+}
+
+enum VendorLedgerEntryType {
+  SALE_HOLD
+  HOLD_RELEASE_DEBIT
+  HOLD_RELEASE_CREDIT
+  PAYOUT_DEBIT
+  REFUND_DEBIT_HOLD
+  REFUND_DEBIT_AVAILABLE
+}
+
+enum PayoutStatus {
+  ON_HOLD
+  READY
+  SENT
+  FAILED
+}
+
+enum RefundCaseStatus {
+  REQUESTED
+  WAITING_VENDOR
+  ESCALATED_ADMIN
+  RESOLVED
+}
+
+enum RefundDecisionType {
+  APPROVE
+  REJECT
+  PARTIAL
+}
+
+enum MembershipInvoiceStatus {
+  PENDING
+  PAID
+  WAIVED
+  VOID
+}
+
+enum DeliveryMethod {
+  PICKUP
+  EXPRESS
+  STANDARD
+}
+
+enum DeliveryRuleScope {
+  GLOBAL
+  COUNTRY
+  VENDOR
+}
+
+enum DeliveryPriceModel {
+  FLAT
+  PER_KM
+  FREE_ABOVE
 }
 
 model User {
@@ -52,6 +197,12 @@ model User {
   updatedAt       DateTime      @updatedAt
   sessions        Session[]
   auditLogs       AuditLog[]
+  vendorProfile   VendorProfile?
+  customerAddresses CustomerAddress[]
+  cart            Cart?
+  orders          Order[]
+  refundCases     RefundCase[]
+  caseMessages    CaseMessage[]
 }
 
 model Session {
@@ -119,4 +270,434 @@ model AuditLog {
   @@index([actorUserId, createdAt])
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+model VendorProfile {
+  id                       String               @id @default(auto()) @map("_id") @db.ObjectId
+  userId                   String               @unique @db.ObjectId
+  storeName                String?
+  storeSlug                String?              @unique
+  businessType             BusinessType?
+  logoUrl                  String?
+  description              String?
+  onboardingStep           VendorOnboardingStep @default(ACCOUNT_SETUP)
+  status                   VendorStatus         @default(ONBOARDING)
+  submittedAt              DateTime?
+  approvedAt               DateTime?
+  approvedByUserId         String?              @db.ObjectId
+  rejectedAt               DateTime?
+  rejectionReason          String?
+  suspendedAt              DateTime?
+  suspensionReason         String?
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
+  user                     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kycDocuments             VendorKycDocument[]
+  address                  VendorAddress?
+  payoutMethod             VendorPayoutMethod?
+  agreementAcceptance      VendorAgreementAcceptance?
+  products                 Product[]
+  orderSplits              OrderVendor[]
+  deliveryRules            DeliveryRule[]
+  membershipInvoices       MembershipInvoice[]
+
+  @@index([status, onboardingStep])
+}
+
+model VendorKycDocument {
+  id                 String          @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId    String          @db.ObjectId
+  documentType       KycDocumentType
+  documentUrl        String
+  selfieWithIdUrl    String?
+  reviewStatus       ReviewStatus    @default(PENDING)
+  reviewedByUserId   String?         @db.ObjectId
+  reviewedAt         DateTime?
+  rejectionReason    String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  vendorProfile      VendorProfile   @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([vendorProfileId, reviewStatus])
+  @@unique([vendorProfileId, documentType])
+}
+
+model VendorAddress {
+  id                 String         @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId    String         @unique @db.ObjectId
+  addressLine1       String
+  city               String
+  country            String
+  postalCode         String
+  proofOfAddressUrl  String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  vendorProfile      VendorProfile  @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+}
+
+model VendorPayoutMethod {
+  id                    String            @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId       String            @unique @db.ObjectId
+  method                PayoutMethodType
+  accountName           String?
+  accountNumberOrIban   String?
+  bankName              String?
+  paypalEmail           String?
+  stripeEmail           String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  vendorProfile         VendorProfile     @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+}
+
+model VendorAgreementAcceptance {
+  id                              String         @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId                 String         @unique @db.ObjectId
+  agreedToVendorTerms             Boolean
+  agreedToMembershipPolicy        Boolean
+  agreedToCommissionPolicy        Boolean
+  agreedToDisputePolicy           Boolean
+  agreedToDeliveryRules           Boolean
+  acceptedAt                      DateTime
+  createdAt                       DateTime       @default(now())
+  updatedAt                       DateTime       @updatedAt
+  vendorProfile                   VendorProfile  @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  slug         String      @unique
+  parentId     String?     @db.ObjectId
+  isActive     Boolean     @default(true)
+  sortOrder    Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  parent       Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children     Category[]  @relation("CategoryHierarchy")
+  products     Product[]
+
+  @@index([parentId, isActive])
+}
+
+model Product {
+  id                 String                @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId    String                @db.ObjectId
+  categoryId         String                @db.ObjectId
+  name               String
+  slug               String
+  description        String
+  images             String[]
+  sku                String?
+  currency           String
+  priceAmount        Int
+  stockQty           Int
+  approvalStatus     ProductApprovalStatus @default(DRAFT)
+  rejectionReason    String?
+  isActive           Boolean               @default(true)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  vendorProfile      VendorProfile         @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  category           Category              @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  cartItems          CartItem[]
+  orderItems         OrderItem[]
+
+  @@unique([vendorProfileId, slug])
+  @@index([vendorProfileId, approvalStatus])
+  @@index([categoryId, approvalStatus, isActive])
+}
+
+model CustomerAddress {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String   @db.ObjectId
+  label        String?
+  fullName     String
+  phone        String
+  addressLine1 String
+  city         String
+  country      String
+  postalCode   String
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isDefault])
+}
+
+model Cart {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String     @unique @db.ObjectId
+  currency     String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items        CartItem[]
+}
+
+model CartItem {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  cartId                String   @db.ObjectId
+  productId             String   @db.ObjectId
+  vendorProfileId       String   @db.ObjectId
+  quantity              Int
+  currencySnapshot      String
+  unitPriceSnapshot     Int
+  productNameSnapshot   String
+  productImageSnapshot  String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  cart                  Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product               Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+  @@index([cartId, vendorProfileId])
+}
+
+model Order {
+  id                    String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId                String         @db.ObjectId
+  orderNumber           String         @unique
+  status                OrderStatus    @default(CREATED)
+  paymentStatus         PaymentStatus  @default(UNPAID)
+  currency              String
+  subtotalAmount        Int
+  deliveryAmount        Int
+  discountAmount        Int
+  grandTotalAmount      Int
+  shippingFullName      String
+  shippingPhone         String
+  shippingAddressLine1  String
+  shippingCity          String
+  shippingCountry       String
+  shippingPostalCode    String
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  user                  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendorOrders          OrderVendor[]
+  refundCases           RefundCase[]
+
+  @@index([userId, createdAt])
+  @@index([status, paymentStatus])
+}
+
+model OrderVendor {
+  id                 String            @id @default(auto()) @map("_id") @db.ObjectId
+  orderId            String            @db.ObjectId
+  vendorProfileId    String            @db.ObjectId
+  status             VendorOrderStatus @default(NEW)
+  currency           String
+  subtotalAmount     Int
+  deliveryAmount     Int
+  discountAmount     Int
+  grandTotalAmount   Int
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  order              Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  vendorProfile      VendorProfile     @relation(fields: [vendorProfileId], references: [id], onDelete: Restrict)
+  items              OrderItem[]
+
+  @@unique([orderId, vendorProfileId])
+  @@index([vendorProfileId, status, createdAt])
+}
+
+model OrderItem {
+  id                   String      @id @default(auto()) @map("_id") @db.ObjectId
+  orderVendorId        String      @db.ObjectId
+  productId            String      @db.ObjectId
+  quantity             Int
+  currency             String
+  unitPriceAmount      Int
+  lineTotalAmount      Int
+  productName          String
+  productImage         String?
+  productSku           String?
+  vendorProfileId      String      @db.ObjectId
+  categoryId           String      @db.ObjectId
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  orderVendor          OrderVendor @relation(fields: [orderVendorId], references: [id], onDelete: Cascade)
+  product              Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  refundCases          RefundCase[]
+
+  @@index([orderVendorId, productId])
+  @@index([vendorProfileId, createdAt])
+}
+
+model PaymentTransaction {
+  id                 String                   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId            String                   @db.ObjectId
+  provider           PaymentProvider
+  providerEventId    String
+  providerPaymentId  String
+  eventType          String
+  amount             Int
+  currency           String
+  status             PaymentTransactionStatus
+  rawPayload         Json
+  processedAt        DateTime?
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+
+  @@unique([provider, providerEventId])
+  @@index([orderId, provider, createdAt])
+}
+
+model CommissionLedger {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId            String   @db.ObjectId
+  orderVendorId      String   @unique @db.ObjectId
+  vendorProfileId    String   @db.ObjectId
+  rateBps            Int
+  baseAmount         Int
+  commissionAmount   Int
+  currency           String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([vendorProfileId, createdAt])
+}
+
+model VendorLedgerEntry {
+  id                   String                @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId      String                @db.ObjectId
+  orderId              String?               @db.ObjectId
+  orderVendorId        String?               @db.ObjectId
+  paymentTransactionId String?               @db.ObjectId
+  payoutId             String?               @db.ObjectId
+  bucket               LedgerBucket
+  entryType            VendorLedgerEntryType
+  amount               Int
+  currency             String
+  description          String?
+  createdAt            DateTime              @default(now())
+
+  @@index([vendorProfileId, bucket, createdAt])
+  @@index([orderVendorId, entryType])
+}
+
+model Payout {
+  id                 String       @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId    String       @db.ObjectId
+  orderVendorId      String       @unique @db.ObjectId
+  amount             Int
+  currency           String
+  status             PayoutStatus @default(ON_HOLD)
+  holdUntil          DateTime
+  releasedAt         DateTime?
+  sentAt             DateTime?
+  failureReason      String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@index([vendorProfileId, status, holdUntil])
+}
+
+model DeliveryRule {
+  id                String             @id @default(auto()) @map("_id") @db.ObjectId
+  method            DeliveryMethod
+  scope             DeliveryRuleScope
+  vendorProfileId   String?            @db.ObjectId
+  countryCode       String?
+  priceModel        DeliveryPriceModel
+  baseFeeAmount     Int
+  perKmRateAmount   Int?
+  freeAboveAmount   Int?
+  etaMinDays        Int
+  etaMaxDays        Int
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  vendorProfile     VendorProfile?     @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([method, scope, countryCode, isActive])
+  @@index([vendorProfileId, method, isActive])
+}
+
+model MembershipInvoice {
+  id               String                  @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId  String                  @db.ObjectId
+  periodStart      DateTime
+  periodEnd        DateTime
+  dueAt            DateTime
+  amount           Int
+  currency         String
+  status           MembershipInvoiceStatus @default(PENDING)
+  paidAt           DateTime?
+  waivedReason     String?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  vendorProfile    VendorProfile           @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorProfileId, periodStart, periodEnd])
+  @@index([status, dueAt])
+  @@index([vendorProfileId, createdAt])
+}
+
+model RefundCase {
+  id                  String           @id @default(auto()) @map("_id") @db.ObjectId
+  orderId             String           @db.ObjectId
+  orderItemId         String           @db.ObjectId
+  customerUserId      String           @db.ObjectId
+  vendorProfileId     String           @db.ObjectId
+  reason              String
+  description         String?
+  requestedAmount     Int
+  status              RefundCaseStatus @default(REQUESTED)
+  vendorExplanation   String?
+  vendorResponseDueAt DateTime?
+  escalatedAt         DateTime?
+  finalDecisionAt     DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  order               Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItem           OrderItem        @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  customerUser        User             @relation(fields: [customerUserId], references: [id], onDelete: Cascade)
+  evidences           RefundEvidence[]
+  decision            RefundDecision?
+  messages            CaseMessage[]
+
+  @@index([vendorProfileId, status, vendorResponseDueAt])
+  @@index([customerUserId, createdAt])
+}
+
+model RefundEvidence {
+  id            String     @id @default(auto()) @map("_id") @db.ObjectId
+  refundCaseId  String     @db.ObjectId
+  actorUserId   String?    @db.ObjectId
+  actorRole     Role
+  fileUrl       String?
+  note          String?
+  createdAt     DateTime   @default(now())
+  refundCase    RefundCase @relation(fields: [refundCaseId], references: [id], onDelete: Cascade)
+
+  @@index([refundCaseId, createdAt])
+}
+
+model RefundDecision {
+  id              String             @id @default(auto()) @map("_id") @db.ObjectId
+  refundCaseId    String             @unique @db.ObjectId
+  decisionType    RefundDecisionType
+  approvedAmount  Int
+  reason          String?
+  decidedByUserId String             @db.ObjectId
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  refundCase      RefundCase         @relation(fields: [refundCaseId], references: [id], onDelete: Cascade)
+
+  @@index([decidedByUserId, createdAt])
+}
+
+model CaseMessage {
+  id            String     @id @default(auto()) @map("_id") @db.ObjectId
+  refundCaseId  String     @db.ObjectId
+  senderUserId  String     @db.ObjectId
+  senderRole    Role
+  message       String
+  attachmentUrl String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  refundCase    RefundCase @relation(fields: [refundCaseId], references: [id], onDelete: Cascade)
+  senderUser    User       @relation(fields: [senderUserId], references: [id], onDelete: Cascade)
+
+  @@index([refundCaseId, createdAt])
 }
