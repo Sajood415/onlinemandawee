@@ -211,6 +211,18 @@ export class OrderService {
 
     this.assertVendorOrderTransition(vendorOrder.status, status);
 
+    if (
+      status !== "CANCELLED" &&
+      vendorOrder.order.paymentStatus !== "PAID" &&
+      vendorOrder.order.paymentStatus !== "PARTIALLY_REFUNDED"
+    ) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Only paid orders can move into fulfillment",
+        statusCode: 400,
+      });
+    }
+
     const updatedVendorOrder = await this.orderRepository.updateVendorOrderStatus(
       vendorOrderId,
       status
@@ -397,8 +409,7 @@ export class OrderService {
         deliveryAmount:
           deliveryQuote.breakdown.find(
             (entry) => entry.vendorProfileId === vendorGroup.vendorProfileId
-          )?.amount ??
-          (input.method === "EXPRESS" ? 0 : deliveryTotal),
+          )?.amount ?? 0,
       })),
     };
   }

@@ -19,6 +19,14 @@ export class AdminPayoutService {
     },
     admin: AuthenticatedUser
   ) {
+    if ((!input.payoutId && !input.vendorProfileId) || (input.payoutId && input.vendorProfileId)) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Provide exactly one of payoutId or vendorProfileId",
+        statusCode: 400,
+      });
+    }
+
     const now = new Date();
     const payouts = input.payoutId
       ? await this.resolveSinglePayout(input.payoutId, now)

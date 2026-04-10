@@ -10,7 +10,19 @@ export const paymentWebhookSchema = z.object({
   payload: z.record(z.string(), z.unknown()).optional(),
 });
 
-export const releasePayoutSchema = z.object({
-  payoutId: z.string().min(1).optional(),
-  vendorProfileId: z.string().min(1).optional(),
-});
+export const releasePayoutSchema = z
+  .object({
+    payoutId: z.string().min(1).optional(),
+    vendorProfileId: z.string().min(1).optional(),
+  })
+  .superRefine((value, ctx) => {
+    const providedCount = Number(!!value.payoutId) + Number(!!value.vendorProfileId);
+
+    if (providedCount !== 1) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Provide exactly one of payoutId or vendorProfileId",
+        path: ["payoutId"],
+      });
+    }
+  });

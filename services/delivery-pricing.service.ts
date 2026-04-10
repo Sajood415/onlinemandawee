@@ -14,6 +14,10 @@ type DeliveryQuoteVendorGroup = {
   subtotalCurrent: number;
 };
 
+type DeliveryRuleEntry = Awaited<
+  ReturnType<DeliveryRuleRepository["listActiveByMethod"]>
+>[number];
+
 export class DeliveryPricingService {
   constructor(
     private readonly deliveryRuleRepository = new DeliveryRuleRepository()
@@ -99,16 +103,14 @@ export class DeliveryPricingService {
       totalAmount,
       etaMinDays: rule.etaMinDays,
       etaMaxDays: rule.etaMaxDays,
-      breakdown: [
-        {
-          vendorProfileId: null,
-          amount: totalAmount,
-          etaMinDays: rule.etaMinDays,
-          etaMaxDays: rule.etaMaxDays,
-          ruleId: rule.id,
-          scope: rule.scope,
-        },
-      ],
+      breakdown: this.allocateSharedDelivery({
+        totalAmount,
+        etaMinDays: rule.etaMinDays,
+        etaMaxDays: rule.etaMaxDays,
+        ruleId: rule.id,
+        scope: rule.scope,
+        vendorGroups: input.vendorGroups,
+      }),
     };
   }
 
@@ -149,7 +151,7 @@ export class DeliveryPricingService {
       countryCode?: string;
     }
   ) {
-    return rules.some((rule) => {
+    return rules.some((rule: DeliveryRuleEntry) => {
       if (rule.scope === "VENDOR") {
         return rule.vendorProfileId === target.vendorProfileId;
       }
@@ -175,7 +177,7 @@ export class DeliveryPricingService {
     const vendorRule =
       target.vendorProfileId
         ? rules.find(
-            (rule) =>
+            (rule: DeliveryRuleEntry) =>
               rule.scope === "VENDOR" &&
               rule.vendorProfileId === target.vendorProfileId
           )
@@ -188,7 +190,7 @@ export class DeliveryPricingService {
     const countryRule =
       target.countryCode
         ? rules.find(
-            (rule) =>
+            (rule: DeliveryRuleEntry) =>
               rule.scope === "COUNTRY" &&
               rule.countryCode?.toUpperCase() ===
                 target.countryCode?.toUpperCase()
@@ -199,7 +201,9 @@ export class DeliveryPricingService {
       return countryRule;
     }
 
-    const globalRule = rules.find((rule) => rule.scope === "GLOBAL");
+    const globalRule = rules.find(
+      (rule: DeliveryRuleEntry) => rule.scope === "GLOBAL"
+    );
 
     if (!globalRule) {
       throw new AppError({
@@ -240,5 +244,57 @@ export class DeliveryPricingService {
     }
 
     return rule.baseFeeAmount + Math.ceil(input.distanceKm) * (rule.perKmRateAmount ?? 0);
+  }
+
+  private allocateSharedDelivery(input: {
+    totalAmount: number;
+    etaMinDays: number;
+    etaMaxDays: number;
+    ruleId: string;
+    scope: string;
+    vendorGroups: DeliveryQuoteVendorGroup[];
+  }) {
+    if (input.vendorGroups.length === 0) {
+      return [];
+    }
+
+    if (input.vendorGroups.length === 1) {
+      return [
+        {
+          vendorProfileId: input.vendorGroups[0].vendorProfileId,
+          amount: input.totalAmount,
+          etaMinDays: input.etaMinDays,
+          etaMaxDays: input.etaMaxDays,
+          ruleId: input.ruleId,
+          scope: input.scope,
+        },
+      ];
+    }
+
+    const subtotalTotal = input.vendorGroups.reduce(
+      (sum, vendorGroup) => sum + vendorGroup.subtotalCurrent,
+      0
+    );
+    let allocated = 0;
+
+    return input.vendorGroups.map((vendorGroup, index) => {
+      const isLast = index === input.vendorGroups.length - 1;
+      const amount = isLast
+        ? input.totalAmount - allocated
+        : subtotalTotal > 0
+          ? Math.floor((input.totalAmount * vendorGroup.subtotalCurrent) / subtotalTotal)
+          : Math.floor(input.totalAmount / input.vendorGroups.length);
+
+      allocated += amount;
+
+      return {
+        vendorProfileId: vendorGroup.vendorProfileId,
+        amount,
+        etaMinDays: input.etaMinDays,
+        etaMaxDays: input.etaMaxDays,
+        ruleId: input.ruleId,
+        scope: input.scope,
+      };
+    });
   }
 }

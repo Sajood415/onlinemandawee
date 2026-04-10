@@ -193,8 +193,7 @@ export class CheckoutService {
         deliveryAmount:
           deliveryQuote?.breakdown.find(
             (entry) => entry.vendorProfileId === vendorGroup.vendorProfileId
-          )?.amount ??
-          (input.method === "EXPRESS" ? 0 : deliveryTotal),
+          )?.amount ?? 0,
       })),
     };
   }

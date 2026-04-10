@@ -67,6 +67,33 @@ export class RefundService {
       });
     }
 
+    const existingCases = await this.refundCaseRepository.listByOrderId(
+      orderItem.orderVendor.orderId
+    );
+    const itemCases = existingCases.filter(
+      (refundCase) => refundCase.orderItemId === orderItem.id
+    );
+
+    if (itemCases.some((refundCase) => refundCase.status !== "RESOLVED")) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "An active refund case already exists for this item",
+        statusCode: 400,
+      });
+    }
+
+    const approvedRefundTotal = itemCases.reduce((sum, refundCase) => {
+      return sum + (refundCase.decision?.approvedAmount ?? 0);
+    }, 0);
+
+    if (approvedRefundTotal + input.requestedAmount > orderItem.lineTotalAmount) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Requested amount exceeds remaining refundable amount",
+        statusCode: 400,
+      });
+    }
+
     const refundCase = await this.refundCaseRepository.create({
       orderId: orderItem.orderVendor.orderId,
       orderItemId: orderItem.id,
@@ -149,6 +176,46 @@ export class RefundService {
         fileUrl: input.evidenceFileUrl,
         note: input.evidenceNote,
       });
+    }
+
+    if (input.action === "ACCEPT") {
+      await this.refundDecisionRepository.create({
+        refundCaseId,
+        decisionType: "APPROVE",
+        approvedAmount: refundCase.requestedAmount,
+        reason: input.explanation,
+        decidedByUserId: auth.id,
+      });
+
+      const updated = await this.refundCaseRepository.update({
+        id: refundCaseId,
+        status: "RESOLVED",
+        vendorExplanation: `${input.action}: ${input.explanation}`,
+        finalDecisionAt: new Date(),
+        vendorResponseDueAt: null,
+      });
+
+      await this.applyRefundFinancials(
+        updated.orderId,
+        updated.orderItem.orderVendorId,
+        updated.vendorProfileId,
+        updated.requestedAmount,
+        updated.order.currency
+      );
+      await this.syncOrderPaymentStatus(updated.orderId);
+
+      await this.auditLogRepository.create({
+        actorUserId: auth.id,
+        actorRole: auth.role,
+        action: "refund.vendor_responded",
+        entityType: "RefundCase",
+        entityId: refundCaseId,
+        metadata: {
+          action: input.action,
+        },
+      });
+
+      return this.serializeRefundCase(updated);
     }
 
     const updated = await this.refundCaseRepository.update({

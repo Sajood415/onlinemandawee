@@ -66,6 +66,14 @@ export const withAuth = <
       });
     }
 
+    if (user.status === "BLOCKED") {
+      throw new AppError({
+        code: ERROR_CODE.FORBIDDEN,
+        message: "User account is blocked",
+        statusCode: 403,
+      });
+    }
+
     return handler(request, {
       ...context,
       auth: {

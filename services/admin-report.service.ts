@@ -29,6 +29,9 @@ export class AdminReportService {
     const orders = (await this.orderRepository.listAll()).filter((order) =>
       this.isWithinRange(order.createdAt, range)
     );
+    const settledOrders = orders.filter((order) =>
+      this.isSettledPayment(order.paymentStatus)
+    );
     const commissions = (await this.commissionLedgerRepository.listAll()).filter(
       (entry) => this.isWithinRange(entry.createdAt, range)
     );
@@ -45,8 +48,8 @@ export class AdminReportService {
       activeVendorsCount: vendors.filter((vendor) => vendor.status === "ACTIVE").length,
       pendingVendorsCount: vendors.filter((vendor) => vendor.status === "PENDING_APPROVAL").length,
       ordersCount: orders.length,
-      paidOrdersCount: orders.filter((order) => order.paymentStatus === "PAID").length,
-      grossMerchandiseValue: orders.reduce(
+      paidOrdersCount: settledOrders.length,
+      grossMerchandiseValue: settledOrders.reduce(
         (sum, order) => sum + order.grandTotalAmount,
         0
       ),
@@ -80,7 +83,8 @@ export class AdminReportService {
       const vendorOrdersInRange = vendorOrders.filter(
         (vendorOrder) =>
           vendorOrder.vendorProfileId === vendor.id &&
-          this.isWithinRange(vendorOrder.createdAt, range)
+          this.isWithinRange(vendorOrder.createdAt, range) &&
+          this.isSettledPayment(vendorOrder.order.paymentStatus)
       );
       const vendorCommissions = commissions.filter(
         (entry) =>
@@ -131,10 +135,13 @@ export class AdminReportService {
     const orders = (await this.orderRepository.listAll()).filter((order) =>
       this.isWithinRange(order.createdAt, range)
     );
+    const settledOrders = orders.filter((order) =>
+      this.isSettledPayment(order.paymentStatus)
+    );
 
     return {
       totalOrders: orders.length,
-      totalAmount: orders.reduce((sum, order) => sum + order.grandTotalAmount, 0),
+      totalAmount: settledOrders.reduce((sum, order) => sum + order.grandTotalAmount, 0),
       byOrderStatus: {
         CREATED: orders.filter((order) => order.status === "CREATED").length,
         PAID: orders.filter((order) => order.status === "PAID").length,
@@ -224,5 +231,13 @@ export class AdminReportService {
     }
 
     return true;
+  }
+
+  private isSettledPayment(status: string) {
+    return (
+      status === "PAID" ||
+      status === "PARTIALLY_REFUNDED" ||
+      status === "REFUNDED"
+    );
   }
 }

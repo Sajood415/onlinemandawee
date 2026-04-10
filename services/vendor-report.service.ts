@@ -21,8 +21,12 @@ export class VendorReportService {
 
   async sales(auth: AuthenticatedUser, range: ReportRange) {
     const vendor = await this.requireActiveVendor(auth.id);
-    const vendorOrders = (await this.orderRepository.listByVendorProfileId(vendor.id)).filter(
-      (vendorOrder) => this.isWithinRange(vendorOrder.createdAt, range)
+    const vendorOrders = (
+      await this.orderRepository.listByVendorProfileId(vendor.id)
+    ).filter(
+      (vendorOrder) =>
+        this.isWithinRange(vendorOrder.createdAt, range) &&
+        this.isSettledPayment(vendorOrder.order.paymentStatus)
     );
 
     return {
@@ -160,5 +164,13 @@ export class VendorReportService {
     }
 
     return true;
+  }
+
+  private isSettledPayment(status: string) {
+    return (
+      status === "PAID" ||
+      status === "PARTIALLY_REFUNDED" ||
+      status === "REFUNDED"
+    );
   }
 }
