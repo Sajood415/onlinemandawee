@@ -1,0 +1,209 @@
+{
+  "Homepage": {
+    "direction": "ltr",
+    "navbar": {
+      "searchPlaceholder": "Search gifts, groceries, flowers, and more",
+      "searchButton": "Search",
+      "languageLabel": "Language",
+      "currencyLabel": "USD",
+      "accountLabel": "Account",
+      "cartLabel": "Cart",
+      "languages": [
+        { "code": "en", "label": "EN" },
+        { "code": "ps", "label": "پښتو" },
+        { "code": "fa-AF", "label": "دری" }
+      ]
+    },
+    "hero": {
+      "eyebrow": "Premium multi-vendor gifting and shopping",
+      "title": "Send Love to Your Family Anywhere",
+      "description": "Discover premium gifts, fresh essentials, and trusted vendors in one elegant marketplace designed for meaningful delivery.",
+      "primaryCta": "Start Shopping",
+      "secondaryCta": "Become a Vendor",
+      "stats": [
+        { "value": "25k+", "label": "Happy Customers" },
+        { "value": "800+", "label": "Verified Vendors" },
+        { "value": "Same Day", "label": "Express Delivery" }
+      ],
+      "floatingTopEyebrow": "Same day delight",
+      "floatingTopTitle": "Curated gifts in hours",
+      "floatingBottomEyebrow": "Trusted by families",
+      "floatingBottomTitle": "Worldwide sending made simple"
+    },
+    "categoriesSection": {
+      "eyebrow": "Discover by interest",
+      "title": "Everything your family needs, beautifully organized",
+      "description": "Browse premium categories built for gifting, groceries, celebration, and care packages."
+    },
+    "categories": [
+      {
+        "title": "Fresh Groceries",
+        "description": "Daily essentials from trusted local stores.",
+        "iconKey": "basket"
+      },
+      {
+        "title": "Luxury Hampers",
+        "description": "Curated bundles for special family moments.",
+        "iconKey": "gift"
+      },
+      {
+        "title": "Flowers",
+        "description": "Elegant bouquets delivered with care.",
+        "iconKey": "flower"
+      },
+      {
+        "title": "Cakes & Sweets",
+        "description": "Celebrate birthdays and milestones beautifully.",
+        "iconKey": "cake"
+      },
+      {
+        "title": "Home Dining",
+        "description": "Restaurant-quality meal kits and hosting picks.",
+        "iconKey": "plate"
+      },
+      {
+        "title": "Fashion Gifts",
+        "description": "Thoughtful apparel and accessory finds.",
+        "iconKey": "sparkles"
+      },
+      {
+        "title": "Wellness",
+        "description": "Premium care packages for loved ones.",
+        "iconKey": "heartShield"
+      },
+      {
+        "title": "Tech & Gadgets",
+        "description": "Useful devices that make distance feel smaller.",
+        "iconKey": "device"
+      }
+    ],
+    "featuredSection": {
+      "eyebrow": "Editor's picks",
+      "title": "Featured products your loved ones will remember",
+      "description": "Premium, gift-ready finds from trusted marketplace vendors.",
+      "viewAll": "View All",
+      "addToCart": "Add to Cart"
+    },
+    "vendorsSection": {
+      "eyebrow": "Trusted marketplace",
+      "title": "Top vendors delivering quality with consistency",
+      "description": "Shop from carefully selected sellers with premium presentation and dependable service."
+    },
+    "topVendors": [
+      {
+        "name": "Noor Premium Gifts",
+        "specialty": "Luxury curated gifting",
+        "accent": "from-rose-100 to-white",
+        "metricLabel": "Orders fulfilled",
+        "metricValue": "12k+"
+      },
+      {
+        "name": "Bloom Avenue",
+        "specialty": "Fresh floral experiences",
+        "accent": "from-red-50 to-white",
+        "metricLabel": "Cities served",
+        "metricValue": "36"
+      },
+      {
+        "name": "Saffron Table",
+        "specialty": "Home dining and feasts",
+        "accent": "from-orange-50 to-white",
+        "metricLabel": "Avg prep time",
+        "metricValue": "45 min"
+      },
+      {
+        "name": "Cocoa Stories",
+        "specialty": "Desserts and sweet gifting",
+        "accent": "from-neutral-100 to-white",
+        "metricLabel": "Gift wraps",
+        "metricValue": "5 styles"
+      }
+    ],
+    "deliverySection": {
+      "eyebrow": "Flexible fulfillment",
+      "title": "Choose delivery your way",
+      "description": "Designed to match urgent gifts, planned orders, and convenient local pickup."
+    },
+    "deliveryOptions": [
+      {
+        "title": "Express",
+        "eyebrow": "Fastest arrival",
+        "description": "Priority delivery for same-day surprises and urgent gifting.",
+        "iconKey": "rocket"
+      },
+      {
+        "title": "Standard",
+        "eyebrow": "Best value",
+        "description": "Balanced delivery pricing for everyday family sending.",
+        "iconKey": "deliveryTruck"
+      },
+      {
+        "title": "Pickup",
+        "eyebrow": "Free option",
+        "description": "Order ahead and collect from your preferred vendor location.",
+        "iconKey": "storefront"
+      }
+    ],
+    "giftingBanner": {
+      "eyebrow": "Thoughtful gifting",
+      "title": "Create Custom Gifts for Your Loved Ones",
+      "description": "Personalize memorable bundles, add heartfelt notes, and let trusted vendors prepare every detail with care.",
+      "primaryCta": "Start Customizing",
+      "secondaryCta": "Explore Gift Ideas",
+      "addOnsTitle": "Popular add-ons",
+      "addOnsDescription": "Flowers, handwritten cards, premium wrapping",
+      "collaborationTitle": "Vendor collaboration",
+      "collaborationDescription": "Build one seamless gift from multiple stores"
+    },
+    "trustSection": {
+      "eyebrow": "Why customers trust us",
+      "title": "A marketplace built around quality and peace of mind",
+      "description": "Every interaction is designed to feel premium, reliable, and effortless."
+    },
+    "trustItems": [
+      {
+        "title": "Secure Payments",
+        "description": "Protected checkout experience for every order.",
+        "iconKey": "lock"
+      },
+      {
+        "title": "Verified Vendors",
+        "description": "Carefully reviewed sellers with trusted quality standards.",
+        "iconKey": "checkBadge"
+      },
+      {
+        "title": "Fast Delivery",
+        "description": "Flexible options for urgent and scheduled delivery needs.",
+        "iconKey": "flash"
+      },
+      {
+        "title": "Easy Refunds",
+        "description": "Clear refund and resolution flow when something goes wrong.",
+        "iconKey": "refresh"
+      }
+    ],
+    "footer": {
+      "tagline": "Premium multi-vendor marketplace",
+      "description": "Send meaningful gifts, premium essentials, and curated surprises to your loved ones anywhere with confidence.",
+      "columns": [
+        {
+          "title": "Company",
+          "links": ["About Mandawee", "How It Works", "Vendor Program", "Careers"]
+        },
+        {
+          "title": "Support",
+          "links": ["Help Center", "Contact Us", "Track Order", "Delivery Areas"]
+        },
+        {
+          "title": "Policies",
+          "links": ["Privacy Policy", "Terms of Service", "Refund Policy", "Vendor Terms"]
+        },
+        {
+          "title": "Socials",
+          "links": ["Instagram", "Facebook", "TikTok", "LinkedIn"]
+        }
+      ],
+      "copyright": "© 2026 Mandawee. Crafted for meaningful connections."
+    }
+  }
+}

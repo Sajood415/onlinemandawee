@@ -1,0 +1,68 @@
+{
+  "featuredProducts": [
+    {
+      "id": "royal-celebration-gift-hamper",
+      "price": "$89.00",
+      "vendor": "Noor Premium Gifts",
+      "image": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=900&q=80",
+      "name": {
+        "en": "Royal Celebration Gift Hamper",
+        "ps": "شاهي د لمانځنې ډالۍ بسته",
+        "fa-AF": "بسته شاهانه جشن"
+      },
+      "badge": {
+        "en": "Best Seller",
+        "ps": "غوره پلور",
+        "fa-AF": "پرفروش"
+      }
+    },
+    {
+      "id": "signature-rose-bouquet-deluxe",
+      "price": "$44.00",
+      "vendor": "Bloom Avenue",
+      "image": "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=900&q=80",
+      "name": {
+        "en": "Signature Rose Bouquet Deluxe",
+        "ps": "ځانګړې د ګلاب ګېډۍ",
+        "fa-AF": "دسته‌گل ویژه رز"
+      },
+      "badge": {
+        "en": "Same Day",
+        "ps": "همدا ورځ",
+        "fa-AF": "همان روز"
+      }
+    },
+    {
+      "id": "family-feast-gourmet-basket",
+      "price": "$72.00",
+      "vendor": "Mandawee Market",
+      "image": "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80",
+      "name": {
+        "en": "Family Feast Gourmet Basket",
+        "ps": "د کورنۍ مېلمستیا ګورمیه بسته",
+        "fa-AF": "سبد مهمانی خانوادگی"
+      },
+      "badge": {
+        "en": "Family Favorite",
+        "ps": "د کورنۍ خوښ",
+        "fa-AF": "محبوب خانواده"
+      }
+    },
+    {
+      "id": "artisan-chocolate-surprise-box",
+      "price": "$28.00",
+      "vendor": "Cocoa Stories",
+      "image": "https://images.unsplash.com/photo-1511381939415-e44015466834?auto=format&fit=crop&w=900&q=80",
+      "name": {
+        "en": "Artisan Chocolate Surprise Box",
+        "ps": "لاسي چاکلېټو د حیرانتیا بکس",
+        "fa-AF": "باکس شگفتی شکلات دست‌ساز"
+      },
+      "badge": {
+        "en": "Gift Ready",
+        "ps": "ډالۍ ته چمتو",
+        "fa-AF": "آماده هدیه"
+      }
+    }
+  ]
+}

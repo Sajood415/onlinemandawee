@@ -1,0 +1,209 @@
+{
+  "Homepage": {
+    "direction": "rtl",
+    "navbar": {
+      "searchPlaceholder": "هدایا، مواد خوراکی، گل‌ها و بیشتر را جستجو کنید",
+      "searchButton": "جستجو",
+      "languageLabel": "زبان",
+      "currencyLabel": "USD",
+      "accountLabel": "حساب",
+      "cartLabel": "سبد",
+      "languages": [
+        { "code": "en", "label": "EN" },
+        { "code": "ps", "label": "پښتو" },
+        { "code": "fa-AF", "label": "دری" }
+      ]
+    },
+    "hero": {
+      "eyebrow": "بازار ممتاز چندفروشنده برای هدیه و خرید",
+      "title": "برای خانواده‌تان در هرجا عشق بفرستید",
+      "description": "هدایای ممتاز، نیازمندی‌های تازه و فروشندگان معتبر را در یک بازار شیک پیدا کنید که برای ارسال‌های معنادار ساخته شده است.",
+      "primaryCta": "شروع خرید",
+      "secondaryCta": "فروشنده شوید",
+      "stats": [
+        { "value": "25k+", "label": "مشتریان خوشحال" },
+        { "value": "800+", "label": "فروشندگان تأییدشده" },
+        { "value": "همان روز", "label": "تحویل سریع" }
+      ],
+      "floatingTopEyebrow": "شادی همان روز",
+      "floatingTopTitle": "هدایای آماده‌شده در چند ساعت",
+      "floatingBottomEyebrow": "مورد اعتماد خانواده‌ها",
+      "floatingBottomTitle": "ارسال جهانی ساده شده است"
+    },
+    "categoriesSection": {
+      "eyebrow": "بر اساس علاقه کشف کنید",
+      "title": "هر چیزی که خانواده‌تان نیاز دارد، زیبا و منظم",
+      "description": "دسته‌بندی‌های ممتاز را ببینید که برای هدیه، مواد خوراکی، جشن و بسته‌های مراقبتی طراحی شده‌اند."
+    },
+    "categories": [
+      {
+        "title": "مواد خوراکی تازه",
+        "description": "نیازهای روزانه از فروشگاه‌های محلی معتبر.",
+        "iconKey": "basket"
+      },
+      {
+        "title": "بسته‌های لوکس",
+        "description": "بسته‌های انتخاب‌شده برای لحظه‌های خاص خانواده.",
+        "iconKey": "gift"
+      },
+      {
+        "title": "گل‌ها",
+        "description": "دسته‌گل‌های شیک با دقت تحویل می‌شوند.",
+        "iconKey": "flower"
+      },
+      {
+        "title": "کیک و شیرینی",
+        "description": "تولدها و مناسبت‌ها را زیباتر جشن بگیرید.",
+        "iconKey": "cake"
+      },
+      {
+        "title": "میز خانواده",
+        "description": "انتخاب‌های باکیفیت برای مهمانی و غذای خانگی.",
+        "iconKey": "plate"
+      },
+      {
+        "title": "هدایای فشن",
+        "description": "لباس‌ها و اکسسوری‌های بافکر.",
+        "iconKey": "sparkles"
+      },
+      {
+        "title": "سلامتی",
+        "description": "بسته‌های مراقبتی ممتاز برای عزیزانتان.",
+        "iconKey": "heartShield"
+      },
+      {
+        "title": "تکنالوژی و گجت",
+        "description": "وسایل کاربردی که فاصله را کمتر می‌کنند.",
+        "iconKey": "device"
+      }
+    ],
+    "featuredSection": {
+      "eyebrow": "انتخاب‌های ویژه",
+      "title": "محصولات ویژه‌ای که عزیزانتان به یاد می‌سپارند",
+      "description": "یافته‌های ممتاز و آماده‌هدیه از فروشندگان معتبر بازار.",
+      "viewAll": "دیدن همه",
+      "addToCart": "افزودن به سبد"
+    },
+    "vendorsSection": {
+      "eyebrow": "بازار قابل اعتماد",
+      "title": "فروشندگان برتر با کیفیت ثابت",
+      "description": "از فروشندگان انتخاب‌شده خرید کنید که ارائه ممتاز و خدمات قابل اعتماد دارند."
+    },
+    "topVendors": [
+      {
+        "name": "Noor Premium Gifts",
+        "specialty": "هدایای لوکس و انتخاب‌شده",
+        "accent": "from-rose-100 to-white",
+        "metricLabel": "سفارش‌های تکمیل‌شده",
+        "metricValue": "12k+"
+      },
+      {
+        "name": "Bloom Avenue",
+        "specialty": "تجربه گل‌های تازه",
+        "accent": "from-red-50 to-white",
+        "metricLabel": "شهرهای تحت پوشش",
+        "metricValue": "36"
+      },
+      {
+        "name": "Saffron Table",
+        "specialty": "غذاهای خانگی و مهمانی",
+        "accent": "from-orange-50 to-white",
+        "metricLabel": "میانگین آماده‌سازی",
+        "metricValue": "45 min"
+      },
+      {
+        "name": "Cocoa Stories",
+        "specialty": "دسر و هدیه‌های شیرین",
+        "accent": "from-neutral-100 to-white",
+        "metricLabel": "سبک‌های بسته‌بندی",
+        "metricValue": "5 styles"
+      }
+    ],
+    "deliverySection": {
+      "eyebrow": "تحویل انعطاف‌پذیر",
+      "title": "روش تحویل دلخواه‌تان را انتخاب کنید",
+      "description": "برای هدیه‌های فوری، سفارش‌های برنامه‌ریزی‌شده و دریافت آسان طراحی شده است."
+    },
+    "deliveryOptions": [
+      {
+        "title": "سریع",
+        "eyebrow": "بیشترین سرعت",
+        "description": "تحویل اولویت‌دار برای سورپرایزهای همان روز و هدیه‌های فوری.",
+        "iconKey": "rocket"
+      },
+      {
+        "title": "معیاری",
+        "eyebrow": "بهترین ارزش",
+        "description": "هزینه متعادل تحویل برای ارسال‌های روزمره خانوادگی.",
+        "iconKey": "deliveryTruck"
+      },
+      {
+        "title": "دریافت حضوری",
+        "eyebrow": "گزینه رایگان",
+        "description": "از قبل سفارش بدهید و از محل فروشنده دلخواه‌تان دریافت کنید.",
+        "iconKey": "storefront"
+      }
+    ],
+    "giftingBanner": {
+      "eyebrow": "هدیه‌دادن با فکر",
+      "title": "برای عزیزانتان هدیه‌های سفارشی بسازید",
+      "description": "بسته‌های ماندگار را شخصی‌سازی کنید، پیام‌های صمیمانه بیفزایید و بگذارید فروشندگان معتبر همه چیز را با دقت آماده کنند.",
+      "primaryCta": "شروع شخصی‌سازی",
+      "secondaryCta": "دیدن ایده‌های هدیه",
+      "addOnsTitle": "افزونه‌های محبوب",
+      "addOnsDescription": "گل‌ها، کارت‌های دست‌نویس، بسته‌بندی ممتاز",
+      "collaborationTitle": "همکاری فروشندگان",
+      "collaborationDescription": "یک هدیه یکپارچه از چند فروشگاه بسازید"
+    },
+    "trustSection": {
+      "eyebrow": "چرا مشتریان به ما اعتماد دارند",
+      "title": "بازاری بر پایه کیفیت و آرامش خاطر",
+      "description": "هر تعامل طوری طراحی شده که ممتاز، قابل اعتماد و آسان باشد."
+    },
+    "trustItems": [
+      {
+        "title": "پرداخت امن",
+        "description": "تجربه چک‌اوت محافظت‌شده برای هر سفارش.",
+        "iconKey": "lock"
+      },
+      {
+        "title": "فروشندگان تأییدشده",
+        "description": "فروشندگان با دقت بررسی‌شده با معیارهای قابل اعتماد.",
+        "iconKey": "checkBadge"
+      },
+      {
+        "title": "تحویل سریع",
+        "description": "گزینه‌های منعطف برای تحویل فوری و زمان‌بندی‌شده.",
+        "iconKey": "flash"
+      },
+      {
+        "title": "استرداد آسان",
+        "description": "روند روشن برای حل مشکل و بازپرداخت در صورت نیاز.",
+        "iconKey": "refresh"
+      }
+    ],
+    "footer": {
+      "tagline": "بازار ممتاز چندفروشنده",
+      "description": "هدایا، نیازهای ممتاز و سورپرایزهای انتخاب‌شده را با اطمینان برای عزیزانتان بفرستید.",
+      "columns": [
+        {
+          "title": "شرکت",
+          "links": ["درباره Mandawee", "چگونه کار می‌کند", "برنامه فروشندگان", "فرصت‌های شغلی"]
+        },
+        {
+          "title": "پشتیبانی",
+          "links": ["مرکز کمک", "تماس با ما", "پیگیری سفارش", "مناطق تحویل"]
+        },
+        {
+          "title": "پالیسی‌ها",
+          "links": ["پالیسی محرمیت", "شرایط خدمات", "پالیسی بازپرداخت", "شرایط فروشندگان"]
+        },
+        {
+          "title": "شبکه‌های اجتماعی",
+          "links": ["Instagram", "Facebook", "TikTok", "LinkedIn"]
+        }
+      ],
+      "copyright": "© 2026 Mandawee. برای ارتباط‌های معنادار ساخته شده است."
+    }
+  }
+}

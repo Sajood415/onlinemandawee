@@ -1,0 +1,209 @@
+{
+  "Homepage": {
+    "direction": "rtl",
+    "navbar": {
+      "searchPlaceholder": "ډالۍ، خوراکي توکي، ګلان او نور ولټوئ",
+      "searchButton": "لټون",
+      "languageLabel": "ژبه",
+      "currencyLabel": "USD",
+      "accountLabel": "حساب",
+      "cartLabel": "کارټ",
+      "languages": [
+        { "code": "en", "label": "EN" },
+        { "code": "ps", "label": "پښتو" },
+        { "code": "fa-AF", "label": "دری" }
+      ]
+    },
+    "hero": {
+      "eyebrow": "پریمیوم څو پلورونکي ډالۍ او پېرود",
+      "title": "خپلې کورنۍ ته هر چیرې مینه ورولېږئ",
+      "description": "پریمیوم ډالۍ، تازه اړین توکي او باوري پلورونکي په یوه ښکلي مارکېټ کې ومومئ چې د مانادارو لېږدونو لپاره جوړ شوی.",
+      "primaryCta": "پېرود پیل کړئ",
+      "secondaryCta": "پلورونکی شئ",
+      "stats": [
+        { "value": "25k+", "label": "خوښ پیرودونکي" },
+        { "value": "800+", "label": "تایید شوي پلورونکي" },
+        { "value": "همدا ورځ", "label": "چټک تحویل" }
+      ],
+      "floatingTopEyebrow": "همدا ورځ خوښي",
+      "floatingTopTitle": "په څو ساعتونو کې ترتیب شوې ډالۍ",
+      "floatingBottomEyebrow": "د کورنیو باور",
+      "floatingBottomTitle": "نړیوال لېږل اسانه شول"
+    },
+    "categoriesSection": {
+      "eyebrow": "د خوښې له مخې ومومئ",
+      "title": "هر څه چې ستاسو کورنۍ ورته اړتیا لري، په ښکلي ډول منظم شوي",
+      "description": "پریمیوم کټګورۍ وګورئ چې د ډالیو، خوراکي توکو، خوښیو او پاملرنې بستو لپاره جوړې شوې دي."
+    },
+    "categories": [
+      {
+        "title": "تازه خوراکي توکي",
+        "description": "ورځني اړین توکي له باوري ځايي پلورنځیو څخه.",
+        "iconKey": "basket"
+      },
+      {
+        "title": "لوکس ډالۍ بستې",
+        "description": "د کورنۍ د ځانګړو شیبو لپاره غوره شوې بستې.",
+        "iconKey": "gift"
+      },
+      {
+        "title": "ګلان",
+        "description": "ښکلي ګېډۍ له پاملرنې سره رسول کېږي.",
+        "iconKey": "flower"
+      },
+      {
+        "title": "کېک او خواږه",
+        "description": "د کلیزو او مهمو شیبو نمانځنه لا ښکلې کړئ.",
+        "iconKey": "cake"
+      },
+      {
+        "title": "کورنۍ مېلمستیا",
+        "description": "د کور لپاره د رستورانت په کچه خوړو غوره توکي.",
+        "iconKey": "plate"
+      },
+      {
+        "title": "فیشن ډالۍ",
+        "description": "فکرمندانه کالي او اکسسوار موندنې.",
+        "iconKey": "sparkles"
+      },
+      {
+        "title": "روغتیا او هوساینه",
+        "description": "د خپلو عزیزانو لپاره پریمیوم د پاملرنې بستې.",
+        "iconKey": "heartShield"
+      },
+      {
+        "title": "ټېک او وسایل",
+        "description": "ګټور وسایل چې فاصله لنډوي.",
+        "iconKey": "device"
+      }
+    ],
+    "featuredSection": {
+      "eyebrow": "د اېډیټر غوره انتخاب",
+      "title": "غوره محصولات چې ستاسو عزیزان به یې یاد ساتي",
+      "description": "پریمیوم او ډالۍ ته چمتو توکي له باوري مارکېټ پلورونکو څخه.",
+      "viewAll": "ټول وګورئ",
+      "addToCart": "کارټ ته اضافه کړئ"
+    },
+    "vendorsSection": {
+      "eyebrow": "باوري مارکېټ",
+      "title": "غوره پلورونکي چې کیفیت په ثبات سره رسوي",
+      "description": "له غوره شویو پلورونکو څخه پېرود وکړئ چې ښکلی وړاندې کول او باوري خدمت لري."
+    },
+    "topVendors": [
+      {
+        "name": "Noor Premium Gifts",
+        "specialty": "لوکس ترتیب شوې ډالۍ",
+        "accent": "from-rose-100 to-white",
+        "metricLabel": "سپارښتنې بشپړې شوې",
+        "metricValue": "12k+"
+      },
+      {
+        "name": "Bloom Avenue",
+        "specialty": "تازه د ګلانو تجربه",
+        "accent": "from-red-50 to-white",
+        "metricLabel": "ښارونه",
+        "metricValue": "36"
+      },
+      {
+        "name": "Saffron Table",
+        "specialty": "کورني خواړه او مېلمستیاوې",
+        "accent": "from-orange-50 to-white",
+        "metricLabel": "اوسط چمتووالی",
+        "metricValue": "45 min"
+      },
+      {
+        "name": "Cocoa Stories",
+        "specialty": "خواږه او ډالۍ",
+        "accent": "from-neutral-100 to-white",
+        "metricLabel": "ډالۍ لفافې",
+        "metricValue": "5 styles"
+      }
+    ],
+    "deliverySection": {
+      "eyebrow": "انعطاف منونکې سپارنه",
+      "title": "تحویل په خپله خوښه وټاکئ",
+      "description": "د بیړنیو ډالیو، پلان شویو فرمایشونو او اسانه اخیستلو لپاره مناسب."
+    },
+    "deliveryOptions": [
+      {
+        "title": "چټک",
+        "eyebrow": "تر ټولو ژر",
+        "description": "د هماغه ورځې حیرانتیاوو او بیړنیو ډالیو لپاره لومړیتوب لرونکی تحویل.",
+        "iconKey": "rocket"
+      },
+      {
+        "title": "معیاري",
+        "eyebrow": "غوره ارزښت",
+        "description": "د ورځني لېږلو لپاره متوازن تحویلي بیه.",
+        "iconKey": "deliveryTruck"
+      },
+      {
+        "title": "اخیستل",
+        "eyebrow": "وړیا انتخاب",
+        "description": "مخکې فرمایش ورکړئ او له خپل خوښې پلورونکي ځایه یې واخلئ.",
+        "iconKey": "storefront"
+      }
+    ],
+    "giftingBanner": {
+      "eyebrow": "له فکره ډکه ډالۍ",
+      "title": "د خپلو عزیزانو لپاره ځانګړې ډالۍ جوړې کړئ",
+      "description": "یادګاري بستې شخصي کړئ، د زړه له کومې پیغامونه ورزیات کړئ او پرېږدئ چې باوري پلورونکي هر څه په پاملرنې سره چمتو کړي.",
+      "primaryCta": "شخصي کول پیل کړئ",
+      "secondaryCta": "د ډالیو نظریات وګورئ",
+      "addOnsTitle": "مشهور اضافات",
+      "addOnsDescription": "ګلان، لاسلیک شوي کارتونه، پریمیوم لفافه",
+      "collaborationTitle": "د پلورونکو همکاري",
+      "collaborationDescription": "له څو پلورنځیو څخه یوه ګډه ډالۍ جوړه کړئ"
+    },
+    "trustSection": {
+      "eyebrow": "ولې پیرودونکي پر موږ باور لري",
+      "title": "یو مارکېټ چې پر کیفیت او ډاډ جوړ شوی",
+      "description": "هره تجربه داسې ډیزاین شوې چې پریمیوم، باوري او اسانه احساس شي."
+    },
+    "trustItems": [
+      {
+        "title": "خوندي تادیات",
+        "description": "د هر فرمایش لپاره خوندي چک‌اوت تجربه.",
+        "iconKey": "lock"
+      },
+      {
+        "title": "تایید شوي پلورونکي",
+        "description": "په دقت ارزول شوي پلورونکي له باوري معیارونو سره.",
+        "iconKey": "checkBadge"
+      },
+      {
+        "title": "چټک تحویل",
+        "description": "د بیړنیو او مهالویش شویو سپارنو لپاره انعطاف منونکي انتخابونه.",
+        "iconKey": "flash"
+      },
+      {
+        "title": "اسانه بېرته ستنول",
+        "description": "که ستونزه رامنځته شي، روښانه د حل او بېرته ستنولو لاره.",
+        "iconKey": "refresh"
+      }
+    ],
+    "footer": {
+      "tagline": "پریمیوم څو پلورونکی مارکېټ",
+      "description": "خپلو عزیزانو ته مانادارې ډالۍ، پریمیوم اړین توکي او غوره شوې حیرانتیاوې په ډاډ سره ورولېږئ.",
+      "columns": [
+        {
+          "title": "شرکت",
+          "links": ["د Mandawee په اړه", "څنګه کار کوي", "د پلورونکو پروګرام", "دندې"]
+        },
+        {
+          "title": "مرسته",
+          "links": ["مرستندویه مرکز", "موږ سره اړیکه", "فرمایش تعقیب", "د تحویل سیمې"]
+        },
+        {
+          "title": "تګلارې",
+          "links": ["د محرمیت تګلاره", "د خدمت شرطونه", "د بېرته ستنولو تګلاره", "د پلورونکو شرطونه"]
+        },
+        {
+          "title": "ټولنیزې شبکې",
+          "links": ["Instagram", "Facebook", "TikTok", "LinkedIn"]
+        }
+      ],
+      "copyright": "© 2026 Mandawee. د مانادارو اړیکو لپاره جوړ شوی."
+    }
+  }
+}
