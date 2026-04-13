@@ -37,6 +37,12 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+@layer base {
+  .button {
+    @apply cursor-pointer;
+  }
+}
+
 ::selection {
   background: rgba(193, 18, 31, 0.16);
   color: #111827;

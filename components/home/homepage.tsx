@@ -1,11 +1,8 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
 import { useLocale, useMessages } from "next-intl";
 
 import productCatalog from "@/data/product.json";
-import { usePathname, useRouter } from "@/i18n/navigation";
 
 type IconProps = {
   className?: string;
@@ -201,7 +198,7 @@ const iconMap: Record<IconKey, (props: IconProps) => React.JSX.Element> = {
   refresh: RefreshIcon,
 };
 
-export function Homepage() {
+export function HomePage() {
   const locale = useLocale();
   const messages = useMessages() as { Homepage: HomepageContent };
   const content = messages.Homepage;
@@ -212,8 +209,6 @@ export function Homepage() {
       dir={content.direction}
       className="min-h-screen bg-white text-slate-900"
     >
-      <Navbar locale={locale} navbar={content.navbar} />
-
       <main>
         <HeroSection hero={content.hero} />
 
@@ -355,114 +350,7 @@ export function Homepage() {
           </SectionShell>
         </section>
       </main>
-
-      <footer className="border-t border-slate-200 bg-white">
-        <SectionShell className="py-14">
-          <div className="grid gap-10 lg:grid-cols-[1.3fr_repeat(4,minmax(0,1fr))]">
-            <div>
-              <div className="flex items-center gap-3">
-                <Image
-                  src="/onlinemandawee-logo.png"
-                  alt="Mandawee logo"
-                  width={140}
-                  height={40}
-                  className="h-10 w-auto object-contain"
-                />
-                <div>
-                  <p className="text-lg font-semibold tracking-tight text-slate-900">
-                    Mandawee
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    {content.footer.tagline}
-                  </p>
-                </div>
-              </div>
-
-              <p className="mt-5 max-w-sm text-sm leading-7 text-slate-600">
-                {content.footer.description}
-              </p>
-            </div>
-
-            {content.footer.columns.map((column) => (
-              <div key={column.title}>
-                <h3 className="text-sm font-semibold text-slate-900">
-                  {column.title}
-                </h3>
-                <ul className="mt-4 space-y-3 text-sm text-slate-600">
-                  {column.links.map((link) => (
-                    <li key={link}>
-                      <a href="#" className="transition hover:text-[#C1121F]">
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-12 border-t border-slate-200 pt-6 text-sm text-slate-500">
-            {content.footer.copyright}
-          </div>
-        </SectionShell>
-      </footer>
     </div>
-  );
-}
-
-function Navbar({
-  locale,
-  navbar,
-}: {
-  locale: string;
-  navbar: HomepageContent["navbar"];
-}) {
-  return (
-    <header className="sticky top-0 z-50 border-b border-primary bg-white/90 backdrop-blur-xl">
-      <SectionShell className="py-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
-          <a href="#" className="flex items-center">
-            <Image
-              src="/logos/onlinemandawee-logo.png"
-              alt="Mandawee logo"
-              width={220}
-              height={64}
-              className="h-12 w-auto object-contain lg:h-14"
-              priority
-            />
-          </a>
-
-          <div className="flex-1">
-            <div className="flex h-14 items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-              <SearchIcon className="h-5 w-5 text-slate-400" />
-              <input
-                aria-label="Search products"
-                placeholder={navbar.searchPlaceholder}
-                className="h-full w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
-              />
-              <button className="inline-flex h-10 items-center justify-center rounded-full bg-[#C1121F] px-5 text-sm font-semibold text-white transition hover:bg-[#a90f1a]">
-                {navbar.searchButton}
-              </button>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <LanguageSelector
-              locale={locale}
-              languages={navbar.languages}
-              languageLabel={navbar.languageLabel}
-            />
-            <Selector label={navbar.currencyLabel} />
-            <IconButton ariaLabel={navbar.accountLabel}>
-              <UserIcon className="h-5 w-5" />
-            </IconButton>
-            <IconButton ariaLabel={navbar.cartLabel} badge="2">
-              <CartIcon className="h-5 w-5" />
-            </IconButton>
-          </div>
-        </div>
-      </SectionShell>
-    </header>
   );
 }
 
@@ -702,123 +590,6 @@ function InfoCard({
   );
 }
 
-function Selector({ label }: { label: string }) {
-  return (
-    <button className="inline-flex h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-slate-300">
-      {label}
-      <ChevronDownIcon className="h-4 w-4 text-slate-400" />
-    </button>
-  );
-}
-
-function LanguageSelector({
-  locale,
-  languages,
-  languageLabel,
-}: {
-  locale: string;
-  languages: LanguageOption[];
-  languageLabel: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
-  const router = useRouter();
-
-  const current = languages.find((l) => l.code === locale) ?? languages[0];
-
-  useEffect(() => {
-    function onPointerDown(ev: MouseEvent) {
-      if (!wrapRef.current?.contains(ev.target as Node)) {
-        setOpen(false);
-      }
-    }
-    function onKey(ev: KeyboardEvent) {
-      if (ev.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, []);
-
-  return (
-    <div className="relative" ref={wrapRef}>
-      <button
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-label={languageLabel}
-        onClick={() => setOpen((o) => !o)}
-        className="inline-flex h-11 min-w-[7.5rem] items-center justify-between gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-slate-300"
-      >
-        <span className="truncate">{current.label}</span>
-        <ChevronDownIcon
-          className={`h-4 w-4 shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      {open ? (
-        <ul
-          role="listbox"
-          aria-label={languageLabel}
-          className="absolute end-0 z-50 mt-2 min-w-[11rem] rounded-2xl border border-slate-200 bg-white py-2 shadow-[0_16px_40px_rgba(15,23,42,0.12)]"
-        >
-          {languages.map((language) => {
-            const selected = language.code === locale;
-            return (
-              <li key={language.code} role="presentation">
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={selected}
-                  className={`flex w-full items-center px-4 py-2.5 text-start text-sm font-medium transition hover:bg-slate-50 ${
-                    selected ? "text-[#C1121F]" : "text-slate-700"
-                  }`}
-                  onClick={() => {
-                    setOpen(false);
-                    router.replace(pathname, {
-                      locale: language.code as "en" | "ps" | "fa-AF",
-                    });
-                  }}
-                >
-                  {language.label}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
-    </div>
-  );
-}
-
-function IconButton({
-  children,
-  badge,
-  ariaLabel,
-}: {
-  children: React.ReactNode;
-  badge?: string;
-  ariaLabel: string;
-}) {
-  return (
-    <button
-      aria-label={ariaLabel}
-      className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:text-[#C1121F]"
-    >
-      {children}
-      {badge ? (
-        <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C1121F] px-1 text-[10px] font-semibold text-white">
-          {badge}
-        </span>
-      ) : null}
-    </button>
-  );
-}
-
 function StatCard({ value, label }: { value: string; label: string }) {
   return (
     <div className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
@@ -1053,66 +824,6 @@ function RefreshIcon({ className = "" }: IconProps) {
     >
       <path d="M20 6v6h-6" />
       <path d="M20 12a8 8 0 1 1-2.3-5.7L20 8" />
-    </svg>
-  );
-}
-
-function SearchIcon({ className = "" }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className={className}
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
-  );
-}
-
-function UserIcon({ className = "" }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className={className}
-    >
-      <circle cx="12" cy="8" r="4" />
-      <path d="M5 20a7 7 0 0 1 14 0" />
-    </svg>
-  );
-}
-
-function CartIcon({ className = "" }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className={className}
-    >
-      <path d="M4 5h2l2.2 9.2a1 1 0 0 0 1 .8h7.9a1 1 0 0 0 1-.8L20 8H8" />
-      <circle cx="10" cy="19" r="1.5" />
-      <circle cx="17" cy="19" r="1.5" />
-    </svg>
-  );
-}
-
-function ChevronDownIcon({ className = "" }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className={className}
-    >
-      <path d="m6 9 6 6 6-6" />
     </svg>
   );
 }
