@@ -54,7 +54,7 @@ type FeaturedProductSource = {
 
 function pickLocalized(
   field: FeaturedProductSource["name"],
-  locale: string
+  locale: string,
 ): string {
   if (locale === "en" || locale === "ps" || locale === "fa-AF") {
     return field[locale];
@@ -208,7 +208,10 @@ export function Homepage() {
   const featuredProducts = featuredProductsForLocale(locale);
 
   return (
-    <div dir={content.direction} className="min-h-screen bg-white text-slate-900">
+    <div
+      dir={content.direction}
+      className="min-h-screen bg-white text-slate-900"
+    >
       <Navbar locale={locale} navbar={content.navbar} />
 
       <main>
@@ -311,12 +314,20 @@ export function Homepage() {
 
               <div className="grid gap-4 rounded-[24px] border border-white/10 bg-white/10 p-5 backdrop-blur">
                 <div className="rounded-2xl bg-white/10 p-4">
-                  <p className="text-sm text-white/70">{content.giftingBanner.addOnsTitle}</p>
-                  <p className="mt-2 text-lg font-semibold">{content.giftingBanner.addOnsDescription}</p>
+                  <p className="text-sm text-white/70">
+                    {content.giftingBanner.addOnsTitle}
+                  </p>
+                  <p className="mt-2 text-lg font-semibold">
+                    {content.giftingBanner.addOnsDescription}
+                  </p>
                 </div>
                 <div className="rounded-2xl bg-white/10 p-4">
-                  <p className="text-sm text-white/70">{content.giftingBanner.collaborationTitle}</p>
-                  <p className="mt-2 text-lg font-semibold">{content.giftingBanner.collaborationDescription}</p>
+                  <p className="text-sm text-white/70">
+                    {content.giftingBanner.collaborationTitle}
+                  </p>
+                  <p className="mt-2 text-lg font-semibold">
+                    {content.giftingBanner.collaborationDescription}
+                  </p>
                 </div>
               </div>
             </div>
@@ -358,8 +369,12 @@ export function Homepage() {
                   className="h-10 w-auto object-contain"
                 />
                 <div>
-                  <p className="text-lg font-semibold tracking-tight text-slate-900">Mandawee</p>
-                  <p className="text-sm text-slate-500">{content.footer.tagline}</p>
+                  <p className="text-lg font-semibold tracking-tight text-slate-900">
+                    Mandawee
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    {content.footer.tagline}
+                  </p>
                 </div>
               </div>
 
@@ -370,7 +385,9 @@ export function Homepage() {
 
             {content.footer.columns.map((column) => (
               <div key={column.title}>
-                <h3 className="text-sm font-semibold text-slate-900">{column.title}</h3>
+                <h3 className="text-sm font-semibold text-slate-900">
+                  {column.title}
+                </h3>
                 <ul className="mt-4 space-y-3 text-sm text-slate-600">
                   {column.links.map((link) => (
                     <li key={link}>
@@ -401,12 +418,12 @@ function Navbar({
   navbar: HomepageContent["navbar"];
 }) {
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-primary bg-white/90 backdrop-blur-xl">
       <SectionShell className="py-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
           <a href="#" className="flex items-center">
             <Image
-              src="/onlinemandawee-logo.png"
+              src="/logos/onlinemandawee-logo.png"
               alt="Mandawee logo"
               width={220}
               height={64}
@@ -476,7 +493,11 @@ function HeroSection({ hero }: { hero: HomepageContent["hero"] }) {
 
             <div className="mt-10 grid grid-cols-3 gap-4">
               {hero.stats.map((stat) => (
-                <StatCard key={stat.label} value={stat.value} label={stat.label} />
+                <StatCard
+                  key={stat.label}
+                  value={stat.value}
+                  label={stat.label}
+                />
               ))}
             </div>
           </div>
@@ -499,12 +520,18 @@ function HeroSection({ hero }: { hero: HomepageContent["hero"] }) {
                 <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
                   {hero.floatingTopEyebrow}
                 </p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">{hero.floatingTopTitle}</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">
+                  {hero.floatingTopTitle}
+                </p>
               </div>
 
               <div className="pointer-events-none absolute bottom-8 right-8 rounded-3xl bg-slate-900 px-5 py-4 text-white shadow-[0_16px_40px_rgba(15,23,42,0.25)]">
-                <p className="text-xs uppercase tracking-[0.16em] text-white/60">{hero.floatingBottomEyebrow}</p>
-                <p className="mt-2 text-xl font-semibold">{hero.floatingBottomTitle}</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-white/60">
+                  {hero.floatingBottomEyebrow}
+                </p>
+                <p className="mt-2 text-xl font-semibold">
+                  {hero.floatingBottomTitle}
+                </p>
               </div>
             </div>
           </div>
@@ -522,7 +549,9 @@ function SectionShell({
   className?: string;
 }) {
   return (
-    <section className={`mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 ${className}`}>
+    <section
+      className={`mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 ${className}`}
+    >
       {children}
     </section>
   );
@@ -560,8 +589,12 @@ function CategoryCard({ category }: { category: Category }) {
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#C1121F]/8 text-[#C1121F]">
         <Icon className="h-7 w-7" />
       </div>
-      <h3 className="mt-5 text-lg font-semibold text-slate-900">{category.title}</h3>
-      <p className="mt-2 text-sm leading-7 text-slate-600">{category.description}</p>
+      <h3 className="mt-5 text-lg font-semibold text-slate-900">
+        {category.title}
+      </h3>
+      <p className="mt-2 text-sm leading-7 text-slate-600">
+        {category.description}
+      </p>
     </article>
   );
 }
@@ -587,7 +620,9 @@ function ProductCard({
           <h3 className="line-clamp-2 text-lg font-semibold text-slate-900">
             {product.name}
           </h3>
-          <span className="shrink-0 text-lg font-bold text-[#C1121F]">{product.price}</span>
+          <span className="shrink-0 text-lg font-bold text-[#C1121F]">
+            {product.price}
+          </span>
         </div>
         <div className="mt-3 flex items-center gap-2 text-sm text-slate-500">
           <span className="inline-flex rounded-full bg-[#C1121F]/8 px-3 py-1 font-medium text-[#C1121F]">
@@ -620,13 +655,19 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
           {initials}
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-slate-900">{vendor.name}</h3>
+          <h3 className="text-lg font-semibold text-slate-900">
+            {vendor.name}
+          </h3>
           <p className="text-sm text-slate-600">{vendor.specialty}</p>
         </div>
       </div>
       <div className="mt-6 flex items-center justify-between rounded-2xl bg-white/85 px-4 py-3">
-        <span className="text-sm font-medium text-slate-600">{vendor.metricLabel}</span>
-        <span className="text-sm font-semibold text-slate-900">{vendor.metricValue}</span>
+        <span className="text-sm font-medium text-slate-600">
+          {vendor.metricLabel}
+        </span>
+        <span className="text-sm font-semibold text-slate-900">
+          {vendor.metricValue}
+        </span>
       </div>
     </article>
   );
@@ -789,7 +830,13 @@ function StatCard({ value, label }: { value: string; label: string }) {
 
 function BasketIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <path d="M5 10h14l-1.2 8.4a2 2 0 0 1-2 1.6H8.2a2 2 0 0 1-2-1.6L5 10Z" />
       <path d="m9 10 3-5 3 5" />
     </svg>
@@ -798,7 +845,13 @@ function BasketIcon({ className = "" }: IconProps) {
 
 function GiftIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <path d="M4 9h16v11H4z" />
       <path d="M12 9v11M4 13h16M7.5 9C6.1 9 5 7.9 5 6.5S6.1 4 7.5 4C10 4 12 9 12 9s2-5 4.5-5C17.9 4 19 5.1 19 6.5S17.9 9 16.5 9" />
     </svg>
@@ -807,7 +860,13 @@ function GiftIcon({ className = "" }: IconProps) {
 
 function FlowerIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <path d="M12 21V9" />
       <path d="M12 9c0-3 2-5 5-5 0 3-2 5-5 5Z" />
       <path d="M12 9c0-3-2-5-5-5 0 3 2 5 5 5Z" />
@@ -819,7 +878,13 @@ function FlowerIcon({ className = "" }: IconProps) {
 
 function CakeIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <path d="M6 10h12v9H6z" />
       <path d="M4 19h16" />
       <path d="M8 10V7M12 10V5M16 10V7" />
@@ -829,7 +894,13 @@ function CakeIcon({ className = "" }: IconProps) {
 
 function PlateIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <circle cx="12" cy="12" r="7" />
       <circle cx="12" cy="12" r="3" />
     </svg>
@@ -838,7 +909,13 @@ function PlateIcon({ className = "" }: IconProps) {
 
 function SparklesIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3Z" />
       <path d="m5 15 .8 2.2L8 18l-2.2.8L5 21l-.8-2.2L2 18l2.2-.8L5 15Z" />
       <path d="m19 13 .8 2.2L22 16l-2.2.8L19 19l-.8-2.2L16 16l2.2-.8L19 13Z" />
@@ -848,7 +925,13 @@ function SparklesIcon({ className = "" }: IconProps) {
 
 function HeartShieldIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <path d="M12 21s7-3.5 7-10V5l-7-2-7 2v6c0 6.5 7 10 7 10Z" />
       <path d="m9 12 2 2 4-4" />
     </svg>
@@ -857,7 +940,13 @@ function HeartShieldIcon({ className = "" }: IconProps) {
 
 function DeviceIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <rect x="5" y="4" width="14" height="16" rx="2.5" />
       <path d="M10 17h4" />
     </svg>
@@ -866,7 +955,13 @@ function DeviceIcon({ className = "" }: IconProps) {
 
 function RocketIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <path d="M14 4c4 0 6 4 6 6-2 0-6 2-8 6l-4-4c4-2 6-6 6-8Z" />
       <path d="M8 16 5 19M10 18l-3 3" />
     </svg>
@@ -875,7 +970,13 @@ function RocketIcon({ className = "" }: IconProps) {
 
 function DeliveryTruckIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <path d="M3 7h11v9H3zM14 10h3l4 3v3h-7z" />
       <circle cx="7" cy="18" r="2" />
       <circle cx="18" cy="18" r="2" />
@@ -885,7 +986,13 @@ function DeliveryTruckIcon({ className = "" }: IconProps) {
 
 function StorefrontIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <path d="M4 10h16M6 10v9h12v-9M4 10l2-5h12l2 5" />
     </svg>
   );
@@ -893,7 +1000,13 @@ function StorefrontIcon({ className = "" }: IconProps) {
 
 function LockIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <rect x="5" y="10" width="14" height="10" rx="2" />
       <path d="M8 10V8a4 4 0 1 1 8 0v2" />
     </svg>
@@ -902,7 +1015,13 @@ function LockIcon({ className = "" }: IconProps) {
 
 function CheckBadgeIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <path d="m9 12 2 2 4-4" />
       <path d="m12 3 2.3 2.1 3.1-.3.9 3 2.7 1.7-1.3 2.8 1.3 2.8-2.7 1.7-.9 3-3.1-.3L12 21l-2.3-2.1-3.1.3-.9-3-2.7-1.7 1.3-2.8-1.3-2.8 2.7-1.7.9-3 3.1.3L12 3Z" />
     </svg>
@@ -911,7 +1030,13 @@ function CheckBadgeIcon({ className = "" }: IconProps) {
 
 function FlashIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />
     </svg>
   );
@@ -919,7 +1044,13 @@ function FlashIcon({ className = "" }: IconProps) {
 
 function RefreshIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <path d="M20 6v6h-6" />
       <path d="M20 12a8 8 0 1 1-2.3-5.7L20 8" />
     </svg>
@@ -928,7 +1059,13 @@ function RefreshIcon({ className = "" }: IconProps) {
 
 function SearchIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-3.5-3.5" />
     </svg>
@@ -937,7 +1074,13 @@ function SearchIcon({ className = "" }: IconProps) {
 
 function UserIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <circle cx="12" cy="8" r="4" />
       <path d="M5 20a7 7 0 0 1 14 0" />
     </svg>
@@ -946,7 +1089,13 @@ function UserIcon({ className = "" }: IconProps) {
 
 function CartIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <path d="M4 5h2l2.2 9.2a1 1 0 0 0 1 .8h7.9a1 1 0 0 0 1-.8L20 8H8" />
       <circle cx="10" cy="19" r="1.5" />
       <circle cx="17" cy="19" r="1.5" />
@@ -956,7 +1105,13 @@ function CartIcon({ className = "" }: IconProps) {
 
 function ChevronDownIcon({ className = "" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
       <path d="m6 9 6 6 6-6" />
     </svg>
   );
