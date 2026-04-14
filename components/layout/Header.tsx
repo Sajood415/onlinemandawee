@@ -87,9 +87,8 @@ export default function Header() {
 
   return (
     <>
-      <div className="sticky top-0 z-[100] w-full bg-white shadow-sm">
-        {/* ================= TOP HEADER ================= */}
-        <header className="border-b border-gray-100 bg-white/95 backdrop-blur-xl relative z-[100]">
+      {/* TOP BAR – sticky (logo, search, account, cart) */}
+      <header className="sticky top-0 z-[100] border-b border-gray-100 bg-white/95 backdrop-blur-xl shadow-sm">
           <div className="mx-auto max-w-7xl px-4 py-2 sm:py-3">
             <div className="flex items-center justify-between gap-4 lg:gap-8">
               {/* LOGO */}
@@ -171,7 +170,7 @@ export default function Header() {
                   <div className="h-8 w-px bg-gray-100 hidden sm:block mx-1" />
                   
                   <div className="relative" ref={userMenuRef}>
-                    <IconButton onClick={() => setShowUserMenu(!showUserMenu)} active={showUserMenu}>
+                    <IconButton onClick={() => setShowUserMenu(!showUserMenu)} active={showUserMenu} aria-label="Account menu">
                       <User size={20} />
                     </IconButton>
                     <AnimatePresence>
@@ -205,7 +204,7 @@ export default function Header() {
                     </AnimatePresence>
                   </div>
 
-                  <IconButton onClick={() => setIsCartOpen(true)} badge={itemCount?.toString()}>
+                  <IconButton onClick={() => setIsCartOpen(true)} badge={itemCount?.toString()} aria-label="Shopping cart">
                     <ShoppingCart size={20} />
                   </IconButton>
                 </div>
@@ -230,9 +229,10 @@ export default function Header() {
               )}
             </AnimatePresence>
           </div>
-        </header>
+      </header>
 
-        <nav className="bg-primary text-white relative z-50">
+      {/* PRIMARY NAV – scrolls normally */}
+      <nav className="bg-primary text-white relative z-50">
           <div className="max-w-7xl mx-auto px-4 flex items-center h-14 sm:h-[68px]">
             {/* CATEGORIES BUTTON */}
             <div className="relative flex-shrink-0" ref={categoriesRef}>
@@ -283,8 +283,7 @@ export default function Header() {
               <Link href="/contact" className="nav-link-bottom">Support</Link>
             </div>
           </div>
-        </nav>
-      </div>
+      </nav>
 
       {/* ================= CART SHEET (MODERN SIDEBAR) ================= */}
       <AnimatePresence>
@@ -355,54 +354,7 @@ export default function Header() {
         )}
       </AnimatePresence>
 
-      <style jsx global>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .menu-link {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          width: calc(100% - 12px);
-          margin: 6px;
-          padding: 14px 18px;
-          border-radius: 14px;
-          font-size: 14px;
-          font-weight: 700;
-          color: #4b5563;
-          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .menu-link:hover {
-          background: #fdf2f0;
-          color: #f1592a;
-          transform: translateX(6px);
-        }
-        .nav-link-bottom {
-          color: rgba(255, 255, 255, 0.9);
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          position: relative;
-          display: flex;
-          align-items: center;
-          height: 100%;
-        }
-        .nav-link-bottom:hover {
-          color: white;
-          transform: translateY(-2px);
-        }
-        .nav-link-bottom::after {
-          content: '';
-          position: absolute;
-          bottom: -4px;
-          left: 0;
-          width: 0;
-          height: 3px;
-          background: #fbbf24;
-          border-radius: 4px;
-          transition: width 0.3s ease;
-        }
-        .nav-link-bottom:hover::after {
-          width: 100%;
-        }
-      `}</style>
+
     </>
   );
 }
@@ -505,10 +457,11 @@ function LanguageSelector({ locale, languages }: any) {
   );
 }
 
-function IconButton({ children, badge, onClick, active }: any) {
+function IconButton({ children, badge, onClick, active, "aria-label": ariaLabel }: any) {
   return (
     <button 
-      onClick={onClick} 
+      onClick={onClick}
+      aria-label={ariaLabel}
       className={`relative h-11 w-11 flex items-center justify-center rounded-full border transition-all duration-300 group active:scale-90 cursor-pointer ${active ? 'bg-primary border-primary text-white shadow-xl shadow-primary/30' : 'border-gray-100 bg-white hover:bg-gray-50 text-gray-600 hover:text-primary hover:border-primary/30'}`}
     >
       {children}

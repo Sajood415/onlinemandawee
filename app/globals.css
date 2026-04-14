@@ -47,3 +47,53 @@ body {
   background: rgba(193, 18, 31, 0.16);
   color: #111827;
 }
+
+/* ── Header nav styles ── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.menu-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: calc(100% - 12px);
+  margin: 6px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #4b5563;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.menu-link:hover {
+  background: #fdf2f0;
+  color: #f1592a;
+  transform: translateX(6px);
+}
+
+.nav-link-bottom {
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+.nav-link-bottom:hover {
+  color: white;
+  transform: translateY(-2px);
+}
+.nav-link-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 3px;
+  background: #fbbf24;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+.nav-link-bottom:hover::after {
+  width: 100%;
+}
