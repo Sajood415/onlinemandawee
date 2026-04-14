@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale, useMessages } from "next-intl";
+import Hero from "./Hero";
 
 import productCatalog from "@/data/product.json";
 
@@ -210,7 +211,7 @@ export function HomePage() {
       className="min-h-screen bg-white text-slate-900"
     >
       <main>
-        <HeroSection hero={content.hero} />
+        <Hero hero={content.hero} />
 
         <SectionShell className="py-16 sm:py-20">
           <SectionHeading
@@ -351,81 +352,6 @@ export function HomePage() {
         </section>
       </main>
     </div>
-  );
-}
-
-function HeroSection({ hero }: { hero: HomepageContent["hero"] }) {
-  return (
-    <section className="overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(193,18,31,0.12),transparent_40%),linear-gradient(180deg,#fff_0%,#fff5f5_100%)]">
-      <SectionShell className="py-10 sm:py-14 lg:py-20">
-        <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <div className="max-w-xl">
-            <span className="inline-flex rounded-full border border-[#C1121F]/10 bg-[#C1121F]/5 px-3 py-1 text-sm font-medium text-[#C1121F]">
-              {hero.eyebrow}
-            </span>
-            <h1 className="mt-6 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl lg:leading-[1.05]">
-              {hero.title}
-            </h1>
-            <p className="mt-5 text-base leading-8 text-slate-600 sm:text-lg">
-              {hero.description}
-            </p>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <button className="inline-flex h-12 items-center justify-center rounded-full bg-[#C1121F] px-6 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(193,18,31,0.22)] transition hover:bg-[#a90f1a]">
-                {hero.primaryCta}
-              </button>
-              <button className="inline-flex h-12 items-center justify-center rounded-full border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50">
-                {hero.secondaryCta}
-              </button>
-            </div>
-
-            <div className="mt-10 grid grid-cols-3 gap-4">
-              {hero.stats.map((stat) => (
-                <StatCard
-                  key={stat.label}
-                  value={stat.value}
-                  label={stat.label}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-0 rounded-[32px] bg-[radial-gradient(circle_at_top,rgba(193,18,31,0.2),transparent_45%)] blur-3xl" />
-            <div className="relative overflow-hidden rounded-[32px] border border-white/70 bg-white p-3 shadow-[0_28px_90px_rgba(15,23,42,0.12)]">
-              <div
-                aria-label="Family receiving gifts together"
-                className="h-[420px] rounded-[28px] bg-cover bg-center sm:h-[520px]"
-                style={{
-                  backgroundImage:
-                    "url('https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=1400&q=80')",
-                }}
-              >
-                <div className="h-full w-full bg-linear-to-t from-slate-900/10 via-transparent to-transparent" />
-              </div>
-
-              <div className="pointer-events-none absolute left-8 top-8 rounded-3xl bg-white/92 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.12)] backdrop-blur">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                  {hero.floatingTopEyebrow}
-                </p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">
-                  {hero.floatingTopTitle}
-                </p>
-              </div>
-
-              <div className="pointer-events-none absolute bottom-8 right-8 rounded-3xl bg-slate-900 px-5 py-4 text-white shadow-[0_16px_40px_rgba(15,23,42,0.25)]">
-                <p className="text-xs uppercase tracking-[0.16em] text-white/60">
-                  {hero.floatingBottomEyebrow}
-                </p>
-                <p className="mt-2 text-xl font-semibold">
-                  {hero.floatingBottomTitle}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </SectionShell>
-    </section>
   );
 }
 
@@ -590,14 +516,7 @@ function InfoCard({
   );
 }
 
-function StatCard({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-      <p className="text-xl font-semibold text-slate-900">{value}</p>
-      <p className="mt-1 text-sm text-slate-500">{label}</p>
-    </div>
-  );
-}
+
 
 function BasketIcon({ className = "" }: IconProps) {
   return (
