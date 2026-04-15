@@ -9,10 +9,10 @@ import { useCart } from "@/store/cart-context";
 import { useCurrency } from "@/store/currency-context";
 import Link from "next/link";
 import { 
-  Search, User, ShoppingCart, ChevronDown, Check, Menu, 
+  Search, User, ShoppingCart, ShoppingBasket, ChevronDown, Check, Menu, 
   Store, LayoutDashboard, Globe, DollarSign, X, 
   Coffee, Cookie, Milk, Apple, Package, HelpCircle, Gift, Sparkles, Zap,
-  ArrowRight
+  ArrowRight, Croissant, ShoppingBag, Wine, Cherry, Carrot, GlassWater, SprayCanIcon, Baby, Heart, Dumbbell, PenTool
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -205,7 +205,7 @@ export default function Header() {
                   </div>
 
                   <IconButton onClick={() => setIsCartOpen(true)} badge={itemCount?.toString()} aria-label="Shopping cart">
-                    <ShoppingCart size={20} />
+                    <ShoppingBasket size={20} />
                   </IconButton>
                 </div>
               </div>
@@ -249,15 +249,33 @@ export default function Header() {
                 {showCategoriesDropdown && (
                   <motion.div 
                     variants={dropdownVariants} initial="hidden" animate="visible" exit="exit"
-                    className="absolute top-full left-0 w-[280px] sm:w-[350px] bg-white text-gray-800 rounded-b-[2rem] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] z-[1001] border-x border-b border-gray-100 overflow-hidden"
+                    className="absolute top-full left-0 w-[320px] sm:w-[380px] bg-white text-gray-800 rounded-b-[2rem] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] z-[1001] border-x border-b border-gray-100 overflow-hidden max-h-[70vh] overflow-y-auto"
                   >
-                    <div className="p-4 grid gap-1.5">
+                    <div className="p-4 grid gap-1">
                       <p className="px-4 py-2 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Store Departments</p>
-                      <CategoryItem href="/categories/breakfast" icon={<Coffee size={18}/>} label="Breakfast & Bakery" onClick={closeAll} />
-                      <CategoryItem href="/categories/snacks" icon={<Cookie size={18}/>} label="Snacks & Sweets" onClick={closeAll} />
-                      <CategoryItem href="/categories/beverages" icon={<Milk size={18}/>} label="Drinks & Juice" onClick={closeAll} />
-                      <CategoryItem href="/categories/fresh-produce" icon={<Apple size={18}/>} label="Fruits & Vegetables" onClick={closeAll} />
-                      <CategoryItem href="/categories/pantry" icon={<Package size={18}/>} label="Pantry Essentials" onClick={closeAll} />
+                      
+                      {/* Food & Grocery */}
+                      <CategoryItem href="/category/breakfast" icon={<Croissant size={18}/>} label="Breakfast Items" onClick={closeAll} />
+                      <CategoryItem href="/category/grocery" icon={<ShoppingBag size={18}/>} label="Edible Grocery" onClick={closeAll} />
+                      <CategoryItem href="/category/snacks" icon={<Cookie size={18}/>} label="Snack Bar" onClick={closeAll} />
+                      <CategoryItem href="/category/beverages" icon={<Wine size={18}/>} label="Beverages" onClick={closeAll} />
+                      <CategoryItem href="/category/fruits" icon={<Cherry size={18}/>} label="Fruits" onClick={closeAll} />
+                      <CategoryItem href="/category/vegetables" icon={<Carrot size={18}/>} label="Vegetables" onClick={closeAll} />
+                      <CategoryItem href="/category/dairy" icon={<GlassWater size={18}/>} label="Dairy Products" onClick={closeAll} />
+                      
+                      <div className="h-px bg-gray-100 my-2 mx-4" />
+                      
+                      {/* Home & Personal Care */}
+                      <CategoryItem href="/category/cleaning-products" icon={<SprayCanIcon size={18}/>} label="Cleaning Products" onClick={closeAll} />
+                      <CategoryItem href="/category/baby-care" icon={<Baby size={18}/>} label="Baby Care" onClick={closeAll} />
+                      <CategoryItem href="/category/personal-care" icon={<Heart size={18}/>} label="Personal Care" onClick={closeAll} />
+                      
+                      <div className="h-px bg-gray-100 my-2 mx-4" />
+                      
+                      {/* Health & Stationery */}
+                      <CategoryItem href="/category/whey-proteins" icon={<Dumbbell size={18}/>} label="Whey Proteins" onClick={closeAll} />
+                      <CategoryItem href="/category/stationery-items" icon={<PenTool size={18}/>} label="Stationery Items" onClick={closeAll} />
+                      
                       <div className="h-px bg-gray-100 my-2 mx-4" />
                       <Link href="/products" onClick={closeAll} className="mx-2 px-5 py-4 text-sm font-black text-primary hover:bg-primary/5 rounded-2xl flex items-center justify-between group transition-all">
                         Discover Everything <ArrowRight size={18} className="group-hover:translate-x-1.5 transition-transform" />
@@ -268,19 +286,37 @@ export default function Header() {
               </AnimatePresence>
             </div>
 
-            {/* NAV LINKS - High Performance Horizontal Layout */}
-            <div className="flex-1 flex items-center gap-8 sm:gap-10 overflow-x-auto no-scrollbar scroll-smooth whitespace-nowrap px-8 py-2 text-[14px] sm:text-[15px] font-bold">
+            {/* NAV LINKS */}
+            {/* Desktop - All Links */}
+            <div className="hidden sm:flex flex-1 items-center gap-8 lg:gap-10 px-8 py-2 text-[15px] font-bold">
               <Link href="/" className="nav-link-bottom">Home</Link>
               <Link href="/products" className="nav-link-bottom">Products</Link>
               <Link href="/gifts" className="nav-link-bottom relative flex items-center gap-2 group">
                 Gift Sets
-                <span className="bg-yellow-400 text-yellow-950 text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter shadow-sm group-hover:scale-110 transition-transform">New</span>
+                <span 
+                  className="text-white text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter shadow-sm group-hover:scale-110 transition-transform"
+                  style={{ backgroundColor: 'var(--yellow)' }}
+                >New</span>
               </Link>
               <Link href="/baby-packages" className="nav-link-bottom">Baby Care</Link>
               <Link href="/deals" className="nav-link-bottom flex items-center gap-1.5">
-                <Zap size={15} className="text-yellow-400 fill-yellow-400" /> Daily Deals
+                <Zap size={15} style={{ color: 'var(--yellow)', fill: 'var(--yellow)' }} /> Daily Deals
               </Link>
               <Link href="/contact" className="nav-link-bottom">Support</Link>
+            </div>
+
+            {/* Mobile - Limited Links + More Button */}
+            <div className="flex sm:hidden flex-1 items-center justify-around px-2 py-2 text-[14px] font-bold">
+              <Link href="/" className="nav-link-bottom px-2">Home</Link>
+              <Link href="/products" className="nav-link-bottom px-2">Products</Link>
+              <Link href="/gifts" className="nav-link-bottom px-2 relative flex items-center gap-1">
+                Gifts
+                <span 
+                  className="text-white text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter"
+                  style={{ backgroundColor: 'var(--yellow)' }}
+                >New</span>
+              </Link>
+              <MobileNavMenu closeAll={closeAll} />
             </div>
           </div>
       </nav>
@@ -295,7 +331,7 @@ export default function Header() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsCartOpen(false)}
-              className="absolute inset-0 bg-black/50 backdrop-blur-[2px] cursor-pointer"
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm cursor-pointer"
             />
             {/* Sheet Side Panel */}
             <motion.div 
@@ -303,51 +339,98 @@ export default function Header() {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="absolute top-0 right-0 h-full w-full max-w-[420px] bg-white shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.3)] flex flex-col"
+              className="absolute top-0 right-0 h-full w-full max-w-[440px] bg-white shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.25)] flex flex-col"
             >
-              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+              {/* Header */}
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-white to-gray-50/50 sticky top-0 z-10">
                 <div className="flex items-center gap-3">
-                  <div className="bg-primary/5 p-2 rounded-xl">
-                    <ShoppingCart size={24} className="text-primary" />
-                  </div>
+                  <motion.div 
+                    className="bg-primary/10 p-3 rounded-2xl border border-primary/20"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 400 }}
+                  >
+                    <ShoppingBasket size={26} className="text-primary" />
+                  </motion.div>
                   <div>
-                    <h2 className="text-xl font-black text-gray-900 tracking-tight leading-none">Your Cart</h2>
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">Review Items</p>
+                    <h2 className="text-xl font-black text-gray-900 tracking-tight leading-none">Your Basket</h2>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                      {itemCount > 0 ? `${itemCount} items ready` : "Start shopping"}
+                    </p>
                   </div>
                 </div>
-                <button 
+                <motion.button 
                   onClick={() => setIsCartOpen(false)} 
-                  className="h-10 w-10 flex items-center justify-center hover:bg-gray-100 rounded-full transition-all cursor-pointer group"
+                  className="h-11 w-11 flex items-center justify-center hover:bg-gray-100 rounded-full transition-all cursor-pointer group border border-gray-200"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <X size={24} className="text-gray-400 group-hover:text-gray-900 transition-colors" />
-                </button>
+                  <X size={22} className="text-gray-400 group-hover:text-gray-900 transition-colors" />
+                </motion.button>
               </div>
 
               {/* Cart Content Area */}
               <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center text-center">
-                 <div className="w-32 h-32 bg-gray-50 rounded-full flex items-center justify-center mb-6 ring-4 ring-gray-25">
-                    <ShoppingCart size={56} className="text-gray-200" />
-                 </div>
-                 <h3 className="text-xl font-black text-gray-900 mb-2">{itemCount > 0 ? `Basket contains ${itemCount} items` : "Your basket is empty"}</h3>
-                 <p className="text-gray-500 max-w-[280px] text-sm leading-relaxed mb-8">
-                   Treat your family to something special! Browse our marketplace for the freshest items in Kabul.
-                 </p>
-                 <Link href="/products" onClick={() => setIsCartOpen(false)} className="px-12 py-4 bg-primary text-white rounded-2xl font-black shadow-[0_15px_30px_-5px_rgba(241,89,42,0.3)] hover:brightness-110 active:scale-95 transition-all">
-                    Browse Marketplace
-                 </Link>
+                 <motion.div 
+                   className="w-36 h-36 bg-gradient-to-br from-gray-50 to-gray-100 rounded-full flex items-center justify-center mb-6 ring-4 ring-gray-50 shadow-inner"
+                   initial={{ scale: 0.8, opacity: 0 }}
+                   animate={{ scale: 1, opacity: 1 }}
+                   transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+                 >
+                    <ShoppingBasket size={60} className="text-gray-300" strokeWidth={1.5} />
+                 </motion.div>
+                 <motion.h3 
+                   className="text-2xl font-black text-gray-900 mb-2"
+                   initial={{ y: 10, opacity: 0 }}
+                   animate={{ y: 0, opacity: 1 }}
+                   transition={{ delay: 0.2 }}
+                 >
+                   {itemCount > 0 ? `Basket has ${itemCount} items` : "Your basket is empty"}
+                 </motion.h3>
+                 <motion.p 
+                   className="text-gray-500 max-w-[280px] text-sm leading-relaxed mb-8"
+                   initial={{ y: 10, opacity: 0 }}
+                   animate={{ y: 0, opacity: 1 }}
+                   transition={{ delay: 0.3 }}
+                 >
+                   Treat your family to something special! Browse our marketplace for the freshest items.
+                 </motion.p>
+                 <motion.div
+                   initial={{ y: 10, opacity: 0 }}
+                   animate={{ y: 0, opacity: 1 }}
+                   transition={{ delay: 0.4 }}
+                 >
+                   <Link 
+                     href="/products" 
+                     onClick={() => setIsCartOpen(false)} 
+                     className="inline-flex items-center gap-2 px-10 py-4 bg-primary text-white rounded-full font-bold shadow-[0_10px_30px_-5px_rgba(220,53,69,0.4)] hover:shadow-[0_15px_40px_-5px_rgba(220,53,69,0.5)] hover:-translate-y-0.5 active:scale-95 transition-all"
+                   >
+                     <Search size={18} />
+                     Browse Products
+                   </Link>
+                 </motion.div>
               </div>
 
               {/* Sticky Footer */}
               {itemCount > 0 && (
-                <div className="p-8 border-t border-gray-100 bg-gray-50/50">
+                <motion.div 
+                  className="p-6 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-white"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
                   <div className="flex items-center justify-between mb-4">
-                     <span className="font-bold text-gray-400 uppercase text-xs tracking-widest">Estimated Total</span>
+                     <span className="font-bold text-gray-500 uppercase text-xs tracking-widest">Estimated Total</span>
                      <span className="text-2xl font-black text-gray-900">--.--</span>
                   </div>
-                  <Link href="/cart" onClick={() => setIsCartOpen(false)} className="w-full py-4.5 bg-gray-900 text-white rounded-2xl font-black shadow-xl flex items-center justify-center gap-3 hover:bg-black transition-all group">
-                    View Shopping Cart <ArrowRight size={18} className="group-hover:translate-x-1.5 transition-transform" />
+                  <Link 
+                    href="/cart" 
+                    onClick={() => setIsCartOpen(false)} 
+                    className="w-full py-4 bg-gray-900 text-white rounded-full font-bold shadow-lg flex items-center justify-center gap-2 hover:bg-black transition-all group"
+                  >
+                    View Full Basket 
+                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                   </Link>
-                </div>
+                </motion.div>
               )}
             </motion.div>
           </div>
@@ -450,6 +533,90 @@ function LanguageSelector({ locale, languages }: any) {
                 <span className="text-xl">{l.flag}</span> {l.label}
               </button>
             ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function MobileNavMenu({ closeAll }: { closeAll: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const navLinks = [
+    { href: "/baby-packages", label: "Baby Care", icon: <Baby size={18} /> },
+    { href: "/deals", label: "Daily Deals", icon: <Zap size={18} />, highlight: true },
+    { href: "/contact", label: "Support", icon: <HelpCircle size={18} /> },
+  ];
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center gap-1 px-3 py-1.5 rounded-full border transition-all ${
+          isOpen 
+            ? 'bg-white border-white text-primary shadow-lg' 
+            : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+        }`}
+      >
+        <span className="text-[13px] font-bold">More</span>
+        <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="absolute top-full right-0 mt-2 w-52 bg-white rounded-xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] z-[9999] overflow-hidden border border-gray-100"
+            style={{ transformOrigin: 'top right' }}
+          >
+            <div className="p-2">
+              <p className="px-3 py-2 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                Quick Links
+              </p>
+              {navLinks.map((link, index) => (
+                <motion.div
+                  key={link.href}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <Link
+                    href={link.href}
+                    onClick={() => { setIsOpen(false); closeAll(); }}
+                    className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-all group"
+                  >
+                    <div className={`w-9 h-9 flex items-center justify-center rounded-lg ${
+                      link.highlight 
+                        ? 'bg-yellow-50 text-yellow-600' 
+                        : 'bg-gray-100 text-gray-500 group-hover:bg-primary/10 group-hover:text-primary'
+                    } transition-colors`}>
+                      {link.icon}
+                    </div>
+                    <span className="font-semibold text-gray-700 text-[14px]">{link.label}</span>
+                    {link.highlight && (
+                      <span className="ml-auto text-[9px] font-black text-white px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--yellow)' }}>
+                        Hot
+                      </span>
+                    )}
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

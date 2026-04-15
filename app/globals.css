@@ -7,6 +7,7 @@
   --secondary: #023788;
   --footerBg: #F2F2F2;
   --green: #428445;
+  --yellow: #E0B252;
 }
 
 @theme inline {
@@ -16,6 +17,7 @@
   --color-secondary:var(--secondary);
   --color-footer-bg:var(--footerBg);
   --color-green:var(--green);
+  --color-yellow:var(--yellow);
   
   
   --font-sans: var(--font-inter);
@@ -102,7 +104,7 @@ body {
   left: 0;
   width: 0;
   height: 3px;
-  background: #fbbf24;
+  background: var(--yellow);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
