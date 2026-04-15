@@ -4,22 +4,29 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Mail, Phone, Send, ShieldCheck, CreditCard, CheckCircle } from "lucide-react";
+import {
+  Mail,
+  Phone,
+  Send,
+  ShieldCheck,
+  CreditCard,
+  CheckCircle,
+} from "lucide-react";
 
 /* ── Route map ───────────────────────────────────────────────────────────── */
 const LINK_MAP: Record<string, string> = {
-  "About Mandawee":   "/about",
-  "How It Works":     "/how-it-works",
-  "Vendor Program":   "/vendor/register",
-  "Careers":          "/careers",
-  "Help Center":      "/help",
-  "Contact Us":       "/contact",
-  "Track Order":      "/orders",
-  "Delivery Areas":   "/delivery",
-  "Privacy Policy":   "/privacy",
+  "About Mandawee": "/about",
+  "How It Works": "/how-it-works",
+  "Vendor Program": "/vendor/register",
+  Careers: "/careers",
+  "Help Center": "/help",
+  "Contact Us": "/contact",
+  "Track Order": "/orders",
+  "Delivery Areas": "/delivery",
+  "Privacy Policy": "/privacy",
   "Terms of Service": "/terms",
-  "Refund Policy":    "/refunds",
-  "Vendor Terms":     "/vendor/terms",
+  "Refund Policy": "/refunds",
+  "Vendor Terms": "/vendor/terms",
 };
 
 /* ── Social SVGs ─────────────────────────────────────────────────────────── */
@@ -46,22 +53,23 @@ export default function Footer() {
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) { setSubscribed(true); setEmail(""); }
+    if (email.trim()) {
+      setSubscribed(true);
+      setEmail("");
+    }
   };
 
   // Only use Company, Support, Policies — Socials handled via icons
   const columns = (t.raw("columns") as any[]).filter(
-    (col: any) => col.title !== "Socials"
+    (col: any) => col.title !== "Socials",
   );
 
   return (
     <footer className="bg-footer-bg text-slate-700 border-t border-slate-200">
-
       {/* ── NEWSLETTER BANNER ──────────────────────────────────────────── */}
       <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-1">
                 Stay in the loop
@@ -74,14 +82,17 @@ export default function Footer() {
               </p>
             </div>
 
-            <form onSubmit={handleSubscribe} className="relative w-full max-w-md">
+            <form
+              onSubmit={handleSubscribe}
+              className="relative w-full max-w-md"
+            >
               {subscribed ? (
                 <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-6 py-4 text-emerald-700 font-semibold">
                   <CheckCircle size={20} className="text-emerald-500" />
                   You&apos;re subscribed — thank you!
                 </div>
               ) : (
-                <div className="flex items-center bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm focus-within:border-primary/50 focus-within:shadow-md transition-all">
+                <div className="flex items-center bg-white border border-slate-200 rounded-full overflow-hidden shadow-sm focus-within:border-primary/50 focus-within:shadow-md transition-all">
                   <input
                     type="email"
                     required
@@ -92,7 +103,7 @@ export default function Footer() {
                   />
                   <button
                     type="submit"
-                    className="m-1.5 h-10 px-5 bg-primary hover:brightness-110 active:scale-95 text-white rounded-xl font-bold text-sm flex items-center gap-2 transition-all cursor-pointer shadow-md shadow-primary/20"
+                    className="m-1.5 h-9 px-5 bg-primary hover:brightness-110 active:scale-95 text-white rounded-full font-bold text-sm flex items-center gap-2 transition-all cursor-pointer shadow-md shadow-primary/20"
                   >
                     <Send size={15} />
                     <span className="hidden sm:inline">Subscribe</span>
@@ -104,7 +115,6 @@ export default function Footer() {
                 Spam-free · Unsubscribe anytime
               </div>
             </form>
-
           </div>
         </div>
       </div>
@@ -112,17 +122,15 @@ export default function Footer() {
       {/* ── MAIN GRID ──────────────────────────────────────────────────── */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid gap-12 lg:grid-cols-[2fr_1fr_1fr_1fr]">
-
           {/* BRAND */}
           <div className="space-y-7">
-
             <Link href="/" className="inline-block">
               <Image
                 src="/logos/onlinemandawee-logo.png"
                 alt="Online Mandawee"
                 width={220}
                 height={68}
-                className="h-16 w-auto transition-opacity hover:opacity-80"
+                className="h-22 w-auto transition-opacity hover:opacity-80"
               />
             </Link>
 
@@ -132,23 +140,37 @@ export default function Footer() {
 
             {/* Contact */}
             <div className="space-y-3">
-              <a href="tel:+93799899856" className="flex items-center gap-3 group cursor-pointer">
+              <a
+                href="tel:+93799899856"
+                className="flex items-center gap-3 group cursor-pointer"
+              >
                 <div className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 group-hover:border-primary/40 group-hover:bg-primary/5 transition-all text-slate-500 group-hover:text-primary shadow-sm">
                   <Phone size={15} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Talk to Us</p>
-                  <p className="text-sm font-semibold text-slate-700 group-hover:text-primary transition-colors">(+93) 799 899856</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Talk to Us
+                  </p>
+                  <p className="text-sm font-semibold text-slate-700 group-hover:text-primary transition-colors">
+                    (+93) 799 899856
+                  </p>
                 </div>
               </a>
 
-              <a href="mailto:info@onlinemandawee.com" className="flex items-center gap-3 group cursor-pointer">
+              <a
+                href="mailto:info@onlinemandawee.com"
+                className="flex items-center gap-3 group cursor-pointer"
+              >
                 <div className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 group-hover:border-primary/40 group-hover:bg-primary/5 transition-all text-slate-500 group-hover:text-primary shadow-sm">
                   <Mail size={15} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Email</p>
-                  <p className="text-sm font-semibold text-slate-700 group-hover:text-primary transition-colors">info@onlinemandawee.com</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Email
+                  </p>
+                  <p className="text-sm font-semibold text-slate-700 group-hover:text-primary transition-colors">
+                    info@onlinemandawee.com
+                  </p>
                 </div>
               </a>
             </div>
@@ -156,9 +178,21 @@ export default function Footer() {
             {/* Socials */}
             <div className="flex gap-3 pt-1">
               {[
-                { href: "https://facebook.com/onlinemandawee",  icon: <FacebookIcon />,  label: "Facebook" },
-                { href: "https://instagram.com/onlinemandawee", icon: <InstagramIcon />, label: "Instagram" },
-                { href: "https://tiktok.com/@onlinemandawee",   icon: <TikTokIcon />,    label: "TikTok" },
+                {
+                  href: "https://facebook.com/onlinemandawee",
+                  icon: <FacebookIcon />,
+                  label: "Facebook",
+                },
+                {
+                  href: "https://instagram.com/onlinemandawee",
+                  icon: <InstagramIcon />,
+                  label: "Instagram",
+                },
+                {
+                  href: "https://tiktok.com/@onlinemandawee",
+                  icon: <TikTokIcon />,
+                  label: "TikTok",
+                },
               ].map(({ href, icon, label }) => (
                 <a
                   key={label}
@@ -172,7 +206,6 @@ export default function Footer() {
                 </a>
               ))}
             </div>
-
           </div>
 
           {/* NAV COLUMNS — Company / Support / Policies */}
@@ -198,23 +231,36 @@ export default function Footer() {
               </ul>
             </div>
           ))}
-
         </div>
       </div>
 
       {/* ── BOTTOM BAR ─────────────────────────────────────────────────── */}
       <div className="border-t border-slate-200 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-
           <p className="text-xs text-slate-500 order-2 sm:order-1">
             {t("copyright")}
           </p>
 
           <div className="flex items-center gap-6 order-1 sm:order-2">
             <div className="flex gap-5 text-xs text-slate-500">
-              <Link href="/privacy" className="hover:text-primary transition-colors cursor-pointer">Privacy</Link>
-              <Link href="/terms"   className="hover:text-primary transition-colors cursor-pointer">Terms</Link>
-              <Link href="/sitemap" className="hover:text-primary transition-colors cursor-pointer">Sitemap</Link>
+              <Link
+                href="/privacy"
+                className="hover:text-primary transition-colors cursor-pointer"
+              >
+                Privacy
+              </Link>
+              <Link
+                href="/terms"
+                className="hover:text-primary transition-colors cursor-pointer"
+              >
+                Terms
+              </Link>
+              <Link
+                href="/sitemap"
+                className="hover:text-primary transition-colors cursor-pointer"
+              >
+                Sitemap
+              </Link>
             </div>
             <div className="h-4 w-px bg-slate-200" />
             <div className="flex items-center gap-2 text-xs text-slate-400">
@@ -222,10 +268,8 @@ export default function Footer() {
               <span>Secure Checkout</span>
             </div>
           </div>
-
         </div>
       </div>
-
     </footer>
   );
 }
