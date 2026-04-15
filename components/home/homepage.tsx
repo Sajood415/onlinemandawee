@@ -14,7 +14,6 @@ import {
   Star,
   Store,
   Truck,
-  Upload,
   Users,
   Zap,
   CheckCircle2,
@@ -514,8 +513,8 @@ function GiftIdeasSection() {
               className="mb-8"
               style={{ color: "var(--foreground)", opacity: 0.7 }}
             >
-              Share your gift ideas with images and videos, or choose from our
-              curated collections. We'll help you create the perfect surprise.
+              Choose from our curated collections for every occasion. We'll help
+              you create the perfect surprise for your loved ones.
             </p>
 
             <div className="space-y-4 mb-8">
@@ -563,44 +562,14 @@ function GiftIdeasSection() {
               ))}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link
-                href="/gifts"
-                className="inline-flex h-12 items-center justify-center rounded-full px-5 sm:px-6 text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-md whitespace-nowrap"
-                style={{ backgroundColor: "var(--primary)" }}
-              >
-                Browse Collections
-              </Link>
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full sm:w-auto"
-              >
-                <Link
-                  href="/gifts/custom"
-                  className="inline-flex h-12 items-center justify-center rounded-full px-5 sm:px-6 text-sm font-semibold text-white relative overflow-hidden w-full sm:w-auto whitespace-nowrap"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, var(--primary) 0%, #E11D48 100%)",
-                    boxShadow: "0 4px 15px rgba(220, 53, 69, 0.3)",
-                  }}
-                >
-                  <motion.span
-                    className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent"
-                    animate={{
-                      x: ["-100%", "100%"],
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "linear",
-                    }}
-                  />
-                  <Upload className="mr-2 h-4 w-4 relative shrink-0" strokeWidth={1.5} />
-                  <span className="relative whitespace-nowrap">Share Your Idea</span>
-                </Link>
-              </motion.div>
-            </div>
+            <Link
+              href="/gifts"
+              className="inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-md"
+              style={{ backgroundColor: "var(--primary)" }}
+            >
+              Browse All Collections
+              <ArrowRight className="ml-2 h-4 w-4" strokeWidth={1.5} />
+            </Link>
           </div>
 
           <motion.div
@@ -704,7 +673,8 @@ function BabyGiftPackagesSection() {
             Welcome the Little Ones
           </h2>
           <p style={{ color: "var(--foreground)", opacity: 0.7 }}>
-            Curated newborn gift packages with essentials, toys, and keepsakes
+            Curated newborn gift packages with essentials, toys, and keepsakes,
+            handpicked by our team
           </p>
         </div>
 
