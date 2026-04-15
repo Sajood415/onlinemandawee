@@ -156,8 +156,7 @@ export default function Categories() {
         <motion.h2
           className="text-center text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl"
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           Shop By Category
@@ -209,8 +208,7 @@ export default function Categories() {
               <motion.div
                 key={item.id}
                 initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
               >
                 <Link

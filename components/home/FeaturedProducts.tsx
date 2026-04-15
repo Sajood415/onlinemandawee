@@ -40,8 +40,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
   return (
     <motion.article
       initial={{ opacity: 0, y: 30, scale: 0.95 }}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      viewport={{ once: true, amount: 0.3 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.5, delay: index * 0.1, type: "spring", stiffness: 100 }}
       className="group border rounded-lg bg-white overflow-hidden"
       style={{ borderColor: 'rgba(226, 232, 240, 0.6)' }}
@@ -144,16 +143,14 @@ export default function FeaturedProducts({
         <motion.div 
           className="max-w-2xl"
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <motion.span 
             className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider border"
             style={{ backgroundColor: 'rgba(220, 53, 69, 0.08)', borderColor: 'rgba(220, 53, 69, 0.15)', color: 'var(--primary)' }}
             initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, delay: 0.1 }}
           >
             <Star className="h-3.5 w-3.5" fill="currentColor" />
@@ -171,8 +168,7 @@ export default function FeaturedProducts({
           className="flex items-center gap-4 self-start rounded-2xl border p-4 backdrop-blur-sm"
           style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', borderColor: 'rgba(226, 232, 240, 0.8)', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}
           initial={{ opacity: 0, x: 20 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
+          animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <div 
@@ -203,8 +199,7 @@ export default function FeaturedProducts({
       <motion.div 
         className="mt-10 flex justify-center"
         initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
         <motion.div

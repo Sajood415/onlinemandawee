@@ -2,8 +2,7 @@
 
 /** @jsxImportSource react */
 import Image from "next/image";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
 import { Search, Sparkles, TrendingUp, Users } from "lucide-react";
 
 interface Stat {
@@ -27,19 +26,8 @@ interface HeroProps {
 }
 
 export default function Hero({ hero }: HeroProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end start"],
-  });
-
-  const y1 = useTransform(scrollYProgress, [0, 1], [0, -100]);
-  const y2 = useTransform(scrollYProgress, [0, 1], [0, -200]);
-  const rotate = useTransform(scrollYProgress, [0, 1], [0, 15]);
-
   return (
     <section
-      ref={containerRef}
       className="relative overflow-hidden bg-white selection:bg-primary/10"
     >
       {/* ── BACKGROUND ART ── */}
@@ -184,7 +172,6 @@ export default function Hero({ hero }: HeroProps) {
             <div className="absolute inset-0 flex items-center justify-center">
               {/* Image 1: The Connection (Main) */}
               <motion.div
-                style={{ y: y1 }}
                 initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                 transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
@@ -202,9 +189,8 @@ export default function Hero({ hero }: HeroProps) {
 
               {/* Image 2: The Harvest (Overlap) */}
               <motion.div
-                style={{ y: y2, rotate: 12 }}
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, x: 50, rotate: 12 }}
+                animate={{ opacity: 1, x: 0, rotate: 12 }}
                 transition={{ delay: 0.4, duration: 1.2 }}
                 className="absolute right-2 sm:-right-1 -bottom-4 w-32 sm:w-40 lg:w-50 aspect-square rounded-2xl overflow-hidden border-2 border-primary shadow-2xl z-30"
               >

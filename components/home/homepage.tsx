@@ -337,9 +337,8 @@ function LiveAdsSection() {
               borderColor: "rgba(220, 53, 69, 0.15)",
             }}
             initial={{ opacity: 0, y: -20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5 }}
+            animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
           >
             <div className="relative">
               <div
@@ -369,9 +368,8 @@ function LiveAdsSection() {
             <motion.article
               key={index}
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{
                 duration: 0.5,
                 delay: index * 0.1,
                 type: "spring",
@@ -501,9 +499,8 @@ function HowItWorksSection() {
             className="text-sm font-bold uppercase tracking-[0.2em] mb-3"
             style={{ color: "var(--primary)" }}
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5 }}
+            animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
           >
             Simple Process
           </motion.p>
@@ -511,9 +508,8 @@ function HowItWorksSection() {
             className="text-4xl font-bold mb-4"
             style={{ color: "var(--foreground)" }}
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.1 }}
           >
             How It Works
           </motion.h2>
@@ -521,9 +517,8 @@ function HowItWorksSection() {
             className="text-base"
             style={{ color: "var(--foreground)", opacity: 0.6 }}
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
           >
             From browsing to delivery, we&apos;ve made shopping from multiple
             vendors seamless
@@ -537,9 +532,8 @@ function HowItWorksSection() {
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.5, delay: index * 0.15 }}
+                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: index * 0.15 }}
                 className="relative"
               >
                 {/* Arrow connector */}
@@ -547,9 +541,8 @@ function HowItWorksSection() {
                   <div className="hidden md:block absolute top-16 -right-3 z-10">
                     <motion.div
                       initial={{ opacity: 0, x: -10 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.3, delay: index * 0.15 + 0.3 }}
+                      animate={{ opacity: 1, x: 0 }}
+                                            transition={{ duration: 0.3, delay: index * 0.15 + 0.3 }}
                     >
                       <svg
                         width="24"
@@ -626,9 +619,8 @@ function HowItWorksSection() {
           <motion.div
             className="hidden md:flex absolute -right-4 top-16 items-center justify-center"
             initial={{ opacity: 0, scale: 0 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, delay: 0.8 }}
           >
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center"
@@ -674,9 +666,8 @@ function FeaturedProductsSection({
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.5 }}
+          animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
         >
           <FeaturedProducts
             products={products}
@@ -733,9 +724,8 @@ function GiftIdeasSection() {
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.5, delay: index * 0.1 }}
                   className="flex items-center gap-4 rounded-xl border p-4 hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer"
                   style={{ backgroundColor: "#F8FAFC", borderColor: "#E2E8F0" }}
                 >
@@ -816,9 +806,8 @@ function GiftIdeasSection() {
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5 }}
+            animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
             className="rounded-3xl p-8 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)]"
             style={{ backgroundColor: "#F8FAFC", borderColor: "#E2E8F0" }}
           >
@@ -863,9 +852,8 @@ function GiftIdeasSection() {
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: 10 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                  animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.3, delay: index * 0.1 }}
                   className="flex items-center gap-3"
                 >
                   <CheckCircle2
@@ -926,9 +914,8 @@ function BabyGiftPackagesSection() {
             <motion.article
               key={index}
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: index * 0.1 }}
               whileHover={{ y: -5 }}
               className="rounded-2xl border bg-white p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all cursor-pointer"
               style={{ borderColor: "#E2E8F0" }}
@@ -1030,9 +1017,8 @@ function DeliveryOptionsSection() {
             <motion.article
               key={index}
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: index * 0.1 }}
               whileHover={{ y: -5 }}
               className="rounded-2xl border p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all cursor-pointer relative"
               style={{ backgroundColor: "#F8FAFC", borderColor: "#E2E8F0" }}
@@ -1141,9 +1127,8 @@ function TrustSection() {
               borderColor: "rgba(66, 132, 69, 0.15)",
             }}
             initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5 }}
           >
             <ShieldCheck
               className="h-4 w-4"
@@ -1161,9 +1146,8 @@ function TrustSection() {
             className="text-4xl font-bold mb-4 tracking-tight"
             style={{ color: "var(--foreground)" }}
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.1 }}
           >
             Shop with Confidence
           </motion.h2>
@@ -1171,9 +1155,8 @@ function TrustSection() {
             className="text-lg"
             style={{ color: "var(--foreground)", opacity: 0.65 }}
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
           >
             Our platform protects every transaction with verified vendors and
             transparent dispute resolution
@@ -1185,9 +1168,8 @@ function TrustSection() {
             <motion.article
               key={index}
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{
                 duration: 0.5,
                 delay: index * 0.1,
                 type: "spring",
@@ -1236,9 +1218,8 @@ function TrustSection() {
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
+          animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
           className="group relative rounded-3xl border bg-white p-8 sm:p-12 backdrop-blur-sm overflow-hidden"
           style={{
             borderColor: "rgba(226, 232, 240, 0.8)",
@@ -1282,9 +1263,8 @@ function TrustSection() {
                     <motion.div
                       key={index}
                       initial={{ opacity: 0, x: -20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true, amount: 0.3 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      animate={{ opacity: 1, x: 0 }}
+                                            transition={{ duration: 0.3, delay: index * 0.1 }}
                       className="flex items-center gap-4 p-3 rounded-xl border hover:shadow-md transition-all"
                       style={{
                         backgroundColor: "rgba(248, 250, 252, 0.8)",
@@ -1314,9 +1294,8 @@ function TrustSection() {
               <div className="flex items-center justify-center">
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
-                  whileInView={{ scale: 1, opacity: 1 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{
+                  animate={{ scale: 1, opacity: 1 }}
+                                    transition={{
                     duration: 0.6,
                     delay: 0.3,
                     type: "spring",
@@ -1371,9 +1350,8 @@ function VendorCTASection() {
         <div className="grid gap-16 lg:grid-cols-2 items-center">
           <motion.div
             initial={{ opacity: 0, x: -40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.1 }}
-            transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
           >
             <motion.div
               className="inline-flex items-center gap-2 rounded-full px-4 py-2 mb-6 border backdrop-blur-sm"
@@ -1499,9 +1477,8 @@ function VendorCTASection() {
 
           <motion.div
             initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.1 }}
-            transition={{
+            animate={{ opacity: 1, x: 0 }}
+                        transition={{
               duration: 0.7,
               type: "spring",
               stiffness: 100,
