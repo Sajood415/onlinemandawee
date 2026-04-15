@@ -179,7 +179,7 @@ export default function Hero({ hero }: HeroProps) {
           </div>
 
           {/* 🎨 RIGHT CONTENT: ORGANIC MOSAIC 🎨 */}
-          <div className="relative h-120 sm:h-150 lg:h-175 w-full mt-6 lg:mt-0">
+          <div className="relative h-100 sm:h-120 lg:h-175 w-full mt-6 lg:mt-0 overflow-visible sm:overflow-visible">
             {/* 🧊 MAIN FLOATING CANVAS 🧊 */}
             <div className="absolute inset-0 flex items-center justify-center">
               {/* Image 1: The Connection (Main) */}
@@ -188,7 +188,7 @@ export default function Hero({ hero }: HeroProps) {
                 initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                 transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                className="relative w-[280px] sm:w-[320px] aspect-5/6 rounded-2xl overflow-hidden border-2 border-primary shadow-[0_40px_100px_rgba(15,23,42,0.15)] z-20"
+                className="relative w-64 sm:w-72 lg:w-[320px] aspect-5/6 rounded-2xl overflow-hidden border-2 border-primary shadow-[0_40px_100px_rgba(15,23,42,0.15)] z-20 mx-auto lg:mx-0"
               >
                 <Image
                   src="/images/hero-1.png"
@@ -206,7 +206,7 @@ export default function Hero({ hero }: HeroProps) {
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4, duration: 1.2 }}
-                className="absolute -right-1 -bottom-4 w-40 sm:w-50 aspect-square rounded-2xl overflow-hidden border-2 border-primary shadow-2xl z-30"
+                className="absolute right-2 sm:-right-1 -bottom-4 w-32 sm:w-40 lg:w-50 aspect-square rounded-2xl overflow-hidden border-2 border-primary shadow-2xl z-30"
               >
                 <Image
                   src="/images/hero-2.png"
@@ -224,16 +224,16 @@ export default function Hero({ hero }: HeroProps) {
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                className="absolute -left-4 sm:-left-6 top-[20%] z-40 p-3 sm:p-4 bg-white/80 backdrop-blur-xl border border-white/50 rounded-2xl shadow-xl flex items-center gap-2 sm:gap-3"
+                className="absolute -left-2 sm:-left-6 top-[20%] z-40 p-2 sm:p-3 lg:p-4 bg-white/80 backdrop-blur-xl border border-white/50 rounded-xl sm:rounded-2xl shadow-xl flex items-center gap-2 sm:gap-3"
               >
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-2xl bg-primary flex items-center justify-center text-white">
-                  <Users size={16} />
+                <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-primary flex items-center justify-center text-white shrink-0">
+                  <Users size={14} className="sm:w-4 sm:h-4" />
                 </div>
-                <div>
-                  <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-primary">
+                <div className="min-w-0">
+                  <p className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-primary">
                     Family Trusted
                   </p>
-                  <p className="text-xs sm:text-sm font-black text-slate-900 tracking-tight">
+                  <p className="text-[10px] sm:text-sm font-black text-slate-900 tracking-tight truncate">
                     Worldwide delivery
                   </p>
                 </div>
@@ -248,16 +248,16 @@ export default function Hero({ hero }: HeroProps) {
                   ease: "easeInOut",
                   delay: 1,
                 }}
-                className="absolute -right-4 sm:-right-8 top-[10%] z-50 p-3 sm:p-5 bg-slate-900 rounded-2xl shadow-2xl text-white"
+                className="absolute right-0 sm:-right-4 lg:-right-8 top-[5%] sm:top-[10%] z-50 p-2 sm:p-3 lg:p-5 bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl text-white max-w-[140px] sm:max-w-none"
               >
-                <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                  <TrendingUp size={14} className="text-primary" />
-                  <span className="text-[7px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 mb-1 sm:mb-2">
+                  <TrendingUp size={12} className="text-primary" />
+                  <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-400">
                     Live Deals
                   </span>
                 </div>
-                <p className="text-[10px] sm:text-base font-medium leading-tight">
-                  Fresh harvest <br /> Just arrived!
+                <p className="text-[9px] sm:text-sm lg:text-base font-medium leading-tight">
+                  Fresh harvest <br className="hidden sm:block" /> Just arrived!
                 </p>
               </motion.div>
 

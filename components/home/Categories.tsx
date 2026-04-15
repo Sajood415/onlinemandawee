@@ -168,7 +168,7 @@ export default function Categories() {
           <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-20 bg-linear-to-r from-white to-transparent hidden md:block" />
           <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-20 bg-linear-to-l from-white to-transparent hidden md:block" />
 
-          {/* Navigation arrows - vertically centered relative to cards only */}
+          {/* Desktop Navigation arrows */}
           <div className="absolute left-0 top-22.5 z-30 hidden -translate-x-1/2 md:block lg:top-16 cursor-pointer">
             <ArrowButton
               direction="left"
@@ -184,9 +184,26 @@ export default function Categories() {
             />
           </div>
 
+          {/* Mobile Navigation arrows - below the scroll area */}
+          <div className="flex md:hidden items-center justify-center gap-4 mt-4">
+            <ArrowButton
+              direction="left"
+              onClick={() => scroll("left")}
+              disabled={!canScrollLeft}
+            />
+            <span className="text-xs text-gray-400 font-medium">
+              Swipe or tap to explore
+            </span>
+            <ArrowButton
+              direction="right"
+              onClick={() => scroll("right")}
+              disabled={!canScrollRight}
+            />
+          </div>
+
           <div
             ref={scrollRef}
-            className="flex gap-6 overflow-x-auto px-0 pb-4 pt-2 scroll-smooth no-scrollbar sm:gap-8 md:px-4 lg:px-8"
+            className="flex gap-6 overflow-x-auto px-4 pb-4 pt-2 scroll-smooth no-scrollbar sm:gap-8 md:px-4 lg:px-8"
           >
             {categories.map((item, index) => (
               <motion.div
@@ -223,6 +240,16 @@ export default function Categories() {
                 </Link>
               </motion.div>
             ))}
+            
+            {/* Mobile swipe indicator */}
+            <div className="md:hidden flex items-center shrink-0 ml-2 pr-4">
+              <div className="flex flex-col items-center gap-2 text-gray-400">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-pulse">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+                <span className="text-[10px] font-bold uppercase tracking-wider rotate-90 whitespace-nowrap">Swipe</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

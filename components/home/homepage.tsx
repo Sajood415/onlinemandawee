@@ -774,24 +774,25 @@ function GiftIdeasSection() {
               ))}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Link
                 href="/gifts"
-                className="inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-md"
+                className="inline-flex h-12 items-center justify-center rounded-full px-5 sm:px-6 text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-md whitespace-nowrap"
                 style={{ backgroundColor: "var(--primary)" }}
               >
-                Browse Gift Collections
+                Browse Collections
               </Link>
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                className="w-full sm:w-auto"
               >
                 <Link
                   href="/gifts/custom"
-                  className="inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-semibold text-white relative overflow-hidden"
+                  className="inline-flex h-12 items-center justify-center rounded-full px-5 sm:px-6 text-sm font-semibold text-white relative overflow-hidden w-full sm:w-auto whitespace-nowrap"
                   style={{
                     background:
-                      "linear-linear(135deg, var(--primary) 0%, #E11D48 100%)",
+                      "linear-gradient(135deg, var(--primary) 0%, #E11D48 100%)",
                     boxShadow: "0 4px 15px rgba(220, 53, 69, 0.3)",
                   }}
                 >
@@ -806,8 +807,8 @@ function GiftIdeasSection() {
                       ease: "linear",
                     }}
                   />
-                  <Upload className="mr-2 h-4 w-4 relative" strokeWidth={1.5} />
-                  <span className="relative">Share Your Idea</span>
+                  <Upload className="mr-2 h-4 w-4 relative shrink-0" strokeWidth={1.5} />
+                  <span className="relative whitespace-nowrap">Share Your Idea</span>
                 </Link>
               </motion.div>
             </div>
@@ -1461,27 +1462,29 @@ function VendorCTASection() {
               ))}
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <motion.div
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
+                className="w-full sm:w-auto"
               >
                 <Link
                   href="/vendor/register"
-                  className="inline-flex h-14 items-center justify-center rounded-full px-8 text-sm font-bold text-white transition-all shadow-lg hover:shadow-xl"
+                  className="inline-flex h-14 items-center justify-center rounded-full px-6 sm:px-8 text-sm font-bold text-white transition-all shadow-lg hover:shadow-xl w-full sm:w-auto whitespace-nowrap"
                   style={{ backgroundColor: "var(--secondary)" }}
                 >
-                  Start Selling Today
-                  <ArrowRight className="ml-2 h-5 w-5" strokeWidth={2} />
+                  Start Selling
+                  <ArrowRight className="ml-2 h-5 w-5 shrink-0" strokeWidth={2} />
                 </Link>
               </motion.div>
               <motion.div
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
+                className="w-full sm:w-auto"
               >
                 <Link
                   href="/vendor/learn-more"
-                  className="inline-flex h-14 items-center justify-center rounded-full border-2 px-8 text-sm font-bold transition-all hover:shadow-lg"
+                  className="inline-flex h-14 items-center justify-center rounded-full border-2 px-6 sm:px-8 text-sm font-bold transition-all hover:shadow-lg w-full sm:w-auto whitespace-nowrap"
                   style={{
                     borderColor: "rgba(226, 232, 240, 0.8)",
                     color: "var(--foreground)",
