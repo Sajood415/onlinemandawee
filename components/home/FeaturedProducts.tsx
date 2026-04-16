@@ -9,7 +9,8 @@ import { useState } from "react";
 type Product = {
   id: string;
   name: string;
-  price: string;
+  price: number;
+  priceDisplay: string;
   vendor: string;
   image: string;
   badge: string;
@@ -24,10 +25,9 @@ type FeaturedProductsProps = {
   description: string;
 };
 
-// Extract numeric price from string like "$49.99"
-function extractPrice(priceStr: string): { original: number; offer: number } {
-  const match = priceStr.match(/[\d.]+/);
-  const original = match ? parseFloat(match[0]) : 0;
+// Extract numeric price from number
+function extractPrice(price: number): { original: number; offer: number } {
+  const original = price;
   const offer = Math.round(original * 0.8 * 100) / 100; // 20% off
   return { original, offer };
 }
@@ -35,6 +35,7 @@ function extractPrice(priceStr: string): { original: number; offer: number } {
 function ProductCard({ product, index }: { product: Product; index: number }) {
   const [count, setCount] = useState(0);
   const { original, offer } = extractPrice(product.price);
+  const priceDisplay = product.priceDisplay;
   const rating = 4;
 
   return (

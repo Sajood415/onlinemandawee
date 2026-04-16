@@ -34,7 +34,8 @@ import Hero from "./Hero";
 
 type FeaturedProductSource = {
   id: string;
-  price: string;
+  price: number;
+  priceDisplay: string;
   vendor: string;
   image: string;
   name: { en: string; ps: string; "fa-AF": string };
@@ -44,7 +45,8 @@ type FeaturedProductSource = {
 type Product = {
   id: string;
   name: string;
-  price: string;
+  price: number;
+  priceDisplay: string;
   vendor: string;
   image: string;
   badge: string;
@@ -187,10 +189,11 @@ function featuredProductsForLocale(locale: string): Product[] {
     (row) => ({
       id: row.id,
       name: pickLocalized(row.name, locale),
-      badge: pickLocalized(row.badge, locale),
       price: row.price,
+      priceDisplay: row.priceDisplay,
       vendor: row.vendor,
       image: row.image,
+      badge: pickLocalized(row.badge, locale),
     }),
   );
 }
