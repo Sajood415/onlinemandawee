@@ -43,10 +43,10 @@ import {
   Dumbbell,
   PenTool,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 
 // --- Framer Motion Configuration ---
-const dropdownVariants = {
+const dropdownVariants: Variants = {
   hidden: { opacity: 0, y: 15, scale: 0.97 },
   visible: {
     opacity: 1,
@@ -57,7 +57,7 @@ const dropdownVariants = {
   exit: { opacity: 0, y: 10, scale: 0.97, transition: { duration: 0.15 } },
 };
 
-const sheetVariants = {
+const sheetVariants: Variants = {
   hidden: { x: "100%" },
   visible: {
     x: 0,

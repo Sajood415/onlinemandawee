@@ -59,11 +59,6 @@ type HomepageMessages = {
       description: string;
       primaryCta: string;
       secondaryCta: string;
-      stats: Array<{ value: string; label: string }>;
-      floatingTopEyebrow: string;
-      floatingTopTitle: string;
-      floatingBottomEyebrow: string;
-      floatingBottomTitle: string;
     };
     featuredSection: {
       eyebrow: string;
@@ -212,7 +207,7 @@ export function HomePage() {
       className="min-h-screen bg-white text-slate-900"
     >
       <main>
-        <Hero hero={content.hero} />
+        <Hero />
         <MarqueeSection />
         <LiveAdsSection />
         <Categories />

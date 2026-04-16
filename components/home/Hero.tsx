@@ -1,285 +1,317 @@
 "use client";
 
-/** @jsxImportSource react */
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
-import { Search, Sparkles, TrendingUp, Users } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Truck,
+  Clock,
+  Star,
+  Play,
+  Pause,
+  Sparkles,
+} from "lucide-react";
 
-interface Stat {
-  value: string;
-  label: string;
-}
+// Full-background hero slides - Local carousel images
+const heroSlides = [
+  {
+    id: 1,
+    image: "/images/carousals/slide-1.jpg",
+    alt: "Fresh organic groceries",
+    eyebrow: "Farm Fresh Daily",
+    title: "Organic Veggies & Fruits Delivered",
+    description:
+      "From local farms to your doorstep. Get 20% off your first fresh produce order!",
+    cta: "Shop Fresh",
+    ctaLink: "/products?category=groceries",
+    themeColor: "#F59E0B",
+    overlayColor: "rgba(0,0,0,0.35)",
+    textPosition: "left",
+  },
+  {
+    id: 2,
+    image: "/images/carousals/slide-2.jpg",
+    alt: "Premium baby essentials",
+    eyebrow: "The Baby Event",
+    title: "Gentle Care for Your Little One",
+    description:
+      "Premium baby products with love. Soft, safe, and perfect for delicate skin.",
+    cta: "Shop Baby",
+    ctaLink: "/baby-packages",
+    themeColor: "#EC4899",
+    overlayColor: "rgba(0,0,0,0.3)",
+    textPosition: "left",
+  },
+  {
+    id: 3,
+    image: "/images/carousals/slide-3.jpg",
+    alt: "Baby bath essentials",
+    eyebrow: "Bath Time Fun",
+    title: "Make Bath Time a Joy",
+    description:
+      "Natural bath essentials that make cleaning up fun and safe for babies.",
+    cta: "Explore",
+    ctaLink: "/products?category=baby-care",
+    themeColor: "#06B6D4",
+    overlayColor: "rgba(0,0,0,0.35)",
+    textPosition: "left",
+  },
+  {
+    id: 4,
+    image: "/images/carousals/slide-4.jpg",
+    alt: "Gifts and celebrations",
+    eyebrow: "Celebrate Together",
+    title: "Gifts That Spark Joy",
+    description:
+      "Curated gift packages for every occasion. Birthdays, parties & special moments.",
+    cta: "Shop Gifts",
+    ctaLink: "/gifts",
+    themeColor: "#8B5CF6",
+    overlayColor: "rgba(0,0,0,0.4)",
+    textPosition: "left",
+  },
+  {
+    id: 5,
+    image: "/images/carousals/slide-5.jpg",
+    alt: "Fresh fruit market",
+    eyebrow: "Summer Harvest",
+    title: "Taste the Season's Best",
+    description:
+      "Handpicked seasonal fruits. Juicy, ripe, and delivered fresh within hours.",
+    cta: "Order Now",
+    ctaLink: "/products?category=fruits",
+    themeColor: "#EF4444",
+    overlayColor: "rgba(0,0,0,0.35)",
+    textPosition: "left",
+  },
+  {
+    id: 6,
+    image: "/images/carousals/slide-6.jpg",
+    alt: "Special offers",
+    eyebrow: "Limited Time",
+    title: "Weekend Special Deals",
+    description:
+      "Exclusive discounts on your favorite products. Valid this weekend only!",
+    cta: "View Deals",
+    ctaLink: "/deals",
+    themeColor: "#10B981",
+    overlayColor: "rgba(0,0,0,0.4)",
+    textPosition: "left",
+  },
+];
 
-interface HeroProps {
-  hero: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    primaryCta: string;
-    secondaryCta: string;
-    stats: Stat[];
-    floatingTopEyebrow: string;
-    floatingTopTitle: string;
-    floatingBottomEyebrow: string;
-    floatingBottomTitle: string;
+// Trust badges
+const trustBadges = [
+  { icon: Truck, text: "Same-day delivery", subtext: "Order by 2PM" },
+  { icon: Star, text: "800+ vendors", subtext: "Verified sellers" },
+  { icon: Clock, text: "Express options", subtext: "2-hour delivery" },
+  { icon: Sparkles, text: "Gift wrapping", subtext: "Free on $50+" },
+];
+
+export default function HeroSection() {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+
+  // Auto-rotate slides
+  useEffect(() => {
+    if (!isAutoPlaying) return;
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [isAutoPlaying]);
+
+  const nextSlide = () => {
+    setIsAutoPlaying(false);
+    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
   };
-}
 
-export default function Hero({ hero }: HeroProps) {
+  const prevSlide = () => {
+    setIsAutoPlaying(false);
+    setCurrentSlide(
+      (prev) => (prev - 1 + heroSlides.length) % heroSlides.length,
+    );
+  };
+
+  const goToSlide = (index: number) => {
+    setIsAutoPlaying(false);
+    setCurrentSlide(index);
+  };
+
+  const toggleAutoPlay = () => {
+    setIsAutoPlaying(!isAutoPlaying);
+  };
+
+  const currentSlideData = heroSlides[currentSlide];
+
   return (
-    <section
-      className="relative overflow-hidden bg-white selection:bg-primary/10"
-    >
-      {/* ── BACKGROUND ART ── */}
-      <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden">
-        {/* Animated Mesh Gradients */}
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            x: [0, 50, 0],
-            rotate: [0, 10, 0],
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-primary/5 blur-[120px] rounded-full"
-        />
-        <motion.div
-          animate={{
-            scale: [1.2, 1, 1.2],
-            x: [0, -30, 0],
-          }}
-          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] bg-blue-500/5 blur-[100px] rounded-full"
-        />
-        <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-linear-to-t from-white to-transparent" />
-      </div>
+    <section className="w-full bg-white">
+      {/* Hero Carousel - Walmart Style */}
+      <div className="relative">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {/* Main Hero Container - Walmart Baby Event Style */}
+          <div className="relative rounded-2xl overflow-hidden shadow-lg">
+            {/* Top Navigation Controls - Walmart Style */}
+            <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+              <button
+                onClick={prevSlide}
+                className="w-8 h-8 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105 border border-gray-100"
+                aria-label="Previous slide"
+              >
+                <ChevronLeft size={20} className="text-primary" />
+              </button>
+              <button
+                onClick={toggleAutoPlay}
+                className="w-8 h-8 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105 border border-gray-100"
+                aria-label={
+                  isAutoPlaying ? "Pause slideshow" : "Play slideshow"
+                }
+              >
+                {isAutoPlaying ? (
+                  <Pause size={18} className="text-primary" />
+                ) : (
+                  <Play size={18} className="text-primary ml-0.5" />
+                )}
+              </button>
+              <button
+                onClick={nextSlide}
+                className="w-8 h-8 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105 border border-gray-100"
+                aria-label="Next slide"
+              >
+                <ChevronRight size={20} className="text-primary" />
+              </button>
+            </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-2 pt-2 pb-8 sm:pt-2 lg:pb-8">
-        <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-8 lg:gap-12 lg:items-center">
-          {/* 🚀 LEFT CONTENT: MESSAGING 🚀 */}
-          <div className="relative z-10 space-y-6">
-            {/* Tagline Badge */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:gap-2.5 bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/50"
-            >
-              <div className="flex -space-x-1.5">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 border-white ring-1 ring-slate-100 overflow-hidden bg-slate-100"
-                  >
+            {/* Slides - Full Background Image Banner */}
+            <div className="relative min-h-80 sm:min-h-90 md:min-h-100 lg:min-h-110 rounded-2xl overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentSlide}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="relative h-full min-h-80 sm:min-h-90 md:min-h-100 lg:min-h-110"
+                >
+                  {/* Background Image */}
+                  <div className="absolute inset-0">
                     <Image
-                      src={`/images/avatars/user-${i}.png`}
-                      alt="user"
-                      width={16}
-                      height={16}
+                      src={currentSlideData.image}
+                      alt={currentSlideData.alt}
+                      fill
                       className="object-cover"
+                      priority
+                    />
+                    {/* Overlay for text readability */}
+                    <div
+                      className="absolute inset-0"
+                      style={{ backgroundColor: currentSlideData.overlayColor }}
                     />
                   </div>
-                ))}
-              </div>
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                {hero.eyebrow}
-              </span>
-            </motion.div>
 
-            {/* Headline */}
-            <div className="space-y-6">
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.8 }}
-                className="text-4xl sm:text-5xl lg:text-7xl font-black text-slate-900 leading-[0.95] tracking-tight"
-              >
-                Send{" "}
-                <span className="text-primary italic font-(family-name:--font-playfair)">
-                  Love
-                </span>{" "}
-                <br />
-                To Your Family.
-              </motion.h1>
+                  {/* Content - Positioned based on textPosition */}
+                  <div
+                    className={`relative z-10 h-full flex items-center px-6 md:px-12 lg:px-16 py-10 ${
+                      currentSlideData.textPosition === "center"
+                        ? "justify-center text-center"
+                        : currentSlideData.textPosition === "right"
+                          ? "justify-end text-right"
+                          : "justify-start text-left"
+                    }`}
+                  >
+                    <div className="max-w-md">
+                      {/* Eyebrow Tag */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1, duration: 0.4 }}
+                        className="inline-block mb-3"
+                      >
+                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white text-gray-900 shadow-md">
+                          {currentSlideData.eyebrow}
+                        </span>
+                      </motion.div>
 
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.8 }}
-                className="max-w-lg sm:max-w-xl text-sm sm:text-base lg:text-lg text-slate-500 font-medium leading-relaxed"
-              >
-                {hero.description}
-              </motion.p>
+                      {/* Title */}
+                      <motion.h1
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2, duration: 0.4 }}
+                        className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight mb-3 text-white drop-shadow-lg"
+                      >
+                        {currentSlideData.title}
+                      </motion.h1>
+
+                      {/* Description */}
+                      <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3, duration: 0.4 }}
+                        className="text-sm md:text-base mb-5 text-white/90 drop-shadow-md"
+                      >
+                        {currentSlideData.description}
+                      </motion.p>
+
+                      {/* CTA Button */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4, duration: 0.4 }}
+                      >
+                        <Link
+                          href={currentSlideData.ctaLink}
+                          className="inline-flex items-center justify-center px-6 py-2.5 rounded-full text-sm font-semibold bg-white text-gray-900 hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+                        >
+                          {currentSlideData.cta}
+                        </Link>
+                      </motion.div>
+                    </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
             </div>
 
-            {/* Action Group */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-              className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center"
-            >
-              {/* Primary Button */}
-              <button className="h-12 sm:h-14 px-6 sm:px-8 rounded-full font-black uppercase tracking-widest text-xs sm:text-sm shadow-xl shadow-primary/25 hover:shadow-primary/40 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 sm:gap-3 group border border-primary/10 overflow-hidden relative text-white">
-                {/* Base bg */}
-                <div className="absolute inset-0 bg-primary/95" />
-                {/* Sweep layer */}
-                <div className="absolute inset-0 bg-primary translate-x-[-101%] group-hover:translate-x-0 transition-transform duration-500 ease-in-out" />
-                {/* Top gloss */}
-                <div className="absolute inset-0 bg-linear-to-t from-black/10 to-transparent pointer-events-none" />
-                <span className="relative z-10 text-sm sm:text-base">
-                  {hero.primaryCta}
-                </span>
-                <Sparkles
-                  size={14}
-                  className="relative z-10 group-hover:rotate-12 transition-transform"
+            {/* Dots Indicator - Bottom Center */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+              {heroSlides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSlide(index)}
+                  className={`h-2.5 rounded-full transition-all duration-300 ${
+                    index === currentSlide
+                      ? "bg-white w-8"
+                      : "bg-white/60 hover:bg-white/80 w-2.5 hover:scale-125"
+                  }`}
+                  aria-label={`Go to slide ${index + 1}`}
                 />
-              </button>
-
-              {/* Secondary Button */}
-              <button className="h-12 sm:h-14 px-6 sm:px-8 rounded-full font-black uppercase tracking-widest text-xs sm:text-sm active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 sm:gap-3 group overflow-hidden relative border-2 border-slate-100">
-                {/* Sweep layer */}
-                <div className="absolute inset-0 bg-primary/5 translate-x-[-101%] group-hover:translate-x-0 transition-transform duration-500 ease-in-out" />
-                {/* Border color shift on hover - handled via group */}
-                <span className="relative z-10 text-slate-800 group-hover:text-primary transition-colors duration-300 text-sm sm:text-base">
-                  {hero.secondaryCta}
-                </span>
-              </button>
-            </motion.div>
-
-            {/* Stats Micro-Row */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="flex gap-6 sm:gap-8 sm:gap-10 pt-4"
-            >
-              {hero.stats.map((stat, i) => (
-                <div key={i} className="flex flex-col gap-1">
-                  <span className="text-xl sm:text-2xl font-black text-slate-900">
-                    {stat.value}
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-                    {stat.label}
-                  </span>
-                </div>
               ))}
-            </motion.div>
+            </div>
           </div>
 
-          {/* 🎨 RIGHT CONTENT: ORGANIC MOSAIC 🎨 */}
-          <div className="relative h-100 sm:h-120 lg:h-175 w-full mt-6 lg:mt-0 overflow-visible sm:overflow-visible">
-            {/* 🧊 MAIN FLOATING CANVAS 🧊 */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              {/* Image 1: The Connection (Main) */}
+          {/* Trust Badges Bar - Walmart Style */}
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+            {trustBadges.map((badge, index) => (
               <motion.div
-                initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
-                animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                className="relative w-64 sm:w-72 lg:w-[320px] aspect-5/6 rounded-2xl overflow-hidden border-2 border-primary shadow-[0_40px_100px_rgba(15,23,42,0.15)] z-20 mx-auto lg:mx-0"
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 + index * 0.1 }}
+                className="flex items-center gap-3 bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
               >
-                <Image
-                  src="/images/hero-1.png"
-                  alt="Connection"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-                <div className="absolute inset-0 bg-linear-to-tr from-slate-900/40 via-transparent to-transparent opacity-60" />
-              </motion.div>
-
-              {/* Image 2: The Harvest (Overlap) */}
-              <motion.div
-                initial={{ opacity: 0, x: 50, rotate: 12 }}
-                animate={{ opacity: 1, x: 0, rotate: 12 }}
-                transition={{ delay: 0.4, duration: 1.2 }}
-                className="absolute right-2 sm:-right-1 -bottom-4 w-32 sm:w-40 lg:w-50 aspect-square rounded-2xl overflow-hidden border-2 border-primary shadow-2xl z-30"
-              >
-                <Image
-                  src="/images/hero-2.png"
-                  alt="Organic Market"
-                  fill
-                  className="object-cover"
-                />
-              </motion.div>
-
-              {/* Floating "Trusted" Pill */}
-              <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                className="absolute -left-2 sm:-left-6 top-[20%] z-40 p-2 sm:p-3 lg:p-4 bg-white/80 backdrop-blur-xl border border-white/50 rounded-xl sm:rounded-2xl shadow-xl flex items-center gap-2 sm:gap-3"
-              >
-                <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-primary flex items-center justify-center text-white shrink-0">
-                  <Users size={14} className="sm:w-4 sm:h-4" />
+                <div className="w-10 h-10 bg-[#e6f1fc] rounded-full flex items-center justify-center shrink-0">
+                  <badge.icon size={20} className="text-primary" />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-primary">
-                    Family Trusted
+                <div>
+                  <p className="font-bold text-[#171717] text-sm">
+                    {badge.text}
                   </p>
-                  <p className="text-[10px] sm:text-sm font-black text-slate-900 tracking-tight truncate">
-                    Worldwide delivery
-                  </p>
+                  <p className="text-[#74767c] text-xs">{badge.subtext}</p>
                 </div>
               </motion.div>
-
-              {/* Floating "Market" Pill */}
-              <motion.div
-                animate={{ y: [0, 10, 0] }}
-                transition={{
-                  duration: 5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1,
-                }}
-                className="absolute right-0 sm:-right-4 lg:-right-8 top-[5%] sm:top-[10%] z-50 p-2 sm:p-3 lg:p-5 bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl text-white max-w-[140px] sm:max-w-none"
-              >
-                <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 mb-1 sm:mb-2">
-                  <TrendingUp size={12} className="text-primary" />
-                  <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    Live Deals
-                  </span>
-                </div>
-                <p className="text-[9px] sm:text-sm lg:text-base font-medium leading-tight">
-                  Fresh harvest <br className="hidden sm:block" /> Just arrived!
-                </p>
-              </motion.div>
-
-              {/* Decorative Blobs/Shapes */}
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                className="absolute -top-[5%] -right-[5%] -z-10 opacity-20"
-              >
-                <svg width="200" height="200" viewBox="0 0 200 200">
-                  <defs>
-                    <linearGradient
-                      id="grad"
-                      x1="0%"
-                      y1="0%"
-                      x2="100%"
-                      y2="100%"
-                    >
-                      <stop
-                        offset="0%"
-                        style={{ stopColor: "var(--primary, #DC3545)" }}
-                      />
-                      <stop
-                        offset="100%"
-                        style={{ stopColor: "var(--primary, #DC3545)" }}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    fill="url(#grad)"
-                    d="M45.1,-62.1C58.8,-53.2,70.1,-40.4,75.2,-25.8C80.3,-11.2,79.2,-5.3,75.4,8.8C71.6,22.9,65,45.2,51.6,58.3C38.2,71.4,18.1,75.3,1.3,74C-15.5,72.7,-31,66.2,-44.6,54.9C-58.2,43.6,-69.9,27.5,-73.4,10.6C-76.9,-6.2,-72.3,-23.7,-62.4,-37C-52.5,-50.2,-37.4,-59.2,-23,-67.6C-8.6,-76.1,5.1,-84.1,20.3,-84.3C35.5,-84.5,52.2,-76.8,45.1,-62.1Z"
-                    transform="translate(100 100)"
-                  />
-                </svg>
-              </motion.div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
