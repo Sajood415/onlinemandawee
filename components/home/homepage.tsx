@@ -208,8 +208,6 @@ export function HomePage() {
     >
       <main>
         <Hero />
-        <MarqueeSection />
-        <LiveAdsSection />
         <Categories />
         <FeaturedProductsSection
           products={featuredProducts}
@@ -219,6 +217,8 @@ export function HomePage() {
           title={content.featuredSection.title}
           description={content.featuredSection.description}
         />
+        <MarqueeSection />
+        <LiveAdsSection />
         <GiftIdeasSection />
         <BabyGiftPackagesSection />
         <DeliveryOptionsSection />
