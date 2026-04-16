@@ -39,15 +39,16 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
   const rating = 4;
 
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 30, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.5, delay: index * 0.1, type: "spring", stiffness: 100 }}
-      className="group border rounded-lg bg-white overflow-hidden"
-      style={{ borderColor: 'rgba(226, 232, 240, 0.6)' }}
-    >
-      {/* Image Container */}
-      <div className="relative w-full h-48 bg-slate-50 overflow-hidden">
+    <Link href={`/products/${product.id}`}>
+      <motion.article
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, delay: index * 0.1, type: "spring", stiffness: 100 }}
+        className="group border rounded-lg bg-white overflow-hidden cursor-pointer"
+        style={{ borderColor: 'rgba(226, 232, 240, 0.6)' }}
+      >
+        {/* Image Container */}
+        <div className="relative w-full h-48 bg-slate-50 overflow-hidden">
         <Image
           src={product.image}
           alt={product.name}
@@ -125,7 +126,8 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
           </div>
         </div>
       </div>
-    </motion.article>
+      </motion.article>
+    </Link>
   );
 }
 
