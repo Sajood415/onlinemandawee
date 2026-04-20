@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useLocale } from "next-intl";
+import { toast } from "@/lib/utils/toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -566,9 +567,9 @@ function ProductCard({
     setIsAdding(true);
     try {
       await addItem(product.id, 1);
-      alert(locale === "en" ? "Added to cart!" : locale === "ps" ? "کارټ ته اضافه شو!" : "به سبد اضافه شد!");
+      toast.success(locale === "en" ? "Added to cart!" : locale === "ps" ? "کارټ ته اضافه شو!" : "به سبد اضافه شد!");
     } catch (error) {
-      alert(locale === "en" ? "Failed to add to cart" : locale === "ps" ? "کارټ ته اضافه کول ناکام شول" : "افزودن به سبد ناموفق بود");
+      toast.error(locale === "en" ? "Failed to add to cart" : locale === "ps" ? "کارټ ته اضافه کول ناکام شول" : "افزودن به سبد ناموفق بود");
     } finally {
       setIsAdding(false);
     }

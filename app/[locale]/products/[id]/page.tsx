@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
+import { toast } from "@/lib/utils/toast";
 import { motion } from "framer-motion";
 import {
   Star,
@@ -43,9 +44,9 @@ export default function ProductDetailPage() {
     setIsAdding(true);
     try {
       await addItem(product.id, quantity);
-      alert(locale === "en" ? `Added ${quantity} item(s) to cart!` : locale === "ps" ? `کارټ ته ${quantity} توکي اضافه شول!` : `${quantity} مورد به سبد اضافه شد!`);
+      toast.success(locale === "en" ? `Added ${quantity} item(s) to cart!` : locale === "ps" ? `کارټ ته ${quantity} توکي اضافه شول!` : `${quantity} مورد به سبد اضافه شد!`);
     } catch (error) {
-      alert(locale === "en" ? "Failed to add to cart" : locale === "ps" ? "کارټ ته اضافه کول ناکام شول" : "افزودن به سبد ناموفق بود");
+      toast.error(locale === "en" ? "Failed to add to cart" : locale === "ps" ? "کارټ ته اضافه کول ناکام شول" : "افزودن به سبد ناموفق بود");
     } finally {
       setIsAdding(false);
     }
