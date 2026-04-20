@@ -25,6 +25,44 @@ const allProducts = productData.featuredProducts;
 const categories = productData.categories;
 const vendors = productData.vendors;
 
+const vendorTranslations = {
+  "Noor Premium Gifts": { ps: "نور پریمیم ډالۍ", "fa-AF": "نور پریمیم هدایا" },
+  "Bloom Avenue": { ps: "بلوم ایونیو", "fa-AF": "بلوم اونیو" },
+  "Mandawee Market": { ps: "منډوي مارکیټ", "fa-AF": "بازار منداوی" },
+  "Cocoa Stories": { ps: "کوکو کیسې", "fa-AF": "داستان‌های کاکائو" },
+  "Fresh Farm Co": { ps: "فریش فارم شرکت", "fa-AF": "شرکت فارم تازه" },
+  "Desert Delights": { ps: "صحرايي خوندونه", "fa-AF": "خوشی‌های صحرا" },
+  "Tiny Tots Store": { ps: "ټایني ټاټس پلورنځی", "fa-AF": "فروشگاه تینی ټاتس" },
+} as const;
+
+const localizeVendor = (vendor: string, locale: "en" | "ps" | "fa-AF") => {
+  if (locale === "en") return vendor;
+  return vendorTranslations[vendor as keyof typeof vendorTranslations]?.[locale] ?? vendor;
+};
+
+const deliveryTranslations = {
+  "Same Day": {
+    ps: "همدا ورځ",
+    "fa-AF": "همان روز",
+  },
+  "Next Day": {
+    ps: "بله ورځ",
+    "fa-AF": "روز بعد",
+  },
+  "2-3 Days": {
+    ps: "2-3 ورځې",
+    "fa-AF": "2-3 روز",
+  },
+} as const;
+
+const localizeDelivery = (delivery: string, locale: "en" | "ps" | "fa-AF") => {
+  if (locale === "en") return delivery;
+  return (
+    deliveryTranslations[delivery as keyof typeof deliveryTranslations]?.[locale] ??
+    delivery
+  );
+};
+
 export default function ProductsPage() {
   const locale = useLocale() as "en" | "ps" | "fa-AF";
   const [searchQuery, setSearchQuery] = useState("");
@@ -340,7 +378,7 @@ export default function ProductsPage() {
                       <span
                         className={`text-sm ${selectedVendor.includes(vendor) ? "text-gray-900 font-medium" : "text-gray-600"}`}
                       >
-                        {vendor}
+                        <bdi dir="ltr">{localizeVendor(vendor, locale)}</bdi>
                       </span>
                     </label>
                   ))}
@@ -465,7 +503,7 @@ export default function ProductsPage() {
                               className="sr-only"
                             />
                             <span className="text-sm text-gray-700">
-                              {vendor}
+                              <bdi dir="ltr">{localizeVendor(vendor, locale)}</bdi>
                             </span>
                           </label>
                         ))}
@@ -642,7 +680,9 @@ function ProductCard({
       {/* Content - Walmart Style */}
       <div className="pt-3">
         {/* Vendor */}
-        <p className="text-xs text-gray-500 mb-1">{product.vendor}</p>
+        <p className="text-xs text-gray-500 mb-1">
+          <bdi dir="ltr">{localizeVendor(product.vendor, locale)}</bdi>
+        </p>
 
         {/* Title */}
         <Link href={`/products/${product.id}`}>
@@ -673,7 +713,9 @@ function ProductCard({
           <span className="font-medium text-gray-900">{product.rating}</span>
           <span className="text-gray-500">({product.reviews})</span>
           <span className="mx-1 text-gray-300">|</span>
-          <span className="text-green-600 font-medium">{product.delivery}</span>
+          <span className="text-green-600 font-medium">
+            {localizeDelivery(product.delivery, locale)}
+          </span>
         </div>
       </div>
     </div>

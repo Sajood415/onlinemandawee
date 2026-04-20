@@ -19,6 +19,27 @@ type Product = {
   badge: string;
 };
 
+const vendorTranslations = {
+  "Noor Premium Gifts": { ps: "نور پریمیم ډالۍ", "fa-AF": "نور پریمیم هدایا" },
+  "Bloom Avenue": { ps: "بلوم ایونیو", "fa-AF": "بلوم اونیو" },
+  "Mandawee Market": { ps: "منډوي مارکیټ", "fa-AF": "بازار منداوی" },
+  "Cocoa Stories": { ps: "کوکو کیسې", "fa-AF": "داستان‌های کاکائو" },
+  "Fresh Farm Co": { ps: "فریش فارم شرکت", "fa-AF": "شرکت فارم تازه" },
+  "Desert Delights": { ps: "صحرايي خوندونه", "fa-AF": "خوشی‌های صحرا" },
+  "Tiny Tots Store": { ps: "ټایني ټاټس پلورنځی", "fa-AF": "فروشگاه تینی ټاتس" },
+} as const;
+
+const localizeVendor = (vendor: string, locale: "en" | "ps" | "fa-AF") => {
+  if (locale === "en") return vendor;
+  return vendorTranslations[vendor as keyof typeof vendorTranslations]?.[locale] ?? vendor;
+};
+
+const featuredUiCopy = {
+  en: { quickCheckout: "Quick Checkout", giftReady: "Gift-ready picks", add: "Add" },
+  ps: { quickCheckout: "چټک خرید", giftReady: "ډالۍ ته چمتو توکي", add: "اضافه" },
+  "fa-AF": { quickCheckout: "خرید سریع", giftReady: "انتخاب‌های آماده هدیه", add: "افزودن" },
+} as const;
+
 type FeaturedProductsProps = {
   products: Product[];
   viewAllLabel: string;
@@ -40,6 +61,8 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
   const [isAdding, setIsAdding] = useState(false);
   const { addItem } = useCart();
   const locale = useLocale();
+  const safeLocale = locale === "ps" || locale === "fa-AF" ? locale : "en";
+  const ui = featuredUiCopy[safeLocale];
   const { original, offer } = extractPrice(product.price);
   const priceDisplay = product.priceDisplay;
   const rating = 4;
@@ -69,7 +92,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         <div className="px-3 py-3">
           {/* Category */}
           <p className="text-xs text-slate-400 uppercase tracking-wider">
-            {product.vendor}
+            <bdi dir="ltr">{localizeVendor(product.vendor, safeLocale)}</bdi>
           </p>
           
           {/* Rating Stars */}
@@ -127,7 +150,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
                 ) : (
                   <>
                     <ShoppingCart className="h-3.5 w-3.5" strokeWidth={2} />
-                    {count > 0 ? count : "Add"}
+                    {count > 0 ? count : ui.add}
                   </>
                 )}
               </motion.button>
@@ -172,6 +195,9 @@ export default function FeaturedProducts({
   title,
   description,
 }: FeaturedProductsProps) {
+  const locale = useLocale();
+  const safeLocale = locale === "ps" || locale === "fa-AF" ? locale : "en";
+  const ui = featuredUiCopy[safeLocale];
   return (
     <section className="py-20 sm:py-28">
       {/* Section Header */}
@@ -215,10 +241,10 @@ export default function FeaturedProducts({
           </div>
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Quick Checkout
+              {ui.quickCheckout}
             </p>
             <p className="text-sm font-semibold text-slate-900">
-              Gift-ready picks
+              {ui.giftReady}
             </p>
           </div>
         </motion.div>

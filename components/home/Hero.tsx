@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useLocale } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -15,114 +16,302 @@ import {
   Sparkles,
 } from "lucide-react";
 
-// Full-background hero slides - Local carousel images
-const heroSlides = [
+type SupportedLocale = "en" | "ps" | "fa-AF";
+
+type HeroSlide = {
+  id: number;
+  image: string;
+  alt: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  cta: string;
+  ctaLink: string;
+  overlayColor: string;
+  textPosition: "left" | "center" | "right";
+};
+
+type HeroBadge = {
+  text: string;
+  subtext: string;
+};
+
+const baseSlides = [
   {
     id: 1,
     image: "/images/carousals/slide-1.jpg",
-    alt: "Fresh organic groceries",
-    eyebrow: "Farm Fresh Daily",
-    title: "Organic Veggies & Fruits Delivered",
-    description:
-      "From local farms to your doorstep. Get 20% off your first fresh produce order!",
-    cta: "Shop Fresh",
     ctaLink: "/products?category=groceries",
-    themeColor: "#F59E0B",
     overlayColor: "rgba(0,0,0,0.35)",
-    textPosition: "left",
+    textPosition: "left" as const,
   },
   {
     id: 2,
     image: "/images/carousals/slide-2.jpg",
-    alt: "Premium baby essentials",
-    eyebrow: "The Baby Event",
-    title: "Gentle Care for Your Little One",
-    description:
-      "Premium baby products with love. Soft, safe, and perfect for delicate skin.",
-    cta: "Shop Baby",
     ctaLink: "/baby-packages",
-    themeColor: "#EC4899",
     overlayColor: "rgba(0,0,0,0.3)",
-    textPosition: "left",
+    textPosition: "left" as const,
   },
   {
     id: 3,
     image: "/images/carousals/slide-3.jpg",
-    alt: "Baby bath essentials",
-    eyebrow: "Bath Time Fun",
-    title: "Make Bath Time a Joy",
-    description:
-      "Natural bath essentials that make cleaning up fun and safe for babies.",
-    cta: "Explore",
     ctaLink: "/products?category=baby-care",
-    themeColor: "#06B6D4",
     overlayColor: "rgba(0,0,0,0.35)",
-    textPosition: "left",
+    textPosition: "left" as const,
   },
   {
     id: 4,
     image: "/images/carousals/slide-4.jpg",
-    alt: "Gifts and celebrations",
-    eyebrow: "Celebrate Together",
-    title: "Gifts That Spark Joy",
-    description:
-      "Curated gift packages for every occasion. Birthdays, parties & special moments.",
-    cta: "Shop Gifts",
     ctaLink: "/gifts",
-    themeColor: "#8B5CF6",
     overlayColor: "rgba(0,0,0,0.4)",
-    textPosition: "left",
+    textPosition: "left" as const,
   },
   {
     id: 5,
     image: "/images/carousals/slide-5.jpg",
-    alt: "Fresh fruit market",
-    eyebrow: "Summer Harvest",
-    title: "Taste the Season's Best",
-    description:
-      "Handpicked seasonal fruits. Juicy, ripe, and delivered fresh within hours.",
-    cta: "Order Now",
     ctaLink: "/products?category=fruits",
-    themeColor: "#EF4444",
     overlayColor: "rgba(0,0,0,0.35)",
-    textPosition: "left",
+    textPosition: "left" as const,
   },
   {
     id: 6,
     image: "/images/carousals/slide-6.jpg",
-    alt: "Special offers",
-    eyebrow: "Limited Time",
-    title: "Weekend Special Deals",
-    description:
-      "Exclusive discounts on your favorite products. Valid this weekend only!",
-    cta: "View Deals",
     ctaLink: "/deals",
-    themeColor: "#10B981",
     overlayColor: "rgba(0,0,0,0.4)",
-    textPosition: "left",
+    textPosition: "left" as const,
   },
 ];
 
-// Trust badges
-const trustBadges = [
-  { icon: Truck, text: "Same-day delivery", subtext: "Order by 2PM" },
-  { icon: Star, text: "800+ vendors", subtext: "Verified sellers" },
-  { icon: Clock, text: "Express options", subtext: "2-hour delivery" },
-  { icon: Sparkles, text: "Gift wrapping", subtext: "Free on $50+" },
-];
+const localizedSlides: Record<
+  SupportedLocale,
+  Array<Omit<HeroSlide, "id" | "image" | "ctaLink" | "overlayColor" | "textPosition">>
+> = {
+  en: [
+    {
+      alt: "Fresh organic groceries",
+      eyebrow: "Farm Fresh Daily",
+      title: "Organic Veggies & Fruits Delivered",
+      description:
+        "From local farms to your doorstep. Get 20% off your first fresh produce order!",
+      cta: "Shop Fresh",
+    },
+    {
+      alt: "Premium baby essentials",
+      eyebrow: "The Baby Event",
+      title: "Gentle Care for Your Little One",
+      description:
+        "Premium baby products with love. Soft, safe, and perfect for delicate skin.",
+      cta: "Shop Baby",
+    },
+    {
+      alt: "Baby bath essentials",
+      eyebrow: "Bath Time Fun",
+      title: "Make Bath Time a Joy",
+      description:
+        "Natural bath essentials that make cleaning up fun and safe for babies.",
+      cta: "Explore",
+    },
+    {
+      alt: "Gifts and celebrations",
+      eyebrow: "Celebrate Together",
+      title: "Gifts That Spark Joy",
+      description:
+        "Curated gift packages for every occasion. Birthdays, parties & special moments.",
+      cta: "Shop Gifts",
+    },
+    {
+      alt: "Fresh fruit market",
+      eyebrow: "Summer Harvest",
+      title: "Taste the Season's Best",
+      description:
+        "Handpicked seasonal fruits. Juicy, ripe, and delivered fresh within hours.",
+      cta: "Order Now",
+    },
+    {
+      alt: "Special offers",
+      eyebrow: "Limited Time",
+      title: "Weekend Special Deals",
+      description:
+        "Exclusive discounts on your favorite products. Valid this weekend only!",
+      cta: "View Deals",
+    },
+  ],
+  ps: [
+    {
+      alt: "تازه عضوي خوراکي توکي",
+      eyebrow: "هره ورځ تازه",
+      title: "عضوي سبزي او مېوې ستاسو تر دروازې",
+      description:
+        "له سیمه‌ییزو فارمونو تر ستاسو کور پورې. په لومړي تازه فرمایش کې 20٪ تخفیف واخلئ!",
+      cta: "تازه واخلئ",
+    },
+    {
+      alt: "د ماشوم پریمیم اړین توکي",
+      eyebrow: "د ماشوم ځانګړی پروګرام",
+      title: "ستاسو کوچني ته نرمه پاملرنه",
+      description:
+        "د مینې سره پریمیم د ماشوم محصولات. نرم، خوندي او د نازک پوست لپاره مناسب.",
+      cta: "د ماشوم توکي",
+    },
+    {
+      alt: "د ماشوم د حمام اړین توکي",
+      eyebrow: "د حمام خوږ وخت",
+      title: "حمام وخت په خوښۍ بدل کړئ",
+      description:
+        "طبیعي د حمام توکي چې پاکوالی د ماشومانو لپاره اسانه او خوندي کوي.",
+      cta: "وګورئ",
+    },
+    {
+      alt: "ډالۍ او لمانځنې",
+      eyebrow: "یوځای ولمانځئ",
+      title: "ډالۍ چې خوښي رامنځته کوي",
+      description:
+        "د هرې موقع لپاره غوره شوې ډالۍ بستې. زوکړې، محفلونه او ځانګړې شېبې.",
+      cta: "ډالۍ واخلئ",
+    },
+    {
+      alt: "تازه مېوې مارکېټ",
+      eyebrow: "د اوړي حاصلات",
+      title: "د فصل غوره خوند وڅکئ",
+      description:
+        "لاس‌چین شوې موسمي مېوې. خوږې، پخې او په څو ساعتونو کې تازه تحویلیږي.",
+      cta: "اوس فرمایش",
+    },
+    {
+      alt: "ځانګړي وړاندیزونه",
+      eyebrow: "محدود وخت",
+      title: "د اونۍ پای ځانګړي تخفیفونه",
+      description:
+        "ستاسو د خوښې محصولاتو لپاره ځانګړي تخفیفونه. یوازې د دې اونۍ پای لپاره!",
+      cta: "وړاندیزونه",
+    },
+  ],
+  "fa-AF": [
+    {
+      alt: "مواد خوراکی تازه و ارگانیک",
+      eyebrow: "تازه هر روز",
+      title: "سبزی و میوه ارگانیک درب منزل",
+      description:
+        "از فارم‌های محلی تا خانه شما. در اولین سفارش تازه 20٪ تخفیف بگیرید!",
+      cta: "خرید تازه",
+    },
+    {
+      alt: "اقلام ممتاز نوزاد",
+      eyebrow: "رویداد نوزاد",
+      title: "مراقبت لطیف برای کوچولوی شما",
+      description:
+        "محصولات ممتاز نوزاد با عشق. نرم، امن و مناسب پوست حساس.",
+      cta: "خرید نوزاد",
+    },
+    {
+      alt: "لوازم حمام نوزاد",
+      eyebrow: "حمام شاد",
+      title: "وقت حمام را لذت‌بخش کنید",
+      description:
+        "اقلام طبیعی حمام که پاک‌کاری را برای نوزادان امن و ساده می‌سازد.",
+      cta: "مشاهده",
+    },
+    {
+      alt: "هدایا و جشن‌ها",
+      eyebrow: "باهم جشن بگیریم",
+      title: "هدایایی که شادی می‌آورد",
+      description:
+        "بسته‌های هدیه منتخب برای هر مناسبت. تولدها، مهمانی‌ها و لحظه‌های خاص.",
+      cta: "خرید هدیه",
+    },
+    {
+      alt: "بازار میوه تازه",
+      eyebrow: "حاصل تابستان",
+      title: "بهترین طعم فصل را بچشید",
+      description:
+        "میوه‌های موسمی دست‌چین‌شده؛ آبدار، رسیده و در چند ساعت تازه تحویل می‌شود.",
+      cta: "همین حالا",
+    },
+    {
+      alt: "پیشنهادهای ویژه",
+      eyebrow: "زمان محدود",
+      title: "تخفیف‌های ویژه آخر هفته",
+      description:
+        "تخفیف‌های اختصاصی روی محصولات محبوب شما. فقط همین آخر هفته!",
+      cta: "دیدن تخفیف",
+    },
+  ],
+};
+
+const localizedBadges: Record<SupportedLocale, HeroBadge[]> = {
+  en: [
+    { text: "Same-day delivery", subtext: "Order by 2PM" },
+    { text: "800+ vendors", subtext: "Verified sellers" },
+    { text: "Express options", subtext: "2-hour delivery" },
+    { text: "Gift wrapping", subtext: "Free on $50+" },
+  ],
+  ps: [
+    { text: "همدا ورځ تحویل", subtext: "تر 2PM مخکې فرمایش" },
+    { text: "800+ پلورونکي", subtext: "تایید شوي پلورونکي" },
+    { text: "چټک انتخابونه", subtext: "2 ساعته تحویل" },
+    { text: "د ډالۍ لفافه", subtext: "پر $50+ وړیا" },
+  ],
+  "fa-AF": [
+    { text: "تحویل همان روز", subtext: "سفارش تا 2PM" },
+    { text: "800+ فروشنده", subtext: "فروشندگان تاییدشده" },
+    { text: "گزینه‌های سریع", subtext: "تحویل 2 ساعته" },
+    { text: "بسته‌بندی هدیه", subtext: "رایگان روی $50+" },
+  ],
+};
+
+const localizedAria: Record<
+  SupportedLocale,
+  {
+    previous: string;
+    next: string;
+    pause: string;
+    play: string;
+    dot: (index: number) => string;
+  }
+> = {
+  en: {
+    previous: "Previous slide",
+    next: "Next slide",
+    pause: "Pause slideshow",
+    play: "Play slideshow",
+    dot: (index) => `Go to slide ${index}`,
+  },
+  ps: {
+    previous: "مخکینی سلایډ",
+    next: "راتلونکی سلایډ",
+    pause: "سلایډ شو ودروئ",
+    play: "سلایډ شو پيل کړئ",
+    dot: (index) => `سلایډ ${index} ته لاړ شئ`,
+  },
+  "fa-AF": {
+    previous: "اسلاید قبلی",
+    next: "اسلاید بعدی",
+    pause: "توقف نمایش اسلاید",
+    play: "پخش نمایش اسلاید",
+    dot: (index) => `رفتن به اسلاید ${index}`,
+  },
+};
 
 export default function HeroSection() {
+  const locale = useLocale();
+  const safeLocale: SupportedLocale =
+    locale === "ps" || locale === "fa-AF" ? locale : "en";
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  // Auto-rotate slides
+  const heroSlides = baseSlides.map((baseSlide, index) => ({
+    ...baseSlide,
+    ...localizedSlides[safeLocale][index],
+  }));
+  const trustBadges = localizedBadges[safeLocale];
+  const ariaCopy = localizedAria[safeLocale];
+
   useEffect(() => {
     if (!isAutoPlaying) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 6000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying]);
+  }, [isAutoPlaying, heroSlides.length]);
 
   const nextSlide = () => {
     setIsAutoPlaying(false);
@@ -149,26 +338,21 @@ export default function HeroSection() {
 
   return (
     <section className="w-full bg-white">
-      {/* Hero Carousel - Walmart Style */}
       <div className="relative">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          {/* Main Hero Container - Walmart Baby Event Style */}
           <div className="relative rounded-2xl overflow-hidden shadow-lg">
-            {/* Top Navigation Controls - Walmart Style */}
             <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
               <button
                 onClick={prevSlide}
                 className="w-8 h-8 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105 border border-gray-100"
-                aria-label="Previous slide"
+                aria-label={ariaCopy.previous}
               >
                 <ChevronLeft size={20} className="text-primary" />
               </button>
               <button
                 onClick={toggleAutoPlay}
                 className="w-8 h-8 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105 border border-gray-100"
-                aria-label={
-                  isAutoPlaying ? "Pause slideshow" : "Play slideshow"
-                }
+                aria-label={isAutoPlaying ? ariaCopy.pause : ariaCopy.play}
               >
                 {isAutoPlaying ? (
                   <Pause size={18} className="text-primary" />
@@ -179,13 +363,12 @@ export default function HeroSection() {
               <button
                 onClick={nextSlide}
                 className="w-8 h-8 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105 border border-gray-100"
-                aria-label="Next slide"
+                aria-label={ariaCopy.next}
               >
                 <ChevronRight size={20} className="text-primary" />
               </button>
             </div>
 
-            {/* Slides - Full Background Image Banner */}
             <div className="relative min-h-80 sm:min-h-90 md:min-h-100 lg:min-h-110 rounded-2xl overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -196,7 +379,6 @@ export default function HeroSection() {
                   transition={{ duration: 0.5 }}
                   className="relative h-full min-h-80 sm:min-h-90 md:min-h-100 lg:min-h-110"
                 >
-                  {/* Background Image */}
                   <div className="absolute inset-0">
                     <Image
                       src={currentSlideData.image}
@@ -205,14 +387,12 @@ export default function HeroSection() {
                       className="object-cover"
                       priority
                     />
-                    {/* Overlay for text readability */}
                     <div
                       className="absolute inset-0"
                       style={{ backgroundColor: currentSlideData.overlayColor }}
                     />
                   </div>
 
-                  {/* Content - Positioned based on textPosition */}
                   <div
                     className={`relative z-10 h-full flex items-center px-6 md:px-12 lg:px-16 py-10 ${
                       currentSlideData.textPosition === "center"
@@ -223,7 +403,6 @@ export default function HeroSection() {
                     }`}
                   >
                     <div className="max-w-md">
-                      {/* Eyebrow Tag */}
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -235,7 +414,6 @@ export default function HeroSection() {
                         </span>
                       </motion.div>
 
-                      {/* Title */}
                       <motion.h1
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -245,7 +423,6 @@ export default function HeroSection() {
                         {currentSlideData.title}
                       </motion.h1>
 
-                      {/* Description */}
                       <motion.p
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -255,7 +432,6 @@ export default function HeroSection() {
                         {currentSlideData.description}
                       </motion.p>
 
-                      {/* CTA Button */}
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -274,7 +450,6 @@ export default function HeroSection() {
               </AnimatePresence>
             </div>
 
-            {/* Dots Indicator - Bottom Center */}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
               {heroSlides.map((_, index) => (
                 <button
@@ -285,33 +460,33 @@ export default function HeroSection() {
                       ? "bg-white w-8"
                       : "bg-white/60 hover:bg-white/80 w-2.5 hover:scale-125"
                   }`}
-                  aria-label={`Go to slide ${index + 1}`}
+                  aria-label={ariaCopy.dot(index + 1)}
                 />
               ))}
             </div>
           </div>
 
-          {/* Trust Badges Bar - Walmart Style */}
           <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-            {trustBadges.map((badge, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 + index * 0.1 }}
-                className="flex items-center gap-3 bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="w-10 h-10 bg-[#e6f1fc] rounded-full flex items-center justify-center shrink-0">
-                  <badge.icon size={20} className="text-primary" />
-                </div>
-                <div>
-                  <p className="font-bold text-[#171717] text-sm">
-                    {badge.text}
-                  </p>
-                  <p className="text-[#74767c] text-xs">{badge.subtext}</p>
-                </div>
-              </motion.div>
-            ))}
+            {trustBadges.map((badge, index) => {
+              const Icon = [Truck, Star, Clock, Sparkles][index] ?? Truck;
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 + index * 0.1 }}
+                  className="flex items-center gap-3 bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="w-10 h-10 bg-[#e6f1fc] rounded-full flex items-center justify-center shrink-0">
+                    <Icon size={20} className="text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-[#171717] text-sm">{badge.text}</p>
+                    <p className="text-[#74767c] text-xs">{badge.subtext}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </div>

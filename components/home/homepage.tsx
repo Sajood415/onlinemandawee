@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useLocale, useMessages } from "next-intl";
@@ -9,7 +9,6 @@ import {
   Megaphone,
   Package,
   ShieldCheck,
-  ShoppingBag,
   Sparkles,
   Star,
   Store,
@@ -20,7 +19,6 @@ import {
   Info,
   Baby,
   Cake,
-  Sparkles as Spark,
   ChevronRight,
   TrendingUp,
   Award,
@@ -72,107 +70,592 @@ type HomepageMessages = {
   };
 };
 
-const liveAds = [
-  {
-    label: "Limited Time",
-    title: "Weekend Special: 20% Off Fresh Groceries",
-    description: "Stock up on essentials from trusted local vendors",
-  },
-  {
-    label: "New Arrival",
-    title: "Premium Gift Collections Now Available",
-    description: "Curated bundles for birthdays and celebrations",
-  },
-  {
-    label: "Vendor Spotlight",
-    title: "Noor Premium Gifts: Luxury Gifting",
-    description: "Hand-selected items with premium wrapping",
-  },
+type SupportedLocale = "en" | "ps" | "fa-AF";
+
+const giftPackageVisuals = [
+  { icon: Cake, color: "var(--primary)" },
+  { icon: Heart, color: "var(--primary)" },
+  { icon: Baby, color: "var(--secondary)" },
 ];
 
-const giftPackages = [
-  {
-    title: "Birthday Surprise Box",
-    items: "Cake, flowers, chocolates, and personalized card",
-    price: "From $49.99",
-    icon: Cake,
-    color: "var(--primary)",
-  },
-  {
-    title: "Anniversary Bundle",
-    items: "Premium gifts, roses, and celebration items",
-    price: "From $79.99",
-    icon: Heart,
-    color: "var(--primary)",
-  },
-  {
-    title: "New Baby Welcome",
-    items: "Essentials, toys, and keepsakes for newborns",
-    price: "From $59.99",
-    icon: Baby,
-    color: "var(--secondary)",
-  },
+const deliveryOptionIcons = [Package, Zap, Truck];
+const trustFeatureIcons = [ShieldCheck, Users, Star];
+const vendorStatIcons = [Store, Users, Package, TrendingUp];
+const vendorStatColors = [
+  "var(--primary)",
+  "var(--secondary)",
+  "var(--green)",
+  "var(--primary)",
 ];
 
-const babyGiftPackages = [
+const homePageCopy: Record<
+  SupportedLocale,
   {
-    title: "Essential Care Package",
-    description: "Diapers, wipes, lotion, and baby powder",
-    items: "12 items included",
+    marqueePartners: string[];
+    livePromotionsLabel: string;
+    learnMoreLabel: string;
+    liveAds: Array<{ label: string; title: string; description: string }>;
+    giftIdeas: {
+      tag: string;
+      title: string;
+      description: string;
+      browseCta: string;
+      packages: Array<{ title: string; items: string; price: string }>;
+      builderTitle: string;
+      builderDescription: string;
+      builderFeatures: string[];
+    };
+    babyGift: {
+      tag: string;
+      title: string;
+      description: string;
+      exploreCta: string;
+      packages: Array<{ title: string; description: string; items: string }>;
+    };
+    delivery: {
+      tag: string;
+      title: string;
+      description: string;
+      standardInfoTitle: string;
+      standardInfoDescription: string;
+      note: string;
+      options: Array<{
+        title: string;
+        description: string;
+        timeframe: string;
+        highlight: string;
+      }>;
+    };
+    trust: {
+      tag: string;
+      title: string;
+      description: string;
+      features: Array<{ title: string; description: string }>;
+      refundTitle: string;
+      refundDescription: string;
+      refundSteps: string[];
+      purchaseProtection: string;
+    };
+    vendor: {
+      tag: string;
+      title: string;
+      description: string;
+      benefits: string[];
+      primaryCta: string;
+      secondaryCta: string;
+      stats: Array<{ count: string; label: string }>;
+    };
+  }
+> = {
+  en: {
+    marqueePartners: [
+      "Trusted Vendors",
+      "Secure Payments",
+      "Fast Delivery",
+      "Quality Products",
+      "24/7 Support",
+      "Verified Sellers",
+      "Gift Wrapping",
+      "Easy Returns",
+    ],
+    livePromotionsLabel: "Live Promotions",
+    learnMoreLabel: "Learn more",
+    liveAds: [
+      {
+        label: "Limited Time",
+        title: "Weekend Special: 20% Off Fresh Groceries",
+        description: "Stock up on essentials from trusted local vendors",
+      },
+      {
+        label: "New Arrival",
+        title: "Premium Gift Collections Now Available",
+        description: "Curated bundles for birthdays and celebrations",
+      },
+      {
+        label: "Vendor Spotlight",
+        title: "Noor Premium Gifts: Luxury Gifting",
+        description: "Hand-selected items with premium wrapping",
+      },
+    ],
+    giftIdeas: {
+      tag: "Gift & Surprise",
+      title: "Make Every Occasion Special",
+      description:
+        "Choose from our curated collections for every occasion. We'll help you create the perfect surprise for your loved ones.",
+      browseCta: "Browse All Collections",
+      packages: [
+        {
+          title: "Birthday Surprise Box",
+          items: "Cake, flowers, chocolates, and personalized card",
+          price: "From $49.99",
+        },
+        {
+          title: "Anniversary Bundle",
+          items: "Premium gifts, roses, and celebration items",
+          price: "From $79.99",
+        },
+        {
+          title: "New Baby Welcome",
+          items: "Essentials, toys, and keepsakes for newborns",
+          price: "From $59.99",
+        },
+      ],
+      builderTitle: "Custom Gift Builder",
+      builderDescription:
+        "Upload photos, videos, or describe your perfect gift. Our team will curate products from multiple vendors to bring your vision to life.",
+      builderFeatures: [
+        "Upload images or videos of gift ideas",
+        "Add personal messages and preferences",
+        "Combine products from any vendor",
+        "Premium wrapping and card options",
+      ],
+    },
+    babyGift: {
+      tag: "Baby Gift Packages",
+      title: "Welcome the Little Ones",
+      description:
+        "Curated newborn gift packages with essentials, toys, and keepsakes, handpicked by our team",
+      exploreCta: "Explore All Baby Packages",
+      packages: [
+        {
+          title: "Essential Care Package",
+          description: "Diapers, wipes, lotion, and baby powder",
+          items: "12 items included",
+        },
+        {
+          title: "Clothing Starter Set",
+          description: "Onesies, bibs, socks, and newborn outfits",
+          items: "8 items included",
+        },
+        {
+          title: "Premium Gift Bundle",
+          description: "Toys, blankets, books, and keepsake box",
+          items: "15 items included",
+        },
+      ],
+    },
+    delivery: {
+      tag: "Delivery Options",
+      title: "Flexible Delivery for Every Need",
+      description: "Choose the delivery method that works best for you",
+      standardInfoTitle: "Why Standard?",
+      standardInfoDescription:
+        "Saves money by grouping items from different vendors into one box",
+      note: "Free delivery on orders over $100 • Local per-km pricing may apply",
+      options: [
+        {
+          title: "Pickup",
+          description: "Free pickup from vendor or warehouse",
+          timeframe: "Same day",
+          highlight: "FREE",
+        },
+        {
+          title: "Express Delivery",
+          description: "Vendors ship separately for fastest delivery",
+          timeframe: "2-3 days",
+          highlight: "~$16",
+        },
+        {
+          title: "Standard Delivery",
+          description: "Consolidated shipping from our warehouse",
+          timeframe: "5-8 days",
+          highlight: "~$6",
+        },
+      ],
+    },
+    trust: {
+      tag: "Trust & Safety",
+      title: "Shop with Confidence",
+      description:
+        "Our platform protects every transaction with verified vendors and transparent dispute resolution",
+      features: [
+        {
+          title: "Platform-Protected Refunds",
+          description:
+            "Admin-managed dispute resolution with transparent decisions",
+        },
+        {
+          title: "Verified Vendors",
+          description: "KYC-verified sellers with quality standards",
+        },
+        {
+          title: "Quality Guarantee",
+          description: "3.99% commission ensures fair pricing for all",
+        },
+      ],
+      refundTitle: "Refund Protection",
+      refundDescription:
+        "If you're not satisfied, our platform manages the refund process:",
+      refundSteps: [
+        "Submit return request with photos",
+        "Vendor responds within 24-48 hours",
+        "Admin reviews and decides fairly",
+        "Refund processed to original payment",
+      ],
+      purchaseProtection: "Purchase Protection",
+    },
+    vendor: {
+      tag: "For Vendors",
+      title: "Become a Vendor",
+      description:
+        "Join our marketplace and reach customers worldwide. Simple onboarding, transparent fees, and powerful tools to grow your business.",
+      benefits: [
+        "Phone-verified signup with OTP security",
+        "Simple store setup with custom URL",
+        "KYC verification for trust and safety",
+        "Flexible payout options (Bank, PayPal, Stripe)",
+        "Transparent 3.99% commission rate",
+        "$5.99/month membership fee",
+      ],
+      primaryCta: "Start Selling",
+      secondaryCta: "Learn More",
+      stats: [
+        { count: "500+", label: "Active Vendors" },
+        { count: "50K+", label: "Happy Customers" },
+        { count: "100K+", label: "Orders Delivered" },
+        { count: "35%", label: "Avg. Growth Rate" },
+      ],
+    },
   },
-  {
-    title: "Clothing Starter Set",
-    description: "Onesies, bibs, socks, and newborn outfits",
-    items: "8 items included",
+  ps: {
+    marqueePartners: [
+      "باوري پلورونکي",
+      "خوندي تادیات",
+      "چټک تحویل",
+      "کیفیته توکي",
+      "24/7 مرسته",
+      "تایید شوي پلورونکي",
+      "د ډالۍ لفافه",
+      "اسانه بیرته ستنول",
+    ],
+    livePromotionsLabel: "ژوندي وړاندیزونه",
+    learnMoreLabel: "نور وګورئ",
+    liveAds: [
+      {
+        label: "محدود وخت",
+        title: "د اونۍ پای ځانګړی وړاندیز: پر تازه خوراکي توکو 20٪ تخفیف",
+        description: "له باوري محلي پلورونکو څخه اړین توکي واخلئ",
+      },
+      {
+        label: "نوی راغلی",
+        title: "اوس پریمیم ډالۍ ټولګې موجودې دي",
+        description: "د زوکړې او لمانځنو لپاره غوره شوې بستې",
+      },
+      {
+        label: "د پلورونکي ځانګړنه",
+        title: "د نور پریمیم ډالیو لوکس ټولګه",
+        description: "د پریمیم لفافې سره په دقت ټاکل شوي توکي",
+      },
+    ],
+    giftIdeas: {
+      tag: "ډالۍ او حیرانتیا",
+      title: "هره موقع ځانګړې کړئ",
+      description:
+        "د هرې موقع لپاره له زموږ له غوره ټولګو انتخاب وکړئ. موږ به ستاسو د عزیزانو لپاره مناسب حیرانتیا چمتو کړو.",
+      browseCta: "ټولې ټولګې وګورئ",
+      packages: [
+        {
+          title: "د زوکړې حیرانتیا بکس",
+          items: "کېک، ګلان، چاکلېټ او شخصي کارت",
+          price: "له $49.99 څخه",
+        },
+        {
+          title: "د کلیزې بسته",
+          items: "پریمیم ډالۍ، ګلابونه او د لمانځنې توکي",
+          price: "له $79.99 څخه",
+        },
+        {
+          title: "نوي ماشوم ته ښه راغلاست",
+          items: "اړین توکي، لوبې او یادګاري شیان",
+          price: "له $59.99 څخه",
+        },
+      ],
+      builderTitle: "شخصي ډالۍ جوړونکی",
+      builderDescription:
+        "انځورونه یا ویډیوګانې پورته کړئ، یا خپله مناسبه ډالۍ تشریح کړئ. زموږ ټیم به له ګڼو پلورونکو څخه توکي یوځای کړي.",
+      builderFeatures: [
+        "د ډالۍ د نظرونو انځورونه یا ویډیوګانې پورته کړئ",
+        "شخصي پیغامونه او خوښې اضافه کړئ",
+        "له بېلابېلو پلورونکو څخه توکي یوځای کړئ",
+        "پریمیم لفافه او کارت اختیارونه",
+      ],
+    },
+    babyGift: {
+      tag: "د ماشوم ډالۍ بستې",
+      title: "کوچنیانو ته ښه راغلاست",
+      description:
+        "د نوي زېږېدلي لپاره غوره شوې بستې چې اړین توکي، لوبې او یادګارونه پکې دي",
+      exploreCta: "د ماشوم ټولې بستې وګورئ",
+      packages: [
+        {
+          title: "د پاملرنې بنسټیزه بسته",
+          description: "ډایپر، وایپس، لوشن او د ماشوم پوډر",
+          items: "12 توکي شامل",
+        },
+        {
+          title: "د جامو پیل بسته",
+          description: "یونسي، بب، جرابې او د نوي زېږېدلي جامې",
+          items: "8 توکي شامل",
+        },
+        {
+          title: "پریمیم ډالۍ بسته",
+          description: "لوبې، کمپلې، کتابونه او یادګاري بکس",
+          items: "15 توکي شامل",
+        },
+      ],
+    },
+    delivery: {
+      tag: "د تحویل انتخابونه",
+      title: "د هر اړتیا لپاره انعطاف منونکی تحویل",
+      description: "هغه تحویلي لاره وټاکئ چې ستاسو لپاره مناسبه وي",
+      standardInfoTitle: "ولې معیاري؟",
+      standardInfoDescription:
+        "د بېلابېلو پلورونکو توکي په یوه بکس کې راغونډوي او لګښت کموي",
+      note: "پر $100 څخه پورته فرمایشونو وړیا تحویل • محلي فی-کیلومتر بیه پلي کېدای شي",
+      options: [
+        {
+          title: "اخیستل",
+          description: "له پلورونکي یا ګودام څخه وړیا اخیستل",
+          timeframe: "همدا ورځ",
+          highlight: "وړیا",
+        },
+        {
+          title: "چټک تحویل",
+          description: "پلورونکي بېل بېل لیږدوي څو ژر ورسیږي",
+          timeframe: "2-3 ورځې",
+          highlight: "~$16",
+        },
+        {
+          title: "معیاري تحویل",
+          description: "له ګودام څخه په یوځای لیږد سره",
+          timeframe: "5-8 ورځې",
+          highlight: "~$6",
+        },
+      ],
+    },
+    trust: {
+      tag: "باور او خوندیتوب",
+      title: "په ډاډه زړه پیرود وکړئ",
+      description:
+        "زموږ پلاتفورم هره معامله د تایید شویو پلورونکو او روښانه شخړه‌حل بهیر سره خوندي کوي",
+      features: [
+        {
+          title: "د پلاتفورم خوندي بیرته ستنول",
+          description: "د اډمین له خوا اداره کېدونکې روښانه پرېکړې",
+        },
+        {
+          title: "تایید شوي پلورونکي",
+          description: "KYC تایید شوي پلورونکي له کیفیت معیارونو سره",
+        },
+        {
+          title: "د کیفیت تضمین",
+          description: "3.99٪ کمیسیون د عادلانه بیو ډاډ ورکوي",
+        },
+      ],
+      refundTitle: "د پیسو بېرته ستنولو خوندیتوب",
+      refundDescription:
+        "که راضي نه یئ، زموږ پلاتفورم د بېرته ستنولو بهیر اداره کوي:",
+      refundSteps: [
+        "له عکسونو سره د بېرته ستنولو غوښتنه ثبت کړئ",
+        "پلورونکی په 24-48 ساعتونو کې ځواب ورکوي",
+        "اډمین په عادلانه ډول ارزونه او پرېکړه کوي",
+        "پیسې بېرته اصلي تادیې ته لېږل کېږي",
+      ],
+      purchaseProtection: "د پېرود خوندیتوب",
+    },
+    vendor: {
+      tag: "د پلورونکو لپاره",
+      title: "پلورونکی شئ",
+      description:
+        "زموږ مارکیټ سره یوځای شئ او نړیوالو پیرودونکو ته ورسیږئ. ساده پیل، روڼ فیسونه او د ودې قوي وسایل.",
+      benefits: [
+        "د OTP امنیت سره د تلیفون تایید شوی ثبت‌نام",
+        "د ځانګړي URL سره ساده پلورنځي جوړول",
+        "د باور لپاره KYC تایید",
+        "انعطاف منونکي ورکړه اختیارونه (Bank, PayPal, Stripe)",
+        "روڼ 3.99٪ کمیسیون",
+        "$5.99 / میاشت غړیتوب فیس",
+      ],
+      primaryCta: "پلور پیل کړئ",
+      secondaryCta: "نور معلومات",
+      stats: [
+        { count: "500+", label: "فعال پلورونکي" },
+        { count: "50K+", label: "خوشاله پیرودونکي" },
+        { count: "100K+", label: "تحویل شوي فرمایشونه" },
+        { count: "35%", label: "منځنی د ودې کچه" },
+      ],
+    },
   },
-  {
-    title: "Premium Gift Bundle",
-    description: "Toys, blankets, books, and keepsake box",
-    items: "15 items included",
+  "fa-AF": {
+    marqueePartners: [
+      "فروشندگان معتبر",
+      "پرداخت امن",
+      "تحویل سریع",
+      "محصولات باکیفیت",
+      "پشتیبانی 24/7",
+      "فروشندگان تاییدشده",
+      "لفافه هدیه",
+      "بازگشت آسان",
+    ],
+    livePromotionsLabel: "پیشنهادهای زنده",
+    learnMoreLabel: "بیشتر ببینید",
+    liveAds: [
+      {
+        label: "زمان محدود",
+        title: "ویژه آخر هفته: 20٪ تخفیف روی مواد خوراکی تازه",
+        description: "نیازهای اساسی را از فروشندگان محلی معتبر تهیه کنید",
+      },
+      {
+        label: "جدید",
+        title: "مجموعه‌های هدیه ممتاز اکنون موجود است",
+        description: "بسته‌های منتخب برای تولدها و جشن‌ها",
+      },
+      {
+        label: "ویترین فروشنده",
+        title: "کالکشن لوکس نور پریمیم هدایا",
+        description: "محصولات دست‌چین‌شده با بسته‌بندی ممتاز",
+      },
+    ],
+    giftIdeas: {
+      tag: "هدیه و سورپرایز",
+      title: "هر مناسبت را خاص بسازید",
+      description:
+        "از مجموعه‌های منتخب ما برای هر مناسبت انتخاب کنید. ما برای عزیزان‌تان سورپرایز عالی آماده می‌کنیم.",
+      browseCta: "دیدن همه مجموعه‌ها",
+      packages: [
+        {
+          title: "جعبه سورپرایز تولد",
+          items: "کیک، گل، شکلات و کارت شخصی",
+          price: "از $49.99",
+        },
+        {
+          title: "بسته سالگرد",
+          items: "هدایای ممتاز، گل رز و اقلام جشن",
+          price: "از $79.99",
+        },
+        {
+          title: "خوش‌آمد نوزاد",
+          items: "اقلام ضروری، اسباب‌بازی و یادگاری‌ها",
+          price: "از $59.99",
+        },
+      ],
+      builderTitle: "هدیه‌ساز سفارشی",
+      builderDescription:
+        "عکس یا ویدیو آپلود کنید یا هدیه دلخواه‌تان را توضیح دهید. تیم ما از چند فروشنده بهترین ترکیب را آماده می‌کند.",
+      builderFeatures: [
+        "آپلود عکس یا ویدیو از ایده هدیه",
+        "افزودن پیام‌ها و سلیقه‌های شخصی",
+        "ترکیب محصولات از فروشندگان مختلف",
+        "گزینه‌های بسته‌بندی ممتاز و کارت",
+      ],
+    },
+    babyGift: {
+      tag: "بسته‌های هدیه نوزاد",
+      title: "به کوچولوها خوش‌آمد بگویید",
+      description:
+        "بسته‌های منتخب نوزاد با اقلام ضروری، اسباب‌بازی و یادگاری که توسط تیم ما آماده شده‌اند",
+      exploreCta: "مشاهده همه بسته‌های نوزاد",
+      packages: [
+        {
+          title: "بسته مراقبت ضروری",
+          description: "پوشک، دستمال، لوشن و پودر بچه",
+          items: "12 قلم شامل است",
+        },
+        {
+          title: "بسته آغاز پوشاک",
+          description: "لباس نوزادی، پیشبند، جوراب و ست‌های نوزاد",
+          items: "8 قلم شامل است",
+        },
+        {
+          title: "بسته هدیه ممتاز",
+          description: "اسباب‌بازی، پتوی نرم، کتاب و جعبه یادگاری",
+          items: "15 قلم شامل است",
+        },
+      ],
+    },
+    delivery: {
+      tag: "گزینه‌های تحویل",
+      title: "تحویل انعطاف‌پذیر برای هر نیاز",
+      description: "روش تحویلی را انتخاب کنید که برای شما بهتر است",
+      standardInfoTitle: "چرا استاندارد؟",
+      standardInfoDescription:
+        "با یکجا کردن اقلام فروشندگان مختلف در یک بسته، هزینه را کم می‌کند",
+      note: "تحویل رایگان برای سفارش‌های بالاتر از $100 • قیمت‌گذاری محلی بر اساس کیلومتر ممکن است اعمال شود",
+      options: [
+        {
+          title: "دریافت حضوری",
+          description: "دریافت رایگان از فروشنده یا انبار",
+          timeframe: "همان روز",
+          highlight: "رایگان",
+        },
+        {
+          title: "تحویل سریع",
+          description: "فروشندگان جداگانه ارسال می‌کنند تا زودتر برسد",
+          timeframe: "2-3 روز",
+          highlight: "~$16",
+        },
+        {
+          title: "تحویل استاندارد",
+          description: "ارسال یکجا از انبار ما",
+          timeframe: "5-8 روز",
+          highlight: "~$6",
+        },
+      ],
+    },
+    trust: {
+      tag: "اعتماد و امنیت",
+      title: "با اطمینان خرید کنید",
+      description:
+        "پلتفرم ما هر تراکنش را با فروشندگان تاییدشده و روند شفاف حل اختلاف محافظت می‌کند",
+      features: [
+        {
+          title: "بازپرداخت محافظت‌شده توسط پلتفرم",
+          description: "حل اختلاف توسط ادمین با تصمیم‌های شفاف",
+        },
+        {
+          title: "فروشندگان تاییدشده",
+          description: "فروشندگان تاییدشده KYC با معیارهای کیفیت",
+        },
+        {
+          title: "تضمین کیفیت",
+          description: "کمیسیون 3.99٪ قیمت‌گذاری منصفانه را تضمین می‌کند",
+        },
+      ],
+      refundTitle: "محافظت بازپرداخت",
+      refundDescription:
+        "اگر راضی نبودید، پلتفرم ما روند بازپرداخت را مدیریت می‌کند:",
+      refundSteps: [
+        "درخواست بازگشت را همراه با عکس ثبت کنید",
+        "فروشنده در 24-48 ساعت پاسخ می‌دهد",
+        "ادمین منصفانه بررسی و تصمیم‌گیری می‌کند",
+        "بازپرداخت به روش پرداخت اصلی انجام می‌شود",
+      ],
+      purchaseProtection: "محافظت خرید",
+    },
+    vendor: {
+      tag: "برای فروشندگان",
+      title: "فروشنده شوید",
+      description:
+        "به بازار ما بپیوندید و به مشتریان جهانی برسید. شروع ساده، هزینه‌های شفاف و ابزارهای قوی برای رشد کسب‌وکار.",
+      benefits: [
+        "ثبت‌نام تاییدشده با شماره موبایل و امنیت OTP",
+        "راه‌اندازی ساده فروشگاه با URL اختصاصی",
+        "تایید KYC برای اعتماد و امنیت",
+        "گزینه‌های انعطاف‌پذیر پرداخت (Bank, PayPal, Stripe)",
+        "نرخ کمیسیون شفاف 3.99٪",
+        "هزینه عضویت ماهانه $5.99",
+      ],
+      primaryCta: "شروع فروش",
+      secondaryCta: "بیشتر بدانید",
+      stats: [
+        { count: "500+", label: "فروشندگان فعال" },
+        { count: "50K+", label: "مشتریان خوشحال" },
+        { count: "100K+", label: "سفارش تحویل‌شده" },
+        { count: "35%", label: "میانگین نرخ رشد" },
+      ],
+    },
   },
-];
-
-const deliveryOptions = [
-  {
-    icon: Package,
-    title: "Pickup",
-    description: "Free pickup from vendor or warehouse",
-    timeframe: "Same day",
-    highlight: "FREE",
-  },
-  {
-    icon: Zap,
-    title: "Express Delivery",
-    description: "Vendors ship separately for fastest delivery",
-    timeframe: "2-3 days",
-    highlight: "~$16",
-  },
-  {
-    icon: Truck,
-    title: "Standard Delivery",
-    description: "Consolidated shipping from our warehouse",
-    timeframe: "5-8 days",
-    highlight: "~$6",
-  },
-];
-
-const trustFeatures = [
-  {
-    icon: ShieldCheck,
-    title: "Platform-Protected Refunds",
-    description: "Admin-managed dispute resolution with transparent decisions",
-  },
-  {
-    icon: Users,
-    title: "Verified Vendors",
-    description: "KYC-verified sellers with quality standards",
-  },
-  {
-    icon: Star,
-    title: "Quality Guarantee",
-    description: "3.99% commission ensures fair pricing for all",
-  },
-];
+};
 
 function pickLocalized(
   field: FeaturedProductSource["name"] | FeaturedProductSource["badge"],
@@ -203,6 +686,9 @@ export function HomePage() {
   const messages = useMessages() as HomepageMessages;
   const content = messages.Homepage;
   const featuredProducts = featuredProductsForLocale(locale);
+  const safeLocale: SupportedLocale =
+    locale === "ps" || locale === "fa-AF" ? locale : "en";
+  const localized = homePageCopy[safeLocale];
 
   return (
     <div
@@ -220,28 +706,28 @@ export function HomePage() {
           title={content.featuredSection.title}
           description={content.featuredSection.description}
         />
-        <MarqueeSection />
-        <LiveAdsSection />
-        <GiftIdeasSection />
-        <BabyGiftPackagesSection />
-        <DeliveryOptionsSection />
-        <TrustSection />
-        <VendorCTASection />
+        <MarqueeSection copy={localized} />
+        <LiveAdsSection copy={localized} />
+        <GiftIdeasSection copy={localized} />
+        <BabyGiftPackagesSection copy={localized} />
+        <DeliveryOptionsSection copy={localized} />
+        <TrustSection copy={localized} />
+        <VendorCTASection copy={localized} />
       </main>
     </div>
   );
 }
 
-function MarqueeSection() {
+function MarqueeSection({ copy }: { copy: (typeof homePageCopy)["en"] }) {
   const partners = [
-    { name: "Trusted Vendors", icon: Store, color: "var(--primary)" },
-    { name: "Secure Payments", icon: ShieldCheck, color: "var(--green)" },
-    { name: "Fast Delivery", icon: Truck, color: "var(--secondary)" },
-    { name: "Quality Products", icon: Star, color: "var(--primary)" },
-    { name: "24/7 Support", icon: Users, color: "var(--secondary)" },
-    { name: "Verified Sellers", icon: CheckCircle2, color: "var(--green)" },
-    { name: "Gift Wrapping", icon: Gift, color: "var(--primary)" },
-    { name: "Easy Returns", icon: Package, color: "var(--secondary)" },
+    { name: copy.marqueePartners[0], icon: Store, color: "var(--primary)" },
+    { name: copy.marqueePartners[1], icon: ShieldCheck, color: "var(--green)" },
+    { name: copy.marqueePartners[2], icon: Truck, color: "var(--secondary)" },
+    { name: copy.marqueePartners[3], icon: Star, color: "var(--primary)" },
+    { name: copy.marqueePartners[4], icon: Users, color: "var(--secondary)" },
+    { name: copy.marqueePartners[5], icon: CheckCircle2, color: "var(--green)" },
+    { name: copy.marqueePartners[6], icon: Gift, color: "var(--primary)" },
+    { name: copy.marqueePartners[7], icon: Package, color: "var(--secondary)" },
   ];
 
   return (
@@ -314,7 +800,7 @@ function MarqueeSection() {
   );
 }
 
-function LiveAdsSection() {
+function LiveAdsSection({ copy }: { copy: (typeof homePageCopy)["en"] }) {
   return (
     <section
       className="py-20 relative overflow-hidden"
@@ -355,12 +841,12 @@ function LiveAdsSection() {
               className="text-xs font-bold uppercase tracking-wider"
               style={{ color: "var(--primary)" }}
             >
-              Live Promotions
+              {copy.livePromotionsLabel}
             </span>
           </motion.div>
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
-          {liveAds.map((ad, index) => (
+          {copy.liveAds.map((ad, index) => (
             <motion.article
               key={index}
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
@@ -430,7 +916,7 @@ function LiveAdsSection() {
                   whileHover={{ x: 5 }}
                   transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 >
-                  <span>Learn more</span>
+                  <span>{copy.learnMoreLabel}</span>
                   <ChevronRight className="h-4 w-4" strokeWidth={2} />
                 </motion.div>
               </div>
@@ -479,7 +965,13 @@ function FeaturedProductsSection({
   );
 }
 
-function GiftIdeasSection() {
+function GiftIdeasSection({ copy }: { copy: (typeof homePageCopy)["en"] }) {
+  const packages = copy.giftIdeas.packages.map((pkg, index) => ({
+    ...pkg,
+    icon: giftPackageVisuals[index]?.icon ?? Gift,
+    color: giftPackageVisuals[index]?.color ?? "var(--primary)",
+  }));
+
   return (
     <section className="py-20" style={{ backgroundColor: "var(--background)" }}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -498,25 +990,24 @@ function GiftIdeasSection() {
                 className="text-xs font-semibold uppercase tracking-wider"
                 style={{ color: "var(--primary)" }}
               >
-                Gift & Surprise
+                {copy.giftIdeas.tag}
               </span>
             </div>
             <h2
               className="text-3xl font-bold mb-4"
               style={{ color: "var(--foreground)" }}
             >
-              Make Every Occasion Special
+              {copy.giftIdeas.title}
             </h2>
             <p
               className="mb-8"
               style={{ color: "var(--foreground)", opacity: 0.7 }}
             >
-              Choose from our curated collections for every occasion. We'll help
-              you create the perfect surprise for your loved ones.
+              {copy.giftIdeas.description}
             </p>
 
             <div className="space-y-4 mb-8">
-              {giftPackages.map((pkg, index) => (
+              {packages.map((pkg, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -20 }}
@@ -565,7 +1056,7 @@ function GiftIdeasSection() {
               className="inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-md"
               style={{ backgroundColor: "var(--primary)" }}
             >
-              Browse All Collections
+              {copy.giftIdeas.browseCta}
               <ArrowRight className="ml-2 h-4 w-4" strokeWidth={1.5} />
             </Link>
           </div>
@@ -597,24 +1088,17 @@ function GiftIdeasSection() {
                 className="text-xl font-bold"
                 style={{ color: "var(--foreground)" }}
               >
-                Custom Gift Builder
+                {copy.giftIdeas.builderTitle}
               </h3>
             </div>
             <p
               className="mb-6"
               style={{ color: "var(--foreground)", opacity: 0.7 }}
             >
-              Upload photos, videos, or describe your perfect gift. Our team
-              will curate products from multiple vendors to bring your vision to
-              life.
+              {copy.giftIdeas.builderDescription}
             </p>
             <div className="space-y-3">
-              {[
-                "Upload images or videos of gift ideas",
-                "Add personal messages and preferences",
-                "Combine products from any vendor",
-                "Premium wrapping and card options",
-              ].map((feature, index) => (
+              {copy.giftIdeas.builderFeatures.map((feature, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: 10 }}
@@ -643,7 +1127,7 @@ function GiftIdeasSection() {
   );
 }
 
-function BabyGiftPackagesSection() {
+function BabyGiftPackagesSection({ copy }: { copy: (typeof homePageCopy)["en"] }) {
   return (
     <section className="py-20" style={{ backgroundColor: "#F8FAFC" }}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -661,23 +1145,22 @@ function BabyGiftPackagesSection() {
               className="text-xs font-semibold uppercase tracking-wider"
               style={{ color: "var(--secondary)" }}
             >
-              Baby Gift Packages
+              {copy.babyGift.tag}
             </span>
           </div>
           <h2
             className="text-3xl font-bold mb-3"
             style={{ color: "var(--foreground)" }}
           >
-            Welcome the Little Ones
+            {copy.babyGift.title}
           </h2>
           <p style={{ color: "var(--foreground)", opacity: 0.7 }}>
-            Curated newborn gift packages with essentials, toys, and keepsakes,
-            handpicked by our team
+            {copy.babyGift.description}
           </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
-          {babyGiftPackages.map((pkg, index) => (
+          {copy.babyGift.packages.map((pkg, index) => (
             <motion.article
               key={index}
               initial={{ opacity: 0, y: 20 }}
@@ -737,7 +1220,7 @@ function BabyGiftPackagesSection() {
               className="inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-md"
               style={{ backgroundColor: "var(--secondary)" }}
             >
-              Explore All Baby Packages
+              {copy.babyGift.exploreCta}
               <ArrowRight className="ml-2 h-4 w-4" strokeWidth={1.5} />
             </Link>
           </motion.div>
@@ -747,7 +1230,12 @@ function BabyGiftPackagesSection() {
   );
 }
 
-function DeliveryOptionsSection() {
+function DeliveryOptionsSection({ copy }: { copy: (typeof homePageCopy)["en"] }) {
+  const options = copy.delivery.options.map((option, index) => ({
+    ...option,
+    icon: deliveryOptionIcons[index] ?? Truck,
+  }));
+
   return (
     <section className="py-20" style={{ backgroundColor: "var(--background)" }}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -765,22 +1253,22 @@ function DeliveryOptionsSection() {
               className="text-xs font-semibold uppercase tracking-wider"
               style={{ color: "var(--secondary)" }}
             >
-              Delivery Options
+              {copy.delivery.tag}
             </span>
           </div>
           <h2
             className="text-3xl font-bold mb-3"
             style={{ color: "var(--foreground)" }}
           >
-            Flexible Delivery for Every Need
+            {copy.delivery.title}
           </h2>
           <p style={{ color: "var(--foreground)", opacity: 0.7 }}>
-            Choose the delivery method that works best for you
+            {copy.delivery.description}
           </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
-          {deliveryOptions.map((option, index) => (
+          {options.map((option, index) => (
             <motion.article
               key={index}
               initial={{ opacity: 0, y: 20 }}
@@ -790,7 +1278,7 @@ function DeliveryOptionsSection() {
               className="rounded-2xl border p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all cursor-pointer relative"
               style={{ backgroundColor: "#F8FAFC", borderColor: "#E2E8F0" }}
             >
-              {option.title === "Standard Delivery" && (
+              {index === 2 && (
                 <div className="group relative">
                   <Info
                     className="h-4 w-4 absolute top-2 right-2"
@@ -805,11 +1293,10 @@ function DeliveryOptionsSection() {
                       className="font-semibold mb-1"
                       style={{ color: "var(--foreground)" }}
                     >
-                      Why Standard?
+                      {copy.delivery.standardInfoTitle}
                     </p>
                     <p style={{ color: "var(--foreground)", opacity: 0.7 }}>
-                      Saves money by grouping items from different vendors into
-                      one box
+                      {copy.delivery.standardInfoDescription}
                     </p>
                   </div>
                 </div>
@@ -868,14 +1355,19 @@ function DeliveryOptionsSection() {
           className="mt-10 text-center text-sm"
           style={{ color: "var(--foreground)", opacity: 0.6 }}
         >
-          Free delivery on orders over $100 • Local per-km pricing may apply
+          {copy.delivery.note}
         </div>
       </div>
     </section>
   );
 }
 
-function TrustSection() {
+function TrustSection({ copy }: { copy: (typeof homePageCopy)["en"] }) {
+  const features = copy.trust.features.map((feature, index) => ({
+    ...feature,
+    icon: trustFeatureIcons[index] ?? ShieldCheck,
+  }));
+
   return (
     <section
       className="py-24 relative overflow-hidden"
@@ -906,7 +1398,7 @@ function TrustSection() {
               className="text-xs font-bold uppercase tracking-wider"
               style={{ color: "var(--green)" }}
             >
-              Trust & Safety
+              {copy.trust.tag}
             </span>
           </motion.div>
           <motion.h2
@@ -916,7 +1408,7 @@ function TrustSection() {
             animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.1 }}
           >
-            Shop with Confidence
+            {copy.trust.title}
           </motion.h2>
           <motion.p
             className="text-lg"
@@ -925,13 +1417,12 @@ function TrustSection() {
             animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
           >
-            Our platform protects every transaction with verified vendors and
-            transparent dispute resolution
+            {copy.trust.description}
           </motion.p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3 mb-16">
-          {trustFeatures.map((feature, index) => (
+          {features.map((feature, index) => (
             <motion.article
               key={index}
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
@@ -1010,23 +1501,17 @@ function TrustSection() {
                     className="text-2xl font-bold"
                     style={{ color: "var(--foreground)" }}
                   >
-                    Refund Protection
+                    {copy.trust.refundTitle}
                   </h3>
                 </div>
                 <p
                   className="mb-8 text-base"
                   style={{ color: "var(--foreground)", opacity: 0.65 }}
                 >
-                  If you're not satisfied, our platform manages the refund
-                  process:
+                  {copy.trust.refundDescription}
                 </p>
                 <div className="space-y-4">
-                  {[
-                    "Submit return request with photos",
-                    "Vendor responds within 24-48 hours",
-                    "Admin reviews and decides fairly",
-                    "Refund processed to original payment",
-                  ].map((step, index) => (
+                  {copy.trust.refundSteps.map((step, index) => (
                     <motion.div
                       key={index}
                       initial={{ opacity: 0, x: -20 }}
@@ -1091,7 +1576,7 @@ function TrustSection() {
                   </motion.div>
                   <p className="text-5xl font-bold relative z-10">100%</p>
                   <p className="text-base mt-2 font-medium opacity-90 relative z-10">
-                    Purchase Protection
+                    {copy.trust.purchaseProtection}
                   </p>
                 </motion.div>
               </div>
@@ -1103,7 +1588,13 @@ function TrustSection() {
   );
 }
 
-function VendorCTASection() {
+function VendorCTASection({ copy }: { copy: (typeof homePageCopy)["en"] }) {
+  const stats = copy.vendor.stats.map((stat, index) => ({
+    ...stat,
+    icon: vendorStatIcons[index] ?? Store,
+    color: vendorStatColors[index] ?? "var(--primary)",
+  }));
+
   return (
     <section
       className="py-24 relative overflow-hidden"
@@ -1144,7 +1635,7 @@ function VendorCTASection() {
                 className="text-xs font-bold uppercase tracking-wider"
                 style={{ color: "var(--primary)" }}
               >
-                For Vendors
+                {copy.vendor.tag}
               </span>
             </motion.div>
             <motion.h2
@@ -1154,7 +1645,7 @@ function VendorCTASection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
-              Become a Vendor
+              {copy.vendor.title}
             </motion.h2>
             <motion.p
               className="mb-10 text-lg leading-relaxed"
@@ -1163,20 +1654,11 @@ function VendorCTASection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              Join our marketplace and reach customers worldwide. Simple
-              onboarding, transparent fees, and powerful tools to grow your
-              business.
+              {copy.vendor.description}
             </motion.p>
 
             <div className="space-y-4 mb-10">
-              {[
-                "Phone-verified signup with OTP security",
-                "Simple store setup with custom URL",
-                "KYC verification for trust and safety",
-                "Flexible payout options (Bank, PayPal, Stripe)",
-                "Transparent 3.99% commission rate",
-                "$5.99/month membership fee",
-              ].map((benefit, index) => (
+              {copy.vendor.benefits.map((benefit, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -20 }}
@@ -1218,7 +1700,7 @@ function VendorCTASection() {
                   className="inline-flex h-14 items-center justify-center rounded-full px-6 sm:px-8 text-sm font-bold text-white transition-all shadow-lg hover:shadow-xl w-full sm:w-auto whitespace-nowrap"
                   style={{ backgroundColor: "var(--secondary)" }}
                 >
-                  Start Selling
+                  {copy.vendor.primaryCta}
                   <ArrowRight className="ml-2 h-5 w-5 shrink-0" strokeWidth={2} />
                 </Link>
               </motion.div>
@@ -1236,7 +1718,7 @@ function VendorCTASection() {
                     backgroundColor: "rgba(255, 255, 255, 0.5)",
                   }}
                 >
-                  Learn More
+                  {copy.vendor.secondaryCta}
                 </Link>
               </motion.div>
             </div>
@@ -1260,32 +1742,7 @@ function VendorCTASection() {
             }}
           >
             <div className="space-y-8">
-              {[
-                {
-                  icon: Store,
-                  count: "500+",
-                  label: "Active Vendors",
-                  color: "var(--primary)",
-                },
-                {
-                  icon: Users,
-                  count: "50K+",
-                  label: "Happy Customers",
-                  color: "var(--secondary)",
-                },
-                {
-                  icon: Package,
-                  count: "100K+",
-                  label: "Orders Delivered",
-                  color: "var(--green)",
-                },
-                {
-                  icon: TrendingUp,
-                  count: "35%",
-                  label: "Avg. Growth Rate",
-                  color: "var(--primary)",
-                },
-              ].map((stat, index) => (
+              {stats.map((stat, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 20 }}
@@ -1335,3 +1792,4 @@ function VendorCTASection() {
     </section>
   );
 }
+

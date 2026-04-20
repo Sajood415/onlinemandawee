@@ -25,6 +25,68 @@ import { useCart } from "@/store/cart-context";
 // Import data from JSON file
 const allProducts = productData.featuredProducts;
 
+const vendorTranslations = {
+  "Noor Premium Gifts": { ps: "نور پریمیم ډالۍ", "fa-AF": "نور پریمیم هدایا" },
+  "Bloom Avenue": { ps: "بلوم ایونیو", "fa-AF": "بلوم اونیو" },
+  "Mandawee Market": { ps: "منډوي مارکیټ", "fa-AF": "بازار منداوی" },
+  "Cocoa Stories": { ps: "کوکو کیسې", "fa-AF": "داستان‌های کاکائو" },
+  "Fresh Farm Co": { ps: "فریش فارم شرکت", "fa-AF": "شرکت فارم تازه" },
+  "Desert Delights": { ps: "صحرايي خوندونه", "fa-AF": "خوشی‌های صحرا" },
+  "Tiny Tots Store": { ps: "ټایني ټاټس پلورنځی", "fa-AF": "فروشگاه تینی ټاتس" },
+} as const;
+
+const localizeVendor = (vendor: string, locale: "en" | "ps" | "fa-AF") => {
+  if (locale === "en") return vendor;
+  return vendorTranslations[vendor as keyof typeof vendorTranslations]?.[locale] ?? vendor;
+};
+
+const featureTranslations = {
+  "Premium quality products": {
+    ps: "پریمیم کیفیت لرونکي توکي",
+    "fa-AF": "محصولات باکیفیت ممتاز",
+  },
+  "Beautifully packaged": {
+    ps: "په ښکلي ډول بسته‌بندي شوي",
+    "fa-AF": "با بسته‌بندی زیبا",
+  },
+  "Perfect for any celebration": {
+    ps: "د هرې لمانځنې لپاره مناسب",
+    "fa-AF": "مناسب برای هر جشن",
+  },
+  "Same day delivery available": {
+    ps: "همدا ورځ تحویل موجود",
+    "fa-AF": "تحویل همان روز موجود",
+  },
+} as const;
+
+const localizeFeature = (feature: string, locale: "en" | "ps" | "fa-AF") => {
+  if (locale === "en") return feature;
+  return featureTranslations[feature as keyof typeof featureTranslations]?.[locale] ?? feature;
+};
+
+const deliveryTranslations = {
+  "Same Day": {
+    ps: "همدا ورځ",
+    "fa-AF": "همان روز",
+  },
+  "Next Day": {
+    ps: "بله ورځ",
+    "fa-AF": "روز بعد",
+  },
+  "2-3 Days": {
+    ps: "2-3 ورځې",
+    "fa-AF": "2-3 روز",
+  },
+} as const;
+
+const localizeDelivery = (delivery: string, locale: "en" | "ps" | "fa-AF") => {
+  if (locale === "en") return delivery;
+  return (
+    deliveryTranslations[delivery as keyof typeof deliveryTranslations]?.[locale] ??
+    delivery
+  );
+};
+
 export default function ProductDetailPage() {
   const params = useParams();
   const locale = useLocale() as "en" | "ps" | "fa-AF";
@@ -208,7 +270,7 @@ export default function ProductDetailPage() {
               className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary hover:underline mb-2"
             >
               <Store className="h-4 w-4" />
-              <span>{product.vendor}</span>
+              <span><bdi dir="ltr">{localizeVendor(product.vendor, locale)}</bdi></span>
               <ChevronRight className="h-3 w-3" />
             </Link>
 
@@ -270,7 +332,7 @@ export default function ProductDetailPage() {
                 <Truck className="h-5 w-5 text-gray-600 mt-0.5" />
                 <div>
                   <p className="font-medium text-gray-900">
-                    {product.delivery}
+                    {localizeDelivery(product.delivery, locale)}
                   </p>
                   <p className="text-sm text-gray-500">
                     {locale === "en"
@@ -361,7 +423,7 @@ export default function ProductDetailPage() {
                     className="flex items-start gap-3 text-sm text-gray-700"
                   >
                     <span className="text-primary font-bold mt-0.5">•</span>
-                    <span>{feature}</span>
+                    <span>{localizeFeature(feature, locale)}</span>
                   </li>
                 ))}
               </ul>
@@ -460,7 +522,7 @@ export default function ProductDetailPage() {
                   <CheckCircle className="h-4 w-4 text-green-600" />
                 </div>
                 <span className="text-sm text-gray-700 font-medium">
-                  {feature}
+                  {localizeFeature(feature, locale)}
                 </span>
               </div>
             ))}
@@ -492,7 +554,9 @@ export default function ProductDetailPage() {
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mb-1">{related.vendor}</p>
+                  <p className="text-xs text-gray-500 mb-1">
+                    <bdi dir="ltr">{localizeVendor(related.vendor, locale)}</bdi>
+                  </p>
                   <h3 className="text-sm text-gray-900 mb-2 line-clamp-2 group-hover:text-primary hover:underline">
                     {related.name[locale]}
                   </h3>
