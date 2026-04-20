@@ -5,6 +5,9 @@ import Image from "next/image";
 import { Star, ShoppingCart, Plus, Minus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useCart } from "@/store/cart-context";
+import { toast } from "@/lib/utils/toast";
+import { useLocale } from "next-intl";
 
 type Product = {
   id: string;
@@ -34,53 +37,52 @@ function extractPrice(price: number): { original: number; offer: number } {
 
 function ProductCard({ product, index }: { product: Product; index: number }) {
   const [count, setCount] = useState(0);
+  const [isAdding, setIsAdding] = useState(false);
+  const { addItem } = useCart();
+  const locale = useLocale();
   const { original, offer } = extractPrice(product.price);
   const priceDisplay = product.priceDisplay;
   const rating = 4;
 
   return (
-    <Link href={`/products/${product.id}`}>
       <motion.article
         initial={{ opacity: 0, y: 30, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, delay: index * 0.1, type: "spring", stiffness: 100 }}
-        className="group border rounded-lg bg-white overflow-hidden cursor-pointer"
+        className="group border rounded-lg bg-white overflow-hidden relative"
         style={{ borderColor: 'rgba(226, 232, 240, 0.6)' }}
       >
         {/* Image Container */}
-        <div className="relative w-full h-48 bg-slate-50 overflow-hidden">
-        <Image
-          src={product.image}
-          alt={product.name}
-          fill
-          className="object-cover transition-transform duration-300 group-hover:scale-110"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-        />
-      </div>
+        <Link href={`/products/${product.id}`} className="block">
+          <div className="relative w-full h-48 bg-slate-50 overflow-hidden">
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-110"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            />
+          </div>
+        </Link>
 
-      {/* Content */}
-      <div className="px-3 py-3">
-        {/* Category */}
-        <p className="text-xs text-slate-400 uppercase tracking-wider">
-          {product.vendor}
-        </p>
-        
-        {/* Product Name */}
-        <h3 className="text-slate-700 font-semibold text-base truncate mt-0.5 group-hover:text-[var(--primary)] transition-colors">
-          {product.name}
-        </h3>
-
-        {/* Rating Stars */}
-        <div className="flex items-center gap-0.5 mt-1.5">
-          {Array(5).fill('').map((_, i) => (
-            rating > i ? (
-              <Star key={i} className="h-3.5 w-3.5 fill-[var(--primary)] text-[var(--primary)]" />
-            ) : (
-              <Star key={i} className="h-3.5 w-3.5 fill-slate-200 text-slate-200" />
-            )
-          ))}
-          <span className="text-xs text-slate-500 ml-1">({rating})</span>
-        </div>
+        {/* Content */}
+        <div className="px-3 py-3">
+          {/* Category */}
+          <p className="text-xs text-slate-400 uppercase tracking-wider">
+            {product.vendor}
+          </p>
+          
+          {/* Rating Stars */}
+          <div className="flex items-center gap-0.5 mt-1.5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              rating > i ? (
+                <Star key={i} className="h-3.5 w-3.5 fill-[var(--primary)] text-[var(--primary)]" />
+              ) : (
+                <Star key={i} className="h-3.5 w-3.5 fill-slate-200 text-slate-200" />
+              )
+            ))}
+            <span className="text-xs text-slate-500 ml-1">({rating})</span>
+          </div>
 
         {/* Price & Add to Cart */}
         <div className="flex items-end justify-between mt-3">
@@ -96,12 +98,38 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
               <motion.button
                 className="flex items-center justify-center gap-1.5 rounded-full text-sm font-medium h-8 px-3 transition-all"
                 style={{ backgroundColor: 'rgba(220, 53, 69, 0.1)', color: 'var(--primary)', border: '1px solid rgba(220, 53, 69, 0.2)' }}
-                onClick={() => setCount(1)}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  setIsAdding(true);
+                  try {
+                    await addItem(product.id, count || 1);
+                    toast.success(
+                      locale === "en" ? "Added to cart!" : 
+                      locale === "ps" ? "کارټ ته اضافه شو!" : "به سبد اضافه شد!"
+                    );
+                    setCount(0);
+                  } catch (error) {
+                    toast.error(
+                      locale === "en" ? "Failed to add to cart" : 
+                      locale === "ps" ? "کارټ ته اضافه کول ناکام شول" : "افزودن به سبد ناموفق بود"
+                    );
+                  } finally {
+                    setIsAdding(false);
+                  }
+                }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <ShoppingCart className="h-3.5 w-3.5" strokeWidth={2} />
-                Add
+                {isAdding ? (
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--primary)] border-t-transparent">
+                    <div className="h-3 w-3.5 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : (
+                  <>
+                    <ShoppingCart className="h-3.5 w-3.5" strokeWidth={2} />
+                    {count > 0 ? count : "Add"}
+                  </>
+                )}
               </motion.button>
             ) : (
               <div 
@@ -109,14 +137,20 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
                 style={{ backgroundColor: 'rgba(220, 53, 69, 0.15)' }}
               >
                 <button 
-                  onClick={() => setCount((prev) => Math.max(prev - 1, 0))}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCount((prev) => Math.max(prev - 1, 0));
+                  }}
                   className="cursor-pointer text-[var(--primary)] px-2 h-full flex items-center justify-center hover:bg-white/50 rounded-full transition-colors"
                 >
                   <Minus className="h-3.5 w-3.5" strokeWidth={2} />
                 </button>
                 <span className="w-5 text-center text-sm font-medium text-[var(--primary)]">{count}</span>
                 <button 
-                  onClick={() => setCount((prev) => prev + 1)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCount((prev) => prev + 1);
+                  }}
                   className="cursor-pointer text-[var(--primary)] px-2 h-full flex items-center justify-center hover:bg-white/50 rounded-full transition-colors"
                 >
                   <Plus className="h-3.5 w-3.5" strokeWidth={2} />
@@ -127,7 +161,6 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         </div>
       </div>
       </motion.article>
-    </Link>
   );
 }
 
