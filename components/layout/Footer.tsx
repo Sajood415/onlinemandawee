@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Mail,
   Phone,
@@ -29,6 +29,12 @@ const LINK_MAP: Record<string, string> = {
   "Vendor Terms": "/vendor/terms",
 };
 
+const NAV_COLUMN_PATHS = [
+  ["/about", "/how-it-works", "/vendor/register", "/careers"],
+  ["/help", "/contact", "/orders", "/delivery"],
+  ["/privacy", "/terms", "/refunds", "/vendor/terms"],
+] as const;
+
 /* ── Social SVGs ─────────────────────────────────────────────────────────── */
 const TikTokIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -46,7 +52,79 @@ const InstagramIcon = () => (
   </svg>
 );
 
+type SupportedLocale = "en" | "ps" | "fa-AF";
+type FooterColumn = { title: string; links: string[] };
+
+const footerUiCopy: Record<
+  SupportedLocale,
+  {
+    newsletterEyebrow: string;
+    newsletterTitle: string;
+    newsletterDescription: string;
+    subscribeSuccess: string;
+    emailPlaceholder: string;
+    subscribeButton: string;
+    spamFree: string;
+    talkToUs: string;
+    emailLabel: string;
+    privacy: string;
+    terms: string;
+    sitemap: string;
+    secureCheckout: string;
+  }
+> = {
+  en: {
+    newsletterEyebrow: "Stay in the loop",
+    newsletterTitle: "Get exclusive deals & fresh updates",
+    newsletterDescription: "Weekly drops. Zero spam. Unsubscribe anytime.",
+    subscribeSuccess: "You're subscribed - thank you!",
+    emailPlaceholder: "your@email.com",
+    subscribeButton: "Subscribe",
+    spamFree: "Spam-free · Unsubscribe anytime",
+    talkToUs: "Talk to Us",
+    emailLabel: "Email",
+    privacy: "Privacy",
+    terms: "Terms",
+    sitemap: "Sitemap",
+    secureCheckout: "Secure Checkout",
+  },
+  ps: {
+    newsletterEyebrow: "له خبرونو سره پاتې شئ",
+    newsletterTitle: "ځانګړي تخفیفونه او تازه معلومات ترلاسه کړئ",
+    newsletterDescription: "اونیز وړاندیزونه. بې سپامه. هر وخت لغوه کولای شئ.",
+    subscribeSuccess: "تاسو سبسکرایب شوئ - مننه!",
+    emailPlaceholder: "your@email.com",
+    subscribeButton: "سبسکرایب",
+    spamFree: "بې سپامه · هر وخت لغوه کولای شئ",
+    talkToUs: "له موږ سره خبرې وکړئ",
+    emailLabel: "برېښنالیک",
+    privacy: "محرمیت",
+    terms: "شرایط",
+    sitemap: "سایټ مېپ",
+    secureCheckout: "خوندي تادیه",
+  },
+  "fa-AF": {
+    newsletterEyebrow: "در جریان بمانید",
+    newsletterTitle: "پیشنهادهای ویژه و تازه‌ترین خبرها را بگیرید",
+    newsletterDescription: "به‌روزرسانی هفتگی. بدون اسپم. لغو هر زمان.",
+    subscribeSuccess: "اشتراک شما ثبت شد - تشکر!",
+    emailPlaceholder: "your@email.com",
+    subscribeButton: "اشتراک",
+    spamFree: "بدون اسپم · لغو هر زمان",
+    talkToUs: "با ما تماس بگیرید",
+    emailLabel: "ایمیل",
+    privacy: "محرمیت",
+    terms: "شرایط",
+    sitemap: "نقشه سایت",
+    secureCheckout: "پرداخت امن",
+  },
+};
+
 export default function Footer() {
+  const locale = useLocale();
+  const safeLocale: SupportedLocale =
+    locale === "ps" || locale === "fa-AF" ? locale : "en";
+  const copy = footerUiCopy[safeLocale];
   const t = useTranslations("Homepage.footer");
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
@@ -60,8 +138,11 @@ export default function Footer() {
   };
 
   // Only use Company, Support, Policies — Socials handled via icons
-  const columns = (t.raw("columns") as any[]).filter(
-    (col: any) => col.title !== "Socials",
+  const columns = (t.raw("columns") as FooterColumn[]).filter(
+    (col) =>
+      col.title !== "Socials" &&
+      col.title !== "ټولنیزې شبکې" &&
+      col.title !== "شبکه‌های اجتماعی",
   );
 
   return (
@@ -72,13 +153,13 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-1">
-                Stay in the loop
+                {copy.newsletterEyebrow}
               </p>
               <h3 className="text-xl font-bold text-slate-900">
-                Get exclusive deals &amp; fresh updates
+                {copy.newsletterTitle}
               </h3>
               <p className="text-sm text-slate-500 mt-1">
-                Weekly drops. Zero spam. Unsubscribe anytime.
+                {copy.newsletterDescription}
               </p>
             </div>
 
@@ -89,7 +170,7 @@ export default function Footer() {
               {subscribed ? (
                 <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-6 py-4 text-emerald-700 font-semibold">
                   <CheckCircle size={20} className="text-emerald-500" />
-                  You&apos;re subscribed — thank you!
+                  {copy.subscribeSuccess}
                 </div>
               ) : (
                 <div className="flex items-center bg-white border border-slate-200 rounded-full overflow-hidden shadow-sm focus-within:border-primary/50 focus-within:shadow-md transition-all">
@@ -98,7 +179,7 @@ export default function Footer() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com"
+                    placeholder={copy.emailPlaceholder}
                     className="flex-1 bg-transparent px-5 py-4 text-sm text-slate-800 placeholder:text-slate-400 outline-none"
                   />
                   <button
@@ -106,13 +187,13 @@ export default function Footer() {
                     className="m-1.5 h-9 px-5 bg-primary hover:brightness-110 active:scale-95 text-white rounded-full font-bold text-sm flex items-center gap-2 transition-all cursor-pointer shadow-md shadow-primary/20"
                   >
                     <Send size={15} />
-                    <span className="hidden sm:inline">Subscribe</span>
+                    <span className="hidden sm:inline">{copy.subscribeButton}</span>
                   </button>
                 </div>
               )}
               <div className="flex items-center gap-1.5 mt-2 px-1 text-[11px] text-slate-400">
                 <ShieldCheck size={12} className="text-emerald-500" />
-                Spam-free · Unsubscribe anytime
+                {copy.spamFree}
               </div>
             </form>
           </div>
@@ -149,7 +230,7 @@ export default function Footer() {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Talk to Us
+                    {copy.talkToUs}
                   </p>
                   <p className="text-sm font-semibold text-slate-700 group-hover:text-primary transition-colors">
                     (+93) 799 899856
@@ -166,7 +247,7 @@ export default function Footer() {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Email
+                    {copy.emailLabel}
                   </p>
                   <p className="text-sm font-semibold text-slate-700 group-hover:text-primary transition-colors">
                     info@onlinemandawee.com
@@ -209,14 +290,17 @@ export default function Footer() {
           </div>
 
           {/* NAV COLUMNS — Company / Support / Policies */}
-          {columns.map((column: any) => (
+          {columns.map((column, columnIndex) => (
             <div key={column.title}>
               <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-5">
                 {column.title}
               </h3>
               <ul className="space-y-3.5">
-                {column.links.map((label: string) => {
-                  const href = LINK_MAP[label] ?? "#";
+                {column.links.map((label: string, linkIndex: number) => {
+                  const href =
+                    NAV_COLUMN_PATHS[columnIndex]?.[linkIndex] ??
+                    LINK_MAP[label] ??
+                    "#";
                   return (
                     <li key={label}>
                       <Link
@@ -247,25 +331,25 @@ export default function Footer() {
                 href="/privacy"
                 className="hover:text-primary transition-colors cursor-pointer"
               >
-                Privacy
+                {copy.privacy}
               </Link>
               <Link
                 href="/terms"
                 className="hover:text-primary transition-colors cursor-pointer"
               >
-                Terms
+                {copy.terms}
               </Link>
               <Link
                 href="/sitemap"
                 className="hover:text-primary transition-colors cursor-pointer"
               >
-                Sitemap
+                {copy.sitemap}
               </Link>
             </div>
             <div className="h-4 w-px bg-slate-200" />
             <div className="flex items-center gap-2 text-xs text-slate-400">
               <CreditCard size={14} />
-              <span>Secure Checkout</span>
+              <span>{copy.secureCheckout}</span>
             </div>
           </div>
         </div>

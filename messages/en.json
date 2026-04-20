@@ -35,6 +35,25 @@
       "title": "Everything your family needs, beautifully organized",
       "description": "Browse premium categories built for gifting, groceries, celebration, and care packages."
     },
+    "categoryCarousel": {
+      "title": "Shop By Category",
+      "swipeHint": "Swipe or tap to explore",
+      "swipeLabel": "Swipe",
+      "items": [
+        "Breakfast Items",
+        "Edible Grocery",
+        "Snack Bar",
+        "Beverages",
+        "Fruits",
+        "Vegetables",
+        "Dairy Products",
+        "Cleaning Products",
+        "Baby Care",
+        "Personal Care",
+        "Whey Proteins",
+        "Stationery Items"
+      ]
+    },
     "categories": [
       {
         "title": "Fresh Groceries",
