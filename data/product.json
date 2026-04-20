@@ -2,9 +2,15 @@
   "featuredProducts": [
     {
       "id": "royal-celebration-gift-hamper",
-      "price": "$89.00",
+      "price": 89.0,
+      "priceDisplay": "$89.00",
       "vendor": "Noor Premium Gifts",
       "image": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=900&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=900&q=80",
+        "https://images.unsplash.com/photo-1512909006721-3d6018887383?auto=format&fit=crop&w=900&q=80",
+        "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=900&q=80"
+      ],
       "name": {
         "en": "Royal Celebration Gift Hamper",
         "ps": "شاهي د لمانځنې ډالۍ بسته",
@@ -14,13 +20,34 @@
         "en": "Best Seller",
         "ps": "غوره پلور",
         "fa-AF": "پرفروش"
-      }
+      },
+      "category": "gifts",
+      "rating": 4.8,
+      "reviews": 128,
+      "delivery": "Same Day",
+      "description": {
+        "en": "A luxurious gift hamper perfect for celebrations. Includes premium chocolates, artisan cookies, gourmet nuts, and a bottle of sparkling juice. Beautifully packaged in an elegant basket with a satin ribbon.",
+        "ps": "د لمانځنو لپاره عالي ډالۍ بسته. پریمیم چاکلیټونه، لاسي کوکیز، ګورمي اوړه، او د جوس بوتل لري.",
+        "fa-AF": "بسته هدیه لوکس مناسب برای جشن‌ها. شامل شکلات‌های ویژه، کوکی‌های دست‌ساز، آجیل‌های گورمه و یک بطری آبمیوه گازدار."
+      },
+      "features": [
+        "Premium quality products",
+        "Beautifully packaged",
+        "Perfect for any celebration",
+        "Same day delivery available"
+      ],
+      "inStock": true
     },
     {
       "id": "signature-rose-bouquet-deluxe",
-      "price": "$44.00",
+      "price": 44.0,
+      "priceDisplay": "$44.00",
       "vendor": "Bloom Avenue",
       "image": "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=900&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=900&q=80",
+        "https://images.unsplash.com/photo-1494972308805-463bc619d34e?auto=format&fit=crop&w=900&q=80"
+      ],
       "name": {
         "en": "Signature Rose Bouquet Deluxe",
         "ps": "ځانګړې د ګلاب ګېډۍ",
@@ -30,13 +57,33 @@
         "en": "Same Day",
         "ps": "همدا ورځ",
         "fa-AF": "همان روز"
-      }
+      },
+      "category": "flowers",
+      "rating": 4.9,
+      "reviews": 256,
+      "delivery": "Same Day",
+      "description": {
+        "en": "A stunning bouquet of 24 fresh red roses, hand-tied with eucalyptus and baby's breath. Perfect for expressing love, gratitude, or congratulations. Includes a free greeting card.",
+        "ps": "د ۲۴ تازه سورو ګلابانو ښکلې ګېډۍ. د مینې، مننې یا مبارکۍ لپاره عالی.",
+        "fa-AF": "دسته‌گل زیبا از ۲۴ رز قرمز تازه، دست‌بافته با اکالیپتوس و گیپسوفیلا. مناسب برای ابراز عشق، سپاس یا تبریک."
+      },
+      "features": [
+        "24 fresh red roses",
+        "Hand-tied bouquet",
+        "Includes free greeting card",
+        "Same day delivery"
+      ],
+      "inStock": true
     },
     {
       "id": "family-feast-gourmet-basket",
-      "price": "$72.00",
+      "price": 72.0,
+      "priceDisplay": "$72.00",
       "vendor": "Mandawee Market",
       "image": "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80"
+      ],
       "name": {
         "en": "Family Feast Gourmet Basket",
         "ps": "د کورنۍ مېلمستیا ګورمیه بسته",
@@ -46,13 +93,34 @@
         "en": "Family Favorite",
         "ps": "د کورنۍ خوښ",
         "fa-AF": "محبوب خانواده"
-      }
+      },
+      "category": "groceries",
+      "rating": 4.7,
+      "reviews": 89,
+      "delivery": "2-3 Days",
+      "description": {
+        "en": "Everything you need for a family feast. Includes premium rice, lentils, spices, nuts, dried fruits, and specialty ingredients. Perfect for gatherings and celebrations.",
+        "ps": "د کورنۍ مېلمستیا لپاره هرڅه اړین. پریمیم وريجي، دال، مساله، او خشکه میوې لري.",
+        "fa-AF": "همه چیزهای لازم برای یک مهمانی خانوادگی. شامل برنج ویژه، عدس، ادویه‌جات، آجیل، میوه خشک و مواد اولیه خاص."
+      },
+      "features": [
+        "Premium quality ingredients",
+        "Perfect for family gatherings",
+        "Serves 6-8 people",
+        "Includes recipe suggestions"
+      ],
+      "inStock": true
     },
     {
       "id": "artisan-chocolate-surprise-box",
-      "price": "$28.00",
+      "price": 28.0,
+      "priceDisplay": "$28.00",
       "vendor": "Cocoa Stories",
       "image": "https://images.unsplash.com/photo-1511381939415-e44015466834?auto=format&fit=crop&w=900&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1511381939415-e44015466834?auto=format&fit=crop&w=900&q=80",
+        "https://images.unsplash.com/photo-1549007994-cb92caebd54b?auto=format&fit=crop&w=900&q=80"
+      ],
       "name": {
         "en": "Artisan Chocolate Surprise Box",
         "ps": "لاسي چاکلېټو د حیرانتیا بکس",
@@ -62,7 +130,185 @@
         "en": "Gift Ready",
         "ps": "ډالۍ ته چمتو",
         "fa-AF": "آماده هدیه"
-      }
+      },
+      "category": "gifts",
+      "rating": 4.6,
+      "reviews": 167,
+      "delivery": "Same Day",
+      "description": {
+        "en": "A delightful box of handcrafted artisan chocolates. Each piece is made with premium cocoa and unique flavors. Perfect gift for chocolate lovers.",
+        "ps": "د لاسي چاکلېټو د حیرانتیا بکس. هر ټوټه د پریمیم کوکا او منحصره فلایورونو سره جوړه شوې.",
+        "fa-AF": "جعبه‌ای از شکلات‌های دست‌ساز لذیذ. هر تکه با کاکائوی ویژه و طعم‌های منحصر به فرد ساخته شده."
+      },
+      "features": [
+        "Handcrafted chocolates",
+        "Unique flavor combinations",
+        "Beautiful gift packaging",
+        "Perfect for gifting"
+      ],
+      "inStock": true
+    },
+    {
+      "id": "organic-vegetable-bundle",
+      "price": 35.0,
+      "priceDisplay": "$35.00",
+      "vendor": "Fresh Farm Co",
+      "image": "https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=900&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=900&q=80"
+      ],
+      "name": {
+        "en": "Organic Vegetable Bundle",
+        "ps": "د ارګانیکو سبزیجاتو بنډل",
+        "fa-AF": "بسته سبزیجات ارگانیک"
+      },
+      "badge": {
+        "en": "Fresh",
+        "ps": "تازه",
+        "fa-AF": "تازه"
+      },
+      "category": "groceries",
+      "rating": 4.5,
+      "reviews": 94,
+      "delivery": "Next Day",
+      "description": {
+        "en": "Fresh organic vegetables delivered to your door. Includes seasonal veggies like tomatoes, cucumbers, peppers, carrots, and leafy greens. All organically grown.",
+        "ps": "تازه ارګانیک سبزي ستاسو په دروازه رسول کیږي. د فصلي سبزیجاتو لکه د رومي، خیار، فلفل، غاړۍ او پاڼې سبزي لري.",
+        "fa-AF": "سبزیجات ارگانیک تازه به درب منزل شما. شامل سبزیجات فصلی مانند گوجه، خیار، فلفل، هویج و سبزیجات برگ‌دار."
+      },
+      "features": [
+        "100% organic",
+        "Farm fresh",
+        "Seasonal selection",
+        "No pesticides"
+      ],
+      "inStock": true
+    },
+    {
+      "id": "premium-dates-collection",
+      "price": 24.0,
+      "priceDisplay": "$24.00",
+      "vendor": "Desert Delights",
+      "image": "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=900&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=900&q=80"
+      ],
+      "name": {
+        "en": "Premium Dates Collection",
+        "ps": "د پریمیم خرما ګانو ټولګه",
+        "fa-AF": "مجموعه خرمای ویژه"
+      },
+      "badge": {
+        "en": "Popular",
+        "ps": "مشهور",
+        "fa-AF": "محبوب"
+      },
+      "category": "groceries",
+      "rating": 4.9,
+      "reviews": 312,
+      "delivery": "Same Day",
+      "description": {
+        "en": "A selection of premium quality dates including Medjool, Ajwa, and Sukkari varieties. Perfect for snacking or as a healthy natural sweetener.",
+        "ps": "د پریمیم کیفیت خرما ګانو ټولګه. د Medjool، Ajwa، او Sukkari ډولونه لري.",
+        "fa-AF": "انتخابی از خرمای کیفیت ویژه شامل انواع Medjool، Ajwa و Sukkari. مناسب برای میان‌وعده یا شیرین‌کننده طبیعی سالم."
+      },
+      "features": [
+        "Multiple premium varieties",
+        "High in nutrients",
+        "Natural sweetener",
+        "Perfect for Ramadan"
+      ],
+      "inStock": true
+    },
+    {
+      "id": "baby-care-essentials-kit",
+      "price": 55.0,
+      "priceDisplay": "$55.00",
+      "vendor": "Tiny Tots Store",
+      "image": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=900&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=900&q=80",
+        "https://images.unsplash.com/photo-1515488042361-ee00e0ddd7e4?auto=format&fit=crop&w=900&q=80"
+      ],
+      "name": {
+        "en": "Baby Care Essentials Kit",
+        "ps": "د ماشومانو پاملرنې اساسي بسته",
+        "fa-AF": "کیت لوازم مراقبت نوزاد"
+      },
+      "badge": {
+        "en": "Trusted",
+        "ps": "باوري",
+        "fa-AF": "مورد اعتماد"
+      },
+      "category": "baby",
+      "rating": 4.8,
+      "reviews": 78,
+      "delivery": "2-3 Days",
+      "description": {
+        "en": "A complete kit for newborn care. Includes gentle baby wash, lotion, powder, diapers, wipes, and a soft towel. All products are hypoallergenic and safe for delicate skin.",
+        "ps": "د نوي زېږېدلي پاملرنې لپاره بشپړ کټ. نرم ماشوم شامپو، لوشن، پوډر، پامپر، او نرم تولۍ لري.",
+        "fa-AF": "کیت کامل برای مراقبت از نوزاد. شامل شامپو ملایم بچه، لوسیون، پودر، پوشک، دستمال مرطوب و حوله نرم."
+      },
+      "features": [
+        "Hypoallergenic products",
+        "Safe for newborn skin",
+        "Complete care kit",
+        "Trusted brands"
+      ],
+      "inStock": true
+    },
+    {
+      "id": "fresh-fruit-basket-large",
+      "price": 48.0,
+      "priceDisplay": "$48.00",
+      "vendor": "Mandawee Market",
+      "image": "https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=900&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=900&q=80"
+      ],
+      "name": {
+        "en": "Fresh Fruit Basket Large",
+        "ps": "د تازه میوو لوی بست",
+        "fa-AF": "سبد میوه تازه بزرگ"
+      },
+      "badge": {
+        "en": "Seasonal",
+        "ps": "د فصل",
+        "fa-AF": "فصلی"
+      },
+      "category": "groceries",
+      "rating": 4.7,
+      "reviews": 145,
+      "delivery": "Same Day",
+      "description": {
+        "en": "A large basket filled with seasonal fresh fruits. Includes apples, oranges, bananas, grapes, and seasonal specialties. Perfect for families or as a healthy gift.",
+        "ps": "د فصلي تازه میوو لرونکي لوی بست. مڼې، نارنج، کیلې، انگور، او فصلي تخصصات لري.",
+        "fa-AF": "سبد بزرگ پر از میوه‌های تازه فصلی. شامل سیب، پرتقال، موز، انگور و تخصصات فصلی. مناسب برای خانواده‌ها یا هدیه سالم."
+      },
+      "features": [
+        "Seasonal selection",
+        "Farm fresh fruits",
+        "Large family size",
+        "Gift ready"
+      ],
+      "inStock": true
     }
+  ],
+  "categories": [
+    { "id": "all", "label": { "en": "All", "ps": "ټول", "fa-AF": "همه" } },
+    { "id": "groceries", "label": { "en": "Groceries", "ps": "خواربار", "fa-AF": "مواد غذایی" } },
+    { "id": "gifts", "label": { "en": "Gifts", "ps": "ډالۍ", "fa-AF": "هدیه" } },
+    { "id": "flowers", "label": { "en": "Flowers", "ps": "ګلان", "fa-AF": "گل" } },
+    { "id": "baby", "label": { "en": "Baby", "ps": "ماشوم", "fa-AF": "نوزاد" } }
+  ],
+  "vendors": [
+    "All",
+    "Noor Premium Gifts",
+    "Bloom Avenue",
+    "Mandawee Market",
+    "Cocoa Stories",
+    "Fresh Farm Co",
+    "Desert Delights",
+    "Tiny Tots Store"
   ]
 }
