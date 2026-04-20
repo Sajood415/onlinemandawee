@@ -164,7 +164,6 @@ export default function Categories() {
         </motion.h2>
 
         <div className="relative mt-10 sm:mt-12">
-
           {/* Desktop Navigation arrows */}
           <div className="absolute left-0 top-22.5 z-30 hidden -translate-x-1/2 md:block lg:top-16 cursor-pointer">
             <ArrowButton
@@ -200,7 +199,7 @@ export default function Categories() {
 
           <div
             ref={scrollRef}
-            className="flex gap-0.5 overflow-x-auto px-0.5 pb-4 pt-2 scroll-smooth no-scrollbar sm:gap-1 md:px-0.5 lg:px-1"
+            className="flex gap-0 overflow-x-auto px-0.5 pb-4 pt-2 scroll-smooth no-scrollbar sm:gap-0 md:gap-0.25 lg:px-1"
           >
             {categories.map((item, index) => (
               <motion.div
@@ -215,11 +214,11 @@ export default function Categories() {
                 >
                   {/* Image container with hover border radius change */}
                   <motion.div
-                    className="relative flex items-center justify-center overflow-hidden rounded-2xl  transition-all duration-300"
+                    className="relative flex items-center justify-center overflow-hidden rounded-lg  transition-all duration-300"
                     whileHover={{ scale: 1.05 }}
                     style={{
-                      width: "120px",
-                      height: "120px",
+                      width: "140px",
+                      height: "150px",
                       margin: "0 auto",
                     }}
                   >
@@ -236,14 +235,24 @@ export default function Categories() {
                 </Link>
               </motion.div>
             ))}
-            
+
             {/* Mobile swipe indicator */}
             <div className="md:hidden flex items-center shrink-0 ml-2 pr-4">
               <div className="flex flex-col items-center gap-2 text-gray-400">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-pulse">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="animate-pulse"
+                >
                   <path d="M9 18l6-6-6-6" />
                 </svg>
-                <span className="text-[10px] font-bold uppercase tracking-wider rotate-90 whitespace-nowrap">Swipe</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider rotate-90 whitespace-nowrap">
+                  Swipe
+                </span>
               </div>
             </div>
           </div>
