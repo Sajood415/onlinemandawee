@@ -1,4 +1,4 @@
-import { HomePage } from "@/components/home/homepage";
+import { HomePage } from "@/components/home/HomePage";
 
 export default function LocaleHomepage() {
   return <HomePage />;
