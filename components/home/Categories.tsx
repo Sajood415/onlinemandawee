@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useMessages } from "next-intl";
@@ -26,78 +26,18 @@ type CategoryMessages = {
 };
 
 const categories: CategoryItem[] = [
-  {
-    id: 1,
-    image: "/categories/breakfastItems.webp",
-    slug: "breakfast",
-    fallbackTitle: "Breakfast Items",
-  },
-  {
-    id: 2,
-    image: "/categories/edibleGrocery.webp",
-    slug: "grocery",
-    fallbackTitle: "Edible Grocery",
-  },
-  {
-    id: 3,
-    image: "/categories/snackBar.webp",
-    slug: "snacks",
-    fallbackTitle: "Snack Bar",
-  },
-  {
-    id: 4,
-    image: "/categories/beverages.webp",
-    slug: "beverages",
-    fallbackTitle: "Beverages",
-  },
-  {
-    id: 5,
-    image: "/categories/fruits.webp",
-    slug: "fruits",
-    fallbackTitle: "Fruits",
-  },
-  {
-    id: 6,
-    image: "/categories/vegetables.webp",
-    slug: "vegetables",
-    fallbackTitle: "Vegetables",
-  },
-  {
-    id: 7,
-    image: "/categories/dairyProducts.webp",
-    slug: "dairy",
-    fallbackTitle: "Dairy Products",
-  },
-  {
-    id: 8,
-    image: "/categories/cleaningProducts.webp",
-    slug: "cleaning-products",
-    fallbackTitle: "Cleaning Products",
-  },
-  {
-    id: 9,
-    image: "/categories/babyCare.webp",
-    slug: "baby-care",
-    fallbackTitle: "Baby Care",
-  },
-  {
-    id: 10,
-    image: "/categories/personalCare.webp",
-    slug: "personal-care",
-    fallbackTitle: "Personal Care",
-  },
-  {
-    id: 11,
-    image: "/categories/wheyProteins.webp",
-    slug: "whey-proteins",
-    fallbackTitle: "Whey Proteins",
-  },
-  {
-    id: 12,
-    image: "/categories/stationaryItems.webp",
-    slug: "stationery-items",
-    fallbackTitle: "Stationery Items",
-  },
+  { id: 1, image: "/categories/breakfastItems.webp", slug: "breakfast", fallbackTitle: "Breakfast Items" },
+  { id: 2, image: "/categories/edibleGrocery.webp", slug: "grocery", fallbackTitle: "Edible Grocery" },
+  { id: 3, image: "/categories/snackBar.webp", slug: "snacks", fallbackTitle: "Snack Bar" },
+  { id: 4, image: "/categories/beverages.webp", slug: "beverages", fallbackTitle: "Beverages" },
+  { id: 5, image: "/categories/fruits.webp", slug: "fruits", fallbackTitle: "Fruits" },
+  { id: 6, image: "/categories/vegetables.webp", slug: "vegetables", fallbackTitle: "Vegetables" },
+  { id: 7, image: "/categories/dairyProducts.webp", slug: "dairy", fallbackTitle: "Dairy Products" },
+  { id: 8, image: "/categories/cleaningProducts.webp", slug: "cleaning-products", fallbackTitle: "Cleaning Products" },
+  { id: 9, image: "/categories/babyCare.webp", slug: "baby-care", fallbackTitle: "Baby Care" },
+  { id: 10, image: "/categories/personalCare.webp", slug: "personal-care", fallbackTitle: "Personal Care" },
+  { id: 11, image: "/categories/wheyProteins.webp", slug: "whey-proteins", fallbackTitle: "Whey Proteins" },
+  { id: 12, image: "/categories/stationaryItems.webp", slug: "stationery-items", fallbackTitle: "Stationery Items" },
 ];
 
 export default function Categories() {
@@ -106,42 +46,87 @@ export default function Categories() {
   const labels = Array.isArray(carousel?.items) ? carousel.items : [];
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const checkScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
-    }
+  const getCurrentIndex = () => {
+    const container = scrollRef.current;
+    if (!container) return 0;
+
+    const containerRect = container.getBoundingClientRect();
+    const centerX = containerRect.left + containerRect.width / 2;
+
+    let nearestIndex = 0;
+    let minDistance = Number.POSITIVE_INFINITY;
+
+    itemRefs.current.forEach((el, index) => {
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const itemCenterX = rect.left + rect.width / 2;
+      const distance = Math.abs(itemCenterX - centerX);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestIndex = index;
+      }
+    });
+
+    return nearestIndex;
   };
 
-  useEffect(() => {
-    checkScroll();
-    const el = scrollRef.current;
-    if (el) {
-      el.addEventListener("scroll", checkScroll);
-      window.addEventListener("resize", checkScroll);
-      return () => {
-        el.removeEventListener("scroll", checkScroll);
-        window.removeEventListener("resize", checkScroll);
-      };
-    }
-  }, []);
-
-  const scroll = (direction: "left" | "right") => {
-    scrollRef.current?.scrollBy({
-      left: direction === "left" ? -280 : 280,
+  const scrollToIndex = (index: number) => {
+    const total = itemRefs.current.length;
+    if (total === 0) return;
+    const normalized = (index + total) % total;
+    itemRefs.current[normalized]?.scrollIntoView({
       behavior: "smooth",
+      inline: "center",
+      block: "nearest",
     });
   };
 
+  const scroll = (direction: "left" | "right") => {
+    const currentIndex = getCurrentIndex();
+    const currentEl = itemRefs.current[currentIndex];
+    if (!currentEl) return;
+
+    const currentRect = currentEl.getBoundingClientRect();
+    const currentCenter = currentRect.left + currentRect.width / 2;
+
+    let candidateIndex = -1;
+    let bestDistance = Number.POSITIVE_INFINITY;
+
+    itemRefs.current.forEach((el, index) => {
+      if (!el || index === currentIndex) return;
+      const rect = el.getBoundingClientRect();
+      const center = rect.left + rect.width / 2;
+      const delta = center - currentCenter;
+
+      if (direction === "left" && delta < 0) {
+        const distance = Math.abs(delta);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          candidateIndex = index;
+        }
+      }
+
+      if (direction === "right" && delta > 0) {
+        const distance = Math.abs(delta);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          candidateIndex = index;
+        }
+      }
+    });
+
+    if (candidateIndex === -1) {
+      scrollToIndex(direction === "left" ? itemRefs.current.length - 1 : 0);
+      return;
+    }
+
+    scrollToIndex(candidateIndex);
+  };
+
   return (
-    <section
-      className="py-16 sm:py-20"
-      style={{ backgroundColor: "var(--background)" }}
-    >
+    <section className="py-16 sm:py-20" style={{ backgroundColor: "var(--background)" }}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.h2
           className="text-center text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl"
@@ -154,34 +139,18 @@ export default function Categories() {
 
         <div className="relative mt-10 sm:mt-12">
           <div className="absolute left-0 top-22.5 z-30 hidden -translate-x-1/2 md:block lg:top-16 cursor-pointer">
-            <ArrowButton
-              direction="left"
-              onClick={() => scroll("left")}
-              disabled={!canScrollLeft}
-            />
+            <ArrowButton direction="left" onClick={() => scroll("left")} />
           </div>
           <div className="absolute right-0 top-22.5 z-30 hidden translate-x-1/2 md:block lg:top-16 cursor-pointer">
-            <ArrowButton
-              direction="right"
-              onClick={() => scroll("right")}
-              disabled={!canScrollRight}
-            />
+            <ArrowButton direction="right" onClick={() => scroll("right")} />
           </div>
 
           <div className="flex md:hidden items-center justify-center gap-4 mt-4">
-            <ArrowButton
-              direction="left"
-              onClick={() => scroll("left")}
-              disabled={!canScrollLeft}
-            />
+            <ArrowButton direction="left" onClick={() => scroll("left")} />
             <span className="text-xs text-gray-400 font-medium">
               {carousel?.swipeHint ?? "Swipe or tap to explore"}
             </span>
-            <ArrowButton
-              direction="right"
-              onClick={() => scroll("right")}
-              disabled={!canScrollRight}
-            />
+            <ArrowButton direction="right" onClick={() => scroll("right")} />
           </div>
 
           <div
@@ -194,6 +163,9 @@ export default function Categories() {
               return (
                 <motion.div
                   key={item.id}
+                  ref={(el) => {
+                    itemRefs.current[index] = el;
+                  }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: index * 0.05 }}
@@ -205,11 +177,7 @@ export default function Categories() {
                     <motion.div
                       className="relative flex items-center justify-center overflow-hidden rounded-lg transition-all duration-300"
                       whileHover={{ scale: 1.05 }}
-                      style={{
-                        width: "140px",
-                        height: "150px",
-                        margin: "0 auto",
-                      }}
+                      style={{ width: "140px", height: "150px", margin: "0 auto" }}
                     >
                       <Image
                         src={item.image}
@@ -254,37 +222,22 @@ export default function Categories() {
 function ArrowButton({
   direction,
   onClick,
-  disabled,
 }: {
   direction: "left" | "right";
   onClick: () => void;
-  disabled?: boolean;
 }) {
   const Icon = direction === "left" ? ChevronLeft : ChevronRight;
 
   return (
     <motion.button
       onClick={onClick}
-      disabled={disabled}
       aria-label={`Scroll ${direction}`}
-      className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all ${
-        disabled
-          ? "bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed opacity-50"
-          : "bg-white text-slate-800 border-slate-200 cursor-pointer hover:bg-primary hover:text-white hover:border-slate-300"
-      }`}
-      style={{
-        boxShadow: disabled
-          ? "none"
-          : "0 4px 20px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06)",
-      }}
-      whileHover={disabled ? {} : { scale: 1.1, y: -2 }}
-      whileTap={disabled ? {} : { scale: 0.95 }}
+      className="flex h-10 w-10 items-center justify-center rounded-full border transition-all bg-white text-slate-800 border-slate-200 cursor-pointer hover:bg-primary hover:text-white hover:border-slate-300"
+      style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06)" }}
+      whileHover={{ scale: 1.1, y: -2 }}
+      whileTap={{ scale: 0.95 }}
     >
-      <Icon
-        size={20}
-        strokeWidth={disabled ? 1.5 : 2}
-        className={disabled ? "opacity-30" : ""}
-      />
+      <Icon size={20} strokeWidth={2} />
     </motion.button>
   );
 }
