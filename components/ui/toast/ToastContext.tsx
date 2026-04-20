@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, XCircle, AlertCircle, Info, X } from "lucide-react";
+import { useLocale } from "next-intl";
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
@@ -79,8 +80,13 @@ interface ToastContainerProps {
 }
 
 function ToastContainer({ toasts, onHide }: ToastContainerProps) {
+  const locale = useLocale();
+  const isRtl = locale === "ps" || locale === "fa-AF";
+
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none">
+    <div
+      className={`fixed top-4 z-[9999] flex flex-col gap-2 pointer-events-none ${isRtl ? "left-4 items-start" : "right-4 items-end"}`}
+    >
       <AnimatePresence>
         {toasts.map((toast) => (
           <ToastItem 
