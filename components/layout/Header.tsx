@@ -73,7 +73,7 @@ export default function Header() {
   const t = useTranslations("Homepage.navbar");
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuth();
-  const { itemCount } = useCart();
+  const { cart, itemCount, total, removeItem, updateQuantity, refreshCart } = useCart();
   const { currency, setCurrency } = useCurrency();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -81,6 +81,14 @@ export default function Header() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showCategoriesDropdown, setShowCategoriesDropdown] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+
+  // Refresh cart when drawer opens
+  useEffect(() => {
+    if (isCartOpen) {
+      refreshCart();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCartOpen]);
 
   // Typewriter placeholder effect
   const searchSuggestions = [
@@ -672,52 +680,108 @@ export default function Header() {
               </div>
 
               {/* Cart Content Area */}
-              <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center text-center">
-                <motion.div
-                  className="w-36 h-36 bg-gradient-to-br from-gray-50 to-gray-100 rounded-full flex items-center justify-center mb-6 ring-4 ring-gray-50 shadow-inner"
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
-                >
-                  <ShoppingBasket
-                    size={60}
-                    className="text-gray-300"
-                    strokeWidth={1.5}
-                  />
-                </motion.div>
-                <motion.h3
-                  className="text-2xl font-black text-gray-900 mb-2"
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  {itemCount > 0
-                    ? `Basket has ${itemCount} items`
-                    : "Your basket is empty"}
-                </motion.h3>
-                <motion.p
-                  className="text-gray-500 max-w-[280px] text-sm leading-relaxed mb-8"
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  Treat your family to something special! Browse our marketplace
-                  for the freshest items.
-                </motion.p>
-                <motion.div
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  <Link
-                    href="/products"
-                    onClick={() => setIsCartOpen(false)}
-                    className="inline-flex items-center gap-2 px-10 py-4 bg-primary text-white rounded-full font-bold shadow-[0_10px_30px_-5px_rgba(220,53,69,0.4)] hover:shadow-[0_15px_40px_-5px_rgba(220,53,69,0.5)] hover:-translate-y-0.5 active:scale-95 transition-all"
-                  >
-                    <Search size={18} />
-                    Browse Products
-                  </Link>
-                </motion.div>
+              <div className="flex-1 overflow-y-auto">
+                {itemCount === 0 ? (
+                  <div className="p-8 flex flex-col items-center justify-center text-center h-full">
+                    <motion.div
+                      className="w-36 h-36 bg-gradient-to-br from-gray-50 to-gray-100 rounded-full flex items-center justify-center mb-6 ring-4 ring-gray-50 shadow-inner"
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+                    >
+                      <ShoppingBasket
+                        size={60}
+                        className="text-gray-300"
+                        strokeWidth={1.5}
+                      />
+                    </motion.div>
+                    <motion.h3
+                      className="text-2xl font-black text-gray-900 mb-2"
+                      initial={{ y: 10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      Your basket is empty
+                    </motion.h3>
+                    <motion.p
+                      className="text-gray-500 max-w-[280px] text-sm leading-relaxed mb-8"
+                      initial={{ y: 10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      Treat your family to something special! Browse our marketplace
+                      for the freshest items.
+                    </motion.p>
+                    <motion.div
+                      initial={{ y: 10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                    >
+                      <Link
+                        href="/products"
+                        onClick={() => setIsCartOpen(false)}
+                        className="inline-flex items-center gap-2 px-10 py-4 bg-primary text-white rounded-full font-bold shadow-[0_10px_30px_-5px_rgba(220,53,69,0.4)] hover:shadow-[0_15px_40px_-5px_rgba(220,53,69,0.5)] hover:-translate-y-0.5 active:scale-95 transition-all"
+                      >
+                        <Search size={18} />
+                        Browse Products
+                      </Link>
+                    </motion.div>
+                  </div>
+                ) : (
+                  <div className="p-4 space-y-4">
+                    {cart.items.map((item) => (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex gap-4 p-3 bg-gray-50 rounded-xl"
+                      >
+                        <div className="relative w-20 h-20 bg-white rounded-lg overflow-hidden flex-shrink-0">
+                          <Image
+                            src={item.productImage}
+                            alt={item.productName}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {item.productName}
+                          </p>
+                          <p className="text-xs text-gray-500">{item.vendor}</p>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="font-bold text-gray-900">
+                              ${item.productPrice.toFixed(2)}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                className="w-7 h-7 bg-white rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200"
+                              >
+                                -
+                              </button>
+                              <span className="text-sm font-medium w-6 text-center">
+                                {item.quantity}
+                              </span>
+                              <button
+                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                className="w-7 h-7 bg-white rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="text-gray-400 hover:text-red-500 self-start"
+                        >
+                          <X size={18} />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Sticky Footer */}
@@ -733,7 +797,7 @@ export default function Header() {
                       Estimated Total
                     </span>
                     <span className="text-2xl font-black text-gray-900">
-                      --.--
+                      ${total.toFixed(2)}
                     </span>
                   </div>
                   <Link

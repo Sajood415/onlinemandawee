@@ -1,149 +1,141 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import productData from "@/data/product.json";
 
 type CartItem = {
   id: string;
   productId: string;
-  vendorProfileId: string;
   quantity: number;
-  currencySnapshot: string;
-  unitPriceSnapshot: number;
-  productNameSnapshot: string;
-  productImageSnapshot?: string;
+  productName: string;
+  productPrice: number;
+  productImage: string;
+  vendor: string;
 };
 
 type Cart = {
-  id: string;
-  userId: string;
-  currency: string;
   items: CartItem[];
-  createdAt: string;
-  updatedAt: string;
 };
 
 type CartContextType = {
-  cart: Cart | null;
+  cart: Cart;
   isLoading: boolean;
   itemCount: number;
   total: number;
   addItem: (productId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
-  refreshCart: () => Promise<void>;
+  refreshCart: () => void;
 };
+
+const CART_STORAGE_KEY = "onlinemandawee-cart";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+// Get product details from JSON
+const getProductDetails = (productId: string) => {
+  return productData.featuredProducts.find((p) => p.id === productId);
+};
+
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<Cart | null>(null);
+  const [cart, setCart] = useState<Cart>({ items: [] });
   const [isLoading, setIsLoading] = useState(false);
 
-  const itemCount = cart?.items.reduce((sum, item) => sum + item.quantity, 0) || 0;
-  const total = cart?.items.reduce((sum, item) => sum + (item.unitPriceSnapshot * item.quantity), 0) || 0;
-
-  const getAuthToken = () => {
-    return localStorage.getItem("accessToken");
-  };
-
-  const refreshCart = useCallback(async () => {
-    const token = getAuthToken();
-    if (!token) return;
-
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/cart", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCart(data.data);
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(CART_STORAGE_KEY);
+    if (stored) {
+      try {
+        setCart(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse cart:", e);
       }
-    } catch (error) {
-      console.error("Failed to fetch cart:", error);
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    refreshCart();
-  }, [refreshCart]);
+  const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+  const total = cart.items.reduce((sum, item) => sum + (item.productPrice * item.quantity), 0);
+
+  const refreshCart = useCallback(() => {
+    const stored = localStorage.getItem(CART_STORAGE_KEY);
+    if (stored) {
+      try {
+        setCart(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse cart:", e);
+      }
+    }
+  }, []);
 
   const addItem = async (productId: string, quantity: number) => {
-    const token = getAuthToken();
-    if (!token) throw new Error("Not authenticated");
-
     setIsLoading(true);
-    try {
-      const response = await fetch("/api/cart/items", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ productId, quantity }),
-      });
-
-      if (!response.ok) throw new Error("Failed to add item");
-
-      await refreshCart();
-    } catch (error) {
-      throw error;
-    } finally {
+    
+    const product = getProductDetails(productId);
+    if (!product) {
       setIsLoading(false);
+      throw new Error("Product not found");
     }
+
+    setCart((prev) => {
+      const existingItem = prev.items.find((item) => item.productId === productId);
+      
+      let newCart;
+      if (existingItem) {
+        // Update quantity if item exists
+        newCart = {
+          items: prev.items.map((item) =>
+            item.productId === productId
+              ? { ...item, quantity: item.quantity + quantity }
+              : item
+          ),
+        };
+      } else {
+        // Add new item
+        const newItem: CartItem = {
+          id: `${productId}-${Date.now()}`,
+          productId,
+          quantity,
+          productName: product.name.en,
+          productPrice: product.price,
+          productImage: product.image,
+          vendor: product.vendor,
+        };
+        newCart = {
+          items: [...prev.items, newItem],
+        };
+      }
+      
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newCart));
+      return newCart;
+    });
+
+    setIsLoading(false);
   };
 
   const removeItem = async (itemId: string) => {
-    const token = getAuthToken();
-    if (!token) throw new Error("Not authenticated");
-
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/cart/items/${itemId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error("Failed to remove item");
-
-      await refreshCart();
-    } catch (error) {
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+    setCart((prev) => {
+      const newCart = {
+        items: prev.items.filter((item) => item.id !== itemId),
+      };
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newCart));
+      return newCart;
+    });
   };
 
   const updateQuantity = async (itemId: string, quantity: number) => {
-    const token = getAuthToken();
-    if (!token) throw new Error("Not authenticated");
-
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/cart/items/${itemId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ quantity }),
-      });
-
-      if (!response.ok) throw new Error("Failed to update quantity");
-
-      await refreshCart();
-    } catch (error) {
-      throw error;
-    } finally {
-      setIsLoading(false);
+    if (quantity <= 0) {
+      return removeItem(itemId);
     }
+
+    setCart((prev) => {
+      const newCart = {
+        items: prev.items.map((item) =>
+          item.id === itemId ? { ...item, quantity } : item
+        ),
+      };
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newCart));
+      return newCart;
+    });
   };
 
   return (

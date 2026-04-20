@@ -17,6 +17,7 @@ import {
   Filter,
 } from "lucide-react";
 import productData from "@/data/product.json";
+import { useCart } from "@/store/cart-context";
 
 // Import data from JSON file
 const allProducts = productData.featuredProducts;
@@ -555,6 +556,23 @@ function ProductCard({
   locale: "en" | "ps" | "fa-AF";
 }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const { addItem, itemCount } = useCart();
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setIsAdding(true);
+    try {
+      await addItem(product.id, 1);
+      alert(locale === "en" ? "Added to cart!" : locale === "ps" ? "کارټ ته اضافه شو!" : "به سبد اضافه شد!");
+    } catch (error) {
+      alert(locale === "en" ? "Failed to add to cart" : locale === "ps" ? "کارټ ته اضافه کول ناکام شول" : "افزودن به سبد ناموفق بود");
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   return (
     <div className="group relative">
@@ -602,13 +620,15 @@ function ProductCard({
         {/* Add to Cart Button - appears on hover at bottom */}
         <div className="absolute bottom-3 left-3 right-3 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200">
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            className="w-full py-2.5 bg-primary text-white text-sm font-bold rounded-full hover:bg-primary/90 transition-colors shadow-md flex items-center justify-center gap-2"
+            onClick={handleAddToCart}
+            disabled={isAdding}
+            className="w-full py-2.5 bg-primary text-white text-sm font-bold rounded-full hover:bg-primary/90 transition-colors shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            <ShoppingCart className="h-4 w-4" />
+            {isAdding ? (
+              <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+            ) : (
+              <ShoppingCart className="h-4 w-4" />
+            )}
             {locale === "en"
               ? "Add to cart"
               : locale === "ps"

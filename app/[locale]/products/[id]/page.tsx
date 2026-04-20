@@ -19,6 +19,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import productData from "@/data/product.json";
+import { useCart } from "@/store/cart-context";
 
 // Import data from JSON file
 const allProducts = productData.featuredProducts;
@@ -33,6 +34,22 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const { addItem } = useCart();
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+
+    setIsAdding(true);
+    try {
+      await addItem(product.id, quantity);
+      alert(locale === "en" ? `Added ${quantity} item(s) to cart!` : locale === "ps" ? `کارټ ته ${quantity} توکي اضافه شول!` : `${quantity} مورد به سبد اضافه شد!`);
+    } catch (error) {
+      alert(locale === "en" ? "Failed to add to cart" : locale === "ps" ? "کارټ ته اضافه کول ناکام شول" : "افزودن به سبد ناموفق بود");
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   if (!product) {
     return (
@@ -297,8 +314,16 @@ export default function ProductDetailPage() {
 
             {/* Action Buttons - Walmart Style */}
             <div className="flex gap-3 mb-6">
-              <button className="flex-1 py-3.5 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
-                <ShoppingCart className="h-5 w-5" />
+              <button
+                onClick={handleAddToCart}
+                disabled={isAdding}
+                className="flex-1 py-3.5 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isAdding ? (
+                  <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                ) : (
+                  <ShoppingCart className="h-5 w-5" />
+                )}
                 {locale === "en"
                   ? "Add to cart"
                   : locale === "ps"
