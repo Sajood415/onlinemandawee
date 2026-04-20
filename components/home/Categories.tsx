@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useMessages } from "next-intl";
@@ -47,35 +47,14 @@ export default function Categories() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  const getCurrentIndex = () => {
-    const container = scrollRef.current;
-    if (!container) return 0;
-
-    const containerRect = container.getBoundingClientRect();
-    const centerX = containerRect.left + containerRect.width / 2;
-
-    let nearestIndex = 0;
-    let minDistance = Number.POSITIVE_INFINITY;
-
-    itemRefs.current.forEach((el, index) => {
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const itemCenterX = rect.left + rect.width / 2;
-      const distance = Math.abs(itemCenterX - centerX);
-      if (distance < minDistance) {
-        minDistance = distance;
-        nearestIndex = index;
-      }
-    });
-
-    return nearestIndex;
-  };
-
-  const scrollToIndex = (index: number) => {
-    const total = itemRefs.current.length;
+  const scrollToIndex = (targetIndex: number) => {
+    const total = categories.length;
     if (total === 0) return;
-    const normalized = (index + total) % total;
+
+    const normalized = (targetIndex + total) % total;
+    setCurrentIndex(normalized);
     itemRefs.current[normalized]?.scrollIntoView({
       behavior: "smooth",
       inline: "center",
@@ -83,47 +62,48 @@ export default function Categories() {
     });
   };
 
-  const scroll = (direction: "left" | "right") => {
-    const currentIndex = getCurrentIndex();
-    const currentEl = itemRefs.current[currentIndex];
-    if (!currentEl) return;
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
 
-    const currentRect = currentEl.getBoundingClientRect();
-    const currentCenter = currentRect.left + currentRect.width / 2;
+    let frame = 0;
 
-    let candidateIndex = -1;
-    let bestDistance = Number.POSITIVE_INFINITY;
+    const syncCurrentFromScroll = () => {
+      const containerRect = container.getBoundingClientRect();
+      const viewportCenter = containerRect.left + containerRect.width / 2;
 
-    itemRefs.current.forEach((el, index) => {
-      if (!el || index === currentIndex) return;
-      const rect = el.getBoundingClientRect();
-      const center = rect.left + rect.width / 2;
-      const delta = center - currentCenter;
+      let bestIndex = 0;
+      let bestDistance = Number.POSITIVE_INFINITY;
 
-      if (direction === "left" && delta < 0) {
-        const distance = Math.abs(delta);
+      itemRefs.current.forEach((item, index) => {
+        if (!item) return;
+        const rect = item.getBoundingClientRect();
+        const center = rect.left + rect.width / 2;
+        const distance = Math.abs(center - viewportCenter);
         if (distance < bestDistance) {
           bestDistance = distance;
-          candidateIndex = index;
+          bestIndex = index;
         }
-      }
+      });
 
-      if (direction === "right" && delta > 0) {
-        const distance = Math.abs(delta);
-        if (distance < bestDistance) {
-          bestDistance = distance;
-          candidateIndex = index;
-        }
-      }
-    });
+      setCurrentIndex(bestIndex);
+    };
 
-    if (candidateIndex === -1) {
-      scrollToIndex(direction === "left" ? itemRefs.current.length - 1 : 0);
-      return;
-    }
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(syncCurrentFromScroll);
+    };
 
-    scrollToIndex(candidateIndex);
-  };
+    syncCurrentFromScroll();
+    container.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", syncCurrentFromScroll);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      container.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", syncCurrentFromScroll);
+    };
+  }, []);
 
   return (
     <section className="py-16 sm:py-20" style={{ backgroundColor: "var(--background)" }}>
@@ -139,18 +119,18 @@ export default function Categories() {
 
         <div className="relative mt-10 sm:mt-12">
           <div className="absolute left-0 top-22.5 z-30 hidden -translate-x-1/2 md:block lg:top-16 cursor-pointer">
-            <ArrowButton direction="left" onClick={() => scroll("left")} />
+            <ArrowButton direction="left" onClick={() => scrollToIndex(currentIndex - 1)} />
           </div>
           <div className="absolute right-0 top-22.5 z-30 hidden translate-x-1/2 md:block lg:top-16 cursor-pointer">
-            <ArrowButton direction="right" onClick={() => scroll("right")} />
+            <ArrowButton direction="right" onClick={() => scrollToIndex(currentIndex + 1)} />
           </div>
 
           <div className="flex md:hidden items-center justify-center gap-4 mt-4">
-            <ArrowButton direction="left" onClick={() => scroll("left")} />
+            <ArrowButton direction="left" onClick={() => scrollToIndex(currentIndex - 1)} />
             <span className="text-xs text-gray-400 font-medium">
               {carousel?.swipeHint ?? "Swipe or tap to explore"}
             </span>
-            <ArrowButton direction="right" onClick={() => scroll("right")} />
+            <ArrowButton direction="right" onClick={() => scrollToIndex(currentIndex + 1)} />
           </div>
 
           <div
