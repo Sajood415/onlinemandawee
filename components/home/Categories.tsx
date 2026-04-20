@@ -123,7 +123,8 @@ export default function Categories() {
     if (scrollRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
       setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+      // Disable right button when scrolled to the end (with 1px tolerance)
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
     }
   };
 
@@ -163,9 +164,6 @@ export default function Categories() {
         </motion.h2>
 
         <div className="relative mt-10 sm:mt-12">
-          {/* Gradient fade masks */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-20 bg-linear-to-r from-white to-transparent hidden md:block" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-20 bg-linear-to-l from-white to-transparent hidden md:block" />
 
           {/* Desktop Navigation arrows */}
           <div className="absolute left-0 top-22.5 z-30 hidden -translate-x-1/2 md:block lg:top-16 cursor-pointer">
@@ -202,7 +200,7 @@ export default function Categories() {
 
           <div
             ref={scrollRef}
-            className="flex gap-6 overflow-x-auto px-4 pb-4 pt-2 scroll-smooth no-scrollbar sm:gap-8 md:px-4 lg:px-8"
+            className="flex gap-0.5 overflow-x-auto px-0.5 pb-4 pt-2 scroll-smooth no-scrollbar sm:gap-1 md:px-0.5 lg:px-1"
           >
             {categories.map((item, index) => (
               <motion.div
@@ -213,15 +211,15 @@ export default function Categories() {
               >
                 <Link
                   href={`/category/${item.slug}`}
-                  className="group block min-w-30 shrink-0 text-center sm:min-w-35 lg:min-w-40"
+                  className="group block min-w-32 shrink-0 text-center sm:min-w-36 lg:min-w-40"
                 >
                   {/* Image container with hover border radius change */}
                   <motion.div
                     className="relative flex items-center justify-center overflow-hidden rounded-2xl  transition-all duration-300"
                     whileHover={{ scale: 1.05 }}
                     style={{
-                      width: "130px",
-                      height: "130px",
+                      width: "120px",
+                      height: "120px",
                       margin: "0 auto",
                     }}
                   >
@@ -232,7 +230,7 @@ export default function Categories() {
                       className="object-cover p-2 transition-transform duration-300 group-hover:scale-110"
                     />
                   </motion.div>
-                  <p className="mt-4 text-xs font-bold uppercase tracking-widest text-slate-900 sm:text-sm">
+                  <p className="mt-2 text-[8px] font-bold uppercase tracking-widest text-slate-900 sm:text-[9px]">
                     {item.title}
                   </p>
                 </Link>
@@ -271,10 +269,10 @@ function ArrowButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={`Scroll ${direction}`}
-      className={`flex h-10 w-10 cursor-pointer hover:bg-primary hover:text-white items-center justify-center rounded-full border transition-all ${
+      className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all ${
         disabled
-          ? "bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed"
-          : "bg-white text-slate-800 border-slate-200 hover:border-slate-300"
+          ? "bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed opacity-50"
+          : "bg-white text-slate-800 border-slate-200 cursor-pointer hover:bg-primary hover:text-white hover:border-slate-300"
       }`}
       style={{
         boxShadow: disabled
@@ -286,8 +284,8 @@ function ArrowButton({
     >
       <Icon
         size={20}
-        strokeWidth={2}
-        className={disabled ? "opacity-40" : ""}
+        strokeWidth={disabled ? 1.5 : 2}
+        className={disabled ? "opacity-30" : ""}
       />
     </motion.button>
   );
