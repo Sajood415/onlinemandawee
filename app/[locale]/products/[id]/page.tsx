@@ -90,6 +90,7 @@ const localizeDelivery = (delivery: string, locale: "en" | "ps" | "fa-AF") => {
 export default function ProductDetailPage() {
   const params = useParams();
   const locale = useLocale() as "en" | "ps" | "fa-AF";
+  const isRtl = locale !== "en";
   const productId = params.id as string;
 
   const product = allProducts.find((p) => p.id === productId);
@@ -132,7 +133,7 @@ export default function ProductDetailPage() {
             href="/products"
             className="text-primary hover:underline inline-flex items-center gap-1 mt-2"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
             {locale === "en"
               ? "Back to Products"
               : locale === "ps"
@@ -149,7 +150,7 @@ export default function ProductDetailPage() {
     .slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-white">
       {/* Breadcrumb */}
       <div className="bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -160,7 +161,7 @@ export default function ProductDetailPage() {
             >
               {locale === "en" ? "Home" : locale === "ps" ? "کور" : "خانه"}
             </Link>
-            <ChevronRight className="h-4 w-4 text-gray-400" />
+            <ChevronRight className={`h-4 w-4 text-gray-400 ${isRtl ? "rotate-180" : ""}`} />
             <Link
               href="/products"
               className="text-gray-500 hover:text-primary hover:underline"
@@ -171,7 +172,7 @@ export default function ProductDetailPage() {
                   ? "محصولات"
                   : "محصولات"}
             </Link>
-            <ChevronRight className="h-4 w-4 text-gray-400" />
+            <ChevronRight className={`h-4 w-4 text-gray-400 ${isRtl ? "rotate-180" : ""}`} />
             <span className="text-gray-900 font-medium truncate max-w-[9rem] sm:max-w-xs">
               {product.name[locale]}
             </span>
@@ -271,7 +272,7 @@ export default function ProductDetailPage() {
             >
               <Store className="h-4 w-4" />
               <span><bdi dir="ltr">{localizeVendor(product.vendor, locale)}</bdi></span>
-              <ChevronRight className="h-3 w-3" />
+              <ChevronRight className={`h-3 w-3 ${isRtl ? "rotate-180" : ""}`} />
             </Link>
 
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3 leading-tight">
@@ -300,7 +301,7 @@ export default function ProductDetailPage() {
                     : "نقد"}
                 )
               </span>
-              <span className="text-sm text-green-600 font-medium ml-2">
+              <span className={`text-sm text-green-600 font-medium ${isRtl ? "mr-2" : "ml-2"}`}>
                 {locale === "en"
                   ? "In stock"
                   : locale === "ps"
@@ -358,7 +359,9 @@ export default function ProductDetailPage() {
                 <div className="flex items-center border border-gray-300 rounded-full bg-white">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-4 py-2 hover:bg-gray-100 transition-colors rounded-l-full text-lg font-medium"
+                    className={`px-4 py-2 hover:bg-gray-100 transition-colors text-lg font-medium ${
+                      isRtl ? "rounded-r-full" : "rounded-l-full"
+                    }`}
                   >
                     -
                   </button>
@@ -367,7 +370,9 @@ export default function ProductDetailPage() {
                   </span>
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    className="px-4 py-2 hover:bg-gray-100 transition-colors rounded-r-full text-lg font-medium"
+                    className={`px-4 py-2 hover:bg-gray-100 transition-colors text-lg font-medium ${
+                      isRtl ? "rounded-l-full" : "rounded-r-full"
+                    }`}
                   >
                     +
                   </button>

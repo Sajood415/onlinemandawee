@@ -124,6 +124,7 @@ export default function Footer() {
   const locale = useLocale();
   const safeLocale: SupportedLocale =
     locale === "ps" || locale === "fa-AF" ? locale : "en";
+  const isRtl = safeLocale !== "en";
   const copy = footerUiCopy[safeLocale];
   const t = useTranslations("Homepage.footer");
   const [email, setEmail] = useState("");
@@ -146,12 +147,15 @@ export default function Footer() {
   );
 
   return (
-    <footer className="bg-footer-bg text-slate-700 border-t border-slate-200">
+    <footer
+      dir={isRtl ? "rtl" : "ltr"}
+      className="bg-footer-bg text-slate-700 border-t border-slate-200"
+    >
       {/* ── NEWSLETTER BANNER ──────────────────────────────────────────── */}
       <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div>
+            <div className={isRtl ? "text-right" : "text-left"}>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-1">
                 {copy.newsletterEyebrow}
               </p>
@@ -165,7 +169,7 @@ export default function Footer() {
 
             <form
               onSubmit={handleSubscribe}
-              className="relative w-full max-w-md"
+              className={`relative w-full max-w-md ${isRtl ? "text-right" : "text-left"}`}
             >
               {subscribed ? (
                 <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-6 py-4 text-emerald-700 font-semibold">
@@ -202,7 +206,11 @@ export default function Footer() {
 
       {/* ── MAIN GRID ──────────────────────────────────────────────────── */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid gap-12 lg:grid-cols-[2fr_1fr_1fr_1fr]">
+        <div
+          className={`grid gap-12 lg:grid-cols-[2fr_1fr_1fr_1fr] ${
+            isRtl ? "text-right" : "text-left"
+          }`}
+        >
           {/* BRAND */}
           <div className="space-y-7">
             <Link href="/" className="inline-block">
@@ -215,7 +223,11 @@ export default function Footer() {
               />
             </Link>
 
-            <p className="text-sm leading-relaxed text-slate-500 max-w-xs">
+            <p
+              className={`text-sm leading-relaxed text-slate-500 max-w-xs ${
+                isRtl ? "ml-auto" : ""
+              }`}
+            >
               {t("description")}
             </p>
 
@@ -223,7 +235,7 @@ export default function Footer() {
             <div className="space-y-3">
               <a
                 href="tel:+93799899856"
-                className="flex items-center gap-3 group cursor-pointer"
+                className={`flex items-center gap-3 group cursor-pointer ${isRtl ? "text-right" : ""}`}
               >
                 <div className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 group-hover:border-primary/40 group-hover:bg-primary/5 transition-all text-slate-500 group-hover:text-primary shadow-sm">
                   <Phone size={15} />
@@ -233,14 +245,14 @@ export default function Footer() {
                     {copy.talkToUs}
                   </p>
                   <p className="text-sm font-semibold text-slate-700 group-hover:text-primary transition-colors">
-                    (+93) 799 899856
+                    <bdi>(+93) 799 899856</bdi>
                   </p>
                 </div>
               </a>
 
               <a
                 href="mailto:info@onlinemandawee.com"
-                className="flex items-center gap-3 group cursor-pointer"
+                className={`flex items-center gap-3 group cursor-pointer ${isRtl ? "text-right" : ""}`}
               >
                 <div className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 group-hover:border-primary/40 group-hover:bg-primary/5 transition-all text-slate-500 group-hover:text-primary shadow-sm">
                   <Mail size={15} />
@@ -250,14 +262,14 @@ export default function Footer() {
                     {copy.emailLabel}
                   </p>
                   <p className="text-sm font-semibold text-slate-700 group-hover:text-primary transition-colors">
-                    info@onlinemandawee.com
+                    <bdi>info@onlinemandawee.com</bdi>
                   </p>
                 </div>
               </a>
             </div>
 
             {/* Socials */}
-            <div className="flex gap-3 pt-1">
+            <div className={`flex gap-3 pt-1 ${isRtl ? "ml-auto w-fit" : ""}`}>
               {[
                 {
                   href: "https://facebook.com/onlinemandawee",
@@ -325,7 +337,11 @@ export default function Footer() {
             {t("copyright")}
           </p>
 
-          <div className="flex items-center gap-6 order-1 sm:order-2">
+          <div
+            className={`flex items-center gap-6 order-1 sm:order-2 ${
+              isRtl ? "flex-row-reverse" : ""
+            }`}
+          >
             <div className="flex gap-5 text-xs text-slate-500">
               <Link
                 href="/privacy"
