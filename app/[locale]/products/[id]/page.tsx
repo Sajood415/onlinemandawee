@@ -57,6 +57,114 @@ const featureTranslations = {
     ps: "همدا ورځ تحویل موجود",
     "fa-AF": "تحویل همان روز موجود",
   },
+  "24 fresh red roses": {
+    ps: "۲۴ تازه سره ګلابونه",
+    "fa-AF": "۲۴ رز سرخ تازه",
+  },
+  "Hand-tied bouquet": {
+    ps: "په لاس تړل شوی ګیډۍ",
+    "fa-AF": "دسته‌گل دست‌بافت",
+  },
+  "Includes free greeting card": {
+    ps: "وړیا مبارکي کارت پکې شامل دی",
+    "fa-AF": "کارت تبریکی رایگان شامل است",
+  },
+  "Same day delivery": {
+    ps: "همدا ورځ تحویل",
+    "fa-AF": "تحویل همان روز",
+  },
+  "Premium quality ingredients": {
+    ps: "پریمیم کیفیت لرونکي اجزا",
+    "fa-AF": "مواد اولیه باکیفیت ممتاز",
+  },
+  "Perfect for family gatherings": {
+    ps: "د کورنۍ غونډو لپاره مناسب",
+    "fa-AF": "مناسب برای گردهمایی‌های خانوادگی",
+  },
+  "Serves 6-8 people": {
+    ps: "د ۶-۸ کسانو لپاره بسنه کوي",
+    "fa-AF": "برای ۶ تا ۸ نفر کافی است",
+  },
+  "Includes recipe suggestions": {
+    ps: "د پخلي وړاندیزونه پکې شامل دي",
+    "fa-AF": "پیشنهادهای دستور پخت شامل است",
+  },
+  "Handcrafted chocolates": {
+    ps: "لاسي جوړ شوي چاکلېټونه",
+    "fa-AF": "شکلات‌های دست‌ساز",
+  },
+  "Unique flavor combinations": {
+    ps: "د خوند ځانګړې ګډونې",
+    "fa-AF": "ترکیب‌های طعم منحصربه‌فرد",
+  },
+  "Beautiful gift packaging": {
+    ps: "ښکلې د ډالۍ بسته‌بندي",
+    "fa-AF": "بسته‌بندی زیبای هدیه",
+  },
+  "Perfect for gifting": {
+    ps: "د ډالۍ لپاره مناسب",
+    "fa-AF": "مناسب برای هدیه دادن",
+  },
+  "100% organic": {
+    ps: "۱۰۰٪ ارګانیک",
+    "fa-AF": "۱۰۰٪ ارگانیک",
+  },
+  "Farm fresh": {
+    ps: "د فارم څخه تازه",
+    "fa-AF": "تازه از فارم",
+  },
+  "Seasonal selection": {
+    ps: "فصلي انتخاب",
+    "fa-AF": "انتخاب فصلی",
+  },
+  "No pesticides": {
+    ps: "بې له زهرجنو دواوو",
+    "fa-AF": "بدون آفت‌کش",
+  },
+  "Multiple premium varieties": {
+    ps: "د پریمیم څو ډولونه",
+    "fa-AF": "چندین نوع ممتاز",
+  },
+  "High in nutrients": {
+    ps: "په مغذي موادو بډایه",
+    "fa-AF": "سرشار از مواد مغذی",
+  },
+  "Natural sweetener": {
+    ps: "طبیعي خوږوونکی",
+    "fa-AF": "شیرین‌کننده طبیعی",
+  },
+  "Perfect for Ramadan": {
+    ps: "د رمضان لپاره مناسب",
+    "fa-AF": "مناسب برای رمضان",
+  },
+  "Hypoallergenic products": {
+    ps: "هایپو الرجنیک محصولات",
+    "fa-AF": "محصولات ضد حساسیت",
+  },
+  "Safe for newborn skin": {
+    ps: "د نوي زیږیدلي پوست لپاره خوندي",
+    "fa-AF": "ایمن برای پوست نوزاد",
+  },
+  "Complete care kit": {
+    ps: "بشپړ د پاملرنې کټ",
+    "fa-AF": "کیت کامل مراقبت",
+  },
+  "Trusted brands": {
+    ps: "باوري برانډونه",
+    "fa-AF": "برندهای مورد اعتماد",
+  },
+  "Farm fresh fruits": {
+    ps: "د فارم څخه تازه مېوې",
+    "fa-AF": "میوه‌های تازه فارم",
+  },
+  "Large family size": {
+    ps: "د کورنۍ لویه اندازه",
+    "fa-AF": "اندازه بزرگ خانوادگی",
+  },
+  "Gift ready": {
+    ps: "ډالۍ ته چمتو",
+    "fa-AF": "آماده هدیه",
+  },
 } as const;
 
 const localizeFeature = (feature: string, locale: "en" | "ps" | "fa-AF") => {
