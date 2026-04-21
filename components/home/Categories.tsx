@@ -26,18 +26,78 @@ type CategoryMessages = {
 };
 
 const categories: CategoryItem[] = [
-  { id: 1, image: "/categories/breakfastItems.webp", slug: "breakfast", fallbackTitle: "Breakfast Items" },
-  { id: 2, image: "/categories/edibleGrocery.webp", slug: "grocery", fallbackTitle: "Edible Grocery" },
-  { id: 3, image: "/categories/snackBar.webp", slug: "snacks", fallbackTitle: "Snack Bar" },
-  { id: 4, image: "/categories/beverages.webp", slug: "beverages", fallbackTitle: "Beverages" },
-  { id: 5, image: "/categories/fruits.webp", slug: "fruits", fallbackTitle: "Fruits" },
-  { id: 6, image: "/categories/vegetables.webp", slug: "vegetables", fallbackTitle: "Vegetables" },
-  { id: 7, image: "/categories/dairyProducts.webp", slug: "dairy", fallbackTitle: "Dairy Products" },
-  { id: 8, image: "/categories/cleaningProducts.webp", slug: "cleaning-products", fallbackTitle: "Cleaning Products" },
-  { id: 9, image: "/categories/babyCare.webp", slug: "baby-care", fallbackTitle: "Baby Care" },
-  { id: 10, image: "/categories/personalCare.webp", slug: "personal-care", fallbackTitle: "Personal Care" },
-  { id: 11, image: "/categories/wheyProteins.webp", slug: "whey-proteins", fallbackTitle: "Whey Proteins" },
-  { id: 12, image: "/categories/stationaryItems.webp", slug: "stationery-items", fallbackTitle: "Stationery Items" },
+  {
+    id: 1,
+    image: "/categories/breakfastItems.webp",
+    slug: "breakfast",
+    fallbackTitle: "Breakfast Items",
+  },
+  {
+    id: 2,
+    image: "/categories/edibleGrocery.webp",
+    slug: "grocery",
+    fallbackTitle: "Edible Grocery",
+  },
+  {
+    id: 3,
+    image: "/categories/snackBar.webp",
+    slug: "snacks",
+    fallbackTitle: "Snack Bar",
+  },
+  {
+    id: 4,
+    image: "/categories/beverages.webp",
+    slug: "beverages",
+    fallbackTitle: "Beverages",
+  },
+  {
+    id: 5,
+    image: "/categories/fruits.webp",
+    slug: "fruits",
+    fallbackTitle: "Fruits",
+  },
+  {
+    id: 6,
+    image: "/categories/vegetables.webp",
+    slug: "vegetables",
+    fallbackTitle: "Vegetables",
+  },
+  {
+    id: 7,
+    image: "/categories/dairyProducts.webp",
+    slug: "dairy",
+    fallbackTitle: "Dairy Products",
+  },
+  {
+    id: 8,
+    image: "/categories/cleaningProducts.webp",
+    slug: "cleaning-products",
+    fallbackTitle: "Cleaning Products",
+  },
+  {
+    id: 9,
+    image: "/categories/babyCare.webp",
+    slug: "baby-care",
+    fallbackTitle: "Baby Care",
+  },
+  {
+    id: 10,
+    image: "/categories/personalCare.webp",
+    slug: "personal-care",
+    fallbackTitle: "Personal Care",
+  },
+  {
+    id: 11,
+    image: "/categories/wheyProteins.webp",
+    slug: "whey-proteins",
+    fallbackTitle: "Whey Proteins",
+  },
+  {
+    id: 12,
+    image: "/categories/stationaryItems.webp",
+    slug: "stationery-items",
+    fallbackTitle: "Stationery Items",
+  },
 ];
 
 export default function Categories() {
@@ -106,7 +166,10 @@ export default function Categories() {
   }, []);
 
   return (
-    <section className="py-16 sm:py-20" style={{ backgroundColor: "var(--background)" }}>
+    <section
+      className="py-16 sm:py-20"
+      style={{ backgroundColor: "var(--background)" }}
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.h2
           className="text-center text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl"
@@ -117,20 +180,43 @@ export default function Categories() {
           {carousel?.title ?? "Shop By Category"}
         </motion.h2>
 
-        <div className="relative mt-10 sm:mt-12">
-          <div className="absolute left-0 top-22.5 z-30 hidden -translate-x-1/2 md:block lg:top-16 cursor-pointer">
-            <ArrowButton direction="left" onClick={() => scrollToIndex(currentIndex - 1)} />
-          </div>
-          <div className="absolute right-0 top-22.5 z-30 hidden translate-x-1/2 md:block lg:top-16 cursor-pointer">
-            <ArrowButton direction="right" onClick={() => scrollToIndex(currentIndex + 1)} />
+        {/* ✅ KEY FIX: added px-10 md:px-12 to create equal space on both sides for the arrows */}
+        <div className="relative mt-10 sm:mt-12 px-10 md:px-12">
+          {/* ✅ Left arrow — positioned inside the px padding, fully visible and symmetric */}
+          <div
+            className="absolute left-0 top-[43%] z-30 hidden -translate-y-1/2 md:flex items-center justify-center cursor-pointer"
+            style={{ width: "48px" }}
+          >
+            <ArrowButton
+              direction="left"
+              onClick={() => scrollToIndex(currentIndex - 1)}
+            />
           </div>
 
+          {/* ✅ Right arrow — same width and positioning as left arrow */}
+          <div
+            className="absolute right-0 top-[43%] z-30 hidden -translate-y-1/2 md:flex items-center justify-center cursor-pointer"
+            style={{ width: "48px" }}
+          >
+            <ArrowButton
+              direction="right"
+              onClick={() => scrollToIndex(currentIndex + 1)}
+            />
+          </div>
+
+          {/* Mobile arrows */}
           <div className="flex md:hidden items-center justify-center gap-4 mt-4">
-            <ArrowButton direction="left" onClick={() => scrollToIndex(currentIndex - 1)} />
+            <ArrowButton
+              direction="left"
+              onClick={() => scrollToIndex(currentIndex - 1)}
+            />
             <span className="text-xs text-gray-400 font-medium">
               {carousel?.swipeHint ?? "Swipe or tap to explore"}
             </span>
-            <ArrowButton direction="right" onClick={() => scrollToIndex(currentIndex + 1)} />
+            <ArrowButton
+              direction="right"
+              onClick={() => scrollToIndex(currentIndex + 1)}
+            />
           </div>
 
           <div
@@ -157,7 +243,11 @@ export default function Categories() {
                     <motion.div
                       className="relative flex items-center justify-center overflow-hidden rounded-lg transition-all duration-300"
                       whileHover={{ scale: 1.05 }}
-                      style={{ width: "140px", height: "150px", margin: "0 auto" }}
+                      style={{
+                        width: "140px",
+                        height: "150px",
+                        margin: "0 auto",
+                      }}
                     >
                       <Image
                         src={item.image}
@@ -213,7 +303,9 @@ function ArrowButton({
       onClick={onClick}
       aria-label={`Scroll ${direction}`}
       className="flex h-10 w-10 items-center justify-center rounded-full border transition-all bg-white text-slate-800 border-slate-200 cursor-pointer hover:bg-primary hover:text-white hover:border-slate-300"
-      style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06)" }}
+      style={{
+        boxShadow: "0 4px 20px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06)",
+      }}
       whileHover={{ scale: 1.1, y: -2 }}
       whileTap={{ scale: 0.95 }}
     >
