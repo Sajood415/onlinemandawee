@@ -343,31 +343,34 @@ export default function HeroSection() {
       <div className="relative">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="relative rounded-2xl overflow-hidden shadow-lg">
-            <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+            <div
+              dir="ltr"
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex items-center gap-1.5 sm:gap-2"
+            >
               <button
                 onClick={prevSlide}
-                className="w-8 h-8 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105 border border-gray-100"
+                className="w-7 h-7 sm:w-8 sm:h-8 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105 border border-gray-100"
                 aria-label={ariaCopy.previous}
               >
-                <ChevronLeft size={20} className="text-primary" />
+                <ChevronLeft className="text-primary h-4 w-4 sm:h-5 sm:w-5" />
               </button>
               <button
                 onClick={toggleAutoPlay}
-                className="w-8 h-8 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105 border border-gray-100"
+                className="w-7 h-7 sm:w-8 sm:h-8 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105 border border-gray-100"
                 aria-label={isAutoPlaying ? ariaCopy.pause : ariaCopy.play}
               >
                 {isAutoPlaying ? (
-                  <Pause size={18} className="text-primary" />
+                  <Pause className="text-primary h-[15px] w-[15px] sm:h-[18px] sm:w-[18px]" />
                 ) : (
-                  <Play size={18} className="text-primary ml-0.5" />
+                  <Play className="text-primary ml-0.5 h-[15px] w-[15px] sm:h-[18px] sm:w-[18px]" />
                 )}
               </button>
               <button
                 onClick={nextSlide}
-                className="w-8 h-8 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105 border border-gray-100"
+                className="w-7 h-7 sm:w-8 sm:h-8 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105 border border-gray-100"
                 aria-label={ariaCopy.next}
               >
-                <ChevronRight size={20} className="text-primary" />
+                <ChevronRight className="text-primary h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             </div>
 
@@ -396,7 +399,7 @@ export default function HeroSection() {
                   </div>
 
                   <div
-                    className={`relative z-10 h-full flex items-center px-6 md:px-12 lg:px-16 py-10 ${
+                    className={`relative z-10 h-full flex items-center px-4 sm:px-6 md:px-12 lg:px-16 py-8 sm:py-10 ${
                       currentSlideData.textPosition === "center"
                         ? "justify-center text-center"
                         : currentSlideData.textPosition === "right"
@@ -404,7 +407,7 @@ export default function HeroSection() {
                           : "justify-start text-left"
                     }`}
                   >
-                    <div className="max-w-md">
+                    <div className="max-w-[85%] sm:max-w-md">
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -468,7 +471,7 @@ export default function HeroSection() {
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             {trustBadges.map((badge, index) => {
               const Icon = [Truck, Star, Clock, Sparkles][index] ?? Truck;
               return (
@@ -477,14 +480,14 @@ export default function HeroSection() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.7 + index * 0.1 }}
-                  className="flex items-center gap-3 bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                  className="flex items-center gap-2 sm:gap-3 bg-white rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow"
                 >
-                  <div className="w-10 h-10 bg-[#e6f1fc] rounded-full flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#e6f1fc] rounded-full flex items-center justify-center shrink-0">
                     <Icon size={20} className="text-primary" />
                   </div>
                   <div>
-                    <p className="font-bold text-[#171717] text-sm">{badge.text}</p>
-                    <p className="text-[#74767c] text-xs">{badge.subtext}</p>
+                    <p className="font-bold text-[#171717] text-xs sm:text-sm">{badge.text}</p>
+                    <p className="text-[#74767c] text-[10px] sm:text-xs">{badge.subtext}</p>
                   </div>
                 </motion.div>
               );

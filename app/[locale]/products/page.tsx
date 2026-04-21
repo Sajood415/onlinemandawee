@@ -127,7 +127,7 @@ export default function ProductsPage() {
       <div className="bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+          <div className="flex min-w-0 items-center gap-2 text-sm text-gray-500 mb-4 overflow-hidden">
             <Link href="/" className="hover:text-primary hover:underline">
               {locale === "en" ? "Home" : locale === "ps" ? "کور" : "خانه"}
             </Link>
@@ -226,11 +226,11 @@ export default function ProductsPage() {
             </button>
 
             {/* Sort Dropdown */}
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none pl-4 pr-10 py-2.5 rounded-full border-2 border-gray-200 focus:border-primary focus:outline-none bg-white cursor-pointer font-medium text-gray-700 text-sm"
+                className="w-full sm:w-auto appearance-none pl-4 pr-10 py-2.5 rounded-full border-2 border-gray-200 focus:border-primary focus:outline-none bg-white cursor-pointer font-medium text-gray-700 text-sm"
               >
                 <option value="featured">
                   {locale === "en"
@@ -403,7 +403,7 @@ export default function ProductsPage() {
                   animate={{ x: 0 }}
                   exit={{ x: "-100%" }}
                   transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                  className="fixed left-0 top-0 bottom-0 w-80 bg-white z-50 overflow-y-auto lg:hidden"
+                  className="fixed left-0 top-0 bottom-0 w-[85vw] max-w-sm bg-white z-50 overflow-y-auto lg:hidden"
                 >
                   <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
                     <h2 className="text-lg font-bold">
@@ -537,7 +537,7 @@ export default function ProductsPage() {
           {/* Products Grid */}
           <div className="flex-1">
             {sortedProducts.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                 {sortedProducts.map((product, index) => (
                   <motion.div
                     key={product.id}
@@ -657,7 +657,7 @@ function ProductCard({
         </button>
 
         {/* Add to Cart Button - appears on hover at bottom */}
-        <div className="absolute bottom-3 left-3 right-3 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200">
+        <div className="absolute bottom-3 left-3 right-3 opacity-100 md:opacity-0 translate-y-0 md:translate-y-2 md:group-hover:translate-y-0 md:group-hover:opacity-100 transition-all duration-200">
           <button
             onClick={handleAddToCart}
             disabled={isAdding}

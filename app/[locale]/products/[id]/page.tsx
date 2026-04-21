@@ -153,7 +153,7 @@ export default function ProductDetailPage() {
       {/* Breadcrumb */}
       <div className="bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex min-w-0 items-center gap-2 text-sm overflow-hidden">
             <Link
               href="/"
               className="text-gray-500 hover:text-primary hover:underline"
@@ -172,7 +172,7 @@ export default function ProductDetailPage() {
                   : "محصولات"}
             </Link>
             <ChevronRight className="h-4 w-4 text-gray-400" />
-            <span className="text-gray-900 font-medium truncate max-w-50">
+            <span className="text-gray-900 font-medium truncate max-w-[9rem] sm:max-w-xs">
               {product.name[locale]}
             </span>
           </div>
@@ -188,7 +188,7 @@ export default function ProductDetailPage() {
               {/* Thumbnails - Vertical on left with scroll for many images */}
               {product.images.length > 1 && (
                 <div
-                  className="hidden sm:flex flex-col gap-3 w-20 shrink-0 max-h-100px overflow-y-auto pr-1"
+                  className="hidden sm:flex flex-col gap-3 w-20 shrink-0 max-h-[26rem] overflow-y-auto pr-1"
                   style={{
                     scrollbarWidth: "thin",
                     scrollbarColor: "#d1d5db transparent",
@@ -376,7 +376,7 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Action Buttons - Walmart Style */}
-            <div className="flex gap-3 mb-6">
+            <div className="flex flex-wrap sm:flex-nowrap gap-3 mb-6">
               <button
                 onClick={handleAddToCart}
                 disabled={isAdding}
@@ -395,7 +395,7 @@ export default function ProductDetailPage() {
               </button>
               <button
                 onClick={() => setIsWishlisted(!isWishlisted)}
-                className={`px-4 rounded-full border-2 transition-all ${
+                className={`h-[52px] w-[52px] flex items-center justify-center rounded-full border-2 transition-all ${
                   isWishlisted
                     ? "bg-white border-red-400 text-red-500"
                     : "bg-white border-gray-300 text-gray-600 hover:border-gray-400"

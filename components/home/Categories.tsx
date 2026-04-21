@@ -180,9 +180,8 @@ export default function Categories() {
           {carousel?.title ?? "Shop By Category"}
         </motion.h2>
 
-        {/* ✅ KEY FIX: added px-10 md:px-12 to create equal space on both sides for the arrows */}
-        <div className="relative mt-10 sm:mt-12 px-10 md:px-12">
-          {/* ✅ Left arrow — positioned inside the px padding, fully visible and symmetric */}
+        <div className="relative mt-10 sm:mt-12 px-6 sm:px-10 md:px-12">
+          {/* Left arrow */}
           <div
             className="absolute left-0 top-[43%] z-30 hidden -translate-y-1/2 md:flex items-center justify-center cursor-pointer"
             style={{ width: "48px" }}
@@ -193,7 +192,7 @@ export default function Categories() {
             />
           </div>
 
-          {/* ✅ Right arrow — same width and positioning as left arrow */}
+          {/* Right arrow */}
           <div
             className="absolute right-0 top-[43%] z-30 hidden -translate-y-1/2 md:flex items-center justify-center cursor-pointer"
             style={{ width: "48px" }}
@@ -205,23 +204,28 @@ export default function Categories() {
           </div>
 
           {/* Mobile arrows */}
-          <div className="flex md:hidden items-center justify-center gap-4 mt-4">
-            <ArrowButton
-              direction="left"
-              onClick={() => scrollToIndex(currentIndex - 1)}
-            />
-            <span className="text-xs text-gray-400 font-medium">
+          <div className="md:hidden mt-4 mb-1">
+            <div
+              dir="ltr"
+              className="flex items-center justify-center gap-10 min-[360px]:gap-14"
+            >
+              <ArrowButton
+                direction="left"
+                onClick={() => scrollToIndex(currentIndex - 1)}
+              />
+              <ArrowButton
+                direction="right"
+                onClick={() => scrollToIndex(currentIndex + 1)}
+              />
+            </div>
+            <p className="mt-2 text-center text-[11px] text-gray-400 font-medium px-2 truncate">
               {carousel?.swipeHint ?? "Swipe or tap to explore"}
-            </span>
-            <ArrowButton
-              direction="right"
-              onClick={() => scrollToIndex(currentIndex + 1)}
-            />
+            </p>
           </div>
 
           <div
             ref={scrollRef}
-            className="flex gap-0 overflow-x-auto px-0.5 pb-4 pt-2 scroll-smooth no-scrollbar sm:gap-0 md:gap-0.25 lg:px-1"
+            className="flex gap-2.5 sm:gap-3 overflow-x-auto px-0.5 pb-4 pt-2 scroll-smooth no-scrollbar"
           >
             {categories.map((item, index) => {
               const label = labels[index] ?? item.fallbackTitle;
@@ -232,22 +236,18 @@ export default function Categories() {
                   ref={(el) => {
                     itemRefs.current[index] = el;
                   }}
+                  className="shrink-0"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: index * 0.05 }}
                 >
                   <Link
                     href={`/category/${item.slug}`}
-                    className="group block min-w-32 shrink-0 text-center sm:min-w-36 lg:min-w-40"
+                    className="group block text-center w-[128px] sm:w-[170px]"
                   >
                     <motion.div
-                      className="relative flex items-center justify-center overflow-hidden rounded-lg transition-all duration-300"
+                      className="relative flex items-center justify-center overflow-hidden rounded-xl transition-all duration-300 w-[128px] h-[128px] sm:w-[170px] sm:h-[170px]"
                       whileHover={{ scale: 1.05 }}
-                      style={{
-                        width: "140px",
-                        height: "150px",
-                        margin: "0 auto",
-                      }}
                     >
                       <Image
                         src={item.image}
@@ -256,7 +256,7 @@ export default function Categories() {
                         className="object-cover p-2 transition-transform duration-300 group-hover:scale-110"
                       />
                     </motion.div>
-                    <p className="mt-2 text-[8px] font-bold uppercase tracking-widest text-slate-900 sm:text-[9px]">
+                    <p className="mt-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-900 leading-tight line-clamp-2">
                       {label}
                     </p>
                   </Link>
@@ -264,6 +264,7 @@ export default function Categories() {
               );
             })}
 
+            {/* Mobile swipe hint */}
             <div className="md:hidden flex items-center shrink-0 ml-2 pr-4">
               <div className="flex flex-col items-center gap-2 text-gray-400">
                 <svg
