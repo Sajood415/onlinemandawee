@@ -387,10 +387,10 @@ export default function Header() {
       {/* TOP BAR – sticky (logo, search, account, cart) */}
       <header
         dir={isRtl ? "rtl" : "ltr"}
-        className="sticky top-0 z-[100] border-b border-gray-100 bg-white/95 backdrop-blur-xl shadow-sm"
+        className="sticky top-0 z-[100] border-b border-gray-100 bg-white/95 backdrop-blur-xl shadow-sm overflow-x-clip"
       >
-        <div className="mx-auto max-w-7xl px-4 py-2 sm:py-3">
-          <div className="flex items-center justify-between gap-4 lg:gap-8">
+        <div className="mx-auto w-full max-w-7xl px-2 sm:px-4 py-2 sm:py-3">
+          <div className="flex min-w-0 flex-nowrap items-center justify-between gap-1.5 sm:gap-4 md:gap-6 lg:gap-8">
             {/* LOGO */}
             <Link
               href="/"
@@ -401,15 +401,15 @@ export default function Header() {
                 alt="logo"
                 width={180}
                 height={52}
-                className="h-9 sm:h-14 w-auto drop-shadow-sm transition-transform hover:scale-105"
+                className="h-6 sm:h-10 md:h-12 lg:h-14 w-auto drop-shadow-sm transition-transform hover:scale-105"
                 priority
               />
             </Link>
 
-            {/* SEARCH - Desktop */}
+            {/* SEARCH - Desktop & Tablet */}
             <form
               onSubmit={handleSearch}
-              className={`hidden lg:flex order-2 flex-1 items-center gap-3 bg-white hover:bg-gray-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 px-2 rounded-full h-12 border border-gray-200 transition-all duration-300 group max-w-2xl shadow-sm ${isRtl ? "pr-5" : "pl-5"}`}
+              className={`hidden md:flex order-2 min-w-0 flex-1 items-center gap-3 bg-white hover:bg-gray-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 px-2 rounded-full h-12 border border-gray-200 transition-all duration-300 group max-w-2xl shadow-sm ${isRtl ? "pr-5" : "pl-5"}`}
             >
               <Search
                 className="text-gray-400 group-focus-within:text-primary transition-colors shrink-0"
@@ -444,14 +444,14 @@ export default function Header() {
 
             {/* RIGHT ICONS - Integrated Professional Row */}
             <div
-              className="flex items-center gap-1 sm:gap-4 order-3"
+              className="flex shrink-0 items-center gap-1 sm:gap-3 md:gap-4 order-3"
             >
               {/* Mobile Search Toggle */}
               <button
                 onClick={() => setShowMobileSearch(!showMobileSearch)}
-                className="lg:hidden p-2 text-gray-500 hover:text-primary transition-colors cursor-pointer"
+                className="md:hidden h-9 w-9 flex items-center justify-center rounded-full border border-gray-100 bg-white text-gray-500 hover:text-primary transition-colors cursor-pointer"
               >
-                <Search size={22} />
+                <Search size={19} />
               </button>
 
               {/* VENDOR PORTAL - Professional Row Alignment */}
@@ -461,7 +461,7 @@ export default function Header() {
                     ? "/vendor/dashboard"
                     : "/vendor/register"
                 }
-                className="hidden sm:flex items-center gap-3 group px-3 py-1.5 hover:bg-gray-50 rounded-full transition-all border border-transparent hover:border-gray-100"
+                className="hidden lg:flex items-center gap-3 group px-3 py-1.5 hover:bg-gray-50 rounded-full transition-all border border-transparent hover:border-gray-100"
               >
                 <div className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-50 group-hover:bg-primary/5 transition-all outline outline-1 outline-gray-100">
                   {isAuthenticated && user?.role === "VENDOR" ? (
@@ -491,21 +491,22 @@ export default function Header() {
               <div className="h-8 w-px bg-gray-100 hidden md:block mx-1" />
 
               {/* SELECTORS - Aligned properly */}
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden xl:flex items-center gap-2">
                 <LanguageSelector
                   locale={locale}
                   label={copy.languageSelect}
+                  isRtl={isRtl}
                   languages={[
                     { code: "en", label: "English", flag: "🇺🇸" },
                     { code: "ps", label: "پښتو", flag: "🇦🇫" },
                     { code: "fa-AF", label: "دری", flag: "🇦🇫" },
                   ]}
                 />
-                <CurrencySelector label={copy.currencySelect} />
+                <CurrencySelector label={copy.currencySelect} isRtl={isRtl} />
               </div>
 
               {/* USER & CART ICONS - Horizontal Alignment */}
-              <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-1 sm:gap-2.5">
                 <div className="h-8 w-px bg-gray-100 hidden sm:block mx-1" />
 
                 <div className="relative" ref={userMenuRef}>
@@ -523,7 +524,7 @@ export default function Header() {
                         initial="hidden"
                         animate="visible"
                         exit="exit"
-                        className="absolute right-0 mt-4 w-60 bg-white rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.2)] z-[1001] border border-gray-100 overflow-hidden"
+                        className={`absolute mt-4 w-60 max-w-[90vw] bg-white rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.2)] z-[1001] border border-gray-100 overflow-hidden ${isRtl ? "left-0" : "right-0"}`}
                       >
                         <div className="py-2 px-1">
                           {isAuthenticated ? (
@@ -607,7 +608,7 @@ export default function Header() {
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                className="lg:hidden mt-3 overflow-hidden pb-1"
+                className="md:hidden mt-3 overflow-hidden pb-1"
               >
                 <form
                   onSubmit={handleSearch}
@@ -645,21 +646,24 @@ export default function Header() {
       </header>
 
       {/* PRIMARY NAV – scrolls normally */}
-      <nav className="bg-primary text-white relative z-50">
-        <div className="max-w-7xl mx-auto px-4 flex items-center h-14 sm:h-[68px]">
+      <nav
+        dir={isRtl ? "rtl" : "ltr"}
+        className="bg-primary text-white relative z-50 overflow-x-clip"
+      >
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 flex items-center h-14 sm:h-[68px]">
           {/* CATEGORIES BUTTON */}
           <div className="relative flex-shrink-0" ref={categoriesRef}>
             <button
               onClick={() => setShowCategoriesDropdown(!showCategoriesDropdown)}
-              className={`flex items-center gap-3 font-bold h-14 sm:h-[68px] px-5 sm:px-10 transition-all duration-300 cursor-pointer border-r border-white/10 ${showCategoriesDropdown ? "bg-white text-primary shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]" : "bg-black/10 hover:bg-black/20"}`}
+              className={`flex items-center gap-1.5 sm:gap-3 font-bold h-14 sm:h-[68px] px-2 sm:px-6 lg:px-8 transition-all duration-300 cursor-pointer border-white/10 ${isRtl ? "border-l" : "border-r"} ${showCategoriesDropdown ? "bg-white text-primary shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]" : "bg-black/10 hover:bg-black/20"}`}
             >
-              <Menu size={20} />
+              <Menu size={18} />
               <span className="hidden leading-none sm:inline mt-0.5 tracking-tight">
                 {copy.exploreCategories}
               </span>
               <ChevronDown
                 size={14}
-                className={`transition-transform duration-300 opacity-60 ${showCategoriesDropdown ? "rotate-180" : ""}`}
+                className={`hidden sm:block transition-transform duration-300 opacity-60 ${showCategoriesDropdown ? "rotate-180" : ""}`}
               />
             </button>
 
@@ -670,7 +674,7 @@ export default function Header() {
                   initial="hidden"
                   animate="visible"
                   exit="exit"
-                  className="absolute top-full left-0 w-[320px] sm:w-[380px] bg-white text-gray-800 rounded-b-[2rem] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] z-[1001] border-x border-b border-gray-100 overflow-hidden max-h-[70vh] overflow-y-auto"
+                  className={`absolute top-full w-[min(92vw,380px)] bg-white text-gray-800 rounded-b-[2rem] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] z-[1001] border-x border-b border-gray-100 overflow-hidden max-h-[70vh] overflow-y-auto ${isRtl ? "right-0" : "left-0"}`}
                 >
                   <div className="p-4 grid gap-1">
                     <p className="px-4 py-2 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">
@@ -779,7 +783,7 @@ export default function Header() {
 
           {/* NAV LINKS */}
           {/* Desktop - All Links */}
-          <div className="hidden sm:flex flex-1 items-center gap-8 lg:gap-10 px-8 py-2 text-[15px] font-bold">
+          <div className="hidden lg:flex flex-1 items-center gap-6 lg:gap-8 px-6 lg:px-8 py-2 text-[14px] lg:text-[15px] font-bold">
             <Link href="/" className="nav-link-bottom">
               {copy.home}
             </Link>
@@ -816,27 +820,54 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* Mobile - Limited Links + More Button */}
-          <div className="flex sm:hidden flex-1 items-center justify-around px-2 py-2 text-[14px] font-bold">
-            <Link href="/" className="nav-link-bottom px-2">
-              {copy.home}
-            </Link>
-            <Link href="/products" className="nav-link-bottom px-2">
-              {copy.products}
-            </Link>
-            <Link
-              href="/gifts"
-              className="nav-link-bottom px-2 relative flex items-center gap-1"
-            >
-              {copy.gifts}
-              <span
-                className="text-white text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter"
-                style={{ backgroundColor: "var(--yellow)" }}
+          {/* Tablet - Limited Links */}
+          <div className="hidden md:flex lg:hidden flex-1 min-w-0 px-2 py-2 overflow-visible">
+            <div className="flex w-full min-w-max items-center gap-3 text-[13px] font-bold whitespace-nowrap">
+              <Link href="/" className="nav-link-bottom px-2 whitespace-nowrap">
+                {copy.home}
+              </Link>
+              <Link href="/products" className="nav-link-bottom px-2 whitespace-nowrap">
+                {copy.products}
+              </Link>
+              <Link
+                href="/gifts"
+                className="nav-link-bottom px-2 relative flex items-center gap-1 whitespace-nowrap"
               >
-                {copy.new}
-              </span>
-            </Link>
-            <MobileNavMenu closeAll={closeAll} />
+                {copy.gifts}
+                <span
+                  className="text-white text-[8px] px-1 py-0.5 rounded-full font-black uppercase tracking-tighter"
+                  style={{ backgroundColor: "var(--yellow)" }}
+                >
+                  {copy.new}
+                </span>
+              </Link>
+              <MobileNavMenu closeAll={closeAll} isRtl={isRtl} />
+            </div>
+          </div>
+
+          {/* Mobile - Limited Links + More Button */}
+          <div className="flex md:hidden flex-1 min-w-0 px-1 py-2 overflow-visible">
+            <div className="flex w-full min-w-0 items-center justify-between gap-1 pr-1 text-[10px] min-[360px]:text-[11px] font-bold whitespace-nowrap">
+              <Link href="/" className="nav-link-bottom px-1 whitespace-nowrap shrink min-w-0">
+                {copy.home}
+              </Link>
+              <Link href="/products" className="nav-link-bottom px-1 whitespace-nowrap shrink min-w-0">
+                {copy.products}
+              </Link>
+              <Link
+                href="/gifts"
+                className="nav-link-bottom px-1 relative flex items-center gap-1 whitespace-nowrap shrink min-w-0"
+              >
+                {copy.gifts}
+                <span
+                  className="hidden min-[360px]:inline-flex text-white text-[8px] px-1 py-0.5 rounded-full font-black uppercase tracking-tighter"
+                  style={{ backgroundColor: "var(--yellow)" }}
+                >
+                  {copy.new}
+                </span>
+              </Link>
+              <MobileNavMenu closeAll={closeAll} isRtl={isRtl} />
+            </div>
           </div>
         </div>
       </nav>
@@ -1079,7 +1110,7 @@ function CategoryItem({
   );
 }
 
-function CurrencySelector({ label }: { label: string }) {
+function CurrencySelector({ label, isRtl }: { label: string; isRtl: boolean }) {
   const [open, setOpen] = useState(false);
   const { currency, setCurrency } = useCurrency();
   const currencies: ("USD" | "AFN" | "EUR" | "CAD")[] = [
@@ -1122,7 +1153,7 @@ function CurrencySelector({ label }: { label: string }) {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="absolute right-0 mt-3 w-40 bg-white rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-gray-100 z-[1001] overflow-hidden p-2"
+            className={`absolute mt-3 w-40 bg-white rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-gray-100 z-[1001] overflow-hidden p-2 ${isRtl ? "left-0" : "right-0"}`}
           >
             <p className="px-4 py-2.5 text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] mb-1">
               {label}
@@ -1134,7 +1165,7 @@ function CurrencySelector({ label }: { label: string }) {
                   setCurrency(c);
                   setOpen(false);
                 }}
-                className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold flex items-center justify-between transition-all cursor-pointer ${currency === c ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-50"}`}
+                className={`w-full px-4 py-3 rounded-xl text-sm font-bold flex items-center justify-between transition-all cursor-pointer ${isRtl ? "text-right" : "text-left"} ${currency === c ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-50"}`}
               >
                 {c}
                 {currency === c && (
@@ -1153,10 +1184,12 @@ function LanguageSelector({
   locale,
   languages,
   label,
+  isRtl,
 }: {
   locale: string;
   languages: Array<{ code: string; label: string; flag: string }>;
   label: string;
+  isRtl: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -1197,7 +1230,7 @@ function LanguageSelector({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-gray-100 z-[1001] overflow-hidden p-2"
+            className={`absolute mt-3 w-56 bg-white rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-gray-100 z-[1001] overflow-hidden p-2 ${isRtl ? "left-0" : "right-0"}`}
           >
             <p className="px-5 py-3 text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] mb-1">
               {label}
@@ -1209,7 +1242,7 @@ function LanguageSelector({
                   setOpen(false);
                   router.replace(pathname, { locale: l.code });
                 }}
-                className={`w-full text-left px-5 py-3.5 rounded-xl text-sm font-bold flex items-center gap-4 transition-all cursor-pointer ${locale === l.code ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-50"}`}
+                className={`w-full px-5 py-3.5 rounded-xl text-sm font-bold flex items-center gap-4 transition-all cursor-pointer ${isRtl ? "text-right" : "text-left"} ${locale === l.code ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-50"}`}
               >
                 <span className="text-xl">{l.flag}</span> {l.label}
               </button>
@@ -1221,7 +1254,13 @@ function LanguageSelector({
   );
 }
 
-function MobileNavMenu({ closeAll }: { closeAll: () => void }) {
+function MobileNavMenu({
+  closeAll,
+  isRtl,
+}: {
+  closeAll: () => void;
+  isRtl: boolean;
+}) {
   const locale = useLocale() as SupportedLocale;
   const safeLocale: SupportedLocale =
     locale === "ps" || locale === "fa-AF" ? locale : "en";
@@ -1254,15 +1293,15 @@ function MobileNavMenu({ closeAll }: { closeAll: () => void }) {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1 px-3 py-1.5 rounded-full border transition-all ${
+        className={`shrink-0 flex items-center gap-1 px-1.5 min-[360px]:px-2 py-1 rounded-full border transition-all ${
           isOpen
             ? "bg-white border-white text-primary shadow-lg"
             : "bg-white/10 border-white/20 text-white hover:bg-white/20"
         }`}
       >
-        <span className="text-[13px] font-bold">{copy.more}</span>
+        <span className="text-[10px] min-[360px]:text-[11px] sm:text-[13px] font-bold">{copy.more}</span>
         <ChevronDown
-          size={14}
+          size={12}
           className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
@@ -1274,8 +1313,8 @@ function MobileNavMenu({ closeAll }: { closeAll: () => void }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="absolute top-full right-0 mt-2 w-52 bg-white rounded-xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] z-[9999] overflow-hidden border border-gray-100"
-            style={{ transformOrigin: "top right" }}
+            className={`absolute top-full mt-2 w-48 sm:w-52 max-w-[calc(100vw-1rem)] bg-white rounded-xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] z-[1002] overflow-hidden border border-gray-100 ${isRtl ? "left-0" : "right-0"}`}
+            style={{ transformOrigin: isRtl ? "top left" : "top right" }}
           >
             <div className="p-2">
               <p className="px-3 py-2 text-[10px] font-black text-gray-400 uppercase tracking-wider">
@@ -1344,7 +1383,7 @@ function IconButton({
     <button
       onClick={onClick}
       aria-label={ariaLabel}
-      className={`relative h-11 w-11 flex items-center justify-center rounded-full border transition-all duration-300 group active:scale-90 cursor-pointer ${active ? "bg-primary border-primary text-white shadow-xl shadow-primary/30" : "border-gray-100 bg-white hover:bg-gray-50 text-gray-600 hover:text-primary hover:border-primary/30"}`}
+      className={`relative h-9 w-9 sm:h-11 sm:w-11 flex items-center justify-center rounded-full border transition-all duration-300 group active:scale-90 cursor-pointer ${active ? "bg-primary border-primary text-white shadow-xl shadow-primary/30" : "border-gray-100 bg-white hover:bg-gray-50 text-gray-600 hover:text-primary hover:border-primary/30"}`}
     >
       {children}
       {badge && (

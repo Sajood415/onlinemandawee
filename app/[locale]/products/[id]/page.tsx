@@ -57,6 +57,114 @@ const featureTranslations = {
     ps: "همدا ورځ تحویل موجود",
     "fa-AF": "تحویل همان روز موجود",
   },
+  "24 fresh red roses": {
+    ps: "۲۴ تازه سره ګلابونه",
+    "fa-AF": "۲۴ رز سرخ تازه",
+  },
+  "Hand-tied bouquet": {
+    ps: "په لاس تړل شوی ګیډۍ",
+    "fa-AF": "دسته‌گل دست‌بافت",
+  },
+  "Includes free greeting card": {
+    ps: "وړیا مبارکي کارت پکې شامل دی",
+    "fa-AF": "کارت تبریکی رایگان شامل است",
+  },
+  "Same day delivery": {
+    ps: "همدا ورځ تحویل",
+    "fa-AF": "تحویل همان روز",
+  },
+  "Premium quality ingredients": {
+    ps: "پریمیم کیفیت لرونکي اجزا",
+    "fa-AF": "مواد اولیه باکیفیت ممتاز",
+  },
+  "Perfect for family gatherings": {
+    ps: "د کورنۍ غونډو لپاره مناسب",
+    "fa-AF": "مناسب برای گردهمایی‌های خانوادگی",
+  },
+  "Serves 6-8 people": {
+    ps: "د ۶-۸ کسانو لپاره بسنه کوي",
+    "fa-AF": "برای ۶ تا ۸ نفر کافی است",
+  },
+  "Includes recipe suggestions": {
+    ps: "د پخلي وړاندیزونه پکې شامل دي",
+    "fa-AF": "پیشنهادهای دستور پخت شامل است",
+  },
+  "Handcrafted chocolates": {
+    ps: "لاسي جوړ شوي چاکلېټونه",
+    "fa-AF": "شکلات‌های دست‌ساز",
+  },
+  "Unique flavor combinations": {
+    ps: "د خوند ځانګړې ګډونې",
+    "fa-AF": "ترکیب‌های طعم منحصربه‌فرد",
+  },
+  "Beautiful gift packaging": {
+    ps: "ښکلې د ډالۍ بسته‌بندي",
+    "fa-AF": "بسته‌بندی زیبای هدیه",
+  },
+  "Perfect for gifting": {
+    ps: "د ډالۍ لپاره مناسب",
+    "fa-AF": "مناسب برای هدیه دادن",
+  },
+  "100% organic": {
+    ps: "۱۰۰٪ ارګانیک",
+    "fa-AF": "۱۰۰٪ ارگانیک",
+  },
+  "Farm fresh": {
+    ps: "د فارم څخه تازه",
+    "fa-AF": "تازه از فارم",
+  },
+  "Seasonal selection": {
+    ps: "فصلي انتخاب",
+    "fa-AF": "انتخاب فصلی",
+  },
+  "No pesticides": {
+    ps: "بې له زهرجنو دواوو",
+    "fa-AF": "بدون آفت‌کش",
+  },
+  "Multiple premium varieties": {
+    ps: "د پریمیم څو ډولونه",
+    "fa-AF": "چندین نوع ممتاز",
+  },
+  "High in nutrients": {
+    ps: "په مغذي موادو بډایه",
+    "fa-AF": "سرشار از مواد مغذی",
+  },
+  "Natural sweetener": {
+    ps: "طبیعي خوږوونکی",
+    "fa-AF": "شیرین‌کننده طبیعی",
+  },
+  "Perfect for Ramadan": {
+    ps: "د رمضان لپاره مناسب",
+    "fa-AF": "مناسب برای رمضان",
+  },
+  "Hypoallergenic products": {
+    ps: "هایپو الرجنیک محصولات",
+    "fa-AF": "محصولات ضد حساسیت",
+  },
+  "Safe for newborn skin": {
+    ps: "د نوي زیږیدلي پوست لپاره خوندي",
+    "fa-AF": "ایمن برای پوست نوزاد",
+  },
+  "Complete care kit": {
+    ps: "بشپړ د پاملرنې کټ",
+    "fa-AF": "کیت کامل مراقبت",
+  },
+  "Trusted brands": {
+    ps: "باوري برانډونه",
+    "fa-AF": "برندهای مورد اعتماد",
+  },
+  "Farm fresh fruits": {
+    ps: "د فارم څخه تازه مېوې",
+    "fa-AF": "میوه‌های تازه فارم",
+  },
+  "Large family size": {
+    ps: "د کورنۍ لویه اندازه",
+    "fa-AF": "اندازه بزرگ خانوادگی",
+  },
+  "Gift ready": {
+    ps: "ډالۍ ته چمتو",
+    "fa-AF": "آماده هدیه",
+  },
 } as const;
 
 const localizeFeature = (feature: string, locale: "en" | "ps" | "fa-AF") => {
@@ -90,6 +198,7 @@ const localizeDelivery = (delivery: string, locale: "en" | "ps" | "fa-AF") => {
 export default function ProductDetailPage() {
   const params = useParams();
   const locale = useLocale() as "en" | "ps" | "fa-AF";
+  const isRtl = locale !== "en";
   const productId = params.id as string;
 
   const product = allProducts.find((p) => p.id === productId);
@@ -132,7 +241,7 @@ export default function ProductDetailPage() {
             href="/products"
             className="text-primary hover:underline inline-flex items-center gap-1 mt-2"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
             {locale === "en"
               ? "Back to Products"
               : locale === "ps"
@@ -149,18 +258,18 @@ export default function ProductDetailPage() {
     .slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-white">
       {/* Breadcrumb */}
       <div className="bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex min-w-0 items-center gap-2 text-sm overflow-hidden">
             <Link
               href="/"
               className="text-gray-500 hover:text-primary hover:underline"
             >
               {locale === "en" ? "Home" : locale === "ps" ? "کور" : "خانه"}
             </Link>
-            <ChevronRight className="h-4 w-4 text-gray-400" />
+            <ChevronRight className={`h-4 w-4 text-gray-400 ${isRtl ? "rotate-180" : ""}`} />
             <Link
               href="/products"
               className="text-gray-500 hover:text-primary hover:underline"
@@ -171,8 +280,8 @@ export default function ProductDetailPage() {
                   ? "محصولات"
                   : "محصولات"}
             </Link>
-            <ChevronRight className="h-4 w-4 text-gray-400" />
-            <span className="text-gray-900 font-medium truncate max-w-50">
+            <ChevronRight className={`h-4 w-4 text-gray-400 ${isRtl ? "rotate-180" : ""}`} />
+            <span className="text-gray-900 font-medium truncate max-w-[9rem] sm:max-w-xs">
               {product.name[locale]}
             </span>
           </div>
@@ -188,7 +297,7 @@ export default function ProductDetailPage() {
               {/* Thumbnails - Vertical on left with scroll for many images */}
               {product.images.length > 1 && (
                 <div
-                  className="hidden sm:flex flex-col gap-3 w-20 shrink-0 max-h-100px overflow-y-auto pr-1"
+                  className="hidden sm:flex flex-col gap-3 w-20 shrink-0 max-h-[26rem] overflow-y-auto pr-1"
                   style={{
                     scrollbarWidth: "thin",
                     scrollbarColor: "#d1d5db transparent",
@@ -271,7 +380,7 @@ export default function ProductDetailPage() {
             >
               <Store className="h-4 w-4" />
               <span><bdi dir="ltr">{localizeVendor(product.vendor, locale)}</bdi></span>
-              <ChevronRight className="h-3 w-3" />
+              <ChevronRight className={`h-3 w-3 ${isRtl ? "rotate-180" : ""}`} />
             </Link>
 
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3 leading-tight">
@@ -300,7 +409,7 @@ export default function ProductDetailPage() {
                     : "نقد"}
                 )
               </span>
-              <span className="text-sm text-green-600 font-medium ml-2">
+              <span className={`text-sm text-green-600 font-medium ${isRtl ? "mr-2" : "ml-2"}`}>
                 {locale === "en"
                   ? "In stock"
                   : locale === "ps"
@@ -358,7 +467,9 @@ export default function ProductDetailPage() {
                 <div className="flex items-center border border-gray-300 rounded-full bg-white">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-4 py-2 hover:bg-gray-100 transition-colors rounded-l-full text-lg font-medium"
+                    className={`px-4 py-2 hover:bg-gray-100 transition-colors text-lg font-medium ${
+                      isRtl ? "rounded-r-full" : "rounded-l-full"
+                    }`}
                   >
                     -
                   </button>
@@ -367,7 +478,9 @@ export default function ProductDetailPage() {
                   </span>
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    className="px-4 py-2 hover:bg-gray-100 transition-colors rounded-r-full text-lg font-medium"
+                    className={`px-4 py-2 hover:bg-gray-100 transition-colors text-lg font-medium ${
+                      isRtl ? "rounded-l-full" : "rounded-r-full"
+                    }`}
                   >
                     +
                   </button>
@@ -376,7 +489,7 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Action Buttons - Walmart Style */}
-            <div className="flex gap-3 mb-6">
+            <div className="flex flex-wrap sm:flex-nowrap gap-3 mb-6">
               <button
                 onClick={handleAddToCart}
                 disabled={isAdding}
@@ -395,7 +508,7 @@ export default function ProductDetailPage() {
               </button>
               <button
                 onClick={() => setIsWishlisted(!isWishlisted)}
-                className={`px-4 rounded-full border-2 transition-all ${
+                className={`h-[52px] w-[52px] flex items-center justify-center rounded-full border-2 transition-all ${
                   isWishlisted
                     ? "bg-white border-red-400 text-red-500"
                     : "bg-white border-gray-300 text-gray-600 hover:border-gray-400"

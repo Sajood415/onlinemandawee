@@ -65,6 +65,7 @@ const localizeDelivery = (delivery: string, locale: "en" | "ps" | "fa-AF") => {
 
 export default function ProductsPage() {
   const locale = useLocale() as "en" | "ps" | "fa-AF";
+  const isRtl = locale !== "en";
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedVendor, setSelectedVendor] = useState<string[]>([]);
@@ -122,16 +123,16 @@ export default function ProductsPage() {
     searchQuery;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-white">
       {/* Breadcrumb & Header Bar */}
       <div className="bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+          <div className="flex min-w-0 items-center gap-2 text-sm text-gray-500 mb-4 overflow-hidden">
             <Link href="/" className="hover:text-primary hover:underline">
               {locale === "en" ? "Home" : locale === "ps" ? "کور" : "خانه"}
             </Link>
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
             <span className="text-gray-900 font-medium">
               {locale === "en"
                 ? "All Products"
@@ -173,7 +174,11 @@ export default function ProductsPage() {
 
             {/* Search Bar */}
             <div className="relative w-full lg:w-96">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search
+                className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 ${
+                  isRtl ? "right-4" : "left-4"
+                }`}
+              />
               <input
                 type="text"
                 placeholder={
@@ -185,12 +190,16 @@ export default function ProductsPage() {
                 }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-10 py-3 rounded-full border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors"
+                className={`w-full py-3 rounded-full border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors ${
+                  isRtl ? "pr-12 pl-10 text-right" : "pl-12 pr-10 text-left"
+                }`}
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-4 top-1/2 -translate-y-1/2"
+                  className={`absolute top-1/2 -translate-y-1/2 ${
+                    isRtl ? "left-4" : "right-4"
+                  }`}
                 >
                   <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
                 </button>
@@ -226,11 +235,11 @@ export default function ProductsPage() {
             </button>
 
             {/* Sort Dropdown */}
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none pl-4 pr-10 py-2.5 rounded-full border-2 border-gray-200 focus:border-primary focus:outline-none bg-white cursor-pointer font-medium text-gray-700 text-sm"
+                className="w-full sm:w-auto appearance-none pl-4 pr-10 py-2.5 rounded-full border-2 border-gray-200 focus:border-primary focus:outline-none bg-white cursor-pointer font-medium text-gray-700 text-sm"
               >
                 <option value="featured">
                   {locale === "en"
@@ -261,7 +270,11 @@ export default function ProductsPage() {
                       : "بالاترین امتیاز"}
                 </option>
               </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <ChevronDown
+                className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none ${
+                  isRtl ? "left-3" : "right-3"
+                }`}
+              />
             </div>
           </div>
 
@@ -299,7 +312,7 @@ export default function ProductsPage() {
                     <button
                       key={cat.id}
                       onClick={() => setSelectedCategory(cat.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-sm transition-all ${
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all ${isRtl ? "text-right" : "text-left"} ${
                         selectedCategory === cat.id
                           ? "bg-primary text-white font-medium"
                           : "text-gray-700 hover:bg-gray-100"
@@ -399,11 +412,13 @@ export default function ProductsPage() {
                   className="fixed inset-0 bg-black/50 z-40 lg:hidden"
                 />
                 <motion.div
-                  initial={{ x: "-100%" }}
+                  initial={{ x: isRtl ? "100%" : "-100%" }}
                   animate={{ x: 0 }}
-                  exit={{ x: "-100%" }}
+                  exit={{ x: isRtl ? "100%" : "-100%" }}
                   transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                  className="fixed left-0 top-0 bottom-0 w-80 bg-white z-50 overflow-y-auto lg:hidden"
+                  className={`fixed top-0 bottom-0 w-[85vw] max-w-sm bg-white z-50 overflow-y-auto lg:hidden ${
+                    isRtl ? "right-0" : "left-0"
+                  }`}
                 >
                   <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
                     <h2 className="text-lg font-bold">
@@ -433,7 +448,7 @@ export default function ProductsPage() {
                           <button
                             key={cat.id}
                             onClick={() => setSelectedCategory(cat.id)}
-                            className={`w-full px-3 py-2.5 rounded-lg text-left text-sm ${
+                            className={`w-full px-3 py-2.5 rounded-lg text-sm ${isRtl ? "text-right" : "text-left"} ${
                               selectedCategory === cat.id
                                 ? "bg-primary text-white font-medium"
                                 : "text-gray-700 hover:bg-gray-100"
@@ -537,7 +552,7 @@ export default function ProductsPage() {
           {/* Products Grid */}
           <div className="flex-1">
             {sortedProducts.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                 {sortedProducts.map((product, index) => (
                   <motion.div
                     key={product.id}
@@ -657,7 +672,7 @@ function ProductCard({
         </button>
 
         {/* Add to Cart Button - appears on hover at bottom */}
-        <div className="absolute bottom-3 left-3 right-3 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200">
+        <div className="absolute bottom-3 left-3 right-3 opacity-100 md:opacity-0 translate-y-0 md:translate-y-2 md:group-hover:translate-y-0 md:group-hover:opacity-100 transition-all duration-200">
           <button
             onClick={handleAddToCart}
             disabled={isAdding}

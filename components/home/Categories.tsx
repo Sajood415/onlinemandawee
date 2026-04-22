@@ -180,109 +180,93 @@ export default function Categories() {
           {carousel?.title ?? "Shop By Category"}
         </motion.h2>
 
-        {/* ✅ KEY FIX: added px-10 md:px-12 to create equal space on both sides for the arrows */}
-        <div className="relative mt-10 sm:mt-12 px-10 md:px-12">
-          {/* ✅ Left arrow — positioned inside the px padding, fully visible and symmetric */}
-          <div
-            className="absolute left-0 top-[43%] z-30 hidden -translate-y-1/2 md:flex items-center justify-center cursor-pointer"
-            style={{ width: "48px" }}
-          >
-            <ArrowButton
-              direction="left"
-              onClick={() => scrollToIndex(currentIndex - 1)}
-            />
-          </div>
+        <div className="mt-10 sm:mt-12">
+          {/* Flex row: left arrow | scroll track | right arrow */}
+          <div className="flex items-start">
+            {/* Left Arrow — height locked to image card height only */}
+            <div className="shrink-0 w-12 flex items-center justify-center h-32 sm:h-42.5">
+              <ArrowButton
+                direction="left"
+                onClick={() => scrollToIndex(currentIndex - 1)}
+              />
+            </div>
 
-          {/* ✅ Right arrow — same width and positioning as left arrow */}
-          <div
-            className="absolute right-0 top-[43%] z-30 hidden -translate-y-1/2 md:flex items-center justify-center cursor-pointer"
-            style={{ width: "48px" }}
-          >
-            <ArrowButton
-              direction="right"
-              onClick={() => scrollToIndex(currentIndex + 1)}
-            />
-          </div>
+            {/* Scrollable cards */}
+            <div
+              ref={scrollRef}
+              className="flex gap-2.5 sm:gap-3 overflow-x-auto pb-4 pt-2 scroll-smooth no-scrollbar flex-1"
+            >
+              {categories.map((item, index) => {
+                const label = labels[index] ?? item.fallbackTitle;
 
-          {/* Mobile arrows */}
-          <div className="flex md:hidden items-center justify-center gap-4 mt-4">
-            <ArrowButton
-              direction="left"
-              onClick={() => scrollToIndex(currentIndex - 1)}
-            />
-            <span className="text-xs text-gray-400 font-medium">
-              {carousel?.swipeHint ?? "Swipe or tap to explore"}
-            </span>
-            <ArrowButton
-              direction="right"
-              onClick={() => scrollToIndex(currentIndex + 1)}
-            />
-          </div>
-
-          <div
-            ref={scrollRef}
-            className="flex gap-0 overflow-x-auto px-0.5 pb-4 pt-2 scroll-smooth no-scrollbar sm:gap-0 md:gap-0.25 lg:px-1"
-          >
-            {categories.map((item, index) => {
-              const label = labels[index] ?? item.fallbackTitle;
-
-              return (
-                <motion.div
-                  key={item.id}
-                  ref={(el) => {
-                    itemRefs.current[index] = el;
-                  }}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                >
-                  <Link
-                    href={`/category/${item.slug}`}
-                    className="group block min-w-32 shrink-0 text-center sm:min-w-36 lg:min-w-40"
+                return (
+                  <motion.div
+                    key={item.id}
+                    ref={(el) => {
+                      itemRefs.current[index] = el;
+                    }}
+                    className="shrink-0"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.05 }}
                   >
-                    <motion.div
-                      className="relative flex items-center justify-center overflow-hidden rounded-lg transition-all duration-300"
-                      whileHover={{ scale: 1.05 }}
-                      style={{
-                        width: "140px",
-                        height: "150px",
-                        margin: "0 auto",
-                      }}
+                    <Link
+                      href={`/category/${item.slug}`}
+                      className="group block text-center w-32 sm:w-42"
                     >
-                      <Image
-                        src={item.image}
-                        alt={label}
-                        fill
-                        className="object-cover p-2 transition-transform duration-300 group-hover:scale-110"
-                      />
-                    </motion.div>
-                    <p className="mt-2 text-[8px] font-bold uppercase tracking-widest text-slate-900 sm:text-[9px]">
-                      {label}
-                    </p>
-                  </Link>
-                </motion.div>
-              );
-            })}
+                      <motion.div
+                        className="relative flex items-center justify-center overflow-hidden rounded-xl transition-all duration-300 w-32 h-32 sm:w-37.5 sm:h-37.5"
+                        whileHover={{ scale: 1.05 }}
+                      >
+                        <Image
+                          src={item.image}
+                          alt={label}
+                          fill
+                          className="object-cover p-2 transition-transform duration-300 group-hover:scale-110"
+                        />
+                      </motion.div>
+                      <p className="mt-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-900 leading-tight line-clamp-2">
+                        {label}
+                      </p>
+                    </Link>
+                  </motion.div>
+                );
+              })}
 
-            <div className="md:hidden flex items-center shrink-0 ml-2 pr-4">
-              <div className="flex flex-col items-center gap-2 text-gray-400">
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="animate-pulse"
-                >
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-                <span className="text-[10px] font-bold uppercase tracking-wider rotate-90 whitespace-nowrap">
-                  {carousel?.swipeLabel ?? "Swipe"}
-                </span>
+              {/* Mobile swipe hint */}
+              <div className="md:hidden flex items-center shrink-0 ml-2 pr-4">
+                <div className="flex flex-col items-center gap-2 text-gray-400">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="animate-pulse"
+                  >
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                  <span className="text-[10px] font-bold uppercase tracking-wider rotate-90 whitespace-nowrap">
+                    {carousel?.swipeLabel ?? "Swipe"}
+                  </span>
+                </div>
               </div>
             </div>
+
+            {/* Right Arrow — height locked to image card height only */}
+            <div className="shrink-0 w-12 flex items-center justify-center h-32 sm:h-42.5">
+              <ArrowButton
+                direction="right"
+                onClick={() => scrollToIndex(currentIndex + 1)}
+              />
+            </div>
           </div>
+
+          {/* Mobile swipe hint text */}
+          <p className="md:hidden mt-1 text-center text-[11px] text-gray-400 font-medium px-2 truncate">
+            {carousel?.swipeHint ?? "Swipe or tap to explore"}
+          </p>
         </div>
       </div>
     </section>
