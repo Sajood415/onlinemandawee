@@ -382,26 +382,8 @@ export default function Header() {
                 <Search size={19} />
               </button>
 
-              {/* AUTH CTAS */}
-              {!isAuthenticated && (
-                <div className="hidden md:flex items-center gap-2">
-                  <button
-                    onClick={handleLogin}
-                    className="h-9 px-4 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors cursor-pointer"
-                  >
-                    Login
-                  </button>
-                  <Link
-                    href="/vendor/register"
-                    className="h-9 px-4 rounded-full bg-primary text-white text-sm font-semibold inline-flex items-center hover:brightness-110 transition-all shadow-sm"
-                  >
-                    Become a Vendor
-                  </Link>
-                </div>
-              )}
-
-              {/* SELECTORS - Aligned properly */}
-              <div className="hidden md:flex items-center gap-2">
+              {/* Language Selector - First */}
+              <div className="hidden md:flex items-center">
                 <LanguageSelector
                   locale={locale}
                   label={copy.languageSelect}
@@ -414,6 +396,7 @@ export default function Header() {
                 />
               </div>
 
+              {/* Cart Button - Second */}
               <IconButton
                 onClick={() => setIsCartOpen(true)}
                 badge={itemCount?.toString()}
@@ -421,6 +404,26 @@ export default function Header() {
               >
                 <ShoppingBasket size={20} />
               </IconButton>
+
+              {/* Login Button - Third */}
+              {!isAuthenticated && (
+                <button
+                  onClick={handleLogin}
+                  className="hidden md:flex h-9 px-4 rounded-full bg-gray-50 text-gray-700 text-sm font-semibold hover:bg-gray-100 transition-colors cursor-pointer items-center justify-center"
+                >
+                  Login
+                </button>
+              )}
+
+              {/* Become a Vendor Button - Fourth */}
+              {!isAuthenticated && (
+                <Link
+                  href="/vendor/register"
+                  className="hidden md:flex h-9 px-4 rounded-full bg-primary text-white text-sm font-semibold inline-flex items-center hover:brightness-110 transition-all shadow-sm"
+                >
+                  Become a Vendor
+                </Link>
+              )}
             </div>
           </div>
 

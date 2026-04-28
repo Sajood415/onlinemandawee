@@ -307,8 +307,8 @@ export default function HeroSection() {
   return (
     <section className="w-full bg-white">
       <div className="relative">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="relative rounded-2xl overflow-hidden shadow-lg">
+        <div className="px-0 py-0">
+          <div className="relative overflow-hidden">
             <div
               dir="ltr"
               className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex items-center gap-1.5 sm:gap-2"
@@ -340,7 +340,7 @@ export default function HeroSection() {
               </button>
             </div>
 
-            <div className="relative min-h-80 sm:min-h-90 md:min-h-100 lg:min-h-110 rounded-2xl overflow-hidden">
+            <div className="relative min-h-96 sm:min-h-[28rem] md:min-h-[32rem] lg:min-h-[36rem] overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentSlide}
@@ -348,7 +348,7 @@ export default function HeroSection() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="relative h-full min-h-80 sm:min-h-90 md:min-h-100 lg:min-h-110"
+                  className="relative h-full min-h-96 sm:min-h-[28rem] md:min-h-[32rem] lg:min-h-[36rem]"
                 >
                   <div className="absolute inset-0">
                     <Image
