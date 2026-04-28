@@ -5,16 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useLocale } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Truck,
-  Clock,
-  Star,
-  Play,
-  Pause,
-  Sparkles,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
 
 type SupportedLocale = "en" | "ps" | "fa-AF";
 
@@ -31,10 +22,6 @@ type HeroSlide = {
   textPosition: "left" | "center" | "right";
 };
 
-type HeroBadge = {
-  text: string;
-  subtext: string;
-};
 
 const baseSlides: Array<
   Pick<HeroSlide, "id" | "image" | "ctaLink" | "overlayColor" | "textPosition">
@@ -239,26 +226,6 @@ const localizedSlides: Record<
   ],
 };
 
-const localizedBadges: Record<SupportedLocale, HeroBadge[]> = {
-  en: [
-    { text: "Same-day delivery", subtext: "Order by 2PM" },
-    { text: "800+ vendors", subtext: "Verified sellers" },
-    { text: "Express options", subtext: "2-hour delivery" },
-    { text: "Gift wrapping", subtext: "Free on $50+" },
-  ],
-  ps: [
-    { text: "همدا ورځ تحویل", subtext: "تر 2PM مخکې فرمایش" },
-    { text: "800+ پلورونکي", subtext: "تایید شوي پلورونکي" },
-    { text: "چټک انتخابونه", subtext: "2 ساعته تحویل" },
-    { text: "د ډالۍ لفافه", subtext: "پر $50+ وړیا" },
-  ],
-  "fa-AF": [
-    { text: "تحویل همان روز", subtext: "سفارش تا 2PM" },
-    { text: "800+ فروشنده", subtext: "فروشندگان تاییدشده" },
-    { text: "گزینه‌های سریع", subtext: "تحویل 2 ساعته" },
-    { text: "بسته‌بندی هدیه", subtext: "رایگان روی $50+" },
-  ],
-};
 
 const localizedAria: Record<
   SupportedLocale,
@@ -304,7 +271,6 @@ export default function HeroSection() {
     ...baseSlide,
     ...localizedSlides[safeLocale][index],
   }));
-  const trustBadges = localizedBadges[safeLocale];
   const ariaCopy = localizedAria[safeLocale];
 
   useEffect(() => {
@@ -471,28 +437,6 @@ export default function HeroSection() {
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            {trustBadges.map((badge, index) => {
-              const Icon = [Truck, Star, Clock, Sparkles][index] ?? Truck;
-              return (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7 + index * 0.1 }}
-                  className="flex items-center gap-2 sm:gap-3 bg-white rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#e6f1fc] rounded-full flex items-center justify-center shrink-0">
-                    <Icon size={20} className="text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-[#171717] text-xs sm:text-sm">{badge.text}</p>
-                    <p className="text-[#74767c] text-[10px] sm:text-xs">{badge.subtext}</p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
         </div>
       </div>
     </section>

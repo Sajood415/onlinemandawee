@@ -6,28 +6,15 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { useAuth } from "@/store/auth-context";
 import { useCart } from "@/store/cart-context";
-import { useCurrency } from "@/store/currency-context";
 import Link from "next/link";
 import {
   Search,
-  User,
-  ShoppingCart,
   ShoppingBasket,
   ChevronDown,
-  Check,
   Menu,
-  Store,
-  LayoutDashboard,
-  Globe,
-  DollarSign,
   X,
-  Coffee,
   Cookie,
-  Milk,
-  Apple,
-  Package,
   HelpCircle,
-  Gift,
   Sparkles,
   Zap,
   ArrowRight,
@@ -105,15 +92,6 @@ const headerCopy: Record<
   {
     searchSuggestions: string[];
     searchButton: string;
-    portal: string;
-    seller: string;
-    dashboard: string;
-    accountMenu: string;
-    authenticatedAccount: string;
-    profile: string;
-    myOrders: string;
-    signOut: string;
-    accessAccount: string;
     mobileSearchPlaceholder: string;
     exploreCategories: string;
     storeDepartments: string;
@@ -138,7 +116,6 @@ const headerCopy: Record<
     estimatedTotal: string;
     viewFullBasket: string;
     languageSelect: string;
-    currencySelect: string;
   }
 > = {
   en: {
@@ -150,15 +127,6 @@ const headerCopy: Record<
       "Browse premium coffee...",
     ],
     searchButton: "Search",
-    portal: "Portal",
-    seller: "Seller",
-    dashboard: "Dashboard",
-    accountMenu: "Account menu",
-    authenticatedAccount: "Authenticated Account",
-    profile: "Profile",
-    myOrders: "My Orders",
-    signOut: "Sign Out",
-    accessAccount: "Access Account",
     mobileSearchPlaceholder: "Search...",
     exploreCategories: "Explore Categories",
     storeDepartments: "Store Departments",
@@ -184,7 +152,6 @@ const headerCopy: Record<
     estimatedTotal: "Estimated Total",
     viewFullBasket: "View Full Basket",
     languageSelect: "Language Select",
-    currencySelect: "Currency Select",
   },
   ps: {
     searchSuggestions: [
@@ -195,15 +162,6 @@ const headerCopy: Record<
       "پریمیم قهوه ولټوئ...",
     ],
     searchButton: "لټون",
-    portal: "پورټل",
-    seller: "پلورونکی",
-    dashboard: "ډشبورډ",
-    accountMenu: "د حساب مېنو",
-    authenticatedAccount: "تایید شوی حساب",
-    profile: "پروفایل",
-    myOrders: "زما فرمایشونه",
-    signOut: "وتل",
-    accessAccount: "حساب ته ننوځئ",
     mobileSearchPlaceholder: "لټون...",
     exploreCategories: "کټګورۍ وپلټئ",
     storeDepartments: "د پلورنځي څانګې",
@@ -229,7 +187,6 @@ const headerCopy: Record<
     estimatedTotal: "اټکلی ټولټال",
     viewFullBasket: "بشپړ باسکټ وګورئ",
     languageSelect: "ژبه وټاکئ",
-    currencySelect: "کرنسي وټاکئ",
   },
   "fa-AF": {
     searchSuggestions: [
@@ -240,15 +197,6 @@ const headerCopy: Record<
       "قهوه ممتاز جستجو کنید...",
     ],
     searchButton: "جستجو",
-    portal: "پورتال",
-    seller: "فروشنده",
-    dashboard: "داشبورد",
-    accountMenu: "منوی حساب",
-    authenticatedAccount: "حساب تاییدشده",
-    profile: "پروفایل",
-    myOrders: "سفارش‌های من",
-    signOut: "خروج",
-    accessAccount: "ورود به حساب",
     mobileSearchPlaceholder: "جستجو...",
     exploreCategories: "کاوش دسته‌بندی‌ها",
     storeDepartments: "بخش‌های فروشگاه",
@@ -274,7 +222,6 @@ const headerCopy: Record<
     estimatedTotal: "جمع تخمینی",
     viewFullBasket: "مشاهده سبد کامل",
     languageSelect: "انتخاب زبان",
-    currencySelect: "انتخاب ارز",
   },
 };
 
@@ -285,13 +232,10 @@ export default function Header() {
     locale === "ps" || locale === "fa-AF" ? locale : "en";
   const isRtl = safeLocale !== "en";
   const copy = headerCopy[safeLocale];
-  const pathname = usePathname();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { cart, itemCount, total, removeItem, updateQuantity, refreshCart } = useCart();
-  const { currency, setCurrency } = useCurrency();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showCategoriesDropdown, setShowCategoriesDropdown] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
@@ -312,7 +256,6 @@ export default function Header() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-  const userMenuRef = useRef<HTMLDivElement>(null);
   const categoriesRef = useRef<HTMLDivElement>(null);
 
   // Typewriter effect - stops when user focuses on search
@@ -351,26 +294,13 @@ export default function Header() {
 
   const handleLogin = () => router.push("/auth/login");
 
-  const handleLogout = () => {
-    logout();
-    setShowUserMenu(false);
-    router.push("/");
-  };
-
   const closeAll = useCallback(() => {
-    setShowUserMenu(false);
     setShowCategoriesDropdown(false);
     setIsCartOpen(false);
   }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        userMenuRef.current &&
-        !userMenuRef.current.contains(event.target as Node)
-      ) {
-        setShowUserMenu(false);
-      }
       if (
         categoriesRef.current &&
         !categoriesRef.current.contains(event.target as Node)
@@ -390,7 +320,7 @@ export default function Header() {
         className="sticky top-0 z-[100] border-b border-gray-100 bg-white/95 backdrop-blur-xl shadow-sm overflow-x-clip"
       >
         <div className="mx-auto w-full max-w-7xl px-2 sm:px-4 py-2 sm:py-3">
-          <div className="flex min-w-0 flex-nowrap items-center justify-between gap-1.5 sm:gap-4 md:gap-6 lg:gap-8">
+          <div className="flex min-w-0 flex-nowrap items-center justify-between gap-2 sm:gap-3 md:gap-4">
             {/* LOGO */}
             <Link
               href="/"
@@ -401,7 +331,7 @@ export default function Header() {
                 alt="logo"
                 width={180}
                 height={52}
-                className="h-6 sm:h-10 md:h-12 lg:h-14 w-auto drop-shadow-sm transition-transform hover:scale-105"
+                className="h-7 sm:h-9 md:h-10 lg:h-11 w-auto drop-shadow-sm transition-transform hover:scale-105"
                 priority
               />
             </Link>
@@ -409,7 +339,7 @@ export default function Header() {
             {/* SEARCH - Desktop & Tablet */}
             <form
               onSubmit={handleSearch}
-              className={`hidden md:flex order-2 min-w-0 flex-1 items-center gap-3 bg-white hover:bg-gray-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 px-2 rounded-full h-12 border border-gray-200 transition-all duration-300 group max-w-2xl shadow-sm ${isRtl ? "pr-5" : "pl-5"}`}
+              className={`hidden md:flex order-2 min-w-0 flex-1 items-center gap-3 bg-white hover:bg-gray-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 px-2 rounded-full h-11 border border-gray-200 transition-all duration-300 group max-w-3xl shadow-sm ${isRtl ? "pr-5" : "pl-5"}`}
             >
               <Search
                 className="text-gray-400 group-focus-within:text-primary transition-colors shrink-0"
@@ -443,9 +373,7 @@ export default function Header() {
             </form>
 
             {/* RIGHT ICONS - Integrated Professional Row */}
-            <div
-              className="flex shrink-0 items-center gap-1 sm:gap-3 md:gap-4 order-3"
-            >
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5 md:gap-3 order-3">
               {/* Mobile Search Toggle */}
               <button
                 onClick={() => setShowMobileSearch(!showMobileSearch)}
@@ -454,44 +382,26 @@ export default function Header() {
                 <Search size={19} />
               </button>
 
-              {/* VENDOR PORTAL - Professional Row Alignment */}
-              <Link
-                href={
-                  isAuthenticated && user?.role === "VENDOR"
-                    ? "/vendor/dashboard"
-                    : "/vendor/register"
-                }
-                className="hidden lg:flex items-center gap-3 group px-3 py-1.5 hover:bg-gray-50 rounded-full transition-all border border-transparent hover:border-gray-100"
-              >
-                <div className="h-9 w-9 flex items-center justify-center rounded-full bg-gray-50 group-hover:bg-primary/5 transition-all outline outline-1 outline-gray-100">
-                  {isAuthenticated && user?.role === "VENDOR" ? (
-                    <LayoutDashboard
-                      size={18}
-                      className="text-gray-600 group-hover:text-primary transition-colors"
-                    />
-                  ) : (
-                    <Store
-                      size={18}
-                      className="text-gray-600 group-hover:text-primary transition-colors"
-                    />
-                  )}
+              {/* AUTH CTAS */}
+              {!isAuthenticated && (
+                <div className="hidden md:flex items-center gap-2">
+                  <button
+                    onClick={handleLogin}
+                    className="h-9 px-4 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    Login
+                  </button>
+                  <Link
+                    href="/vendor/register"
+                    className="h-9 px-4 rounded-full bg-primary text-white text-sm font-semibold inline-flex items-center hover:brightness-110 transition-all shadow-sm"
+                  >
+                    Become a Vendor
+                  </Link>
                 </div>
-                <div className="flex flex-col -space-y-1">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-primary transition-colors">
-                    {copy.portal}
-                  </span>
-                  <span className="text-[13px] font-bold text-gray-700 group-hover:text-primary leading-tight transition-colors">
-                    {isAuthenticated && user?.role === "VENDOR"
-                      ? copy.dashboard
-                      : copy.seller}
-                  </span>
-                </div>
-              </Link>
-
-              <div className="h-8 w-px bg-gray-100 hidden md:block mx-1" />
+              )}
 
               {/* SELECTORS - Aligned properly */}
-              <div className="hidden xl:flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2">
                 <LanguageSelector
                   locale={locale}
                   label={copy.languageSelect}
@@ -502,102 +412,15 @@ export default function Header() {
                     { code: "fa-AF", label: "دری", flag: "🇦🇫" },
                   ]}
                 />
-                <CurrencySelector label={copy.currencySelect} isRtl={isRtl} />
               </div>
 
-              {/* USER & CART ICONS - Horizontal Alignment */}
-              <div className="flex items-center gap-1 sm:gap-2.5">
-                <div className="h-8 w-px bg-gray-100 hidden sm:block mx-1" />
-
-                <div className="relative" ref={userMenuRef}>
-                  <IconButton
-                    onClick={() => setShowUserMenu(!showUserMenu)}
-                    active={showUserMenu}
-                    aria-label={copy.accountMenu}
-                  >
-                    <User size={20} />
-                  </IconButton>
-                  <AnimatePresence>
-                    {showUserMenu && (
-                      <motion.div
-                        variants={dropdownVariants}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
-                        className={`absolute mt-4 w-60 max-w-[90vw] bg-white rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.2)] z-[1001] border border-gray-100 overflow-hidden ${isRtl ? "left-0" : "right-0"}`}
-                      >
-                        <div className="py-2 px-1">
-                          {isAuthenticated ? (
-                            <>
-                              <div className="px-4 py-3 border-b border-gray-50 mb-2 bg-gray-50/50">
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                                  {copy.authenticatedAccount}
-                                </p>
-                                <p className="text-[13px] font-bold text-gray-800 truncate">
-                                  {user?.email}
-                                </p>
-                              </div>
-                              <Link
-                                href={
-                                  user?.role === "CUSTOMER"
-                                    ? "/profile"
-                                    : user?.role === "VENDOR"
-                                      ? "/vendor/profile"
-                                      : "/admin/profile"
-                                }
-                                onClick={closeAll}
-                                className="menu-link"
-                              >
-                                <User size={16} /> {copy.profile}
-                              </Link>
-                              <button
-                                onClick={() => {
-                                  router.push(
-                                    user?.role === "CUSTOMER"
-                                      ? "/orders"
-                                      : "/vendor/orders",
-                                  );
-                                  closeAll();
-                                }}
-                                className="menu-link"
-                              >
-                                <ShoppingCart size={16} /> {copy.myOrders}
-                              </button>
-                              <div className="h-px bg-gray-100 my-2 mx-2" />
-                              <button
-                                onClick={handleLogout}
-                                className="menu-link text-red-500 hover:bg-red-50"
-                              >
-                                {copy.signOut}
-                              </button>
-                            </>
-                          ) : (
-                            <div className="p-3">
-                              <button
-                                onClick={() => {
-                                  router.push("/auth/login");
-                                  closeAll();
-                                }}
-                                className="w-full py-3.5 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all cursor-pointer"
-                              >
-                                {copy.accessAccount}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                <IconButton
-                  onClick={() => setIsCartOpen(true)}
-                  badge={itemCount?.toString()}
-                  aria-label={t("cartLabel")}
-                >
-                  <ShoppingBasket size={20} />
-                </IconButton>
-              </div>
+              <IconButton
+                onClick={() => setIsCartOpen(true)}
+                badge={itemCount?.toString()}
+                aria-label={t("cartLabel")}
+              >
+                <ShoppingBasket size={20} />
+              </IconButton>
             </div>
           </div>
 
@@ -1110,76 +933,6 @@ function CategoryItem({
   );
 }
 
-function CurrencySelector({ label, isRtl }: { label: string; isRtl: boolean }) {
-  const [open, setOpen] = useState(false);
-  const { currency, setCurrency } = useCurrency();
-  const currencies: ("USD" | "AFN" | "EUR" | "CAD")[] = [
-    "USD",
-    "AFN",
-    "EUR",
-    "CAD",
-  ];
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function click(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node))
-        setOpen(false);
-    }
-    window.addEventListener("mousedown", click);
-    return () => window.removeEventListener("mousedown", click);
-  }, []);
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen(!open)}
-        className={`h-11 px-4 rounded-full border flex items-center gap-2 text-[14px] font-bold transition-all cursor-pointer ${open ? "bg-white shadow-lg border-primary/30 text-primary" : "bg-gray-50/80 border-gray-100 hover:bg-white text-gray-600"}`}
-      >
-        <DollarSign
-          size={14}
-          className={`${open ? "text-primary" : "text-gray-400"}`}
-        />
-        <span className="mt-0.5">{currency}</span>
-        <ChevronDown
-          size={12}
-          className={`transition-transform duration-300 ${open ? "rotate-180 opacity-100" : "opacity-40"}`}
-        />
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            variants={dropdownVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className={`absolute mt-3 w-40 bg-white rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-gray-100 z-[1001] overflow-hidden p-2 ${isRtl ? "left-0" : "right-0"}`}
-          >
-            <p className="px-4 py-2.5 text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] mb-1">
-              {label}
-            </p>
-            {currencies.map((c) => (
-              <button
-                key={c}
-                onClick={() => {
-                  setCurrency(c);
-                  setOpen(false);
-                }}
-                className={`w-full px-4 py-3 rounded-xl text-sm font-bold flex items-center justify-between transition-all cursor-pointer ${isRtl ? "text-right" : "text-left"} ${currency === c ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-50"}`}
-              >
-                {c}
-                {currency === c && (
-                  <div className="h-2 w-2 rounded-full bg-primary" />
-                )}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 function LanguageSelector({
   locale,
   languages,
@@ -1210,12 +963,12 @@ function LanguageSelector({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className={`h-11 px-3.5 rounded-full border flex items-center gap-2 text-sm font-bold transition-all cursor-pointer ${open ? "bg-white shadow-lg border-primary/30 text-primary" : "bg-gray-50/80 border-gray-100 hover:bg-white text-gray-600"}`}
+        className={`h-9 px-3 rounded-full border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${open ? "bg-white shadow-lg border-primary/30 text-primary" : "bg-gray-50/80 border-gray-100 hover:bg-white text-gray-600"}`}
       >
-        <span className="text-lg w-7 h-7 flex items-center justify-center bg-white rounded-full shadow-md border border-gray-100">
+        <span className="text-base w-6 h-6 flex items-center justify-center bg-white rounded-full shadow-sm border border-gray-100">
           {current.flag}
         </span>
-        <span className="uppercase text-xs tracking-widest mt-0.5">
+        <span className="uppercase text-[10px] tracking-wider mt-0.5">
           {locale.split("-")[0]}
         </span>
         <ChevronDown
