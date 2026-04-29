@@ -56,15 +56,21 @@ function extractPrice(price: number): { original: number; offer: number } {
   return { original, offer };
 }
 
-function ProductCard({ product, index }: { product: Product; index: number }) {
+function ProductCard({
+  product,
+  index,
+  addToCartLabel,
+}: {
+  product: Product;
+  index: number;
+  addToCartLabel: string;
+}) {
   const [count, setCount] = useState(0);
   const [isAdding, setIsAdding] = useState(false);
   const { addItem } = useCart();
   const locale = useLocale();
   const safeLocale = locale === "ps" || locale === "fa-AF" ? locale : "en";
-  const ui = featuredUiCopy[safeLocale];
   const { original, offer } = extractPrice(product.price);
-  const priceDisplay = product.priceDisplay;
   const rating = 4;
 
   return (
@@ -72,9 +78,12 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         initial={{ opacity: 0, y: 30, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, delay: index * 0.1, type: "spring", stiffness: 100 }}
-        className="group border rounded-lg bg-white overflow-hidden relative"
+        className="group relative overflow-hidden rounded-lg border bg-white"
         style={{ borderColor: 'rgba(226, 232, 240, 0.6)' }}
       >
+        <span className="absolute left-3 top-3 z-10 rounded-md bg-primary px-2 py-1 text-[10px] font-bold text-white">
+          {product.badge}
+        </span>
         {/* Image Container */}
         <Link href={`/products/${product.id}`} className="block">
           <div className="relative w-full h-48 bg-slate-50 overflow-hidden">
@@ -90,8 +99,12 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
 
         {/* Content */}
         <div className="px-3 py-3">
-          {/* Category */}
-          <p className="text-xs text-slate-400 uppercase tracking-wider">
+          <p className="line-clamp-2 text-sm font-semibold text-slate-900 min-h-10">
+            {product.name}
+          </p>
+
+          {/* Vendor */}
+          <p className="mt-1 text-xs text-slate-400 uppercase tracking-wider">
             <bdi dir="ltr">{localizeVendor(product.vendor, safeLocale)}</bdi>
           </p>
           
@@ -119,7 +132,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
           <div>
             {count === 0 ? (
               <motion.button
-                className="flex items-center justify-center gap-1.5 rounded-full text-sm font-medium h-8 px-3 transition-all"
+                className="flex h-8 items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium transition-all"
                 style={{ backgroundColor: 'rgba(220, 53, 69, 0.1)', color: 'var(--primary)', border: '1px solid rgba(220, 53, 69, 0.2)' }}
                 onClick={async (e) => {
                   e.stopPropagation();
@@ -131,7 +144,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
                       locale === "ps" ? "کارټ ته اضافه شو!" : "به سبد اضافه شد!"
                     );
                     setCount(0);
-                  } catch (error) {
+                  } catch {
                     toast.error(
                       locale === "en" ? "Failed to add to cart" : 
                       locale === "ps" ? "کارټ ته اضافه کول ناکام شول" : "افزودن به سبد ناموفق بود"
@@ -150,13 +163,13 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
                 ) : (
                   <>
                     <ShoppingCart className="h-3.5 w-3.5" strokeWidth={2} />
-                    {count > 0 ? count : ui.add}
+                    {count > 0 ? count : addToCartLabel}
                   </>
                 )}
               </motion.button>
             ) : (
               <div 
-                className="flex items-center justify-center gap-1 h-8 px-2 rounded-full"
+                className="flex h-8 items-center justify-center gap-1 rounded-md px-2"
                 style={{ backgroundColor: 'rgba(220, 53, 69, 0.15)' }}
               >
                 <button 
@@ -164,7 +177,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
                     e.stopPropagation();
                     setCount((prev) => Math.max(prev - 1, 0));
                   }}
-                  className="cursor-pointer text-[var(--primary)] px-2 h-full flex items-center justify-center hover:bg-white/50 rounded-full transition-colors"
+                  className="flex h-full cursor-pointer items-center justify-center rounded-sm px-2 text-[var(--primary)] transition-colors hover:bg-white/50"
                 >
                   <Minus className="h-3.5 w-3.5" strokeWidth={2} />
                 </button>
@@ -174,7 +187,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
                     e.stopPropagation();
                     setCount((prev) => prev + 1);
                   }}
-                  className="cursor-pointer text-[var(--primary)] px-2 h-full flex items-center justify-center hover:bg-white/50 rounded-full transition-colors"
+                  className="flex h-full cursor-pointer items-center justify-center rounded-sm px-2 text-[var(--primary)] transition-colors hover:bg-white/50"
                 >
                   <Plus className="h-3.5 w-3.5" strokeWidth={2} />
                 </button>
@@ -209,7 +222,7 @@ export default function FeaturedProducts({
           transition={{ duration: 0.5 }}
         >
           <motion.span 
-            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider border"
+            className="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-xs font-bold uppercase tracking-wider"
             style={{ backgroundColor: 'rgba(220, 53, 69, 0.08)', borderColor: 'rgba(220, 53, 69, 0.15)', color: 'var(--primary)' }}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -227,14 +240,14 @@ export default function FeaturedProducts({
         </motion.div>
 
         <motion.div 
-          className="flex items-center gap-4 self-start rounded-2xl border p-4 backdrop-blur-sm"
-          style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', borderColor: 'rgba(226, 232, 240, 0.8)', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}
+          className="flex items-center gap-4 self-start rounded-lg border p-4"
+          style={{ backgroundColor: 'rgba(255, 255, 255, 0.96)', borderColor: 'rgba(226, 232, 240, 0.8)' }}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <div 
-            className="flex h-12 w-12 items-center justify-center rounded-xl border"
+            className="flex h-12 w-12 items-center justify-center rounded-lg border"
             style={{ backgroundColor: 'rgba(220, 53, 69, 0.1)', borderColor: 'rgba(220, 53, 69, 0.2)', color: 'var(--primary)' }}
           >
             <ShoppingCart className="h-6 w-6" strokeWidth={1.5} />
@@ -253,7 +266,12 @@ export default function FeaturedProducts({
       {/* Product Grid */}
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {products.slice(0, 4).map((product, index) => (
-          <ProductCard key={product.id} product={product} index={index} />
+          <ProductCard
+            key={product.id}
+            product={product}
+            index={index}
+            addToCartLabel={addToCartLabel}
+          />
         ))}
       </div>
 
@@ -270,11 +288,10 @@ export default function FeaturedProducts({
         >
           <Link
             href="/products"
-            className="inline-flex h-14 items-center gap-2 rounded-full px-8 text-sm font-bold transition-all border"
+            className="inline-flex h-14 items-center gap-2 rounded-md border px-8 text-sm font-bold transition-all"
             style={{ 
               borderColor: 'rgba(226, 232, 240, 0.8)', 
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
+              backgroundColor: 'rgba(255, 255, 255, 0.96)'
             }}
           >
             {viewAllLabel}

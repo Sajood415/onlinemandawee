@@ -215,7 +215,7 @@ export default function Categories() {
                       className="group block text-center w-32 sm:w-42"
                     >
                       <motion.div
-                        className="relative flex items-center justify-center overflow-hidden rounded-xl transition-all duration-300 w-32 h-32 sm:w-37.5 sm:h-37.5"
+                        className="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white transition-all duration-300 sm:h-37.5 sm:w-37.5"
                         whileHover={{ scale: 1.05 }}
                       >
                         <Image
@@ -286,10 +286,7 @@ function ArrowButton({
     <motion.button
       onClick={onClick}
       aria-label={`Scroll ${direction}`}
-      className="flex h-10 w-10 items-center justify-center rounded-full border transition-all bg-white text-slate-800 border-slate-200 cursor-pointer hover:bg-primary hover:text-white hover:border-slate-300"
-      style={{
-        boxShadow: "0 4px 20px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06)",
-      }}
+      className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white text-slate-800 transition-all hover:border-slate-300 hover:bg-primary hover:text-white"
       whileHover={{ scale: 1.1, y: -2 }}
       whileTap={{ scale: 0.95 }}
     >

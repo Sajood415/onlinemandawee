@@ -4,6 +4,7 @@ import React from "react";
 import { AuthProvider } from "@/store/auth-context";
 import { CartProvider } from "@/store/cart-context";
 import { CurrencyProvider } from "@/store/currency-context";
+import { WishlistProvider } from "@/store/wishlist-context";
 import { ToastProvider } from "@/components/ui/toast/ToastContext";
 import { useToastUtils, setGlobalToastContext } from "@/lib/utils/toast";
 
@@ -27,11 +28,13 @@ export function AppProviders({ children }: AppProvidersProps) {
     <AuthProvider>
       <CurrencyProvider>
         <CartProvider>
-          <ToastProvider>
-            <ToastInitializer>
-              {children}
-            </ToastInitializer>
-          </ToastProvider>
+          <WishlistProvider>
+            <ToastProvider>
+              <ToastInitializer>
+                {children}
+              </ToastInitializer>
+            </ToastProvider>
+          </WishlistProvider>
         </CartProvider>
       </CurrencyProvider>
     </AuthProvider>

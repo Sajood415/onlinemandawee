@@ -17,6 +17,8 @@ type HeroSlide = {
   title: string;
   description: string;
   cta: string;
+  secondaryCta: string;
+  points: [string, string];
   ctaLink: string;
   overlayColor: string;
   textPosition: "left" | "center" | "right";
@@ -82,6 +84,8 @@ const localizedSlides: Record<
       description:
         "From local farms to your doorstep. Get 20% off your first fresh produce order!",
       cta: "Shop Fresh",
+      secondaryCta: "View Deals",
+      points: ["Free delivery over $100", "Verified local vendors"],
     },
     {
       alt: "Premium baby essentials",
@@ -90,6 +94,8 @@ const localizedSlides: Record<
       description:
         "Premium baby products with love. Soft, safe, and perfect for delicate skin.",
       cta: "Shop Baby",
+      secondaryCta: "Explore Essentials",
+      points: ["Parent-trusted products", "Fast doorstep delivery"],
     },
     {
       alt: "Baby bath essentials",
@@ -98,6 +104,8 @@ const localizedSlides: Record<
       description:
         "Natural bath essentials that make cleaning up fun and safe for babies.",
       cta: "Explore",
+      secondaryCta: "Shop Care",
+      points: ["Gentle formulas", "Everyday low prices"],
     },
     {
       alt: "Gifts and celebrations",
@@ -106,6 +114,8 @@ const localizedSlides: Record<
       description:
         "Curated gift packages for every occasion. Birthdays, parties & special moments.",
       cta: "Shop Gifts",
+      secondaryCta: "Build Bundle",
+      points: ["Personalized options", "Premium wrapping available"],
     },
     {
       alt: "Fresh fruit market",
@@ -114,6 +124,8 @@ const localizedSlides: Record<
       description:
         "Handpicked seasonal fruits. Juicy, ripe, and delivered fresh within hours.",
       cta: "Order Now",
+      secondaryCta: "See Top Picks",
+      points: ["Same-day freshness", "Direct from trusted vendors"],
     },
     {
       alt: "Special offers",
@@ -122,6 +134,8 @@ const localizedSlides: Record<
       description:
         "Exclusive discounts on your favorite products. Valid this weekend only!",
       cta: "View Deals",
+      secondaryCta: "Browse Products",
+      points: ["Up to 50% off", "New offers every week"],
     },
   ],
   ps: [
@@ -132,6 +146,8 @@ const localizedSlides: Record<
       description:
         "له سیمه‌ییزو فارمونو تر ستاسو کور پورې. په لومړي تازه فرمایش کې 20٪ تخفیف واخلئ!",
       cta: "تازه واخلئ",
+      secondaryCta: "تخفیفونه وګورئ",
+      points: ["پر $100 پورته وړیا تحویل", "باوري محلي پلورونکي"],
     },
     {
       alt: "د ماشوم پریمیم اړین توکي",
@@ -140,6 +156,8 @@ const localizedSlides: Record<
       description:
         "د مینې سره پریمیم د ماشوم محصولات. نرم، خوندي او د نازک پوست لپاره مناسب.",
       cta: "د ماشوم توکي",
+      secondaryCta: "اړین توکي وګورئ",
+      points: ["د مور و پلار باور", "چټک کور تحویل"],
     },
     {
       alt: "د ماشوم د حمام اړین توکي",
@@ -148,6 +166,8 @@ const localizedSlides: Record<
       description:
         "طبیعي د حمام توکي چې پاکوالی د ماشومانو لپاره اسانه او خوندي کوي.",
       cta: "وګورئ",
+      secondaryCta: "پاملرنه واخلئ",
+      points: ["نرم فارمول", "ورځني ټیټې بیې"],
     },
     {
       alt: "ډالۍ او لمانځنې",
@@ -156,6 +176,8 @@ const localizedSlides: Record<
       description:
         "د هرې موقع لپاره غوره شوې ډالۍ بستې. زوکړې، محفلونه او ځانګړې شېبې.",
       cta: "ډالۍ واخلئ",
+      secondaryCta: "بسته جوړه کړئ",
+      points: ["شخصي اختیارونه", "پریمیم لفافه"],
     },
     {
       alt: "تازه مېوې مارکېټ",
@@ -164,6 +186,8 @@ const localizedSlides: Record<
       description:
         "لاس‌چین شوې موسمي مېوې. خوږې، پخې او په څو ساعتونو کې تازه تحویلیږي.",
       cta: "اوس فرمایش",
+      secondaryCta: "غوره توکي وګورئ",
+      points: ["همدا ورځ تازه", "له باوري پلورونکو"],
     },
     {
       alt: "ځانګړي وړاندیزونه",
@@ -172,6 +196,8 @@ const localizedSlides: Record<
       description:
         "ستاسو د خوښې محصولاتو لپاره ځانګړي تخفیفونه. یوازې د دې اونۍ پای لپاره!",
       cta: "وړاندیزونه",
+      secondaryCta: "محصولات وګورئ",
+      points: ["تر 50٪ تخفیف", "هره اوونۍ نوي وړاندیزونه"],
     },
   ],
   "fa-AF": [
@@ -182,6 +208,8 @@ const localizedSlides: Record<
       description:
         "از فارم‌های محلی تا خانه شما. در اولین سفارش تازه 20٪ تخفیف بگیرید!",
       cta: "خرید تازه",
+      secondaryCta: "دیدن تخفیف‌ها",
+      points: ["تحویل رایگان بالای $100", "فروشندگان معتبر محلی"],
     },
     {
       alt: "اقلام ممتاز نوزاد",
@@ -190,6 +218,8 @@ const localizedSlides: Record<
       description:
         "محصولات ممتاز نوزاد با عشق. نرم، امن و مناسب پوست حساس.",
       cta: "خرید نوزاد",
+      secondaryCta: "دیدن ضروریات",
+      points: ["مورد اعتماد والدین", "تحویل سریع به خانه"],
     },
     {
       alt: "لوازم حمام نوزاد",
@@ -198,6 +228,8 @@ const localizedSlides: Record<
       description:
         "اقلام طبیعی حمام که پاک‌کاری را برای نوزادان امن و ساده می‌سازد.",
       cta: "مشاهده",
+      secondaryCta: "خرید مراقبت",
+      points: ["فرمول ملایم", "قیمت روزانه مناسب"],
     },
     {
       alt: "هدایا و جشن‌ها",
@@ -206,6 +238,8 @@ const localizedSlides: Record<
       description:
         "بسته‌های هدیه منتخب برای هر مناسبت. تولدها، مهمانی‌ها و لحظه‌های خاص.",
       cta: "خرید هدیه",
+      secondaryCta: "ساخت بسته",
+      points: ["گزینه‌های شخصی‌سازی", "بسته‌بندی ممتاز"],
     },
     {
       alt: "بازار میوه تازه",
@@ -214,6 +248,8 @@ const localizedSlides: Record<
       description:
         "میوه‌های موسمی دست‌چین‌شده؛ آبدار، رسیده و در چند ساعت تازه تحویل می‌شود.",
       cta: "همین حالا",
+      secondaryCta: "دیدن بهترین‌ها",
+      points: ["تازگی همان‌روز", "مستقیم از فروشندگان معتبر"],
     },
     {
       alt: "پیشنهادهای ویژه",
@@ -222,6 +258,8 @@ const localizedSlides: Record<
       description:
         "تخفیف‌های اختصاصی روی محصولات محبوب شما. فقط همین آخر هفته!",
       cta: "دیدن تخفیف",
+      secondaryCta: "مشاهده محصولات",
+      points: ["تا 50٪ تخفیف", "پیشنهادهای تازه هفتگی"],
     },
   ],
 };
@@ -365,7 +403,7 @@ export default function HeroSection() {
                   </div>
 
                   <div
-                    className={`relative z-10 h-full flex items-center px-4 sm:px-6 md:px-12 lg:px-16 py-8 sm:py-10 ${
+                    className={`absolute inset-0 z-10 flex items-center px-4 sm:px-6 md:px-12 lg:px-16 ${
                       currentSlideData.textPosition === "center"
                         ? "justify-center text-center"
                         : currentSlideData.textPosition === "right"
@@ -404,15 +442,38 @@ export default function HeroSection() {
                       </motion.p>
 
                       <motion.div
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.38, duration: 0.35 }}
+                        className={`mb-5 flex flex-wrap gap-2 ${currentSlideData.textPosition === "center" ? "justify-center" : ""}`}
+                      >
+                        {currentSlideData.points.map((point) => (
+                          <span
+                            key={point}
+                            className="rounded-full bg-white/20 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm"
+                          >
+                            {point}
+                          </span>
+                        ))}
+                      </motion.div>
+
+                      <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4, duration: 0.4 }}
+                        className={`flex flex-wrap gap-2 ${currentSlideData.textPosition === "center" ? "justify-center" : ""}`}
                       >
                         <Link
                           href={currentSlideData.ctaLink}
                           className="inline-flex items-center justify-center px-6 py-2.5 rounded-full text-sm font-semibold bg-white text-gray-900 hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl hover:scale-105"
                         >
                           {currentSlideData.cta}
+                        </Link>
+                        <Link
+                          href="/products"
+                          className="inline-flex items-center justify-center px-6 py-2.5 rounded-full text-sm font-semibold border border-white/50 text-white hover:bg-white/15 transition-all shadow-lg hover:shadow-xl"
+                        >
+                          {currentSlideData.secondaryCta}
                         </Link>
                       </motion.div>
                     </div>

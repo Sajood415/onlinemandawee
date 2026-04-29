@@ -314,6 +314,19 @@ export default function Header() {
 
   return (
     <>
+      <div className="hidden bg-[#0f3460] text-white md:block">
+        <div className="mx-auto flex h-8 max-w-7xl items-center justify-between px-4 text-xs">
+          <p className="font-semibold">Free Delivery on Orders Above $100</p>
+          <div className="flex items-center gap-4 text-white/90">
+            <Link href="/vendor/register" className="hover:text-white">
+              Sell on Mandawee
+            </Link>
+            <Link href="/track-order" className="hover:text-white">
+              Track Order
+            </Link>
+          </div>
+        </div>
+      </div>
       {/* TOP BAR – sticky (logo, search, account, cart) */}
       <header
         dir={isRtl ? "rtl" : "ltr"}
@@ -474,14 +487,14 @@ export default function Header() {
       {/* PRIMARY NAV – scrolls normally */}
       <nav
         dir={isRtl ? "rtl" : "ltr"}
-        className="bg-primary text-white relative z-50 overflow-x-clip"
+        className="bg-linear-to-r from-primary via-primary to-[#c5152a] text-white relative z-50 overflow-x-clip border-t border-white/20 shadow-[0_6px_16px_rgba(15,23,42,0.2)]"
       >
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 flex items-center h-14 sm:h-[68px]">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 flex items-center h-12 sm:h-14">
           {/* CATEGORIES BUTTON */}
           <div className="relative flex-shrink-0" ref={categoriesRef}>
             <button
               onClick={() => setShowCategoriesDropdown(!showCategoriesDropdown)}
-              className={`flex items-center gap-1.5 sm:gap-3 font-bold h-14 sm:h-[68px] px-2 sm:px-6 lg:px-8 transition-all duration-300 cursor-pointer border-white/10 ${isRtl ? "border-l" : "border-r"} ${showCategoriesDropdown ? "bg-white text-primary shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]" : "bg-black/10 hover:bg-black/20"}`}
+              className={`flex items-center gap-1.5 sm:gap-2.5 font-bold h-12 sm:h-14 px-2 sm:px-5 lg:px-6 transition-all duration-300 cursor-pointer border-white/15 ${isRtl ? "border-l" : "border-r"} ${showCategoriesDropdown ? "bg-white text-primary shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]" : "bg-black/20 hover:bg-black/35"}`}
             >
               <Menu size={18} />
               <span className="hidden leading-none sm:inline mt-0.5 tracking-tight">
@@ -609,16 +622,16 @@ export default function Header() {
 
           {/* NAV LINKS */}
           {/* Desktop - All Links */}
-          <div className="hidden lg:flex flex-1 items-center gap-6 lg:gap-8 px-6 lg:px-8 py-2 text-[14px] lg:text-[15px] font-bold">
-            <Link href="/" className="nav-link-bottom">
+          <div className="hidden lg:flex flex-1 items-center gap-2 px-5 lg:px-7 py-1.5 text-[13px] lg:text-[14px] font-bold">
+            <Link href="/" className="inline-flex h-8 items-center rounded-md px-3 transition-all hover:bg-white/18 hover:text-white">
               {copy.home}
             </Link>
-            <Link href="/products" className="nav-link-bottom">
+            <Link href="/products" className="inline-flex h-8 items-center rounded-md px-3 transition-all hover:bg-white/18 hover:text-white">
               {copy.products}
             </Link>
             <Link
               href="/gifts"
-              className="nav-link-bottom relative flex items-center gap-2 group"
+              className="inline-flex h-8 items-center rounded-md px-3 relative flex items-center gap-2 group transition-all hover:bg-white/18 hover:text-white"
             >
               {copy.giftSets}
               <span
@@ -628,12 +641,12 @@ export default function Header() {
                 {copy.new}
               </span>
             </Link>
-            <Link href="/baby-packages" className="nav-link-bottom">
+            <Link href="/baby-packages" className="inline-flex h-8 items-center rounded-md px-3 transition-all hover:bg-white/18 hover:text-white">
               {copy.babyCare}
             </Link>
             <Link
               href="/deals"
-              className="nav-link-bottom flex items-center gap-1.5"
+              className="inline-flex h-8 items-center rounded-md px-3 flex items-center gap-1.5 transition-all hover:bg-white/18 hover:text-white"
             >
               <Zap
                 size={15}
@@ -641,23 +654,23 @@ export default function Header() {
               />{" "}
               {copy.dailyDeals}
             </Link>
-            <Link href="/contact" className="nav-link-bottom">
+            <Link href="/contact" className="inline-flex h-8 items-center rounded-md px-3 transition-all hover:bg-white/18 hover:text-white">
               {copy.support}
             </Link>
           </div>
 
           {/* Tablet - Limited Links */}
-          <div className="hidden md:flex lg:hidden flex-1 min-w-0 px-2 py-2 overflow-visible">
-            <div className="flex w-full min-w-max items-center gap-3 text-[13px] font-bold whitespace-nowrap">
-              <Link href="/" className="nav-link-bottom px-2 whitespace-nowrap">
+          <div className="hidden md:flex lg:hidden flex-1 min-w-0 px-2 py-1.5 overflow-visible">
+            <div className="flex w-full min-w-max items-center gap-2 text-[13px] font-bold whitespace-nowrap">
+              <Link href="/" className="inline-flex h-8 items-center rounded-md px-2 whitespace-nowrap transition-all hover:bg-white/18">
                 {copy.home}
               </Link>
-              <Link href="/products" className="nav-link-bottom px-2 whitespace-nowrap">
+              <Link href="/products" className="inline-flex h-8 items-center rounded-md px-2 whitespace-nowrap transition-all hover:bg-white/18">
                 {copy.products}
               </Link>
               <Link
                 href="/gifts"
-                className="nav-link-bottom px-2 relative flex items-center gap-1 whitespace-nowrap"
+                className="inline-flex h-8 items-center rounded-md px-2 relative flex items-center gap-1 whitespace-nowrap transition-all hover:bg-white/18"
               >
                 {copy.gifts}
                 <span
@@ -672,17 +685,17 @@ export default function Header() {
           </div>
 
           {/* Mobile - Limited Links + More Button */}
-          <div className="flex md:hidden flex-1 min-w-0 px-1 py-2 overflow-visible">
+          <div className="flex md:hidden flex-1 min-w-0 px-1 py-1.5 overflow-visible">
             <div className="flex w-full min-w-0 items-center justify-between gap-1 pr-1 text-[10px] min-[360px]:text-[11px] font-bold whitespace-nowrap">
-              <Link href="/" className="nav-link-bottom px-1 whitespace-nowrap shrink min-w-0">
+              <Link href="/" className="inline-flex h-7 items-center rounded-md px-1 whitespace-nowrap shrink min-w-0 transition-all hover:bg-white/18">
                 {copy.home}
               </Link>
-              <Link href="/products" className="nav-link-bottom px-1 whitespace-nowrap shrink min-w-0">
+              <Link href="/products" className="inline-flex h-7 items-center rounded-md px-1 whitespace-nowrap shrink min-w-0 transition-all hover:bg-white/18">
                 {copy.products}
               </Link>
               <Link
                 href="/gifts"
-                className="nav-link-bottom px-1 relative flex items-center gap-1 whitespace-nowrap shrink min-w-0"
+                className="inline-flex h-7 items-center rounded-md px-1 relative flex items-center gap-1 whitespace-nowrap shrink min-w-0 transition-all hover:bg-white/18"
               >
                 {copy.gifts}
                 <span
@@ -1152,3 +1165,4 @@ function IconButton({
     </button>
   );
 }
+
