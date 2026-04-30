@@ -39,7 +39,7 @@ export class PaymentTransactionRepository {
         amount: input.amount,
         currency: input.currency,
         status: input.status,
-        rawPayload: input.rawPayload as Prisma.InputJsonValue,
+        rawPayload: input.rawPayload as any,
         processedAt: input.processedAt ?? null,
       },
     });

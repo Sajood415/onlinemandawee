@@ -136,6 +136,16 @@ const homePageCopy: Record<
       primaryCta: string;
       secondaryCta: string;
     };
+    ui: {
+      add: string;
+      departments: string;
+      curatedPicks: string;
+      popularRightNow: string;
+      trustLayer: string;
+      marketplaceUpdate: string;
+      sameDay: string;
+      daysTwoToThree: string;
+    };
   }
 > = {
   en: {
@@ -224,6 +234,16 @@ const homePageCopy: Record<
       primaryCta: "Start shopping",
       secondaryCta: "Become a vendor",
     },
+    ui: {
+      add: "Add",
+      departments: "departments",
+      curatedPicks: "curated picks",
+      popularRightNow: "Popular Right Now",
+      trustLayer: "Trust Layer",
+      marketplaceUpdate: "Marketplace Update",
+      sameDay: "Same Day",
+      daysTwoToThree: "Days 2-3",
+    },
   },
   ps: {
     highlights: [
@@ -310,6 +330,16 @@ const homePageCopy: Record<
         "د بازار موندنې پاڼه باید په پای کې هم یو پیاوړی بدلون ولري، خو دا برخه ګټوره او لنډه وساتئ.",
       primaryCta: "پېرود پیل کړئ",
       secondaryCta: "پلورونکی شئ",
+    },
+    ui: {
+      add: "اضافه",
+      departments: "څانګې",
+      curatedPicks: "غوره انتخابونه",
+      popularRightNow: "همدا اوس مشهور",
+      trustLayer: "د باور پوړ",
+      marketplaceUpdate: "د مارکېټ تازه معلومات",
+      sameDay: "هماغه ورځ",
+      daysTwoToThree: "۲-۳ ورځې",
     },
   },
   "fa-AF": {
@@ -398,6 +428,16 @@ const homePageCopy: Record<
       primaryCta: "شروع خرید",
       secondaryCta: "فروشنده شوید",
     },
+    ui: {
+      add: "افزودن",
+      departments: "دپارتمان",
+      curatedPicks: "گزینش برتر",
+      popularRightNow: "همین حالا محبوب",
+      trustLayer: "لایه اعتماد",
+      marketplaceUpdate: "به‌روزرسانی بازار",
+      sameDay: "همان روز",
+      daysTwoToThree: "۲-۳ روز",
+    },
   },
 };
 
@@ -434,6 +474,16 @@ function localizeVendor(vendor: string, locale: SupportedLocale) {
   return vendorTranslations[vendor as keyof typeof vendorTranslations]?.[locale] ?? vendor;
 }
 
+function localizeDelivery(
+  delivery: string,
+  copy: (typeof homePageCopy)["en"],
+) {
+  const normalized = delivery.trim().toLowerCase();
+  if (normalized === "same day") return copy.ui.sameDay;
+  if (normalized === "days 2-3") return copy.ui.daysTwoToThree;
+  return delivery;
+}
+
 function getCategoryLabel(categoryId: string, locale: SupportedLocale) {
   const categories = productCatalog.categories as Array<{
     id: string;
@@ -467,6 +517,7 @@ export function HomePage() {
           tabs={localized.arrivals.tabs}
           products={featuredProducts.slice(0, 4)}
           locale={safeLocale}
+          copy={localized}
         />
         <DealsSpotlightSection
           products={featuredProducts.slice(0, 4)}
@@ -475,7 +526,7 @@ export function HomePage() {
         />
         <FeatureBannerWideSection copy={localized} />
         <VendorShowcaseSection products={featuredProducts} copy={localized} locale={safeLocale} />
-        <PromoBannerSection copy={localized} />
+        <PromoBannerSection copy={localized} locale={safeLocale} />
         <CategoryShelvesSection
           products={featuredProducts}
           viewAllLabel={content.featuredSection.viewAll}
@@ -489,6 +540,7 @@ export function HomePage() {
           tabs={localized.arrivals.tabs}
           products={[...featuredProducts].sort((a, b) => b.rating - a.rating).slice(0, 4)}
           locale={safeLocale}
+          copy={localized}
         />
         <TrustSection copy={localized} />
         <NewsletterSection copy={localized} />
@@ -503,12 +555,14 @@ function CompactProductShelfSection({
   tabs,
   products,
   locale,
+  copy,
 }: {
   title: string;
   description: string;
   tabs: string[];
   products: Product[];
   locale: SupportedLocale;
+  copy: (typeof homePageCopy)["en"];
 }) {
   return (
     <section className="bg-white py-14">
@@ -551,10 +605,10 @@ function CompactProductShelfSection({
               <div className="mt-4 flex items-end justify-between">
                 <div>
                   <p className="text-lg font-bold text-[var(--primary)]">${product.price.toFixed(2)}</p>
-                  <p className="text-xs text-slate-400">{product.delivery}</p>
+                  <p className="text-xs text-slate-400">{localizeDelivery(product.delivery, copy)}</p>
                 </div>
                 <span className="rounded-md border border-[var(--primary)]/15 bg-[var(--primary)]/6 px-3 py-2 text-xs font-bold text-[var(--primary)]">
-                  Add
+                  {copy.ui.add}
                 </span>
               </div>
             </Link>
@@ -574,6 +628,7 @@ function DealsSpotlightSection({
   copy: (typeof homePageCopy)["en"];
   locale: SupportedLocale;
 }) {
+  const isRtl = locale !== "en";
   return (
     <section className="bg-white py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -593,7 +648,7 @@ function DealsSpotlightSection({
             className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 transition hover:text-[var(--primary)]"
           >
             {copy.deals.cta}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
           </Link>
         </div>
 
@@ -622,7 +677,7 @@ function DealsSpotlightSection({
                 <div className="space-y-3 p-5">
                   <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                     <span>{getCategoryLabel(product.category, locale)}</span>
-                    <span>{product.delivery}</span>
+                    <span>{localizeDelivery(product.delivery, copy)}</span>
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-[var(--secondary)]">
@@ -711,6 +766,7 @@ function VendorShowcaseSection({
   copy: (typeof homePageCopy)["en"];
   locale: SupportedLocale;
 }) {
+  const isRtl = locale !== "en";
   const vendorMap = new Map<
     string,
     { vendor: string; items: Product[]; categories: Set<string>; rating: number }
@@ -785,7 +841,7 @@ function VendorShowcaseSection({
                   </p>
                 </div>
                 <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-sm text-slate-500">
-                  <span>{Array.from(vendor.categories).length} departments</span>
+                  <span>{Array.from(vendor.categories).length} {copy.ui.departments}</span>
                   <span>{copy.vendors.rating}: {vendor.rating.toFixed(1)}</span>
                 </div>
                 <Link
@@ -793,7 +849,7 @@ function VendorShowcaseSection({
                   className="inline-flex items-center gap-2 rounded-md border border-[var(--primary)]/15 bg-[var(--primary)]/6 px-4 py-2 text-sm font-bold text-[var(--primary)] transition hover:bg-[var(--primary)] hover:text-white"
                 >
                   {copy.vendors.visitStore}
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
                 </Link>
               </div>
             </article>
@@ -804,7 +860,14 @@ function VendorShowcaseSection({
   );
 }
 
-function PromoBannerSection({ copy }: { copy: (typeof homePageCopy)["en"] }) {
+function PromoBannerSection({
+  copy,
+  locale,
+}: {
+  copy: (typeof homePageCopy)["en"];
+  locale: SupportedLocale;
+}) {
+  const isRtl = locale !== "en";
   return (
     <section className="bg-slate-50 py-10">
       <div className="mx-auto grid max-w-7xl gap-5 px-4 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
@@ -812,7 +875,7 @@ function PromoBannerSection({ copy }: { copy: (typeof homePageCopy)["en"] }) {
           <div className="grid gap-0 lg:grid-cols-[1fr_0.95fr]">
             <div className="p-8 sm:p-10">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--primary)]">
-                Popular Right Now
+                {copy.ui.popularRightNow}
               </p>
               <h3 className="mt-3 text-3xl font-bold leading-tight text-slate-950">
                 {copy.promos[0]?.title}
@@ -825,7 +888,7 @@ function PromoBannerSection({ copy }: { copy: (typeof homePageCopy)["en"] }) {
                 className="mt-7 inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-5 py-3 text-sm font-bold text-white transition hover:brightness-110"
               >
                 {copy.promos[0]?.cta}
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
               </Link>
             </div>
             <div className="relative min-h-[240px] bg-slate-100">
@@ -847,7 +910,7 @@ function PromoBannerSection({ copy }: { copy: (typeof homePageCopy)["en"] }) {
               className="rounded-lg border border-slate-200 bg-white p-6"
             >
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-                Curated Picks
+                {copy.ui.curatedPicks}
               </p>
               <h3 className="mt-3 text-2xl font-bold leading-tight text-slate-950">
                 {promo.title}
@@ -862,7 +925,7 @@ function PromoBannerSection({ copy }: { copy: (typeof homePageCopy)["en"] }) {
                 }`}
               >
                 {promo.cta}
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
               </Link>
             </article>
           ))}
@@ -885,6 +948,7 @@ function CategoryShelvesSection({
   copy: (typeof homePageCopy)["en"];
   locale: SupportedLocale;
 }) {
+  const isRtl = locale !== "en";
   const shelves = ["groceries", "gifts", "baby"].map((category) => ({
     id: category,
     products: products.filter((product) => product.category === category).slice(0, 4),
@@ -914,7 +978,7 @@ function CategoryShelvesSection({
                       {getCategoryLabel(shelf.id, locale)}
                     </h3>
                     <p className="text-sm text-slate-500">
-                      {shelf.products.length} curated picks
+                      {shelf.products.length} {copy.ui.curatedPicks}
                     </p>
                   </div>
                 </div>
@@ -923,7 +987,7 @@ function CategoryShelvesSection({
                   className="inline-flex items-center gap-2 text-sm font-bold text-[var(--primary)] transition hover:text-[var(--secondary)]"
                 >
                   {copy.shelves.cta}
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
                 </Link>
               </div>
 
@@ -951,7 +1015,7 @@ function TrustSection({ copy }: { copy: (typeof homePageCopy)["en"] }) {
           <div>
             <p className="mb-3 inline-flex items-center gap-2 rounded-md bg-[var(--green)]/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[var(--green)]">
               <HeartHandshake className="h-3.5 w-3.5" />
-              Trust Layer
+              {copy.ui.trustLayer}
             </p>
             <h2 className="text-2xl font-bold text-slate-950 sm:text-3xl">
               {copy.trust.title}
@@ -982,7 +1046,7 @@ function NewsletterSection({ copy }: { copy: (typeof homePageCopy)["en"] }) {
             <div>
               <p className="mb-3 inline-flex items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white/80">
                 <MapPin className="h-3.5 w-3.5" />
-                Marketplace Update
+                {copy.ui.marketplaceUpdate}
               </p>
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
                 {copy.newsletter.title}

@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { useLocale } from "next-intl";
+import { useState, useEffect, useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import Image from "next/image";
 import {
-  Search,
   ShoppingCart,
   Heart,
   Star,
@@ -13,13 +12,9 @@ import {
   ChevronRight,
   Play,
   Pause,
-  Filter,
   Grid,
   List,
-  MapPin,
-  Clock,
   Truck,
-  Shield,
   Tag,
   Store,
   Apple,
@@ -28,11 +23,6 @@ import {
   Cookie,
   Wine,
   Baby,
-  Dumbbell,
-  SprayCanIcon,
-  PenTool,
-  ChevronDown,
-  X,
   Coffee,
   Eye,
 } from "lucide-react";
@@ -43,8 +33,6 @@ import { useWishlist } from "@/store/wishlist-context";
 import { QuickViewModal } from "@/components/home/QuickViewModal";
 import { ProductSkeleton } from "@/components/home/SkeletonCard";
 import productCatalog from "@/data/product.json";
-
-type SupportedLocale = "en" | "ps" | "fa-AF";
 
 type Product = {
   id: string;
@@ -78,59 +66,108 @@ const heroSlides: HeroSlide[] = [
   {
     id: 1,
     image: "/images/carousals/slide-1.jpg",
-    alt: "Fresh Groceries",
-    title: "Fresh Groceries Delivered",
-    subtitle: "Get 20% off on all fresh produce",
-    cta: "Shop Now",
+    alt: "",
+    title: "",
+    subtitle: "",
+    cta: "",
     ctaLink: "/products?category=fresh",
-    discount: "20% OFF",
+    discount: "",
   },
   {
     id: 2,
     image: "/images/carousals/slide-2.jpg",
-    alt: "Baby Care",
-    title: "Baby Care Essentials",
-    subtitle: "Everything your little one needs",
-    cta: "Explore",
+    alt: "",
+    title: "",
+    subtitle: "",
+    cta: "",
     ctaLink: "/products?category=baby-care",
-    discount: "15% OFF",
+    discount: "",
   },
   {
     id: 3,
     image: "/images/carousals/slide-3.jpg",
-    alt: "Special Offers",
-    title: "Weekly Special Offers",
-    subtitle: "Save big on your favorite items",
-    cta: "View Deals",
+    alt: "",
+    title: "",
+    subtitle: "",
+    cta: "",
     ctaLink: "/deals",
-    discount: "UP TO 50% OFF",
+    discount: "",
   },
 ];
 
 const categories: Category[] = [
-  { id: "breakfast", name: "Breakfast Items", icon: <Coffee size={20} />, href: "/category/breakfast" },
-  { id: "grocery", name: "Edible Grocery", icon: <ShoppingCart size={20} />, href: "/category/grocery" },
-  { id: "snacks", name: "Snack Bar", icon: <Cookie size={20} />, href: "/category/snacks" },
-  { id: "beverages", name: "Beverages", icon: <Wine size={20} />, href: "/category/beverages" },
-  { id: "fruits", name: "Fruits", icon: <Apple size={20} />, href: "/category/fruits" },
-  { id: "vegetables", name: "Vegetables", icon: <Carrot size={20} />, href: "/category/vegetables" },
-  { id: "dairy", name: "Dairy", icon: <Milk size={20} />, href: "/category/dairy" },
-  { id: "baby-care", name: "Baby Care", icon: <Baby size={20} />, href: "/category/baby-care" },
+  { id: "breakfast", name: "", icon: <Coffee size={20} />, href: "/category/breakfast" },
+  { id: "grocery", name: "", icon: <ShoppingCart size={20} />, href: "/category/grocery" },
+  { id: "snacks", name: "", icon: <Cookie size={20} />, href: "/category/snacks" },
+  { id: "beverages", name: "", icon: <Wine size={20} />, href: "/category/beverages" },
+  { id: "fruits", name: "", icon: <Apple size={20} />, href: "/category/fruits" },
+  { id: "vegetables", name: "", icon: <Carrot size={20} />, href: "/category/vegetables" },
+  { id: "dairy", name: "", icon: <Milk size={20} />, href: "/category/dairy" },
+  { id: "baby-care", name: "", icon: <Baby size={20} />, href: "/category/baby-care" },
 ];
 
+type FeaturedProductSource = {
+  id: string;
+  price: number;
+  priceDisplay: string;
+  vendor: string;
+  image: string;
+  name: { en: string; ps: string; "fa-AF": string };
+  badge: { en: string; ps: string; "fa-AF": string };
+};
+
+type SupportedLocale = "en" | "ps" | "fa-AF";
+
+const vendorTranslations = {
+  "Noor Premium Gifts": { ps: "نور پریمیم ډالۍ", "fa-AF": "نور پریمیم هدایا" },
+  "Bloom Avenue": { ps: "بلوم ایونیو", "fa-AF": "بلوم اونیو" },
+  "Mandawee Market": { ps: "منډوي مارکیټ", "fa-AF": "بازار منداوی" },
+  "Cocoa Stories": { ps: "کوکو کیسې", "fa-AF": "داستان‌های کاکائو" },
+  "Fresh Farm Co": { ps: "فریش فارم شرکت", "fa-AF": "شرکت فارم تازه" },
+  "Desert Delights": { ps: "صحرايي خوندونه", "fa-AF": "خوشی‌های صحرا" },
+  "Tiny Tots Store": { ps: "ټایني ټاټس پلورنځی", "fa-AF": "فروشگاه تینی ټاتس" },
+} as const;
+
+function localizeVendor(vendor: string, locale: SupportedLocale) {
+  if (locale === "en") return vendor;
+  return vendorTranslations[vendor as keyof typeof vendorTranslations]?.[locale] ?? vendor;
+}
+
+function pickLocalized(field: FeaturedProductSource["name"], locale: string): string;
+function pickLocalized(field: FeaturedProductSource["badge"], locale: string): string;
+function pickLocalized(
+  field: FeaturedProductSource["name"] | FeaturedProductSource["badge"],
+  locale: string,
+) {
+  if (locale === "en" || locale === "ps" || locale === "fa-AF") return field[locale];
+  return field.en;
+}
+
 function featuredProductsForLocale(locale: string): Product[] {
-  return (productCatalog.featuredProducts as any[]).map((row) => ({
+  return (productCatalog.featuredProducts as FeaturedProductSource[]).map((row) => ({
     id: row.id,
-    name: row.name[locale] || row.name.en,
+    name: pickLocalized(row.name, locale),
     price: row.price,
     priceDisplay: row.priceDisplay,
     vendor: row.vendor,
     image: row.image,
-    badge: row.badge[locale] || row.badge.en,
+    badge: pickLocalized(row.badge, locale),
   }));
 }
 
-function ProductCard({ product, onQuickView, isListView = false }: { product: Product; onQuickView: (product: Product) => void; isListView?: boolean }) {
+function ProductCard({
+  product,
+  onQuickView,
+  locale,
+  isListView = false,
+}: {
+  product: Product;
+  onQuickView: (product: Product) => void;
+  locale: SupportedLocale;
+  isListView?: boolean;
+}) {
+  const t = useTranslations("HomeV2");
+  const isRtl = locale !== "en";
   const { addItem } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   
@@ -160,7 +197,7 @@ function ProductCard({ product, onQuickView, isListView = false }: { product: Pr
     // Clean List View Layout
     return (
       <motion.div
-        whileHover={{ x: 4 }}
+        whileHover={{ x: isRtl ? -4 : 4 }}
         className="group bg-white rounded-lg border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
       >
         <div className="flex gap-4 p-4">
@@ -184,7 +221,7 @@ function ProductCard({ product, onQuickView, isListView = false }: { product: Pr
             <button
               onClick={handleWishlistToggle}
               className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/90 flex items-center justify-center shadow-sm transition-all duration-200 hover:scale-105"
-              aria-label="Toggle wishlist"
+              aria-label={t("productCard.toggleWishlist")}
             >
               <Heart
                 size={16}
@@ -203,15 +240,15 @@ function ProductCard({ product, onQuickView, isListView = false }: { product: Pr
               <h3 className="text-sm font-medium text-gray-900 mb-1 line-clamp-2 group-hover:text-[var(--secondary)] transition-colors duration-200">
                 {product.name}
               </h3>
-              <p className="text-xs text-gray-500 mb-2">{product.vendor}</p>
+              <p className="text-xs text-gray-500 mb-2">{localizeVendor(product.vendor, locale)}</p>
               
               <div className="flex items-center gap-3 mb-2">
                 <div className="flex items-center">
                   <Star size={12} className="fill-yellow-400 text-yellow-400" />
-                  <span className="text-xs text-gray-600 ml-1">4.8</span>
+                  <span className={`text-xs text-gray-600 ${isRtl ? "mr-1" : "ml-1"}`}>4.8</span>
                 </div>
                 <span className="text-xs text-gray-400">(234)</span>
-                <span className="text-xs text-green-600 font-medium">In Stock</span>
+                <span className="text-xs text-green-600 font-medium">{t("productCard.inStock")}</span>
               </div>
             </div>
             
@@ -273,7 +310,7 @@ function ProductCard({ product, onQuickView, isListView = false }: { product: Pr
         <button
           onClick={handleWishlistToggle}
           className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/90 flex items-center justify-center shadow-sm transition-all duration-200 hover:scale-105"
-          aria-label="Toggle wishlist"
+          aria-label={t("productCard.toggleWishlist")}
         >
           <Heart
             size={16}
@@ -290,7 +327,7 @@ function ProductCard({ product, onQuickView, isListView = false }: { product: Pr
           onClick={() => onQuickView(product)}
           className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-white/90 px-3 py-1 rounded-full text-xs font-medium opacity-0 transition-all duration-200 group-hover:opacity-100 hover:scale-105 shadow-sm"
         >
-          Quick View
+          {t("productCard.quickView")}
         </button>
       </div>
       
@@ -299,16 +336,16 @@ function ProductCard({ product, onQuickView, isListView = false }: { product: Pr
         <h3 className="text-sm font-medium text-gray-900 mb-1 line-clamp-2 group-hover:text-[var(--secondary)] transition-colors duration-200">
           {product.name}
         </h3>
-        <p className="text-xs text-gray-500 mb-2">{product.vendor}</p>
+        <p className="text-xs text-gray-500 mb-2">{localizeVendor(product.vendor, locale)}</p>
         
         {/* Rating */}
         <div className="flex items-center gap-2 mb-2">
           <div className="flex items-center">
             <Star size={12} className="fill-yellow-400 text-yellow-400" />
-            <span className="text-xs text-gray-600 ml-1">4.8</span>
+            <span className={`text-xs text-gray-600 ${isRtl ? "mr-1" : "ml-1"}`}>4.8</span>
           </div>
           <span className="text-xs text-gray-400">(234)</span>
-          <span className="text-xs text-green-600 font-medium">In Stock</span>
+          <span className="text-xs text-green-600 font-medium">{t("productCard.inStock")}</span>
         </div>
         
         {/* Price and Cart */}
@@ -332,9 +369,11 @@ function ProductCard({ product, onQuickView, isListView = false }: { product: Pr
 }
 
 function HeroCarousel() {
+  const t = useTranslations("HomeV2");
+  const locale = useLocale();
+  const isRtl = locale === "ps" || locale === "fa-AF";
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
-  const slideRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -371,7 +410,7 @@ function HeroCarousel() {
         >
           <Image
             src={heroSlides[currentSlide].image}
-            alt={heroSlides[currentSlide].alt}
+            alt={t(`heroSlides.${currentSlide}.alt`)}
             fill
             className="object-cover"
             priority
@@ -379,25 +418,25 @@ function HeroCarousel() {
           <div className="absolute inset-0 bg-black/45" />
           
           <div className="absolute inset-0 flex items-center">
-            <div className="container mx-auto px-6 pl-20">
+            <div className={`container mx-auto px-4 sm:px-6 ${isRtl ? "sm:pr-16 lg:pr-20" : "sm:pl-16 lg:pl-20"}`}>
               <div className="max-w-2xl">
                 {heroSlides[currentSlide].discount && (
                   <span className="inline-block bg-[var(--secondary)] text-white text-sm font-bold px-3 py-1 rounded-full mb-4">
-                    {heroSlides[currentSlide].discount}
+                    {t(`heroSlides.${currentSlide}.discount`)}
                   </span>
                 )}
                 <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
-                  {heroSlides[currentSlide].title}
+                  {t(`heroSlides.${currentSlide}.title`)}
                 </h1>
                 <p className="text-lg md:text-xl text-white/90 mb-6">
-                  {heroSlides[currentSlide].subtitle}
+                  {t(`heroSlides.${currentSlide}.subtitle`)}
                 </p>
                 <Link
                   href={heroSlides[currentSlide].ctaLink}
                   className="inline-flex items-center bg-[var(--secondary)] text-white px-6 py-3 rounded-lg font-semibold hover:brightness-110 transition-colors"
                 >
-                  {heroSlides[currentSlide].cta}
-                  <ChevronRight size={20} className="ml-2" />
+                  {t(`heroSlides.${currentSlide}.cta`)}
+                  <ChevronRight size={20} className={`${isRtl ? "mr-2 rotate-180" : "ml-2"}`} />
                 </Link>
               </div>
             </div>
@@ -408,21 +447,21 @@ function HeroCarousel() {
       {/* Navigation Controls */}
       <button
         onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-white/30 transition-colors"
+        className={`absolute top-1/2 hidden -translate-y-1/2 bg-white/20 p-2 text-white backdrop-blur-sm transition-colors hover:bg-white/30 sm:block ${isRtl ? "right-2 sm:right-4" : "left-2 sm:left-4"}`}
       >
-        <ChevronLeft size={24} />
+        {isRtl ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
       </button>
       <button
         onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-white/30 transition-colors"
+        className={`absolute top-1/2 hidden -translate-y-1/2 bg-white/20 p-2 text-white backdrop-blur-sm transition-colors hover:bg-white/30 sm:block ${isRtl ? "left-2 sm:left-4" : "right-2 sm:right-4"}`}
       >
-        <ChevronRight size={24} />
+        {isRtl ? <ChevronLeft size={24} /> : <ChevronRight size={24} />}
       </button>
 
       {/* Play/Pause Button */}
       <button
         onClick={() => setIsPlaying(!isPlaying)}
-        className="absolute bottom-4 right-4 bg-white/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-white/30 transition-colors"
+        className={`absolute bottom-4 bg-white/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-white/30 transition-colors ${isRtl ? "left-4" : "right-4"}`}
       >
         {isPlaying ? <Pause size={20} /> : <Play size={20} />}
       </button>
@@ -444,14 +483,21 @@ function HeroCarousel() {
 }
 
 function FilterSidebar() {
+  const t = useTranslations("HomeV2");
   const [priceRange, setPriceRange] = useState([0, 100]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [onSaleOnly, setOnSaleOnly] = useState(false);
 
   const categories = [
-    "Fruits", "Vegetables", "Dairy", "Snacks", "Beverages", 
-    "Baby Care", "Personal Care", "Fitness"
+    t("filters.categories.0"),
+    t("filters.categories.1"),
+    t("filters.categories.2"),
+    t("filters.categories.3"),
+    t("filters.categories.4"),
+    t("filters.categories.5"),
+    t("filters.categories.6"),
+    t("filters.categories.7"),
   ];
 
   const toggleCategory = (category: string) => {
@@ -465,13 +511,13 @@ function FilterSidebar() {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 sticky top-4">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="font-semibold text-lg">Filters</h3>
-        <button className="text-sm text-[var(--secondary)] hover:underline">Clear all</button>
+        <h3 className="font-semibold text-lg">{t("filters.title")}</h3>
+        <button className="text-sm text-[var(--secondary)] hover:underline">{t("filters.clearAll")}</button>
       </div>
 
       {/* Categories */}
       <div className="mb-6">
-        <h4 className="font-medium mb-3">Categories</h4>
+        <h4 className="font-medium mb-3">{t("filters.categoryTitle")}</h4>
         <div className="space-y-2">
           {categories.map((category) => (
             <label key={category} className="flex items-center gap-2 cursor-pointer">
@@ -489,7 +535,7 @@ function FilterSidebar() {
 
       {/* Price Range */}
       <div className="mb-6">
-        <h4 className="font-medium mb-3">Price Range</h4>
+        <h4 className="font-medium mb-3">{t("filters.priceRange")}</h4>
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <span className="text-sm">$</span>
@@ -498,7 +544,7 @@ function FilterSidebar() {
               value={priceRange[0]}
               onChange={(e) => setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])}
               className="w-20 px-2 py-1 border rounded text-sm"
-              placeholder="Min"
+              placeholder={t("filters.min")}
             />
             <span className="text-sm">-</span>
             <input
@@ -506,7 +552,7 @@ function FilterSidebar() {
               value={priceRange[1]}
               onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 100])}
               className="w-20 px-2 py-1 border rounded text-sm"
-              placeholder="Max"
+              placeholder={t("filters.max")}
             />
           </div>
         </div>
@@ -514,7 +560,7 @@ function FilterSidebar() {
 
       {/* Availability */}
       <div className="mb-6">
-        <h4 className="font-medium mb-3">Availability</h4>
+        <h4 className="font-medium mb-3">{t("filters.availability")}</h4>
         <div className="space-y-2">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -523,7 +569,7 @@ function FilterSidebar() {
               onChange={(e) => setInStockOnly(e.target.checked)}
               className="rounded text-[var(--secondary)] focus:ring-[var(--secondary)]"
             />
-            <span className="text-sm">In Stock</span>
+            <span className="text-sm">{t("filters.inStock")}</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -532,13 +578,13 @@ function FilterSidebar() {
               onChange={(e) => setOnSaleOnly(e.target.checked)}
               className="rounded text-[var(--secondary)] focus:ring-[var(--secondary)]"
             />
-            <span className="text-sm">On Sale</span>
+            <span className="text-sm">{t("filters.onSale")}</span>
           </label>
         </div>
       </div>
 
       <button className="w-full bg-[var(--secondary)] text-white py-2 rounded-lg font-medium hover:brightness-110 transition-colors">
-        Apply Filters
+        {t("filters.apply")}
       </button>
     </div>
   );
@@ -546,6 +592,10 @@ function FilterSidebar() {
 
 export function HomeV2() {
   const locale = useLocale();
+  const safeLocale: SupportedLocale =
+    locale === "ps" || locale === "fa-AF" ? locale : "en";
+  const isRtl = safeLocale !== "en";
+  const t = useTranslations("HomeV2");
   const [isLoading, setIsLoading] = useState(true);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
@@ -554,7 +604,7 @@ export function HomeV2() {
   
   const products = useMemo(() => featuredProductsForLocale(locale), [locale]);
   const filteredProducts = useMemo(() => {
-    let filtered = [...products];
+    const filtered = [...products];
     
     // Apply sorting
     switch (sortBy) {
@@ -565,8 +615,7 @@ export function HomeV2() {
         filtered.sort((a, b) => b.price - a.price);
         break;
       case "rating":
-        // Simulate rating sort
-        filtered.sort(() => Math.random() - 0.5);
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
         break;
     }
     
@@ -590,7 +639,7 @@ export function HomeV2() {
   };
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-gray-50">
+    <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen w-full overflow-x-hidden bg-gray-50">
       <QuickViewModal 
         product={quickViewProduct}
         isOpen={isQuickViewOpen}
@@ -606,15 +655,15 @@ export function HomeV2() {
       <section className="bg-white py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-10">
-            <h2 className="text-3xl font-black text-gray-900 mb-3">Shop By Category</h2>
+            <h2 className="text-3xl font-black text-gray-900 mb-3">{t("categories.title")}</h2>
             <div className="flex items-center gap-2 mb-6">
               <div className="h-1 w-12 bg-[var(--secondary)] rounded-full"></div>
-              <p className="text-gray-600 font-medium">Browse our wide selection of products</p>
+              <p className="text-gray-600 font-medium">{t("categories.subtitle")}</p>
             </div>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-8">
-            {categories.map((category) => (
+            {categories.map((category, idx) => (
               <Link
                 key={category.id}
                 href={category.href}
@@ -631,13 +680,13 @@ export function HomeV2() {
                   
                   {/* Category Name */}
                   <h3 className="text-sm font-bold text-gray-900 mb-1 group-hover:text-[var(--secondary)] transition-colors duration-500 line-clamp-2">
-                    {category.name}
+                    {t(`categoryItems.${idx}`)}
                   </h3>
                   
                   {/* Shop Badge */}
                   <div className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 group-hover:translate-y-0 translate-y-2">
                     <span className="text-xs font-semibold text-[var(--secondary)] bg-[var(--secondary)]/10 px-2 py-1 rounded-full">
-                      Shop
+                      {t("categories.shop")}
                     </span>
                   </div>
                 </div>
@@ -653,8 +702,8 @@ export function HomeV2() {
               href="/categories"
               className="group inline-flex items-center bg-[var(--secondary)] text-white px-8 py-4 rounded-full font-bold text-lg hover:brightness-110 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
             >
-              <span>Explore All Categories</span>
-              <ChevronRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+              <span>{t("categories.exploreAll")}</span>
+              <ChevronRight size={20} className={`${isRtl ? "mr-2 rotate-180 group-hover:-translate-x-1" : "ml-2 group-hover:translate-x-1"} transition-transform duration-300`} />
             </Link>
           </div>
         </div>
@@ -673,10 +722,10 @@ export function HomeV2() {
             <div className="min-w-0 flex-1">
               {/* Header */}
               <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900">All Products</h2>
-                    <p className="text-sm text-gray-500">{filteredProducts.length} results</p>
+                    <h2 className="text-xl font-semibold text-gray-900">{t("products.title")}</h2>
+                    <p className="text-sm text-gray-500">{filteredProducts.length} {t("products.results")}</p>
                   </div>
                   
                   <div className="flex items-center gap-4">
@@ -685,10 +734,10 @@ export function HomeV2() {
                       onChange={(e) => setSortBy(e.target.value)}
                       className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--secondary)]"
                     >
-                      <option value="default">Sort by: Featured</option>
-                      <option value="price-low">Price: Low to High</option>
-                      <option value="price-high">Price: High to Low</option>
-                      <option value="rating">Highest Rated</option>
+                      <option value="default">{t("products.sort.featured")}</option>
+                      <option value="price-low">{t("products.sort.lowToHigh")}</option>
+                      <option value="price-high">{t("products.sort.highToLow")}</option>
+                      <option value="rating">{t("products.sort.highestRated")}</option>
                     </select>
                     
                     <div className="flex border border-gray-200 rounded-lg">
@@ -723,6 +772,7 @@ export function HomeV2() {
                       key={product.id}
                       product={product}
                       onQuickView={handleQuickView}
+                      locale={safeLocale}
                       isListView={viewMode === "list"}
                     />
                   ))}
@@ -738,9 +788,9 @@ export function HomeV2() {
         {/* Top Deals */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">Top Deals</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t("sections.topDeals")}</h2>
             <Link href="/deals" className="text-[var(--secondary)] hover:underline text-sm font-medium">
-              View all
+              {t("sections.viewAll")}
             </Link>
           </div>
           <div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
@@ -749,6 +799,7 @@ export function HomeV2() {
                 key={`deal-${product.id}`}
                 product={product}
                 onQuickView={handleQuickView}
+                locale={safeLocale}
               />
             ))}
           </div>
@@ -757,9 +808,9 @@ export function HomeV2() {
         {/* Best Selling */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">Best Selling</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t("sections.bestSelling")}</h2>
             <Link href="/best-selling" className="text-[var(--secondary)] hover:underline text-sm font-medium">
-              View all
+              {t("sections.viewAll")}
             </Link>
           </div>
           <div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
@@ -768,6 +819,7 @@ export function HomeV2() {
                 key={`best-${product.id}`}
                 product={product}
                 onQuickView={handleQuickView}
+                locale={safeLocale}
               />
             ))}
           </div>
@@ -776,9 +828,9 @@ export function HomeV2() {
         {/* Fresh Picks */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">Fresh Picks</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t("sections.freshPicks")}</h2>
             <Link href="/fresh" className="text-[var(--secondary)] hover:underline text-sm font-medium">
-              View all
+              {t("sections.viewAll")}
             </Link>
           </div>
           <div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
@@ -787,6 +839,7 @@ export function HomeV2() {
                 key={`fresh-${product.id}`}
                 product={product}
                 onQuickView={handleQuickView}
+                locale={safeLocale}
               />
             ))}
           </div>
@@ -798,18 +851,18 @@ export function HomeV2() {
         <div className="bg-[var(--secondary)] rounded-2xl p-8 text-white">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
             <div>
-              <h3 className="text-2xl font-bold mb-2">Weekend Special Offer!</h3>
-              <p className="text-white/90 mb-4">Get up to 30% off on selected categories. Limited time only!</p>
+              <h3 className="text-2xl font-bold mb-2">{t("promo.title")}</h3>
+              <p className="text-white/90 mb-4">{t("promo.description")}</p>
               <Link
                 href="/weekend-deals"
                 className="inline-flex items-center bg-white text-[var(--secondary)] px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
               >
-                Shop Now
-                <ChevronRight size={20} className="ml-2" />
+                {t("promo.cta")}
+                <ChevronRight size={20} className={`${isRtl ? "mr-2" : "ml-2"}`} />
               </Link>
             </div>
             <div className="my-2 self-start text-5xl font-bold leading-none text-white/20 md:my-0 md:self-auto md:text-6xl">
-              30% OFF
+              {t("promo.offBadge")}
             </div>
           </div>
         </div>
@@ -817,7 +870,7 @@ export function HomeV2() {
 
       <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <h2 className="text-2xl font-black text-slate-900">Top Trending Products</h2>
+          <h2 className="text-2xl font-black text-slate-900">{t("sections.trending")}</h2>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {products.slice(0, 6).map((p, index) => (
@@ -826,7 +879,7 @@ export function HomeV2() {
                 <Image src={p.image} alt={p.name} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
                 {index < 2 && (
                   <div className="absolute top-1 right-1 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded font-bold">
-                    TRENDING
+                    {t("sections.trendingBadge")}
                   </div>
                 )}
               </div>
@@ -847,13 +900,13 @@ export function HomeV2() {
       <section className="pb-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-[0_8px_22px_rgba(15,23,42,0.08)]">
-            <h3 className="mb-4 text-2xl font-black text-slate-900">Why shoppers choose Mandawee</h3>
+          <h3 className="mb-4 text-2xl font-black text-slate-900">{t("why.title")}</h3>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                { icon: Truck, title: "Fast Delivery", desc: "Same-day delivery on selected items" },
-                { icon: Store, title: "Verified Vendors", desc: "Trusted stores with quality standards" },
-                { icon: Tag, title: "Daily Deals", desc: "Fresh promotions and limited-time offers" },
-                { icon: ShoppingCart, title: "Easy Checkout", desc: "Quick cart and secure payments" },
+                { icon: Truck, title: t("why.items.0.title"), desc: t("why.items.0.desc") },
+                { icon: Store, title: t("why.items.1.title"), desc: t("why.items.1.desc") },
+                { icon: Tag, title: t("why.items.2.title"), desc: t("why.items.2.desc") },
+                { icon: ShoppingCart, title: t("why.items.3.title"), desc: t("why.items.3.desc") },
               ].map((item) => (
                 <div key={item.title} className="rounded-lg border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4 transition hover:-translate-y-0.5 hover:shadow-md">
                   <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">

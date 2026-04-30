@@ -37,7 +37,7 @@ export class IdempotencyKeyRepository {
       data: {
         status: "SUCCEEDED",
         responseCode: input.responseCode,
-        responseBody: input.responseBody as Prisma.InputJsonValue,
+        responseBody: input.responseBody as any,
         resourceType: input.resourceType ?? null,
         resourceId: input.resourceId ?? null,
       },
@@ -54,7 +54,7 @@ export class IdempotencyKeyRepository {
       data: {
         status: "FAILED",
         responseCode: input.responseCode,
-        responseBody: input.responseBody as Prisma.InputJsonValue,
+        responseBody: input.responseBody as any,
       },
     });
   }

@@ -118,6 +118,17 @@ const headerCopy: Record<
     estimatedTotal: string;
     viewFullBasket: string;
     languageSelect: string;
+    login: string;
+    becomeVendor: string;
+    sellOnMandawee: string;
+    trackOrder: string;
+    freeDeliveryAbove100: string;
+    freshDealsDaily: string;
+    freshGroceriesEveryday: string;
+    categories: string;
+    searchProductsPlaceholder: string;
+    deliverToKabul: string;
+    contactUs: string;
   }
 > = {
   en: {
@@ -154,6 +165,17 @@ const headerCopy: Record<
     estimatedTotal: "Estimated Total",
     viewFullBasket: "View Full Basket",
     languageSelect: "Language Select",
+    login: "Login",
+    becomeVendor: "Become a Vendor",
+    sellOnMandawee: "Sell on Mandawee",
+    trackOrder: "Track Order",
+    freeDeliveryAbove100: "Free Delivery on Orders Above $100",
+    freshDealsDaily: "Fresh deals daily · Multi-vendor grocery marketplace",
+    freshGroceriesEveryday: "Fresh groceries everyday",
+    categories: "Categories",
+    searchProductsPlaceholder: "Search for products...",
+    deliverToKabul: "Deliver to Kabul",
+    contactUs: "Contact Us",
   },
   ps: {
     searchSuggestions: [
@@ -189,6 +211,17 @@ const headerCopy: Record<
     estimatedTotal: "اټکلی ټولټال",
     viewFullBasket: "بشپړ باسکټ وګورئ",
     languageSelect: "ژبه وټاکئ",
+    login: "ننوتل",
+    becomeVendor: "پلورونکی شئ",
+    sellOnMandawee: "په منډوي کې وپلورئ",
+    trackOrder: "فرمایش تعقیب کړئ",
+    freeDeliveryAbove100: "د $100 څخه پورته فرمایشونو لپاره وړیا تحویل",
+    freshDealsDaily: "هره ورځ تازه ډیلونه · څو-پلورونکي خوراکي بازار",
+    freshGroceriesEveryday: "هره ورځ تازه خوراکي توکي",
+    categories: "کټګورۍ",
+    searchProductsPlaceholder: "محصولات ولټوئ...",
+    deliverToKabul: "کابل ته تحویل",
+    contactUs: "موږ سره اړیکه",
   },
   "fa-AF": {
     searchSuggestions: [
@@ -224,6 +257,17 @@ const headerCopy: Record<
     estimatedTotal: "جمع تخمینی",
     viewFullBasket: "مشاهده سبد کامل",
     languageSelect: "انتخاب زبان",
+    login: "ورود",
+    becomeVendor: "فروشنده شوید",
+    sellOnMandawee: "در منداوی بفروشید",
+    trackOrder: "پیگیری سفارش",
+    freeDeliveryAbove100: "تحویل رایگان برای سفارش‌های بالاتر از $100",
+    freshDealsDaily: "پیشنهادهای تازه روزانه · بازار چندفروشنده خواربار",
+    freshGroceriesEveryday: "مواد خوراکی تازه هر روز",
+    categories: "دسته‌بندی‌ها",
+    searchProductsPlaceholder: "جستجوی محصولات...",
+    deliverToKabul: "تحویل به کابل",
+    contactUs: "تماس با ما",
   },
 };
 
@@ -288,7 +332,7 @@ export default function Header() {
     }, typeSpeed);
 
     return () => clearTimeout(timeout);
-  }, [charIndex, isDeleting, suggestionIndex, isSearchFocused, searchQuery]);
+  }, [charIndex, isDeleting, suggestionIndex, isSearchFocused, searchQuery, searchSuggestions]);
 
   const router = useRouter();
 
@@ -331,10 +375,10 @@ export default function Header() {
       <>
         <div className="hidden bg-[var(--green)] text-white md:block">
           <div className="mx-auto flex h-8 max-w-7xl items-center justify-between px-4 text-xs font-semibold">
-            <p>Fresh groceries everyday</p>
+            <p>{copy.freshGroceriesEveryday}</p>
             <div className="flex items-center gap-4">
-              <Link href="/vendor/register" className="hover:text-white/90">Sell on Mandawee</Link>
-              <Link href="/track-order" className="hover:text-white/90">Track Order</Link>
+              <Link href="/vendor/register" className="hover:text-white/90">{copy.sellOnMandawee}</Link>
+              <Link href="/track-order" className="hover:text-white/90">{copy.trackOrder}</Link>
             </div>
           </div>
         </div>
@@ -352,7 +396,7 @@ export default function Header() {
                   className="inline-flex items-center gap-2 rounded-md bg-[var(--green)] px-3 py-2 text-sm font-bold text-white"
                 >
                   <Menu size={15} />
-                  Categories
+                  {copy.categories}
                 </button>
                 <AnimatePresence>
                   {showCategoriesDropdown && (
@@ -364,14 +408,14 @@ export default function Header() {
                       className="absolute left-0 top-full z-[500] mt-2 w-72 rounded-lg border border-[var(--green)]/20 bg-[var(--footerBg)] p-2 shadow-xl"
                     >
                       {[
-                        "Breakfast & Dairy",
-                        "Meats & Seafood",
-                        "Breads & Bakery",
-                        "Chips & Snacks",
-                        "Medical Healthcare",
-                        "Frozen Foods",
-                        "Grocery & Staples",
-                        "Other Items",
+                        safeLocale === "en" ? "Breakfast & Dairy" : safeLocale === "ps" ? "ناشته او لبنیات" : "صبحانه و لبنیات",
+                        safeLocale === "en" ? "Meats & Seafood" : safeLocale === "ps" ? "غوښه او سمندري خواړه" : "گوشت و غذاهای دریایی",
+                        safeLocale === "en" ? "Breads & Bakery" : safeLocale === "ps" ? "ډوډۍ او بیکري" : "نان و بیکری",
+                        safeLocale === "en" ? "Chips & Snacks" : safeLocale === "ps" ? "چپس او سنکونه" : "چیپس و اسنک",
+                        safeLocale === "en" ? "Medical Healthcare" : safeLocale === "ps" ? "روغتیايي توکي" : "محصولات صحی",
+                        safeLocale === "en" ? "Frozen Foods" : safeLocale === "ps" ? "یخ وهلي خوراکي" : "مواد غذایی منجمد",
+                        safeLocale === "en" ? "Grocery & Staples" : safeLocale === "ps" ? "پرچون او اساسي توکي" : "خواربار و اقلام ضروری",
+                        safeLocale === "en" ? "Other Items" : safeLocale === "ps" ? "نور توکي" : "سایر اقلام",
                       ].map((name) => (
                         <button key={name} className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--green)]/10">
                           <span>{name}</span>
@@ -388,13 +432,26 @@ export default function Header() {
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search for products..."
+                  placeholder={copy.searchProductsPlaceholder}
                   className="w-full bg-transparent px-2 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--green)]/55"
                 />
                 <button type="submit" className="rounded-md bg-[var(--green)] px-3 py-1.5 text-xs font-bold text-white">
-                  Search
+                  {copy.searchButton}
                 </button>
               </form>
+
+              <div className="hidden md:flex items-center">
+                <LanguageSelector
+                  locale={locale}
+                  label={copy.languageSelect}
+                  isRtl={isRtl}
+                  languages={[
+                    { code: "en", label: "English", flag: "🇺🇸" },
+                    { code: "ps", label: "پښتو", flag: "🇦🇫" },
+                    { code: "fa-AF", label: "دری", flag: "🇦🇫" },
+                  ]}
+                />
+              </div>
 
               <Link href="/cart" className="relative grid h-10 w-10 place-items-center rounded-full border border-[var(--green)]/25 bg-white text-[var(--green)]">
                 <ShoppingBasket size={18} />
@@ -410,7 +467,7 @@ export default function Header() {
                   onClick={handleLogin}
                   className="hidden md:flex h-10 px-4 rounded-full border border-[var(--green)]/25 bg-white text-[var(--green)] text-sm font-semibold items-center justify-center hover:bg-[var(--green)]/5"
                 >
-                  Login
+                  {copy.login}
                 </button>
               )}
 
@@ -418,7 +475,7 @@ export default function Header() {
                 href="/vendor/register"
                 className="hidden md:flex h-10 px-4 rounded-full bg-[var(--green)] text-white text-sm font-semibold items-center justify-center hover:brightness-110"
               >
-                Become a Vendor
+                {copy.becomeVendor}
               </Link>
             </div>
 
@@ -428,14 +485,14 @@ export default function Header() {
                   onClick={handleLogin}
                   className="h-9 rounded-md border border-[var(--green)]/25 bg-white text-sm font-semibold text-[var(--green)] hover:bg-[var(--green)]/5"
                 >
-                  Login
+                  {copy.login}
                 </button>
               )}
               <Link
                 href="/vendor/register"
                 className={`h-9 rounded-md bg-[var(--green)] text-center text-sm font-semibold leading-9 text-white hover:brightness-110 ${!isAuthenticated ? "" : "col-span-2"}`}
               >
-                Become a Vendor
+                {copy.becomeVendor}
               </Link>
             </div>
           </div>
@@ -443,11 +500,11 @@ export default function Header() {
 
         <nav className="border-b border-[var(--green)]/20 bg-white">
           <div className="mx-auto flex h-11 max-w-7xl items-center gap-6 overflow-x-auto px-4 text-sm font-semibold text-[var(--foreground)] no-scrollbar">
-            <Link href="/" className="shrink-0 hover:text-[var(--green)]">Home</Link>
-            <Link href="/products" className="shrink-0 hover:text-[var(--green)]">Products</Link>
-            <Link href="/deals" className="shrink-0 hover:text-[var(--green)]">Daily Deals</Link>
-            <Link href="/gifts" className="shrink-0 hover:text-[var(--green)]">Gift Sets</Link>
-            <Link href="/contact" className="shrink-0 hover:text-[var(--green)]">Contact Us</Link>
+            <Link href="/" className="shrink-0 hover:text-[var(--green)]">{copy.home}</Link>
+            <Link href="/products" className="shrink-0 hover:text-[var(--green)]">{copy.products}</Link>
+            <Link href="/deals" className="shrink-0 hover:text-[var(--green)]">{copy.dailyDeals}</Link>
+            <Link href="/gifts" className="shrink-0 hover:text-[var(--green)]">{copy.giftSets}</Link>
+            <Link href="/contact" className="shrink-0 hover:text-[var(--green)]">{copy.contactUs}</Link>
           </div>
         </nav>
       </>
@@ -459,13 +516,13 @@ export default function Header() {
       <>
         <div className="hidden bg-[var(--secondary)] text-white md:block">
           <div className="mx-auto flex h-8 max-w-7xl items-center justify-between px-4 text-xs">
-            <p className="font-semibold">Multi-vendor grocery marketplace</p>
+            <p className="font-semibold">{copy.freshDealsDaily}</p>
             <div className="flex items-center gap-4 text-white/90">
               <Link href="/vendor/register" className="hover:text-white">
-                Become a Vendor
+                {copy.becomeVendor}
               </Link>
               <Link href="/track-order" className="hover:text-white">
-                Track Order
+                {copy.trackOrder}
               </Link>
             </div>
           </div>
@@ -490,7 +547,7 @@ export default function Header() {
 
               <div className="hidden lg:flex items-center gap-2 rounded-full bg-[var(--footerBg)] px-3 py-2 text-xs font-semibold text-slate-700">
                 <MapPin size={14} className="text-[var(--secondary)]" />
-                Deliver to Kabul
+                {copy.deliverToKabul}
               </div>
 
               <form
@@ -504,6 +561,19 @@ export default function Header() {
                   placeholder={t("searchPlaceholder")}
                   className="w-full bg-transparent text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400"
                 />
+                <div className="hidden md:flex items-center">
+                  <LanguageSelector
+                    locale={locale}
+                    label={copy.languageSelect}
+                    isRtl={isRtl}
+                    languages={[
+                      { code: "en", label: "English", flag: "🇺🇸" },
+                      { code: "ps", label: "پښتو", flag: "🇦🇫" },
+                      { code: "fa-AF", label: "دری", flag: "🇦🇫" },
+                    ]}
+                  />
+                </div>
+
                 <button
                   type="submit"
                   className="rounded-full bg-[var(--secondary)] px-4 py-2 text-xs font-bold text-white hover:brightness-110"
@@ -532,7 +602,7 @@ export default function Header() {
                     onClick={handleLogin}
                     className="hidden md:flex h-10 px-4 rounded-full border border-[var(--secondary)]/20 text-[var(--secondary)] text-sm font-semibold items-center justify-center hover:bg-[var(--secondary)]/5"
                   >
-                    Login
+                    {copy.login}
                   </button>
                 )}
               </div>
@@ -551,7 +621,7 @@ export default function Header() {
                 className="inline-flex items-center gap-1.5 rounded-full bg-[var(--secondary)] px-3 py-2 text-xs font-bold text-white hover:brightness-110 sm:gap-2 sm:px-4"
               >
                 <Menu size={14} />
-                Categories
+                {copy.categories}
                 <ChevronDown size={14} className={showCategoriesDropdown ? "rotate-180" : ""} />
               </button>
               <AnimatePresence>
@@ -703,19 +773,19 @@ export default function Header() {
 
             <div className="flex min-w-0 flex-1 items-center gap-0.5 text-sm font-semibold sm:gap-1">
               <Link href="/" className="shrink-0 rounded-full px-2 py-1.5 text-[13px] hover:bg-[var(--secondary)]/10 hover:text-[var(--secondary)] sm:px-3 sm:text-sm">
-                Home
+                {copy.home}
               </Link>
               <Link href="/products" className="shrink-0 rounded-full px-2 py-1.5 text-[13px] hover:bg-[var(--secondary)]/10 hover:text-[var(--secondary)] sm:px-3 sm:text-sm">
-                Products
+                {copy.products}
               </Link>
               <Link href="/deals" className="hidden md:inline-flex shrink-0 rounded-full px-3 py-1.5 hover:bg-[var(--secondary)]/10 hover:text-[var(--secondary)]">
-                Daily Deals
+                {copy.dailyDeals}
               </Link>
               <Link href="/gifts" className="hidden md:inline-flex shrink-0 rounded-full px-3 py-1.5 hover:bg-[var(--secondary)]/10 hover:text-[var(--secondary)]">
-                Gift Sets
+                {copy.giftSets}
               </Link>
               <Link href="/contact" className="hidden md:inline-flex shrink-0 rounded-full px-3 py-1.5 hover:bg-[var(--secondary)]/10 hover:text-[var(--secondary)]">
-                Support
+                {copy.support}
               </Link>
 
               <div className="relative ml-auto md:hidden" ref={v2MoreMenuRef}>
@@ -740,21 +810,21 @@ export default function Header() {
                         onClick={closeAll}
                         className="block rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-[var(--secondary)]/10"
                       >
-                        Daily Deals
+                        {copy.dailyDeals}
                       </Link>
                       <Link
                         href="/gifts"
                         onClick={closeAll}
                         className="block rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-[var(--secondary)]/10"
                       >
-                        Gift Sets
+                        {copy.giftSets}
                       </Link>
                       <Link
                         href="/contact"
                         onClick={closeAll}
                         className="block rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-[var(--secondary)]/10"
                       >
-                        Support
+                        {copy.support}
                       </Link>
                     </motion.div>
                   )}
@@ -985,15 +1055,15 @@ export default function Header() {
         <div className="mx-auto flex h-8 max-w-7xl items-center justify-between px-4 text-xs">
           <p className="font-semibold">
             {isV2Home
-              ? "Fresh deals daily · Multi-vendor grocery marketplace"
-              : "Free Delivery on Orders Above $100"}
+              ? copy.freshDealsDaily
+              : copy.freeDeliveryAbove100}
           </p>
           <div className="flex items-center gap-4 text-white/90">
             <Link href="/vendor/register" className="hover:text-white">
-              Sell on Mandawee
+              {copy.sellOnMandawee}
             </Link>
             <Link href="/track-order" className="hover:text-white">
-              Track Order
+              {copy.trackOrder}
             </Link>
           </div>
         </div>
@@ -1097,6 +1167,7 @@ export default function Header() {
                 onClick={() => setIsCartOpen(true)}
                 badge={itemCount?.toString()}
                 aria-label={t("cartLabel")}
+                accent={isV2Home ? "secondary" : "primary"}
               >
                 <ShoppingBasket size={20} />
               </IconButton>
@@ -1111,7 +1182,7 @@ export default function Header() {
                       : "bg-gray-50 text-gray-700 hover:bg-gray-100"
                   }`}
                 >
-                  Login
+                    {copy.login}
                 </button>
               )}
 
@@ -1124,7 +1195,7 @@ export default function Header() {
                     : "bg-primary hover:brightness-110"
                 }`}
               >
-                Become a Vendor
+                {copy.becomeVendor}
               </Link>
             </div>
           </div>
@@ -1886,14 +1957,20 @@ function IconButton({
   badge,
   onClick,
   active,
+  accent = "secondary",
   "aria-label": ariaLabel,
 }: {
   children: ReactNode;
   badge?: string;
   onClick?: () => void;
   active?: boolean;
+  accent?: "primary" | "secondary";
   "aria-label"?: string;
 }) {
+  const accentBgClass = accent === "primary" ? "bg-primary" : "bg-[var(--secondary)]";
+  const accentTextClass = accent === "primary" ? "text-primary" : "text-[var(--secondary)]";
+  const accentRingClass = accent === "primary" ? "ring-primary" : "ring-[var(--secondary)]";
+
   return (
     <button
       onClick={onClick}
@@ -1903,7 +1980,7 @@ function IconButton({
       {children}
       {badge && (
         <span
-          className={`absolute -top-1 -right-1 text-[10px] font-black min-w-5 h-5 flex items-center justify-center rounded-full ring-2 shadow-md transition-all ${active ? "bg-white text-[var(--secondary)] ring-[var(--secondary)]" : "bg-[var(--secondary)] text-white ring-white"}`}
+          className={`absolute -top-1 -right-1 text-[10px] font-black min-w-5 h-5 flex items-center justify-center rounded-full ring-2 shadow-md transition-all ${active ? `bg-white ${accentTextClass} ${accentRingClass}` : `${accentBgClass} text-white ring-white`}`}
         >
           {badge}
         </span>

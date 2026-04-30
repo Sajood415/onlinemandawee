@@ -1,5 +1,5 @@
-import { V3PremiumHome } from "@/components/home/variants/V3PremiumHome";
+import { HomeV3 } from "@/components/home/variants/HomeV3";
 
 export default function HomeV3Page() {
-  return <V3PremiumHome />;
+  return <HomeV3 />;
 }

@@ -23,7 +23,7 @@ export class AuditLogRepository {
         entityId: data.entityId,
         ipAddress: data.ipAddress,
         userAgent: data.userAgent,
-        metadata: data.metadata as Prisma.InputJsonValue | undefined,
+        metadata: data.metadata as any,
         ...(data.actorUserId
           ? {
               actorUser: {

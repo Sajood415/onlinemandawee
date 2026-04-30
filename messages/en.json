@@ -224,5 +224,149 @@
       ],
       "copyright": "© 2026 Mandawee. Crafted for meaningful connections."
     }
+  },
+  "HomeV2": {
+    "categories": {
+      "title": "Shop By Category",
+      "subtitle": "Browse our wide selection of products",
+      "shop": "Shop",
+      "exploreAll": "Explore All Categories"
+    },
+    "products": {
+      "title": "All Products",
+      "results": "results",
+      "sort": {
+        "featured": "Sort by: Featured",
+        "lowToHigh": "Price: Low to High",
+        "highToLow": "Price: High to Low",
+        "highestRated": "Highest Rated"
+      }
+    },
+    "sections": {
+      "topDeals": "Top Deals",
+      "bestSelling": "Best Selling",
+      "freshPicks": "Fresh Picks",
+      "trending": "Top Trending Products",
+      "trendingBadge": "TRENDING",
+      "viewAll": "View all"
+    },
+    "promo": {
+      "title": "Weekend Special Offer!",
+      "description": "Get up to 30% off on selected categories. Limited time only!",
+      "cta": "Shop Now",
+      "offBadge": "30% OFF"
+    },
+    "why": {
+      "title": "Why shoppers choose Mandawee",
+      "items": [
+        { "title": "Fast Delivery", "desc": "Same-day delivery on selected items" },
+        { "title": "Verified Vendors", "desc": "Trusted stores with quality standards" },
+        { "title": "Daily Deals", "desc": "Fresh promotions and limited-time offers" },
+        { "title": "Easy Checkout", "desc": "Quick cart and secure payments" }
+      ]
+    },
+    "heroSlides": [
+      { "alt": "Fresh Groceries", "title": "Fresh Groceries Delivered", "subtitle": "Get 20% off on all fresh produce", "cta": "Shop Now", "discount": "20% OFF" },
+      { "alt": "Baby Care", "title": "Baby Care Essentials", "subtitle": "Everything your little one needs", "cta": "Explore", "discount": "15% OFF" },
+      { "alt": "Special Offers", "title": "Weekly Special Offers", "subtitle": "Save big on your favorite items", "cta": "View Deals", "discount": "UP TO 50% OFF" }
+    ],
+    "categoryItems": [
+      "Breakfast Items",
+      "Edible Grocery",
+      "Snack Bar",
+      "Beverages",
+      "Fruits",
+      "Vegetables",
+      "Dairy",
+      "Baby Care"
+    ],
+    "filters": {
+      "title": "Filters",
+      "clearAll": "Clear all",
+      "categoryTitle": "Categories",
+      "priceRange": "Price Range",
+      "min": "Min",
+      "max": "Max",
+      "availability": "Availability",
+      "inStock": "In Stock",
+      "onSale": "On Sale",
+      "apply": "Apply Filters",
+      "categories": [
+        "Fruits",
+        "Vegetables",
+        "Dairy",
+        "Snacks",
+        "Beverages",
+        "Baby Care",
+        "Personal Care",
+        "Fitness"
+      ]
+    },
+    "productCard": {
+      "inStock": "In Stock",
+      "quickView": "Quick View",
+      "toggleWishlist": "Toggle wishlist"
+    }
+  },
+  "HomeV3": {
+    "slides": [
+      {
+        "title": "Fresh Groceries Delivered Daily",
+        "sub": "Quality products from trusted local vendors",
+        "cta": "Shop Now",
+        "discount": "UP TO 40% OFF"
+      },
+      {
+        "title": "Organic & Natural Products",
+        "sub": "Healthy choices for your family",
+        "cta": "Explore",
+        "discount": "SPECIAL OFFERS"
+      },
+      {
+        "title": "Fast Delivery to Your Door",
+        "sub": "Order today, receive tomorrow",
+        "cta": "Order Now",
+        "discount": "FREE SHIPPING"
+      }
+    ],
+    "topCategories": ["Breakfast", "Grocery", "Snacks", "Beverages", "Fruits", "Vegetables", "Dairy", "Baby Care"],
+    "trust": ["Organic produce", "Fast delivery", "Secure payment", "Best savings"],
+    "featured": {
+      "title": "Featured Grocery",
+      "subtitle": "Handpicked quality items for you"
+    },
+    "banners": [
+      { "eyebrow": "Fresh Fruits Special", "title": "Up to 40% OFF", "subtitle": "Seasonal favorites" },
+      { "eyebrow": "Organic Vegetables", "title": "Fresh Daily", "subtitle": "Farm to table" }
+    ],
+    "weekly": {
+      "title": "Weekly Best Selling Groceries",
+      "subtitle": "Most popular products this week",
+      "hot": "HOT"
+    },
+    "trending": {
+      "title": "Top Trending Products",
+      "offBadge": "25% Off",
+      "packLabel": "500g Pack"
+    },
+    "blog": {
+      "title": "Latest Blog Post Insights",
+      "postTitle": "Fusion Fixation: Fueling Your Passion for All Things Stylish",
+      "category": "Modern Fashion",
+      "readDetails": "Read Details"
+    },
+    "why": {
+      "title": "Why shoppers choose Mandawee",
+      "items": [
+        { "title": "Fast Delivery", "desc": "Same-day delivery on selected items" },
+        { "title": "Verified Vendors", "desc": "Trusted stores with quality standards" },
+        { "title": "Daily Deals", "desc": "Fresh promotions and limited-time offers" },
+        { "title": "Easy Checkout", "desc": "Quick cart and secure payments" }
+      ]
+    },
+    "productCard": {
+      "freshQuality": "Fresh Quality",
+      "add": "Add"
+    }
   }
 }
