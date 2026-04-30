@@ -235,6 +235,7 @@ export default function Header() {
     locale === "ps" || locale === "fa-AF" ? locale : "en";
   const isRtl = safeLocale !== "en";
   const isV2Home = pathname?.includes("/home-v2");
+  const isV3Home = pathname?.includes("/home-v3");
   const copy = headerCopy[safeLocale];
   const { isAuthenticated } = useAuth();
   const { cart, itemCount, total, removeItem, updateQuantity, refreshCart } = useCart();
@@ -325,6 +326,134 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  if (isV3Home) {
+    return (
+      <>
+        <div className="hidden bg-[var(--green)] text-white md:block">
+          <div className="mx-auto flex h-8 max-w-7xl items-center justify-between px-4 text-xs font-semibold">
+            <p>Fresh groceries everyday</p>
+            <div className="flex items-center gap-4">
+              <Link href="/vendor/register" className="hover:text-white/90">Sell on Mandawee</Link>
+              <Link href="/track-order" className="hover:text-white/90">Track Order</Link>
+            </div>
+          </div>
+        </div>
+
+        <header dir={isRtl ? "rtl" : "ltr"} className="sticky top-0 z-[100] border-b border-[var(--green)]/20 bg-[var(--footerBg)] shadow-sm">
+          <div className="mx-auto max-w-7xl px-3 py-3 sm:px-4">
+            <div className="flex items-center gap-2">
+              <Link href="/" className="shrink-0">
+                <Image src="/logos/onlinemandawee-logo.png" alt="logo" width={150} height={42} className="h-7 w-auto sm:h-8" />
+              </Link>
+
+              <div className="relative shrink-0" ref={categoriesRef}>
+                <button
+                  onClick={() => setShowCategoriesDropdown((prev) => !prev)}
+                  className="inline-flex items-center gap-2 rounded-md bg-[var(--green)] px-3 py-2 text-sm font-bold text-white"
+                >
+                  <Menu size={15} />
+                  Categories
+                </button>
+                <AnimatePresence>
+                  {showCategoriesDropdown && (
+                    <motion.div
+                      variants={dropdownVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      className="absolute left-0 top-full z-[500] mt-2 w-72 rounded-lg border border-[var(--green)]/20 bg-[var(--footerBg)] p-2 shadow-xl"
+                    >
+                      {[
+                        "Breakfast & Dairy",
+                        "Meats & Seafood",
+                        "Breads & Bakery",
+                        "Chips & Snacks",
+                        "Medical Healthcare",
+                        "Frozen Foods",
+                        "Grocery & Staples",
+                        "Other Items",
+                      ].map((name) => (
+                        <button key={name} className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--green)]/10">
+                          <span>{name}</span>
+                          <span className="grid h-6 w-6 place-items-center rounded-full bg-[var(--green)]/15 text-[var(--green)]">+</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <form onSubmit={handleSearch} className="flex min-w-0 flex-1 items-center rounded-md border border-[var(--green)]/20 bg-white px-2 py-1.5">
+                <Search size={16} className="text-[var(--green)]" />
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search for products..."
+                  className="w-full bg-transparent px-2 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--green)]/55"
+                />
+                <button type="submit" className="rounded-md bg-[var(--green)] px-3 py-1.5 text-xs font-bold text-white">
+                  Search
+                </button>
+              </form>
+
+              <Link href="/cart" className="relative grid h-10 w-10 place-items-center rounded-full border border-[var(--green)]/25 bg-white text-[var(--green)]">
+                <ShoppingBasket size={18} />
+                {!!itemCount && (
+                  <span className="absolute -top-1 -right-1 min-w-5 h-5 flex items-center justify-center rounded-full bg-[var(--green)] text-[10px] font-black text-white">
+                    {itemCount}
+                  </span>
+                )}
+              </Link>
+
+              {!isAuthenticated && (
+                <button
+                  onClick={handleLogin}
+                  className="hidden md:flex h-10 px-4 rounded-full border border-[var(--green)]/25 bg-white text-[var(--green)] text-sm font-semibold items-center justify-center hover:bg-[var(--green)]/5"
+                >
+                  Login
+                </button>
+              )}
+
+              <Link
+                href="/vendor/register"
+                className="hidden md:flex h-10 px-4 rounded-full bg-[var(--green)] text-white text-sm font-semibold items-center justify-center hover:brightness-110"
+              >
+                Become a Vendor
+              </Link>
+            </div>
+
+            <div className="mt-2 grid grid-cols-2 gap-2 md:hidden">
+              {!isAuthenticated && (
+                <button
+                  onClick={handleLogin}
+                  className="h-9 rounded-md border border-[var(--green)]/25 bg-white text-sm font-semibold text-[var(--green)] hover:bg-[var(--green)]/5"
+                >
+                  Login
+                </button>
+              )}
+              <Link
+                href="/vendor/register"
+                className={`h-9 rounded-md bg-[var(--green)] text-center text-sm font-semibold leading-9 text-white hover:brightness-110 ${!isAuthenticated ? "" : "col-span-2"}`}
+              >
+                Become a Vendor
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        <nav className="border-b border-[var(--green)]/20 bg-white">
+          <div className="mx-auto flex h-11 max-w-7xl items-center gap-6 overflow-x-auto px-4 text-sm font-semibold text-[var(--foreground)] no-scrollbar">
+            <Link href="/" className="shrink-0 hover:text-[var(--green)]">Home</Link>
+            <Link href="/products" className="shrink-0 hover:text-[var(--green)]">Products</Link>
+            <Link href="/deals" className="shrink-0 hover:text-[var(--green)]">Daily Deals</Link>
+            <Link href="/gifts" className="shrink-0 hover:text-[var(--green)]">Gift Sets</Link>
+            <Link href="/contact" className="shrink-0 hover:text-[var(--green)]">Contact Us</Link>
+          </div>
+        </nav>
+      </>
+    );
+  }
+
   if (isV2Home) {
     return (
       <>
@@ -393,7 +522,7 @@ export default function Header() {
                     <ShoppingBasket size={19} />
                   </span>
                   {!!itemCount && (
-                    <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-[var(--secondary)] px-1 py-0.5 text-[10px] font-black text-white">
+                    <span className="absolute -top-1 -right-1 min-w-5 h-5 flex items-center justify-center rounded-full bg-[var(--secondary)] text-[10px] font-black text-white">
                       {itemCount}
                     </span>
                   )}
@@ -1769,7 +1898,7 @@ function IconButton({
     <button
       onClick={onClick}
       aria-label={ariaLabel}
-      className={`relative h-9 w-9 sm:h-11 sm:w-11 flex items-center justify-center rounded-full border transition-all duration-300 group active:scale-90 cursor-pointer ${active ? "bg-primary border-primary text-white shadow-xl shadow-primary/30" : "border-gray-100 bg-white hover:bg-gray-50 text-gray-600 hover:text-primary hover:border-primary/30"}`}
+      className={`relative h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center rounded-full border transition-all duration-300 group active:scale-90 cursor-pointer ${active ? "bg-primary border-primary text-white shadow-xl shadow-primary/30" : "border-gray-100 bg-white hover:bg-gray-50 text-gray-600 hover:text-primary hover:border-primary/30"}`}
     >
       {children}
       {badge && (

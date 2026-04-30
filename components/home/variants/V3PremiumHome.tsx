@@ -2,561 +2,286 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
 import {
   ChevronLeft,
   ChevronRight,
-  ChevronRight as ArrowR,
-  Store,
+  Apple,
+  Beef,
+  Croissant,
+  Candy,
+  Pill,
+  IceCream,
+  Drumstick,
+  Snowflake,
+  ShoppingBasket,
+  CircleHelp,
+  Leaf,
+  Truck,
+  ShieldCheck,
+  BadgePercent,
+  ShoppingCart,
   Star,
-  Mail,
+  Eye,
+  Coffee,
+  Cookie,
+  Wine,
+  Carrot,
+  Milk,
+  Baby,
+  Store,
+  Tag,
 } from "lucide-react";
 import productData from "@/data/product.json";
 
 type Locale = "en" | "ps" | "fa-AF";
 
-/* ── Hero Slides ─────────────────────────────────────────────────────────── */
-const SLIDES = [
-  {
-    image:
-      "https://images.unsplash.com/photo-1607082350899-7e105aa886ae?auto=format&fit=crop&w=1600&q=80",
-    en: {
-      eyebrow: "Welcome to Mandawee",
-      title: "Your Premium Multi-Vendor Marketplace",
-      sub: "Quality products from verified Afghan vendors, delivered with care",
-      cta: "Explore Now",
-    },
-    ps: {
-      eyebrow: "منډوي ته ښه راغلاست",
-      title: "ستاسو پریمیم د ګڼو پلورونکو بازار",
-      sub: "له تایید شوو افغان پلورونکو کیفیت لرونکي محصولات، د پاملرنې سره رسول",
-      cta: "اوس وګورئ",
-    },
-    "fa-AF": {
-      eyebrow: "به مندوی خوش آمدید",
-      title: "بازار چندفروشنده ممتاز شما",
-      sub: "محصولات باکیفیت از فروشندگان معتبر افغان، تحویل با دقت",
-      cta: "همین حالا کاوش کنید",
-    },
-  },
-  {
-    image:
-      "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=1600&q=80",
-    en: {
-      eyebrow: "Curated Collections",
-      title: "Discover Premium Afghan Dates & Dry Fruits",
-      sub: "Sourced directly from trusted farmers — pure, natural, fresh",
-      cta: "Shop Collection",
-    },
-    ps: {
-      eyebrow: "غوره ټولګه",
-      title: "پریمیم افغان خرما او وچې مېوې وګورئ",
-      sub: "مستقیم له باوري کرنکارو — خالص، طبیعي، تازه",
-      cta: "ټولګه واخلئ",
-    },
-    "fa-AF": {
-      eyebrow: "کالکشن منتخب",
-      title: "خرما و میوه خشک ممتاز افغانستان را کشف کنید",
-      sub: "مستقیم از کشاورزان معتبر — خالص، طبیعی، تازه",
-      cta: "مجموعه را ببینید",
-    },
-  },
-  {
-    image:
-      "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1600&q=80",
-    en: {
-      eyebrow: "Gifting Made Easy",
-      title: "Thoughtfully Curated Hampers & Bouquets",
-      sub: "Celebrate every milestone with premium gifts delivered same day",
-      cta: "Browse Gifts",
-    },
-    ps: {
-      eyebrow: "ډالۍ اسانه کیږي",
-      title: "دقیقه ډول غوره بستې او ګلان",
-      sub: "همدا ورځ د تحویل سره د هرې شیبې لمانځل",
-      cta: "ډالۍ وګورئ",
-    },
-    "fa-AF": {
-      eyebrow: "هدیه دادن آسان شد",
-      title: "بسته‌ها و دسته‌گل‌های منتخب متفکرانه",
-      sub: "هر مایلستون را با هدایای ویژه تحویل همان روز جشن بگیرید",
-      cta: "هدایا را ببینید",
-    },
-  },
-];
-
-/* ── Category Image Cards ─────────────────────────────────────────────────── */
-const CAT_CARDS = [
-  {
-    label: { en: "Fresh Groceries", ps: "تازه خوراکي", "fa-AF": "مواد خوراکی تازه" },
-    image:
-      "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80",
-    href: "/category/grocery",
-  },
-  {
-    label: { en: "Gift Hampers", ps: "ډالۍ بستې", "fa-AF": "بسته‌های هدیه" },
-    image:
-      "https://images.unsplash.com/photo-1512909006721-3d6018887383?auto=format&fit=crop&w=600&q=80",
-    href: "/gifts",
-  },
-  {
-    label: { en: "Fresh Flowers", ps: "تازه ګلان", "fa-AF": "گل‌های تازه" },
-    image:
-      "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=600&q=80",
-    href: "/category/flowers",
-  },
-  {
-    label: { en: "Baby & Care", ps: "د ماشوم پاملرنه", "fa-AF": "مراقبت نوزاد" },
-    image:
-      "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=600&q=80",
-    href: "/category/baby-care",
-  },
-  {
-    label: { en: "Snacks & Sweets", ps: "سنکونه او خوږ", "fa-AF": "اسنک و شیرینی" },
-    image:
-      "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=600&q=80",
-    href: "/category/snacks",
-  },
-  {
-    label: { en: "Personal Care", ps: "شخصي پاملرنه", "fa-AF": "مراقبت شخصی" },
-    image:
-      "https://images.unsplash.com/photo-1570194065650-d99fb4bedf0a?auto=format&fit=crop&w=600&q=80",
-    href: "/category/personal-care",
-  },
-];
-
-/* ── Vendor Marquee Pills ─────────────────────────────────────────────────── */
-const VENDOR_PILLS = [
-  "Noor Premium Gifts",
-  "Bloom Avenue",
-  "Harvest Market",
-  "Little Steps",
-  "Kabul Spice House",
-  "Afghan Organics",
-  "Pure Valley Farms",
-  "Sweet Moments",
-  "Mandawee Essentials",
-  "Green Leaf Co.",
-];
-
-/* ── Featured Vendors ─────────────────────────────────────────────────────── */
-const FEATURED_VENDORS = [
-  {
-    name: "Noor Premium Gifts",
-    tag: { en: "Gift Specialist", ps: "د ډالۍ متخصص", "fa-AF": "متخصص هدیه" },
-    items: 48,
-    image:
-      "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    name: "Harvest Market",
-    tag: { en: "Organic Groceries", ps: "طبیعي خوراکي", "fa-AF": "مواد ارگانیک" },
-    items: 67,
-    image:
-      "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    name: "Bloom Avenue",
-    tag: { en: "Flowers & Bouquets", ps: "ګلان او ګېډۍ", "fa-AF": "گل و دسته‌گل" },
-    items: 32,
-    image:
-      "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=600&q=80",
-  },
-];
-
-/* ── Copy ────────────────────────────────────────────────────────────────── */
-const COPY: Record<
-  Locale,
-  {
-    shopByCategory: string;
-    viewAll: string;
-    todayDeals: string;
-    editorPicks: string;
-    ourVendors: string;
-    vendorPartners: string;
-    visitStore: string;
-    items: string;
-    splitLeft: string;
-    splitLeftSub: string;
-    splitLeftCta: string;
-    splitRight: string;
-    splitRightSub: string;
-    splitRightCta: string;
-    newsletterTitle: string;
-    newsletterSub: string;
-    newsletterPlaceholder: string;
-    subscribe: string;
-    addToCart: string;
-    deal: string;
-  }
-> = {
-  en: {
-    shopByCategory: "Shop by Category",
-    viewAll: "View All",
-    todayDeals: "Today's Best Deals",
-    editorPicks: "Editor's Picks",
-    ourVendors: "Our Vendors",
-    vendorPartners: "Trusted vendor partners",
-    visitStore: "Visit Store",
-    items: "items",
-    splitLeft: "Sell on Mandawee",
-    splitLeftSub:
-      "Join our growing community of 500+ vendors. Simple setup, low commission.",
-    splitLeftCta: "Become a Vendor",
-    splitRight: "Same Day Delivery",
-    splitRightSub:
-      "Order before 2pm and receive your items the same day, anywhere in Kabul.",
-    splitRightCta: "Learn More",
-    newsletterTitle: "Get the Best Deals in Your Inbox",
-    newsletterSub:
-      "Weekly drops, exclusive offers and new vendor alerts. No spam, ever.",
-    newsletterPlaceholder: "your@email.com",
-    subscribe: "Subscribe",
-    addToCart: "Add to Cart",
-    deal: "Deal",
-  },
-  ps: {
-    shopByCategory: "د کټګورۍ له مخې واخلئ",
-    viewAll: "ټول وګورئ",
-    todayDeals: "د نن ورځې غوره وړاندیزونه",
-    editorPicks: "د ایډیټر انتخابونه",
-    ourVendors: "زموږ پلورونکي",
-    vendorPartners: "باوري پلورونکي شریکان",
-    visitStore: "پلازمینه وګورئ",
-    items: "توکي",
-    splitLeft: "پر منډوي پلور وکړئ",
-    splitLeftSub:
-      "له ۵۰۰+ پلورونکو لرونکي زموږ روزافزونه ټولنې سره یوځای شئ. اسان تنظیم، کم کمیسیون.",
-    splitLeftCta: "پلورونکی شئ",
-    splitRight: "همدا ورځ تحویل",
-    splitRightSub:
-      "د غرمې ۲ بجو دمخه آرډر ورکړئ او همدا ورځ کابل کې د توکو تحویل ترلاسه کړئ.",
-    splitRightCta: "نور معلومات",
-    newsletterTitle: "غوره وړاندیزونه ستاسو بریښنالیک ته ترلاسه کړئ",
-    newsletterSub:
-      "اونیز تازه توکي، ځانګړي وړاندیزونه. بې سپامه.",
-    newsletterPlaceholder: "your@email.com",
-    subscribe: "سبسکرایب",
-    addToCart: "کارت ته اضافه کړئ",
-    deal: "وړاندیز",
-  },
-  "fa-AF": {
-    shopByCategory: "خرید بر اساس دسته‌بندی",
-    viewAll: "دیدن همه",
-    todayDeals: "بهترین پیشنهادهای امروز",
-    editorPicks: "انتخاب‌های سردبیر",
-    ourVendors: "فروشندگان ما",
-    vendorPartners: "شرکای فروشنده معتبر",
-    visitStore: "بازدید از فروشگاه",
-    items: "آیتم",
-    splitLeft: "در مندوی بفروشید",
-    splitLeftSub:
-      "به جامعه رو به رشد ۵۰۰+ فروشنده ما بپیوندید. راه‌اندازی ساده، کمیسیون کم.",
-    splitLeftCta: "فروشنده شوید",
-    splitRight: "تحویل همان روز",
-    splitRightSub:
-      "قبل از ساعت ۲ بعدازظهر سفارش دهید و همان روز اجناس خود را در کابل دریافت کنید.",
-    splitRightCta: "بیشتر بدانید",
-    newsletterTitle: "بهترین پیشنهادها را در صندوق پستی خود دریافت کنید",
-    newsletterSub:
-      "به‌روزرسانی هفتگی، پیشنهادات ویژه. بدون اسپم.",
-    newsletterPlaceholder: "your@email.com",
-    subscribe: "اشتراک",
-    addToCart: "افزودن به سبد",
-    deal: "تخفیف",
-  },
+type Product = {
+  id: string;
+  price: number;
+  priceDisplay: string;
+  vendor: string;
+  image: string;
+  name: { en: string; ps: string; "fa-AF": string };
+  badge: { en: string; ps: string; "fa-AF": string };
+  rating: number;
+  reviews: number;
 };
 
-/* ── Component ───────────────────────────────────────────────────────────── */
+const HERO_SLIDES = [
+  {
+    image: "/images/hero-slide-1.jpg",
+    title: {
+      en: "Fresh Groceries Delivered Daily",
+      ps: "تازه خوراکي توکي ورځ په ورڍ لېږدول کيږي",
+      "fa-AF": "خوارکFresh تازه روزانه تحویل",
+    },
+    sub: {
+      en: "Quality products from trusted local vendors",
+      ps: "له باوري محلي پلورونکو څخه کیفیت توکي",
+      "fa-AF": "محصولات باکیفیت از فروشندگان محلی معتبر",
+    },
+    cta: { en: "Shop Now", ps: "اوس واخلئ", "fa-AF": "همین حالا خرید کنید" },
+    discount: "UP TO 40% OFF",
+  },
+  {
+    image: "/images/hero-slide-2.jpg",
+    title: {
+      en: "Organic & Natural Products",
+      ps: "عضوي او طبیعي محصولات",
+      "fa-AF": "محصولات ارگانیک و طبیعی",
+    },
+    sub: {
+      en: "Healthy choices for your family",
+      ps: "د خپلې کورنۍ لپاره صحی انتخابونه",
+      "fa-AF": "انتخاب‌های سالم برای خانواده شما",
+    },
+    cta: { en: "Explore", ps: "وپلټئ", "fa-AF": "کاوش" },
+    discount: "SPECIAL OFFERS",
+  },
+  {
+    image: "/images/hero-slide-3.jpg",
+    title: {
+      en: "Fast Delivery to Your Door",
+      ps: "چارچاوی لېږد ستاسو تر دروازې",
+      "fa-AF": "تحویل سریع به درب منزل شما",
+    },
+    sub: {
+      en: "Order today, receive tomorrow",
+      ps: "نن ورته کړئ، بیه راز ترلاسه کړئ",
+      "fa-AF": "امروز سفارش دهید، فردا تحویل بگیرید",
+    },
+    cta: { en: "Order Now", ps: "اوس ورته کړئ", "fa-AF": "همین حالا سفارش دهید" },
+    discount: "FREE SHIPPING",
+  },
+] as const;
+
+const DEPARTMENTS = [
+  { icon: Apple, en: "Breakfast & Dairy" },
+  { icon: Beef, en: "Meats & Seafood" },
+  { icon: Croissant, en: "Breads & Bakery" },
+  { icon: Candy, en: "Chips & Snacks" },
+  { icon: Pill, en: "Medical Healthcare" },
+  { icon: IceCream, en: "Frozen Foods" },
+  { icon: ShoppingBasket, en: "Grocery & Staples" },
+  { icon: CircleHelp, en: "Other Items" },
+] as const;
+
+const TOP_CATEGORIES = [
+  { id: "breakfast", name: "Breakfast", icon: Coffee, href: "/category/breakfast" },
+  { id: "grocery", name: "Grocery", icon: ShoppingCart, href: "/category/grocery" },
+  { id: "snacks", name: "Snacks", icon: Cookie, href: "/category/snacks" },
+  { id: "beverages", name: "Beverages", icon: Wine, href: "/category/beverages" },
+  { id: "fruits", name: "Fruits", icon: Apple, href: "/category/fruits" },
+  { id: "vegetables", name: "Vegetables", icon: Carrot, href: "/category/vegetables" },
+  { id: "dairy", name: "Dairy", icon: Milk, href: "/category/dairy" },
+  { id: "baby-care", name: "Baby Care", icon: Baby, href: "/category/baby-care" },
+];
+
+function ProductMiniCard({ product, locale }: { product: Product; locale: Locale }) {
+  const discount = Math.floor(Math.random() * 30) + 10;
+  const oldPrice = (product.price * 1.25).toFixed(2);
+  
+  return (
+    <article className="group overflow-hidden rounded-md border border-[var(--green)]/15 bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+      <div className="relative h-32 overflow-hidden bg-[var(--footerBg)]">
+        <Image src={product.image} alt={product.name[locale]} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+        <span className="absolute left-2 top-2 rounded bg-[var(--green)] text-white px-2 py-1 text-xs font-bold">
+          {discount}% OFF
+        </span>
+      </div>
+      <div className="p-3">
+        <h4 className="mb-1 line-clamp-2 text-sm font-semibold text-[var(--foreground)] group-hover:text-[var(--green)] transition-colors">{product.name[locale]}</h4>
+        <p className="mb-2 text-xs text-[var(--foreground)]/60">Fresh Quality</p>
+        <div className="flex items-end justify-between gap-2">
+          <div>
+            <p className="text-lg font-black text-[var(--primary)]">{product.priceDisplay}</p>
+            <p className="text-xs text-[var(--foreground)]/40 line-through">{oldPrice}</p>
+          </div>
+          <button className="rounded-full bg-[var(--green)] hover:bg-[var(--green)]/90 px-3 py-1.5 text-xs font-bold text-white transition-colors duration-300">
+            Add
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export function V3PremiumHome() {
   const raw = useLocale();
   const locale: Locale = raw === "ps" || raw === "fa-AF" ? raw : "en";
-  const c = COPY[locale];
-  const products = productData.featuredProducts;
-  const isRtl = locale !== "en";
+  const [active, setActive] = useState(0);
+  const products = productData.featuredProducts as Product[];
+  const featured = useMemo(() => products.slice(0, 8), [products]);
+  const weekly = useMemo(() => products.slice(0, 12), [products]);
 
-  /* Hero */
-  const [slide, setSlide] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const next = useCallback(
-    () => setSlide((s) => (s + 1) % SLIDES.length),
-    []
-  );
-  const prev = useCallback(
-    () => setSlide((s) => (s - 1 + SLIDES.length) % SLIDES.length),
-    []
-  );
   useEffect(() => {
-    if (paused) return;
-    const id = setInterval(next, 5000);
+    const id = setInterval(() => setActive((p) => (p + 1) % HERO_SLIDES.length), 5000);
     return () => clearInterval(id);
-  }, [paused, next]);
-
-  /* Newsletter */
-  const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
-  const marqueeRef = useRef<HTMLDivElement>(null);
-
-  /* Marquee animation pause on hover */
-  const [marqueeHovered, setMarqueeHovered] = useState(false);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-white" dir={isRtl ? "rtl" : "ltr"}>
-      {/* ── HERO CAROUSEL ─────────────────────────────────────────────── */}
-      <section
-        className="relative overflow-hidden"
-        style={{ height: "clamp(300px, 52vh, 560px)" }}
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-      >
-        {SLIDES.map((s, i) => (
-          <div
-            key={i}
-            className="absolute inset-0 transition-opacity duration-1000"
-            style={{
-              opacity: i === slide ? 1 : 0,
-              zIndex: i === slide ? 1 : 0,
-            }}
-          >
-            <Image
-              src={s.image}
-              alt={s[locale].title}
-              fill
-              className="object-cover"
-              priority={i === 0}
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  "linear-gradient(to top, rgba(2,55,136,0.85) 0%, rgba(2,55,136,0.3) 50%, transparent 100%)",
-              }}
-            />
-            <div className="absolute bottom-20 left-0 right-0 z-10 px-8 sm:px-16 lg:px-24">
-              <span
-                className="mb-3 inline-block rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-widest text-white"
-                style={{ backgroundColor: "var(--primary)" }}
-              >
-                {s[locale].eyebrow}
-              </span>
-              <h1 className="max-w-2xl text-2xl font-extrabold leading-tight text-white sm:text-3xl lg:text-5xl">
-                {s[locale].title}
-              </h1>
-              <p className="mt-3 max-w-lg text-sm text-white/80 sm:text-base">
-                {s[locale].sub}
-              </p>
-              <Link
-                href="/products"
-                className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold shadow-lg transition-all hover:bg-gray-50 active:scale-95"
-                style={{ color: "var(--secondary)" }}
-              >
-                {s[locale].cta} <ArrowR size={16} />
+    <div className="bg-[var(--footerBg)] text-[var(--foreground)]">
+      <section className="pt-0">
+        <div className="relative overflow-hidden">
+          <Image
+            src={HERO_SLIDES[active].image}
+            alt={HERO_SLIDES[active].title[locale]}
+            width={1600}
+            height={520}
+            className="h-[240px] w-full object-cover sm:h-[340px] lg:h-[420px]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/40" />
+          <div className="absolute inset-0 flex items-center px-4 sm:px-10 lg:px-16">
+            <div className="max-w-xl text-white sm:max-w-2xl">
+              {HERO_SLIDES[active].discount && (
+                <span className="mb-3 inline-block rounded-full bg-[var(--green)] px-3 py-1.5 text-xs font-bold text-white sm:mb-4 sm:px-4 sm:py-2 sm:text-sm">
+                  {HERO_SLIDES[active].discount}
+                </span>
+              )}
+              <h1 className="mb-3 text-xl font-extrabold leading-tight sm:text-3xl lg:text-4xl">{HERO_SLIDES[active].title[locale]}</h1>
+              <p className="mb-5 max-w-xl text-sm text-white/90 sm:text-base">{HERO_SLIDES[active].sub[locale]}</p>
+              <Link href="/products" className="inline-flex items-center rounded-md bg-[var(--green)] px-5 py-2.5 text-sm font-bold text-white transition-all duration-300 hover:bg-[var(--green)]/90">
+                {HERO_SLIDES[active].cta[locale]}
+                <ChevronRight size={18} className="ml-2" />
               </Link>
             </div>
           </div>
-        ))}
+          <button onClick={() => setActive((p) => (p - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)} className="absolute left-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-white/20 p-2 text-white transition-all duration-300 hover:bg-white/30 sm:left-4 sm:block sm:p-3">
+            <ChevronLeft size={20} />
+          </button>
+          <button onClick={() => setActive((p) => (p + 1) % HERO_SLIDES.length)} className="absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-white/20 p-2 text-white transition-all duration-300 hover:bg-white/30 sm:right-4 sm:block sm:p-3">
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      </section>
 
-        {/* Arrows */}
-        <button
-          onClick={prev}
-          className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full p-2.5 text-white transition-colors"
-          style={{ backgroundColor: "rgba(2,55,136,0.5)" }}
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <button
-          onClick={next}
-          className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full p-2.5 text-white transition-colors"
-          style={{ backgroundColor: "rgba(2,55,136,0.5)" }}
-        >
-          <ChevronRight size={20} />
-        </button>
-
-        {/* Floating category chips — overlap bottom of hero */}
-        <div className="absolute bottom-0 left-0 right-0 z-20 flex justify-center gap-2 px-4 pb-0 translate-y-1/2">
-          {CAT_CARDS.slice(0, 4).map((cat) => (
-            <Link
-              key={cat.href}
-              href={cat.href}
-              className="hidden sm:flex shrink-0 items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-[var(--foreground)] shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
-            >
-              <span>{cat.label[locale]}</span>
+      <section className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+          {TOP_CATEGORIES.map((category) => (
+            <Link key={category.id} href={category.href} className="group rounded-md border border-[var(--green)]/15 bg-white p-2 text-center transition-all duration-300 hover:border-[var(--green)]/35 sm:p-2.5">
+              <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-md bg-[var(--green)]/10 transition-colors group-hover:bg-[var(--green)]/20">
+                <category.icon className="text-[var(--green)]" size={20} />
+              </div>
+              <p className="text-[11px] font-semibold text-[var(--foreground)] group-hover:text-[var(--green)] transition-colors">{category.name}</p>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* spacer for the floating chips */}
-      <div className="hidden sm:block h-8" />
-
-      {/* ── SHOP BY CATEGORY ──────────────────────────────────────────── */}
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="mb-8 flex items-center justify-between">
-          <h2 className="text-2xl font-extrabold text-[var(--foreground)]">
-            {c.shopByCategory}
-          </h2>
-          <Link
-            href="/products"
-            className="flex items-center gap-1 text-sm font-semibold"
-            style={{ color: "var(--secondary)" }}
-          >
-            {c.viewAll} <ArrowR size={14} />
-          </Link>
+      <section className="border-y border-[var(--green)]/15 bg-white">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-4 py-4 text-sm font-semibold text-[var(--foreground)]/75 sm:grid-cols-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2"><Leaf size={16} className="text-[var(--green)]" /> Organic produce</div>
+          <div className="flex items-center gap-2"><Truck size={16} className="text-[var(--green)]" /> Fast delivery</div>
+          <div className="flex items-center gap-2"><ShieldCheck size={16} className="text-[var(--green)]" /> Secure payment</div>
+          <div className="flex items-center gap-2"><BadgePercent size={16} className="text-[var(--green)]" /> Best savings</div>
         </div>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {CAT_CARDS.map((cat) => (
-            <Link
-              key={cat.href}
-              href={cat.href}
-              className="group relative h-40 overflow-hidden rounded-2xl shadow-sm"
-            >
-              <Image
-                src={cat.image}
-                alt={cat.label[locale]}
-                fill
-                className="object-cover transition-transform duration-300 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-              <span className="absolute bottom-3 left-0 right-0 px-3 text-center text-sm font-extrabold text-white">
-                {cat.label[locale]}
-              </span>
-            </Link>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-extrabold text-[var(--foreground)]">Featured Grocery</h2>
+            <p className="mt-1 text-sm text-[var(--foreground)]/70">Handpicked quality items for you</p>
+          </div>
+          <div className="flex gap-2">
+            <button className="rounded-full border border-[var(--green)]/20 p-2 text-[var(--foreground)]/65 hover:border-[var(--green)] hover:text-[var(--green)] transition-colors">
+              <ChevronLeft size={16} />
+            </button>
+            <button className="rounded-full border border-[var(--green)]/20 p-2 text-[var(--foreground)]/65 hover:border-[var(--green)] hover:text-[var(--green)] transition-colors">
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+          {featured.map((p) => (
+            <ProductMiniCard key={p.id} product={p} locale={locale} />
           ))}
         </div>
       </section>
 
-      {/* ── TODAY'S BEST DEALS ────────────────────────────────────────── */}
-      <section
-        className="py-10"
-        style={{ backgroundColor: "var(--footerBg)" }}
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-xl font-extrabold text-[var(--foreground)]">
-              {c.todayDeals}
-            </h2>
-            <Link
-              href="/products"
-              className="flex items-center gap-1 text-sm font-semibold"
-              style={{ color: "var(--secondary)" }}
-            >
-              {c.viewAll} <ArrowR size={14} />
-            </Link>
-          </div>
-          <div className="flex gap-4 overflow-x-auto pb-3 no-scrollbar">
-            {products.map((p) => (
-              <div
-                key={p.id}
-                className="min-w-[200px] flex-shrink-0 overflow-hidden rounded-2xl bg-white shadow-sm"
-              >
-                <div className="relative h-44">
-                  <Image
-                    src={p.image}
-                    alt={p.name[locale]}
-                    fill
-                    className="object-cover"
-                  />
-                  <span
-                    className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-black uppercase text-white"
-                    style={{ backgroundColor: "var(--primary)" }}
-                  >
-                    {c.deal}
-                  </span>
-                </div>
-                <div className="p-3">
-                  <p
-                    className="text-[10px] font-semibold uppercase"
-                    style={{ color: "var(--secondary)" }}
-                  >
-                    {p.vendor}
-                  </p>
-                  <p className="mt-0.5 line-clamp-1 text-sm font-semibold text-[var(--foreground)]">
-                    {p.name[locale]}
-                  </p>
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <span
-                      className="font-extrabold text-sm"
-                      style={{ color: "var(--secondary)" }}
-                    >
-                      {p.priceDisplay}
-                    </span>
-                    <button
-                      className="rounded-full px-3 py-1 text-[11px] font-bold text-white shrink-0"
-                      style={{ backgroundColor: "var(--secondary)" }}
-                    >
-                      {c.addToCart}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+      <section className="mx-auto max-w-7xl px-4 pb-7 sm:px-6 lg:px-8">
+        <div className="grid gap-6 sm:grid-cols-2">
+          <article className="group relative overflow-hidden rounded-lg border border-[var(--green)]/20 bg-[var(--yellow)]/35 p-5 text-[var(--foreground)] transition-all duration-300 hover:-translate-y-0.5">
+            <div className="relative z-10">
+              <p className="text-xs font-bold uppercase tracking-wide text-[var(--green)]">Fresh Fruits Special</p>
+              <p className="mt-2 text-2xl font-black">Up to 40% OFF</p>
+              <p className="mt-1 text-sm text-[var(--foreground)]/75">Seasonal favorites</p>
+            </div>
+            <div className="absolute right-4 top-4 text-6xl opacity-15">🍎</div>
+          </article>
+          <article className="group relative overflow-hidden rounded-lg border border-[var(--green)]/20 bg-[var(--green)]/12 p-5 text-[var(--foreground)] transition-all duration-300 hover:-translate-y-0.5">
+            <div className="relative z-10">
+              <p className="text-xs font-bold uppercase tracking-wide text-[var(--green)]">Organic Vegetables</p>
+              <p className="mt-2 text-2xl font-black">Fresh Daily</p>
+              <p className="mt-1 text-sm text-[var(--foreground)]/75">Farm to table</p>
+            </div>
+            <div className="absolute right-4 top-4 text-6xl opacity-15">🥬</div>
+          </article>
         </div>
       </section>
 
-      {/* ── EDITOR'S PICKS ────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-2xl font-extrabold text-[var(--foreground)]">
-            {c.editorPicks}
-          </h2>
-          <Link
-            href="/products"
-            className="flex items-center gap-1 text-sm font-semibold"
-            style={{ color: "var(--secondary)" }}
-          >
-            {c.viewAll} <ArrowR size={14} />
-          </Link>
+      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
+        <div className="mb-5">
+          <h2 className="text-xl font-extrabold text-[var(--foreground)]">Weekly Best Selling Groceries</h2>
+          <p className="mt-1 text-sm text-[var(--foreground)]/70">Most popular products this week</p>
         </div>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {products.map((p) => (
-            <article
-              key={p.id}
-              className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 transition-all hover:shadow-md"
-            >
-              <div className="relative h-44">
-                <Image
-                  src={p.image}
-                  alt={p.name[locale]}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="p-4">
-                <p
-                  className="text-[11px] font-semibold"
-                  style={{ color: "var(--secondary)" }}
-                >
-                  {p.vendor}
-                </p>
-                <h3 className="mt-1 line-clamp-2 text-sm font-semibold text-[var(--foreground)]">
-                  {p.name[locale]}
-                </h3>
-                <div className="mt-1 flex items-center gap-0.5">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      size={11}
-                      style={{
-                        color: "var(--yellow)",
-                        fill:
-                          star <= Math.round(p.rating)
-                            ? "var(--yellow)"
-                            : "none",
-                      }}
-                    />
-                  ))}
+        <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+          {weekly.map((p) => (
+            <article key={`weekly-${p.id}`} className="group overflow-hidden rounded-md border border-[var(--green)]/15 bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+              <div className="relative h-32 overflow-hidden bg-[var(--footerBg)]">
+                <Image src={p.image} alt={p.name[locale]} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                <div className="absolute right-2 top-2 rounded bg-[var(--green)] px-2 py-1 text-[10px] font-bold text-white">
+                  HOT
                 </div>
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <span className="font-extrabold text-sm text-[var(--foreground)]">
-                    {p.priceDisplay}
-                  </span>
-                  <button
-                    className="rounded-full px-3 py-1 text-[11px] font-bold text-white shrink-0"
-                    style={{ backgroundColor: "var(--secondary)" }}
-                  >
-                    {c.addToCart}
+              </div>
+              <div className="p-3">
+                <h4 className="mb-2 line-clamp-2 text-sm font-semibold text-[var(--foreground)]">{p.name[locale]}</h4>
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-black text-[var(--primary)]">{p.priceDisplay}</span>
+                  <button className="rounded-full bg-[var(--green)] hover:bg-[var(--green)]/90 p-2 text-white transition-colors duration-300">
+                    <ShoppingCart size={14} />
                   </button>
                 </div>
               </div>
@@ -565,198 +290,108 @@ export function V3PremiumHome() {
         </div>
       </section>
 
-      {/* ── VENDOR BRANDS (Marquee + 3 featured) ─────────────────────── */}
-      <section
-        className="py-12"
-        style={{ backgroundColor: "var(--footerBg)" }}
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-extrabold text-[var(--foreground)]">
-                {c.ourVendors}
-              </h2>
-              <p className="text-sm text-gray-500">{c.vendorPartners}</p>
-            </div>
-          </div>
-
-          {/* Marquee */}
-          <div
-            className="relative overflow-hidden py-3"
-            onMouseEnter={() => setMarqueeHovered(true)}
-            onMouseLeave={() => setMarqueeHovered(false)}
-          >
-            <div
-              ref={marqueeRef}
-              className="flex gap-3 w-max"
-              style={{
-                animation: marqueeHovered
-                  ? "none"
-                  : "marquee 25s linear infinite",
-              }}
-            >
-              {[...VENDOR_PILLS, ...VENDOR_PILLS].map((name, i) => (
-                <span
-                  key={i}
-                  className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold text-[var(--foreground)] bg-white"
-                  style={{ borderColor: "var(--secondary)" }}
-                >
-                  {name}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Featured vendor cards */}
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            {FEATURED_VENDORS.map((v) => (
-              <div
-                key={v.name}
-                className="overflow-hidden rounded-2xl bg-white shadow-sm"
+      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
+        <div className="mb-5">
+          <h2 className="text-xl font-bold text-[var(--foreground)]">Top Trending Products</h2>
+        </div>
+        <div className="overflow-hidden rounded-lg bg-white p-4 ring-1 ring-black/5 sm:p-6">
+          <div className="grid min-w-0 gap-3 md:grid-cols-2 lg:grid-cols-4">
+            {products.slice(0, 8).map((p) => (
+              <article
+                key={`trend-${p.id}`}
+                className="flex min-h-[112px] min-w-0 items-center gap-2.5 overflow-hidden rounded-md border border-[#edf0e9] bg-white px-2.5 py-2.5 sm:gap-3 sm:px-3"
               >
-                <div className="relative h-32">
-                  <Image
-                    src={v.image}
-                    alt={v.name}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                <div className="relative h-[90px] w-[104px] shrink-0 overflow-hidden rounded-md border border-[#eef2eb] bg-white">
+                  <Image src={p.image} alt={p.name[locale]} fill className="object-cover" />
+                  <span className="absolute left-0 top-0 bg-[var(--yellow)] px-1 py-0.5 text-[9px] font-bold leading-tight text-[#2f2f2f]">
+                    25% Off
+                  </span>
                 </div>
-                <div className="p-4">
-                  <p className="font-bold text-[var(--foreground)]">{v.name}</p>
-                  <p className="mt-0.5 text-xs text-gray-500">{v.tag[locale]}</p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span
-                      className="text-xs font-semibold"
-                      style={{ color: "var(--secondary)" }}
-                    >
-                      {v.items} {c.items}
+                <div className="min-w-0 flex-1 pr-0.5">
+                  <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-[var(--foreground)]">
+                    {p.name[locale]}
+                  </h3>
+                  <p className="mt-0.5 text-[11px] font-normal leading-none text-[#6f776f]">500g Pack</p>
+                  <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0">
+                    <span className="text-[15px] font-bold tabular-nums leading-none text-[var(--primary)]">
+                      {p.priceDisplay}
                     </span>
-                    <Link
-                      href="/products"
-                      className="text-xs font-semibold"
-                      style={{ color: "var(--secondary)" }}
-                    >
-                      {c.visitStore} →
-                    </Link>
+                    <span className="text-[11px] leading-none text-[#8d9392] line-through tabular-nums">
+                      ${(p.price * 1.18).toFixed(2)}
+                    </span>
                   </div>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── SPLIT PROMO BANNERS ───────────────────────────────────────── */}
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-4 sm:grid-cols-2">
-          {/* Left – navy */}
-          <div
-            className="flex flex-col justify-between rounded-2xl p-8 min-h-52"
-            style={{ backgroundColor: "var(--secondary)" }}
-          >
-            <div>
-              <Store size={28} className="text-white/60 mb-3" />
-              <h3 className="text-xl font-extrabold text-white">
-                {c.splitLeft}
-              </h3>
-              <p className="mt-2 text-sm text-white/70 max-w-xs">
-                {c.splitLeftSub}
-              </p>
-            </div>
-            <Link
-              href="/vendor/register"
-              className="mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold transition-all hover:bg-gray-100"
-              style={{ color: "var(--secondary)" }}
+      <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-extrabold leading-tight text-[var(--foreground)]">Latest Blog Post Insights</h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { title: "Fusion Fixation: Fueling Your Passion for All Things Stylish", date: "15 Sep, 2023", category: "Modern Fashion", image: "/images/blog-1.jpg" },
+            { title: "Fusion Fixation: Fueling Your Passion for All Things Stylish", date: "15 Sep, 2023", category: "Modern Fashion", image: "/images/blog-2.jpg" },
+            { title: "Fusion Fixation: Fueling Your Passion for All Things Stylish", date: "15 Sep, 2023", category: "Modern Fashion", image: "/images/blog-3.jpg" },
+            { title: "Fusion Fixation: Fueling Your Passion for All Things Stylish", date: "15 Sep, 2023", category: "Modern Fashion", image: "/images/blog-4.jpg" },
+          ].map((blog, index) => (
+            <article
+              key={`blog-${index}`}
+              className="group overflow-hidden rounded-md border border-[var(--green)]/15 bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
             >
-              {c.splitLeftCta} <ArrowR size={14} />
-            </Link>
-          </div>
-
-          {/* Right – white with navy border */}
-          <div
-            className="flex flex-col justify-between rounded-2xl border-2 p-8 min-h-52"
-            style={{ borderColor: "var(--secondary)" }}
-          >
-            <div>
-              <div
-                className="mb-3 flex h-10 w-10 items-center justify-center rounded-full text-white text-lg"
-                style={{ backgroundColor: "var(--secondary)" }}
-              >
-                ⚡
+              <div className="relative h-40 overflow-hidden bg-[var(--footerBg)]">
+                <Image src={blog.image} alt={blog.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105" />
               </div>
-              <h3
-                className="text-xl font-extrabold"
-                style={{ color: "var(--secondary)" }}
-              >
-                {c.splitRight}
-              </h3>
-              <p className="mt-2 text-sm text-gray-500 max-w-xs">
-                {c.splitRightSub}
-              </p>
+              <div className="space-y-2.5 p-3">
+                <div className="flex flex-wrap items-center gap-4 text-[12px] text-[var(--foreground)]/65">
+                  <span className="inline-flex items-center gap-1">
+                    <Eye size={12} className="text-[var(--green)]/75" />
+                    {blog.date}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Store size={12} className="text-[var(--green)]/75" />
+                    {blog.category}
+                  </span>
+                </div>
+                <h3 className="line-clamp-2 text-[15px] font-bold leading-[1.2] text-[var(--foreground)]">
+                  {blog.title}
+                </h3>
+                <button className="inline-flex items-center gap-2 text-[14px] font-semibold text-[var(--foreground)] transition-colors hover:text-[var(--green)]">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--green)]/15 text-[var(--green)]">+</span>
+                  Read Details
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="pb-14">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-xl border border-[var(--green)]/15 bg-white p-5 shadow-[0_8px_22px_rgba(22,163,74,0.08)]">
+            <h3 className="mb-4 text-2xl font-black text-[var(--foreground)]">Why shoppers choose Mandawee</h3>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                { icon: Truck, title: "Fast Delivery", desc: "Same-day delivery on selected items" },
+                { icon: Store, title: "Verified Vendors", desc: "Trusted stores with quality standards" },
+                { icon: Tag, title: "Daily Deals", desc: "Fresh promotions and limited-time offers" },
+                { icon: ShoppingCart, title: "Easy Checkout", desc: "Quick cart and secure payments" },
+              ].map((item) => (
+                <div key={item.title} className="rounded-lg border border-[var(--green)]/15 bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-md">
+                  <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--green)]/12 text-[var(--green)]">
+                    <item.icon size={18} />
+                  </div>
+                  <p className="text-sm font-bold text-[var(--foreground)]">{item.title}</p>
+                  <p className="mt-1 text-xs text-[var(--foreground)]/65">{item.desc}</p>
+                </div>
+              ))}
             </div>
-            <Link
-              href="/delivery"
-              className="mt-6 inline-flex w-fit items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white transition-all"
-              style={{ backgroundColor: "var(--secondary)" }}
-            >
-              {c.splitRightCta} <ArrowR size={14} />
-            </Link>
           </div>
         </div>
       </section>
-
-      {/* ── NEWSLETTER STRIP ──────────────────────────────────────────── */}
-      <section
-        className="py-16"
-        style={{ backgroundColor: "var(--secondary)" }}
-      >
-        <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
-          <Mail size={28} className="mx-auto mb-4 text-white/60" />
-          <h2 className="text-2xl font-extrabold text-white sm:text-3xl">
-            {c.newsletterTitle}
-          </h2>
-          <p className="mt-3 text-sm text-white/70">{c.newsletterSub}</p>
-          {subscribed ? (
-            <p className="mt-6 rounded-full bg-white/20 px-8 py-4 text-sm font-bold text-white inline-block">
-              ✓ Subscribed!
-            </p>
-          ) : (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (email.trim()) setSubscribed(true);
-              }}
-              className="mx-auto mt-6 flex max-w-md overflow-hidden rounded-full bg-white shadow-lg"
-            >
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={c.newsletterPlaceholder}
-                className="flex-1 bg-transparent px-5 py-4 text-sm text-[var(--foreground)] outline-none placeholder:text-gray-400"
-              />
-              <button
-                type="submit"
-                className="m-1.5 rounded-full px-5 py-2.5 text-sm font-bold text-white"
-                style={{ backgroundColor: "var(--primary)" }}
-              >
-                {c.subscribe}
-              </button>
-            </form>
-          )}
-        </div>
-      </section>
-
-      {/* Marquee keyframe */}
-      <style>{`
-        @keyframes marquee {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-      `}</style>
     </div>
   );
 }

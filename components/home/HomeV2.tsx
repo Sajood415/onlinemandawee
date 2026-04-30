@@ -21,6 +21,7 @@ import {
   Truck,
   Shield,
   Tag,
+  Store,
   Apple,
   Carrot,
   Milk,
@@ -809,6 +810,59 @@ export function HomeV2() {
             </div>
             <div className="my-2 self-start text-5xl font-bold leading-none text-white/20 md:my-0 md:self-auto md:text-6xl">
               30% OFF
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-black text-slate-900">Top Trending Products</h2>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {products.slice(0, 6).map((p, index) => (
+            <article key={`trend-${p.id}`} className="group rounded-lg border border-slate-200 bg-white overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <div className="relative h-20 overflow-hidden bg-slate-50">
+                <Image src={p.image} alt={p.name} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                {index < 2 && (
+                  <div className="absolute top-1 right-1 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded font-bold">
+                    TRENDING
+                  </div>
+                )}
+              </div>
+              <div className="p-2">
+                <p className="line-clamp-2 text-xs font-semibold text-slate-900 mb-1">{p.name}</p>
+                <div className="flex items-center gap-1 text-xs text-slate-500 mb-1">
+                  <Star size={8} className="fill-yellow-400 text-yellow-400" />
+                  <span>4.8</span>
+                  <span className="text-slate-400">(234)</span>
+                </div>
+                <p className="text-xs font-bold text-primary">{p.priceDisplay}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="pb-14">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-[0_8px_22px_rgba(15,23,42,0.08)]">
+            <h3 className="mb-4 text-2xl font-black text-slate-900">Why shoppers choose Mandawee</h3>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                { icon: Truck, title: "Fast Delivery", desc: "Same-day delivery on selected items" },
+                { icon: Store, title: "Verified Vendors", desc: "Trusted stores with quality standards" },
+                { icon: Tag, title: "Daily Deals", desc: "Fresh promotions and limited-time offers" },
+                { icon: ShoppingCart, title: "Easy Checkout", desc: "Quick cart and secure payments" },
+              ].map((item) => (
+                <div key={item.title} className="rounded-lg border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4 transition hover:-translate-y-0.5 hover:shadow-md">
+                  <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <item.icon size={18} />
+                  </div>
+                  <p className="text-sm font-bold text-slate-900">{item.title}</p>
+                  <p className="mt-1 text-xs text-slate-600">{item.desc}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
