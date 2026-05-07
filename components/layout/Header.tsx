@@ -254,6 +254,11 @@ const HEADER_LOGO_SRC =
 /** Same as announcement bar – logo row background (not black, not white) */
 const HEADER_BAR_CLASS = "bg-[#0f3460]";
 
+/** Promo message row (dismissible) – matches logo strip */
+const TOP_PROMO_BAR_CLASS = "bg-[#0f3460]";
+/** Sell on Mandawee / Track Order row */
+const TOP_LINKS_BAR_CLASS = "bg-[#D12C40]";
+
 export default function Header() {
   const t = useTranslations("Homepage.navbar");
   const locale = useLocale() as SupportedLocale;
@@ -361,36 +366,42 @@ export default function Header() {
 
   return (
     <>
-      <div className="relative bg-[#0f3460] text-white">
-        <div className="relative mx-auto flex min-h-9 max-w-7xl items-center px-4 py-1 text-xs sm:text-[13px]">
-          {showTopPromo ? (
-            <>
-              <p className="flex-1 px-10 text-center font-semibold leading-tight sm:px-14">
-                {copy.freeDeliveryAbove100}
-              </p>
-              <button
-                type="button"
-                onClick={dismissTopPromo}
-                className={`absolute top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-white/85 transition hover:bg-white/15 hover:text-white ${isRtl ? "left-1.5 sm:left-3" : "right-1.5 sm:right-3"}`}
-                aria-label="Close announcement"
-              >
-                <X size={15} strokeWidth={2.5} />
-              </button>
-            </>
-          ) : (
-            <div
-              className={`flex w-full flex-wrap items-center justify-center gap-x-4 gap-y-1 py-1 text-white/90 sm:justify-end ${isRtl ? "sm:flex-row-reverse" : ""}`}
-            >
-              <Link href="/vendor/register" className="font-semibold hover:text-white">
-                {copy.sellOnMandawee}
-              </Link>
-              <Link href="/track-order" className="font-semibold hover:text-white">
-                {copy.trackOrder}
-              </Link>
-            </div>
-          )}
+      {/* Top utility links – always above logo / main navbar */}
+      <div className={`relative ${TOP_LINKS_BAR_CLASS} text-white`}>
+        <div
+          className={`relative mx-auto flex min-h-9 max-w-7xl items-center justify-center gap-x-5 px-4 py-1 text-xs font-semibold sm:justify-end sm:text-[13px] ${isRtl ? "sm:flex-row-reverse" : ""}`}
+        >
+          <Link
+            href="/vendor/register"
+            className="px-2 py-0.5 text-white/95 transition hover:text-white"
+          >
+            {copy.sellOnMandawee}
+          </Link>
+          <Link
+            href="/track-order"
+            className="px-2 py-0.5 text-white/95 transition hover:text-white"
+          >
+            {copy.trackOrder}
+          </Link>
         </div>
       </div>
+      {showTopPromo ? (
+        <div className={`relative ${TOP_PROMO_BAR_CLASS} text-white`}>
+          <div className="relative mx-auto flex min-h-9 max-w-7xl items-center px-4 py-1 text-xs sm:text-[13px]">
+            <p className="flex-1 px-10 text-center font-semibold leading-tight sm:px-14">
+              {copy.freeDeliveryAbove100}
+            </p>
+            <button
+              type="button"
+              onClick={dismissTopPromo}
+              className={`absolute top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-white/85 transition hover:bg-white/15 hover:text-white ${isRtl ? "left-1.5 sm:left-3" : "right-1.5 sm:right-3"}`}
+              aria-label="Close announcement"
+            >
+              <X size={15} strokeWidth={2.5} />
+            </button>
+          </div>
+        </div>
+      ) : null}
       {/* TOP BAR – sticky (logo, search, account, cart) */}
       <header
         dir={isRtl ? "rtl" : "ltr"}
