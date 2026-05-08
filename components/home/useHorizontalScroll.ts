@@ -8,8 +8,11 @@ export function useHorizontalScroll() {
   const scroll = useCallback((dir: -1 | 1) => {
     const el = ref.current;
     if (!el) return;
-    const amount = Math.min(el.clientWidth * 0.88, 640);
-    el.scrollBy({ left: dir * amount, behavior: "smooth" });
+    const cs = getComputedStyle(el);
+    const pl = parseFloat(cs.paddingLeft) || 0;
+    const pr = parseFloat(cs.paddingRight) || 0;
+    const page = el.clientWidth - pl - pr;
+    el.scrollBy({ left: dir * page, behavior: "smooth" });
   }, []);
 
   return { ref, scroll };

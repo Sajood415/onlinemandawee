@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useLocale } from "next-intl";
 import { HomeHeroCarousel } from "./HomeHeroCarousel";
@@ -11,10 +11,13 @@ export function HomePage() {
   const isRtl = locale === "ps" || locale === "fa-AF";
 
   return (
-    <div dir={isRtl ? "rtl" : "ltr"} className="min-h-0 bg-white">
+    <div dir={isRtl ? "rtl" : "ltr"} className="min-h-0 w-full min-w-0 bg-white">
       <HomeHeroCarousel />
-      <div className="w-full px-2 pt-4 sm:px-3 sm:pt-6 lg:px-4">
+      {/* Edge-to-edge on small screens; no side padding wrapper */}
+      <div className="w-full min-w-0 pt-3 sm:px-4 sm:pt-5 lg:px-5">
         <HomeMidPromoCarousel />
+      </div>
+      <div className="w-full min-w-0 px-3 pt-2 sm:px-4 sm:pt-4 lg:px-5">
         <HomeCategoryCarousel />
       </div>
       <HomeStackedSections />

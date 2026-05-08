@@ -36,7 +36,7 @@ export function HomeCategoryCarousel() {
         </button>
         <div
           ref={ref}
-          className="flex gap-3 overflow-x-auto scroll-smooth pb-2 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-4 sm:px-12 [&::-webkit-scrollbar]:hidden"
+          className="flex gap-3 overflow-x-auto scroll-smooth pb-2 pl-1 pr-3 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-4 sm:px-2 md:px-4 [&::-webkit-scrollbar]:hidden"
         >
           {tiles.map((item) => (
             <Link

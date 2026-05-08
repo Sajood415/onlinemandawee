@@ -3,12 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import productCatalog from "@/data/product.json";
 import { useCart } from "@/store/cart-context";
 import { toast } from "@/lib/utils/toast";
-import { useHorizontalScroll } from "./useHorizontalScroll";
 
 type LocaleKey = "en" | "ps" | "fa-AF";
 
@@ -19,6 +18,30 @@ type Row = {
   image: string;
   name: Record<LocaleKey, string>;
 };
+
+function chunkPairs<T>(items: T[]): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += 2) out.push(items.slice(i, i + 2));
+  return out;
+}
+
+function readFlexGapPx(el: HTMLElement) {
+  const cs = getComputedStyle(el);
+  return parseFloat(cs.columnGap || cs.gap || "0") || 0;
+}
+
+function readViewportInnerPx(el: HTMLElement) {
+  const cs = getComputedStyle(el);
+  const pl = parseFloat(cs.paddingLeft) || 0;
+  const pr = parseFloat(cs.paddingRight) || 0;
+  return Math.max(0, Math.floor(el.clientWidth - pl - pr));
+}
+
+function readRailPageWidthPx(el: HTMLElement) {
+  const gap = readFlexGapPx(el);
+  const inner = readViewportInnerPx(el);
+  return Math.max(0, Math.floor(inner - gap));
+}
 
 function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
   const { addItem } = useCart();
@@ -40,29 +63,29 @@ function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
   };
 
   return (
-    <div className="group flex w-[252px] shrink-0 flex-col rounded-sm bg-white ring-2 ring-transparent ring-offset-0 transition-[color,transform,box-shadow,ring-offset-width] duration-200 ease-out hover:-translate-y-0.5 hover:ring-neutral-200 hover:ring-offset-8 hover:ring-offset-white hover:shadow-[0_10px_28px_-14px_rgba(15,23,42,0.1)] sm:w-[260px] md:w-[268px] lg:w-[274px] xl:w-[280px]">
-      <Link href={`/products/${p.id}`} className="flex flex-1 flex-col overflow-hidden">
-        <div className="relative aspect-square overflow-hidden bg-white">
+    <div className="group flex h-full min-h-0 w-full min-w-0 flex-col rounded-sm bg-white transition-shadow duration-200 hover:shadow-md">
+      <Link href={`/products/${p.id}`} className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="relative aspect-4/5 min-h-0 min-w-0 overflow-hidden bg-white">
           <Image
             src={p.image}
             alt={p.name[locale]}
             fill
             className="object-cover object-center transition duration-300 group-hover:scale-[1.03]"
-            sizes="(max-width: 640px) 252px, (max-width: 768px) 260px, (max-width: 1024px) 268px, (max-width: 1280px) 274px, 280px"
+            sizes="(max-width: 640px) 38vw, 240px"
           />
         </div>
-        <div className="flex flex-1 flex-col pt-4">
-          <h3 className="mb-2 min-h-12 line-clamp-2 text-start text-[0.9375rem] font-normal leading-snug tracking-tight text-neutral-700 sm:min-h-14 sm:text-base">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-2 sm:pt-3">
+          <h3 className="mb-1 line-clamp-2 min-h-9 text-start text-xs font-normal leading-snug tracking-tight text-neutral-800 sm:mb-2 sm:min-h-12 sm:text-sm md:text-base">
             {p.name[locale]}
           </h3>
-          <p className="mb-4 text-start text-base font-semibold text-black">{p.priceDisplay}</p>
+          <p className="mb-2 text-start text-sm font-semibold text-black sm:mb-3 sm:text-base">{p.priceDisplay}</p>
         </div>
       </Link>
       <button
         type="button"
         onClick={onAdd}
         disabled={busy}
-        className="w-full rounded-md border border-black bg-white py-3 text-center text-xs font-bold uppercase tracking-[0.08em] text-black transition hover:bg-neutral-50 disabled:opacity-50"
+        className="w-full rounded-md border border-black bg-white py-2 text-center text-[9px] font-bold uppercase tracking-[0.06em] text-black transition hover:bg-neutral-50 disabled:opacity-50 sm:py-2.5 sm:text-[11px]"
       >
         {busy ? "…" : t("addToCart")}
       </button>
@@ -84,39 +107,88 @@ export function HomeProductRail({ productIds, showTitle = true }: Props) {
         .map((id) => all.find((p) => p.id === id))
         .filter((p): p is Row => Boolean(p)) as Row[])
     : all;
-  const { ref, scroll } = useHorizontalScroll();
+  const pages = chunkPairs(rows);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const syncRailPage = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const px = readRailPageWidthPx(el);
+    if (px > 0) el.style.setProperty("--rail-page", `${px}px`);
+  }, []);
+
+  useLayoutEffect(() => {
+    syncRailPage();
+    const el = scrollRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(syncRailPage);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [syncRailPage, rows.length]);
+
+  const scrollByPage = useCallback((dir: -1 | 1) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const step = readViewportInnerPx(el);
+    if (step <= 0) return;
+    el.scrollBy({ left: dir * step, behavior: "smooth" });
+  }, []);
+
+  const pageStyle: CSSProperties = {
+    flex: "0 0 var(--rail-page)",
+    width: "var(--rail-page)",
+    minWidth: "var(--rail-page)",
+  };
 
   return (
-    <section className="mb-0">
+    <section className="mb-0 w-full min-w-0">
       {showTitle ? (
-        <h2 className="mb-8 text-center text-lg font-bold uppercase tracking-wide text-slate-900 sm:text-xl">
+        <h2 className="mb-6 px-3 text-center text-lg font-bold uppercase tracking-wide text-slate-900 sm:mb-8 sm:px-0 sm:text-xl">
           {t("featuredTitle")}
         </h2>
       ) : null}
-      <div className="flex items-center gap-1 sm:gap-1.5">
+      <div className="relative flex min-h-0 w-full min-w-0 items-center gap-0 sm:gap-1.5">
         <button
           type="button"
-          onClick={() => scroll(-1)}
-          className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-300 bg-white text-neutral-800 shadow-md transition hover:bg-neutral-50 sm:inline-flex"
+          onClick={() => scrollByPage(-1)}
+          className="absolute left-0 top-[42%] z-20 inline-flex h-7 w-7 -translate-y-1/2 shrink-0 items-center justify-center rounded-full border border-neutral-300 bg-white/95 text-neutral-800 shadow-sm backdrop-blur-[2px] transition hover:bg-neutral-50 sm:static sm:top-auto sm:h-9 sm:w-9 sm:translate-y-0 sm:bg-white sm:shadow-md sm:backdrop-blur-none"
           aria-label="prev"
         >
-          <ChevronLeft className="h-4 w-4 stroke-[1.75]" />
+          <ChevronLeft className="h-3.5 w-3.5 stroke-[1.75] sm:h-4 sm:w-4" />
         </button>
-        <div
-          ref={ref}
-          className="flex min-w-0 flex-1 gap-6 overflow-x-auto scroll-smooth pb-4 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] md:gap-7 lg:gap-8 [&::-webkit-scrollbar]:hidden"
-        >
-          {rows.map((p) => (
-            <ProductCard key={p.id} p={p} locale={locale} />
-          ))}
+
+        <div className="mx-auto min-h-0 w-full min-w-0 max-w-[620px] flex-1 overflow-hidden">
+          <div
+            ref={scrollRef}
+            dir="ltr"
+            className="flex min-h-0 w-full min-w-0 flex-row gap-4 overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth px-4 [-ms-overflow-style:none] [scrollbar-width:none] touch-pan-x sm:gap-6 sm:px-6 [&::-webkit-scrollbar]:hidden"
+          >
+            {pages.map((pair, pi) => (
+              <div
+                key={`${pair[0]?.id ?? pi}-${pair[1]?.id ?? "x"}`}
+                className="box-border flex min-h-0 min-w-0 flex-row gap-3 sm:gap-4"
+                style={pageStyle}
+              >
+                {pair.map((p) => (
+                  <div key={p.id} className="min-h-0 min-w-0 flex-1">
+                    <ProductCard p={p} locale={locale} />
+                  </div>
+                ))}
+                {pair.length === 1 ? (
+                  <div className="min-h-0 min-w-0 flex-1" aria-hidden />
+                ) : null}
+              </div>
+            ))}
+          </div>
         </div>
+
         <button
           type="button"
-          onClick={() => scroll(1)}
-          className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-300 bg-white text-neutral-800 shadow-md transition hover:bg-neutral-50 sm:inline-flex"
+          onClick={() => scrollByPage(1)}
+          className="absolute right-0 top-[42%] z-20 inline-flex h-7 w-7 -translate-y-1/2 shrink-0 items-center justify-center rounded-full border border-neutral-300 bg-white/95 text-neutral-800 shadow-sm backdrop-blur-[2px] transition hover:bg-neutral-50 sm:static sm:top-auto sm:h-9 sm:w-9 sm:translate-y-0 sm:bg-white sm:shadow-md sm:backdrop-blur-none"
           aria-label="next"
         >
-          <ChevronRight className="h-4 w-4 stroke-[1.75]" />
+          <ChevronRight className="h-3.5 w-3.5 stroke-[1.75] sm:h-4 sm:w-4" />
         </button>
       </div>
     </section>

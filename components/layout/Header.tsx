@@ -407,7 +407,7 @@ export default function Header() {
         dir={isRtl ? "rtl" : "ltr"}
         className={`sticky top-0 z-[9998] overflow-x-clip border-b border-white/15 shadow-[0_4px_20px_rgba(15,52,96,0.35)] ${HEADER_BAR_CLASS}`}
       >
-        <div className="mx-auto w-full max-w-7xl px-2 sm:px-4 py-2 sm:py-3">
+        <div className="mx-auto w-full min-w-0 max-w-7xl px-1.5 py-2 sm:px-4 sm:py-3">
           <div className="flex min-w-0 flex-nowrap items-center justify-between gap-2 sm:gap-3 md:gap-4">
             {/* LOGO */}
             <Link href="/" className="flex-shrink-0 order-1">
@@ -562,7 +562,7 @@ export default function Header() {
         dir={isRtl ? "rtl" : "ltr"}
         className="relative z-[9997] overflow-x-clip border-b border-gray-200 bg-white text-gray-900 shadow-[0_2px_8px_rgba(15,23,42,0.06)]"
       >
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 flex items-center h-12 sm:h-14">
+        <div className="mx-auto flex h-12 w-full min-w-0 max-w-7xl items-center px-1.5 sm:h-14 sm:px-3 md:px-4">
           {/* CATEGORIES BUTTON */}
           <div className="relative flex-shrink-0" ref={categoriesRef}>
             <button

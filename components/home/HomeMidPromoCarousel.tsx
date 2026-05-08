@@ -20,25 +20,27 @@ export function HomeMidPromoCarousel() {
   const s = slides[i] ?? slides[0];
 
   return (
-    <section className="relative mb-12 overflow-hidden rounded-2xl bg-gradient-to-br from-[#c41e3a] via-[#DC3545] to-[#991b1b] shadow-xl">
+    <section className="relative w-full min-w-0 max-w-full overflow-hidden rounded-none bg-gradient-to-br from-[#c41e3a] via-[#DC3545] to-[#991b1b] shadow-none sm:rounded-2xl sm:shadow-xl">
       <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-      <div className="relative flex flex-col items-start gap-4 px-6 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-10 sm:py-12">
-        <div className="max-w-xl">
+      <div className="relative flex w-full min-w-0 flex-col items-stretch gap-4 px-4 py-8 text-balance sm:flex-row sm:items-center sm:justify-between sm:px-10 sm:py-12">
+        <div className="w-full min-w-0 sm:max-w-xl">
           <span className="mb-2 inline-block rotate-[-3deg] bg-white px-3 py-1 text-xs font-black uppercase tracking-widest text-[#DC3545] shadow-md">
             {s.ribbon}
           </span>
-          <h2 className="text-2xl font-extrabold uppercase tracking-tight text-white sm:text-3xl">
+          <h2 className="text-xl font-extrabold uppercase leading-tight tracking-tight text-white sm:text-2xl md:text-3xl">
             {s.title}
           </h2>
-          <p className="mt-2 text-sm font-medium text-white/90 sm:text-base">{s.subtitle}</p>
+          <p className="mt-2 text-sm font-medium leading-snug text-white/90 sm:text-base">
+            {s.subtitle}
+          </p>
           <Link
             href={s.href}
-            className="mt-5 inline-flex rounded-full border-2 border-white bg-white px-7 py-2.5 text-xs font-bold uppercase tracking-wider text-[#DC3545] transition hover:bg-white/90"
+            className="mt-5 inline-flex rounded-full border-2 border-white bg-white px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-[#DC3545] transition hover:bg-white/90 sm:px-7"
           >
             {s.cta}
           </Link>
         </div>
-        <div className="relative mx-auto mt-4 h-40 w-40 shrink-0 sm:mx-0 sm:h-48 sm:w-48">
+        <div className="relative mx-auto mt-2 h-36 w-36 shrink-0 sm:mx-0 sm:mt-0 sm:h-48 sm:w-48">
           <div className="absolute inset-0 rounded-full border-4 border-white/50 bg-white/10 shadow-inner" />
           <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-white p-2">
             <Image
@@ -47,7 +49,7 @@ export function HomeMidPromoCarousel() {
               alt=""
               fill
               className="object-cover"
-              sizes="200px"
+              sizes="(max-width: 640px) 144px, 200px"
             />
           </div>
         </div>

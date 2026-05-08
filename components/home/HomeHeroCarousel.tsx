@@ -17,20 +17,20 @@ export function HomeHeroCarousel() {
   }
 
   return (
-    <section className="w-full bg-[#004795]" aria-labelledby="hero-heading">
+    <section className="w-full min-w-0 bg-[#004795]" aria-labelledby="hero-heading">
       <h1 id="hero-heading" className="sr-only">
         {label}
       </h1>
       <Link
         href={slide.href}
-        className="block w-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-white"
+        className="block w-full min-w-0 overflow-hidden outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-white"
       >
         <Image
           src={slide.image}
           alt={label}
           width={2048}
           height={820}
-          className="h-auto w-full object-contain object-top"
+          className="h-auto w-full min-h-[160px] object-cover object-center sm:min-h-0 sm:object-contain sm:object-top"
           sizes="100vw"
           priority
           draggable={false}
