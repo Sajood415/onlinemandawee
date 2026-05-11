@@ -14,14 +14,14 @@ export function HomeCategoryCarousel() {
 
   return (
     <section className="mb-6 [font-family:var(--font-poppins)] text-[#000000] font-normal leading-[1.2]">
-      <h2 className="m-0 mb-8 text-center text-lg uppercase tracking-wide sm:text-xl">
+      <h2 className="m-0 mb-4 text-center text-lg uppercase tracking-wide sm:text-xl sm:mb-5">
         {t("shopByCategory")}
       </h2>
       <div className="relative">
         <button
           type="button"
           onClick={() => scroll(-1)}
-          className="absolute left-0 top-[72px] z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:bg-slate-50 sm:top-[80px] sm:flex"
+          className="absolute left-0 top-[72px] z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:bg-slate-50 active:scale-95 sm:top-[80px]"
           aria-label="prev"
         >
           <ChevronLeft className="h-5 w-5" />
@@ -29,14 +29,14 @@ export function HomeCategoryCarousel() {
         <button
           type="button"
           onClick={() => scroll(1)}
-          className="absolute right-0 top-[72px] z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:bg-slate-50 sm:top-[80px] sm:flex"
+          className="absolute right-0 top-[72px] z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:bg-slate-50 active:scale-95 sm:top-[80px]"
           aria-label="next"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
         <div
           ref={ref}
-          className="flex gap-4 overflow-x-auto scroll-smooth pb-2 pl-1 pr-3 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-5 sm:px-2 md:px-4 [&::-webkit-scrollbar]:hidden"
+          className="flex gap-4 overflow-x-auto scroll-smooth pb-2 px-11 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-5 sm:px-12 md:px-14 [&::-webkit-scrollbar]:hidden"
         >
           {tiles.map((item) => (
             <Link

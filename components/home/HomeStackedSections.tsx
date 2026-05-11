@@ -26,7 +26,7 @@ export function HomeStackedSections() {
               priority={section.id === "quality-grocery"}
             />
           </Link>
-          <div className="w-full min-w-0 px-0 py-6 sm:px-4 sm:py-10 lg:px-5">
+          <div className="w-full min-w-0 px-3 py-6 sm:px-4 sm:py-10 lg:px-5">
             <HomeProductRail productIds={section.productIds} showTitle={false} />
           </div>
         </div>

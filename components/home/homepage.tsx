@@ -12,7 +12,7 @@ export function HomePage() {
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-0 w-full min-w-0 bg-white">
       <HomeHeroCarousel />
-      <div className="w-full min-w-0 px-0 pt-6 sm:px-4 sm:pt-8 lg:px-6 xl:px-8">
+      <div className="w-full min-w-0 px-0 pt-9 sm:px-4 sm:pt-11 lg:px-6 xl:px-8">
         <HomeCategoryCarousel />
       </div>
       <HomeStackedSections />

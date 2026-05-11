@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import productCatalog from "@/data/product.json";
 import { useCart } from "@/store/cart-context";
@@ -18,38 +18,6 @@ type Row = {
   image: string;
   name: Record<LocaleKey, string>;
 };
-
-function chunkPairs<T>(items: T[]): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < items.length; i += 2) out.push(items.slice(i, i + 2));
-  return out;
-}
-
-function readFlexGapPx(el: HTMLElement) {
-  const cs = getComputedStyle(el);
-  return parseFloat(cs.columnGap || cs.gap || "0") || 0;
-}
-
-function readViewportInnerPx(el: HTMLElement) {
-  const cs = getComputedStyle(el);
-  const pl = parseFloat(cs.paddingLeft) || 0;
-  const pr = parseFloat(cs.paddingRight) || 0;
-  return Math.max(0, Math.floor(el.clientWidth - pl - pr));
-}
-
-function readRailPageWidthPx(el: HTMLElement) {
-  const gap = readFlexGapPx(el);
-  const inner = readViewportInnerPx(el);
-  return Math.max(0, Math.floor(inner - gap) - 1);
-}
-
-function scrollDesktopStep(el: HTMLElement) {
-  const cs = getComputedStyle(el);
-  const pl = parseFloat(cs.paddingLeft) || 0;
-  const pr = parseFloat(cs.paddingRight) || 0;
-  const inner = Math.max(0, el.clientWidth - pl - pr);
-  return Math.floor(inner * 0.75);
-}
 
 function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
   const { addItem } = useCart();
@@ -71,29 +39,29 @@ function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
   };
 
   return (
-    <div className="group flex h-full min-h-0 w-full min-w-0 flex-col rounded-sm bg-white transition-shadow duration-200 hover:shadow-md">
-      <Link href={`/products/${p.id}`} className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="relative aspect-4/5 min-h-0 min-w-0 overflow-hidden bg-white md:aspect-square">
+    <div className="flex h-full min-h-0 flex-col bg-white">
+      <Link href={`/products/${p.id}`} className="flex min-h-0 flex-1 flex-col text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">
+        <div className="relative aspect-square w-full min-w-0 overflow-hidden rounded-md bg-neutral-50">
           <Image
             src={p.image}
             alt={p.name[locale]}
             fill
-            className="object-cover object-center transition duration-300 group-hover:scale-[1.03]"
-            sizes="(max-width: 767px) 38vw, 220px"
+            className="object-cover object-center"
+            sizes="(max-width: 640px) 45vw, 210px"
           />
         </div>
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-2 md:pt-2.5">
-          <h3 className="mb-1 line-clamp-2 min-h-9 text-start text-xs font-normal leading-snug tracking-tight text-neutral-800 md:mb-1.5 md:min-h-10 md:text-sm">
+        <div className="mt-3 flex min-h-0 flex-1 flex-col">
+          <h3 className="line-clamp-2 text-[13px] font-normal leading-snug text-black sm:text-sm">
             {p.name[locale]}
           </h3>
-          <p className="mb-2 text-start text-sm font-semibold text-black md:mb-2 md:text-sm">{p.priceDisplay}</p>
+          <p className="mt-2 text-sm font-semibold tracking-tight text-black">{p.priceDisplay}</p>
         </div>
       </Link>
       <button
         type="button"
         onClick={onAdd}
         disabled={busy}
-        className="w-full rounded-md border border-black bg-white py-2 text-center text-[9px] font-bold uppercase tracking-[0.06em] text-black transition hover:bg-neutral-50 disabled:opacity-50 md:py-2 md:text-[10px]"
+        className="mt-3 w-full rounded-sm border border-neutral-900 bg-white py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-900 transition-colors hover:bg-neutral-50 disabled:opacity-45 sm:text-[11px]"
       >
         {busy ? "…" : t("addToCart")}
       </button>
@@ -115,137 +83,58 @@ export function HomeProductRail({ productIds, showTitle = true }: Props) {
         .map((id) => all.find((p) => p.id === id))
         .filter((p): p is Row => Boolean(p)) as Row[])
     : all;
-  const pages = chunkPairs(rows);
 
-  const mobileScrollRef = useRef<HTMLDivElement>(null);
-  const desktopScrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const syncRailPage = useCallback(() => {
-    const el = mobileScrollRef.current;
+  const scrollByPage = useCallback((dir: -1 | 1) => {
+    const el = scrollRef.current;
     if (!el) return;
-    const px = readRailPageWidthPx(el);
-    if (px > 0) el.style.setProperty("--rail-page", `${px}px`);
+    const w = el.getBoundingClientRect().width;
+    el.scrollBy({ left: dir * Math.max(1, Math.round(w)), behavior: "smooth" });
   }, []);
-
-  useLayoutEffect(() => {
-    syncRailPage();
-    const el = mobileScrollRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(syncRailPage);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [syncRailPage, rows.length]);
-
-  const scrollMobileByPage = useCallback((dir: -1 | 1) => {
-    const el = mobileScrollRef.current;
-    if (!el) return;
-    const step = readRailPageWidthPx(el) + readFlexGapPx(el);
-    if (step <= 0) return;
-    el.scrollBy({ left: dir * step, behavior: "smooth" });
-  }, []);
-
-  const scrollDesktop = useCallback((dir: -1 | 1) => {
-    const el = desktopScrollRef.current;
-    if (!el) return;
-    const step = scrollDesktopStep(el);
-    if (step <= 0) return;
-    el.scrollBy({ left: dir * step, behavior: "smooth" });
-  }, []);
-
-  const pageStyle: CSSProperties = {
-    flex: "0 0 var(--rail-page)",
-    width: "var(--rail-page)",
-    minWidth: "var(--rail-page)",
-  };
 
   return (
     <section className="mb-0 w-full min-w-0">
       {showTitle ? (
-        <h2 className="mb-6 px-3 text-center text-lg font-bold uppercase tracking-wide text-slate-900 sm:mb-8 sm:px-0 sm:text-xl">
+        <h2 className="mb-5 text-center text-lg font-bold uppercase tracking-wide text-slate-900 sm:mb-7 sm:text-xl">
           {t("featuredTitle")}
         </h2>
       ) : null}
 
-      <div className="relative flex min-h-0 w-full min-w-0 items-center gap-0 md:hidden sm:gap-1.5">
+      <div className="relative w-full min-w-0">
         <button
           type="button"
-          onClick={() => scrollMobileByPage(-1)}
-          className="absolute left-0 top-[42%] z-20 inline-flex h-7 w-7 -translate-y-1/2 shrink-0 items-center justify-center rounded-full border border-neutral-300 bg-white/95 text-neutral-800 shadow-sm backdrop-blur-[2px] transition hover:bg-neutral-50 sm:static sm:top-auto sm:h-9 sm:w-9 sm:translate-y-0 sm:bg-white sm:shadow-md sm:backdrop-blur-none"
+          onClick={() => scrollByPage(-1)}
+          className="absolute left-0 top-[92px] z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm transition hover:bg-neutral-50 active:scale-95 sm:top-[100px] md:h-10 md:w-10 md:top-[108px]"
           aria-label="prev"
         >
-          <ChevronLeft className="h-3.5 w-3.5 stroke-[1.75] sm:h-4 sm:w-4" />
+          <ChevronLeft className="h-4 w-4 stroke-[1.6] md:h-[18px] md:w-[18px]" />
         </button>
-
-        <div className="mx-auto min-h-0 w-full min-w-0 flex-1 overflow-hidden">
-          <div
-            ref={mobileScrollRef}
-            dir="ltr"
-            className="flex min-h-0 w-full min-w-0 flex-row gap-4 overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth px-4 [-ms-overflow-style:none] [scrollbar-width:none] touch-pan-x sm:gap-6 sm:px-6 [&::-webkit-scrollbar]:hidden"
-          >
-            {pages.map((pair, pi) => (
-              <div
-                key={`${pair[0]?.id ?? pi}-${pair[1]?.id ?? "x"}`}
-                className="box-border flex min-h-0 min-w-0 flex-row gap-3 sm:gap-4"
-                style={pageStyle}
-              >
-                {pair.map((p) => (
-                  <div key={p.id} className="min-h-0 min-w-0 flex-1">
-                    <ProductCard p={p} locale={locale} />
-                  </div>
-                ))}
-                {pair.length === 1 ? (
-                  <div className="min-h-0 min-w-0 flex-1" aria-hidden />
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </div>
-
         <button
           type="button"
-          onClick={() => scrollMobileByPage(1)}
-          className="absolute right-0 top-[42%] z-20 inline-flex h-7 w-7 -translate-y-1/2 shrink-0 items-center justify-center rounded-full border border-neutral-300 bg-white/95 text-neutral-800 shadow-sm backdrop-blur-[2px] transition hover:bg-neutral-50 sm:static sm:top-auto sm:h-9 sm:w-9 sm:translate-y-0 sm:bg-white sm:shadow-md sm:backdrop-blur-none"
+          onClick={() => scrollByPage(1)}
+          className="absolute right-0 top-[92px] z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm transition hover:bg-neutral-50 active:scale-95 sm:top-[100px] md:h-10 md:w-10 md:top-[108px]"
           aria-label="next"
         >
-          <ChevronRight className="h-3.5 w-3.5 stroke-[1.75] sm:h-4 sm:w-4" />
+          <ChevronRight className="h-4 w-4 stroke-[1.6] md:h-[18px] md:w-[18px]" />
         </button>
-      </div>
 
-      <div className="relative hidden min-h-0 w-full min-w-0 items-center gap-2 md:flex">
-        <button
-          type="button"
-          onClick={() => scrollDesktop(-1)}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-300 bg-white text-neutral-800 shadow-md transition hover:bg-neutral-50"
-          aria-label="prev"
+        <div
+          ref={scrollRef}
+          dir="ltr"
+          className="flex w-full min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth px-10 py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] touch-pan-x sm:px-11 md:px-12 [&::-webkit-scrollbar]:hidden"
         >
-          <ChevronLeft className="h-4 w-4 stroke-[1.75]" />
-        </button>
-
-        <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
-          <div
-            ref={desktopScrollRef}
-            dir="ltr"
-            className="flex min-h-0 w-full min-w-0 flex-row gap-4 overflow-x-auto overflow-y-hidden scroll-smooth py-1 [-ms-overflow-style:none] [scrollbar-width:none] md:gap-5 lg:gap-6 [&::-webkit-scrollbar]:hidden"
-          >
-            {rows.map((p) => (
-              <div
-                key={p.id}
-                className="w-[200px] shrink-0 md:w-[210px] lg:w-[230px]"
-              >
+          {rows.map((p) => (
+            <div
+              key={p.id}
+              className="box-border min-w-0 max-w-[210px] shrink-0 snap-start basis-[calc((100%-0.75rem)/2)]"
+            >
+              <div className="h-full px-[5px] sm:px-2 md:px-[15px]">
                 <ProductCard p={p} locale={locale} />
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-
-        <button
-          type="button"
-          onClick={() => scrollDesktop(1)}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-300 bg-white text-neutral-800 shadow-md transition hover:bg-neutral-50"
-          aria-label="next"
-        >
-          <ChevronRight className="h-4 w-4 stroke-[1.75]" />
-        </button>
       </div>
     </section>
   );
