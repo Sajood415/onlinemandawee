@@ -23,14 +23,14 @@ export function HomeHeroCarousel() {
       </h1>
       <Link
         href={slide.href}
-        className="block w-full min-w-0 overflow-hidden outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-white"
+        className="block w-full min-w-0 overflow-hidden bg-[#004795] outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-white"
       >
         <Image
           src={slide.image}
           alt={label}
           width={2048}
           height={820}
-          className="h-auto w-full min-h-[160px] object-cover object-center sm:min-h-0 sm:object-contain sm:object-top"
+          className="h-auto w-full object-contain object-top"
           sizes="100vw"
           priority
           draggable={false}

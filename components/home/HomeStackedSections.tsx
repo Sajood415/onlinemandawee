@@ -14,13 +14,14 @@ export function HomeStackedSections() {
         <div key={section.id} className="w-full min-w-0 border-b border-slate-100">
           <Link
             href={section.href}
-            className="relative block w-full min-w-0 overflow-hidden bg-slate-100 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-primary min-h-[120px] h-[clamp(7.5rem,22vw,17rem)] sm:h-[clamp(8.5rem,20vw,16.5rem)]"
+            className="relative block w-full min-w-0 overflow-hidden bg-slate-100 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-primary max-sm:min-h-0 sm:min-h-[120px] sm:h-[clamp(8.5rem,20vw,16.5rem)]"
           >
             <Image
               src={section.banner}
               alt={section.label}
-              fill
-              className="object-cover object-center"
+              width={2048}
+              height={820}
+              className="h-auto w-full object-contain object-center sm:absolute sm:inset-0 sm:h-full sm:w-full sm:object-cover sm:object-center"
               sizes="100vw"
               priority={section.id === "quality-grocery"}
             />
