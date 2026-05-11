@@ -119,8 +119,6 @@ const headerCopy: Record<
     languageSelect: string;
     login: string;
     becomeVendor: string;
-    sellOnMandawee: string;
-    trackOrder: string;
     freeDeliveryAbove100: string;
   }
 > = {
@@ -160,8 +158,6 @@ const headerCopy: Record<
     languageSelect: "Language Select",
     login: "Login",
     becomeVendor: "Become a Vendor",
-    sellOnMandawee: "Sell on Mandawee",
-    trackOrder: "Track Order",
     freeDeliveryAbove100: "Free Delivery on Orders Above $100",
   },
   ps: {
@@ -200,8 +196,6 @@ const headerCopy: Record<
     languageSelect: "ژبه وټاکئ",
     login: "ننوتل",
     becomeVendor: "پلورونکی شئ",
-    sellOnMandawee: "په منډوي کې وپلورئ",
-    trackOrder: "فرمایش تعقیب کړئ",
     freeDeliveryAbove100: "د $100 څخه پورته فرمایشونو لپاره وړیا تحویل",
   },
   "fa-AF": {
@@ -240,8 +234,6 @@ const headerCopy: Record<
     languageSelect: "انتخاب زبان",
     login: "ورود",
     becomeVendor: "فروشنده شوید",
-    sellOnMandawee: "در منداوی بفروشید",
-    trackOrder: "پیگیری سفارش",
     freeDeliveryAbove100: "تحویل رایگان برای سفارش‌های بالاتر از $100",
   },
 };
@@ -256,8 +248,6 @@ const HEADER_BAR_CLASS = "bg-[#0f3460]";
 
 /** Promo message row (dismissible) – matches logo strip */
 const TOP_PROMO_BAR_CLASS = "bg-[#0f3460]";
-/** Sell on Mandawee / Track Order row */
-const TOP_LINKS_BAR_CLASS = "bg-[#D12C40]";
 
 export default function Header() {
   const t = useTranslations("Homepage.navbar");
@@ -366,25 +356,6 @@ export default function Header() {
 
   return (
     <>
-      {/* Top utility links – always above logo / main navbar */}
-      <div className={`relative ${TOP_LINKS_BAR_CLASS} text-white`}>
-        <div
-          className={`relative mx-auto flex min-h-9 max-w-7xl items-center justify-center gap-x-5 px-4 py-1 text-xs font-semibold sm:justify-end sm:text-[13px] ${isRtl ? "sm:flex-row-reverse" : ""}`}
-        >
-          <Link
-            href="/vendor/register"
-            className="px-2 py-0.5 text-white/95 transition hover:text-white"
-          >
-            {copy.sellOnMandawee}
-          </Link>
-          <Link
-            href="/track-order"
-            className="px-2 py-0.5 text-white/95 transition hover:text-white"
-          >
-            {copy.trackOrder}
-          </Link>
-        </div>
-      </div>
       {showTopPromo ? (
         <div className={`relative ${TOP_PROMO_BAR_CLASS} text-white`}>
           <div className="relative mx-auto flex min-h-9 max-w-7xl items-center px-4 py-1 text-xs sm:text-[13px]">

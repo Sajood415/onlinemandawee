@@ -2,16 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import {
-  Mail,
-  Phone,
-  Send,
-  ShieldCheck,
-  CreditCard,
-  CheckCircle,
-} from "lucide-react";
+import { Mail, Phone, CreditCard } from "lucide-react";
 
 /* ── Route map ───────────────────────────────────────────────────────────── */
 const LINK_MAP: Record<string, string> = {
@@ -58,13 +50,6 @@ type FooterColumn = { title: string; links: string[] };
 const footerUiCopy: Record<
   SupportedLocale,
   {
-    newsletterEyebrow: string;
-    newsletterTitle: string;
-    newsletterDescription: string;
-    subscribeSuccess: string;
-    emailPlaceholder: string;
-    subscribeButton: string;
-    spamFree: string;
     talkToUs: string;
     emailLabel: string;
     privacy: string;
@@ -74,13 +59,6 @@ const footerUiCopy: Record<
   }
 > = {
   en: {
-    newsletterEyebrow: "Stay in the loop",
-    newsletterTitle: "Get exclusive deals & fresh updates",
-    newsletterDescription: "Weekly drops. Zero spam. Unsubscribe anytime.",
-    subscribeSuccess: "You're subscribed - thank you!",
-    emailPlaceholder: "your@email.com",
-    subscribeButton: "Subscribe",
-    spamFree: "Spam-free · Unsubscribe anytime",
     talkToUs: "Talk to Us",
     emailLabel: "Email",
     privacy: "Privacy",
@@ -89,13 +67,6 @@ const footerUiCopy: Record<
     secureCheckout: "Secure Checkout",
   },
   ps: {
-    newsletterEyebrow: "له خبرونو سره پاتې شئ",
-    newsletterTitle: "ځانګړي تخفیفونه او تازه معلومات ترلاسه کړئ",
-    newsletterDescription: "اونیز وړاندیزونه. بې سپامه. هر وخت لغوه کولای شئ.",
-    subscribeSuccess: "تاسو سبسکرایب شوئ - مننه!",
-    emailPlaceholder: "your@email.com",
-    subscribeButton: "سبسکرایب",
-    spamFree: "بې سپامه · هر وخت لغوه کولای شئ",
     talkToUs: "له موږ سره خبرې وکړئ",
     emailLabel: "برېښنالیک",
     privacy: "محرمیت",
@@ -104,13 +75,6 @@ const footerUiCopy: Record<
     secureCheckout: "خوندي تادیه",
   },
   "fa-AF": {
-    newsletterEyebrow: "در جریان بمانید",
-    newsletterTitle: "پیشنهادهای ویژه و تازه‌ترین خبرها را بگیرید",
-    newsletterDescription: "به‌روزرسانی هفتگی. بدون اسپم. لغو هر زمان.",
-    subscribeSuccess: "اشتراک شما ثبت شد - تشکر!",
-    emailPlaceholder: "your@email.com",
-    subscribeButton: "اشتراک",
-    spamFree: "بدون اسپم · لغو هر زمان",
     talkToUs: "با ما تماس بگیرید",
     emailLabel: "ایمیل",
     privacy: "محرمیت",
@@ -127,16 +91,6 @@ export default function Footer() {
   const isRtl = safeLocale !== "en";
   const copy = footerUiCopy[safeLocale];
   const t = useTranslations("Homepage.footer");
-  const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
-
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email.trim()) {
-      setSubscribed(true);
-      setEmail("");
-    }
-  };
 
   // Only use Company, Support, Policies — Socials handled via icons
   const columns = (t.raw("columns") as FooterColumn[]).filter(
@@ -151,59 +105,6 @@ export default function Footer() {
       dir={isRtl ? "rtl" : "ltr"}
       className="bg-footer-bg text-slate-700 border-t border-slate-200"
     >
-      {/* ── NEWSLETTER BANNER ──────────────────────────────────────────── */}
-      <div className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className={isRtl ? "text-right" : "text-left"}>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-1">
-                {copy.newsletterEyebrow}
-              </p>
-              <h3 className="text-xl font-bold text-slate-900">
-                {copy.newsletterTitle}
-              </h3>
-              <p className="text-sm text-slate-500 mt-1">
-                {copy.newsletterDescription}
-              </p>
-            </div>
-
-            <form
-              onSubmit={handleSubscribe}
-              className={`relative w-full max-w-md ${isRtl ? "text-right" : "text-left"}`}
-            >
-              {subscribed ? (
-                <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-6 py-4 text-emerald-700 font-semibold">
-                  <CheckCircle size={20} className="text-emerald-500" />
-                  {copy.subscribeSuccess}
-                </div>
-              ) : (
-                <div className="flex items-center bg-white border border-slate-200 rounded-full overflow-hidden shadow-sm focus-within:border-primary/50 focus-within:shadow-md transition-all">
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={copy.emailPlaceholder}
-                    className="flex-1 bg-transparent px-5 py-4 text-sm text-slate-800 placeholder:text-slate-400 outline-none"
-                  />
-                  <button
-                    type="submit"
-                    className="m-1.5 h-9 px-5 bg-primary hover:brightness-110 active:scale-95 text-white rounded-full font-bold text-sm flex items-center gap-2 transition-all cursor-pointer shadow-md shadow-primary/20"
-                  >
-                    <Send size={15} />
-                    <span className="hidden sm:inline">{copy.subscribeButton}</span>
-                  </button>
-                </div>
-              )}
-              <div className="flex items-center gap-1.5 mt-2 px-1 text-[11px] text-slate-400">
-                <ShieldCheck size={12} className="text-emerald-500" />
-                {copy.spamFree}
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
       {/* ── MAIN GRID ──────────────────────────────────────────────────── */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div

@@ -13,15 +13,15 @@ export function HomeCategoryCarousel() {
   const { ref, scroll } = useHorizontalScroll();
 
   return (
-    <section className="mb-14">
-      <h2 className="mb-8 text-center text-lg font-bold uppercase tracking-wide text-slate-900 sm:text-xl">
+    <section className="mb-6 [font-family:var(--font-poppins)] text-[#000000] font-normal leading-[1.2]">
+      <h2 className="m-0 mb-8 text-center text-lg uppercase tracking-wide sm:text-xl">
         {t("shopByCategory")}
       </h2>
       <div className="relative">
         <button
           type="button"
           onClick={() => scroll(-1)}
-          className="absolute left-0 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:bg-slate-50 sm:flex"
+          className="absolute left-0 top-[72px] z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:bg-slate-50 sm:top-[80px] sm:flex"
           aria-label="prev"
         >
           <ChevronLeft className="h-5 w-5" />
@@ -29,38 +29,35 @@ export function HomeCategoryCarousel() {
         <button
           type="button"
           onClick={() => scroll(1)}
-          className="absolute right-0 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:bg-slate-50 sm:flex"
+          className="absolute right-0 top-[72px] z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:bg-slate-50 sm:top-[80px] sm:flex"
           aria-label="next"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
         <div
           ref={ref}
-          className="flex gap-3 overflow-x-auto scroll-smooth pb-2 pl-1 pr-3 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-4 sm:px-2 md:px-4 [&::-webkit-scrollbar]:hidden"
+          className="flex gap-4 overflow-x-auto scroll-smooth pb-2 pl-1 pr-3 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-5 sm:px-2 md:px-4 [&::-webkit-scrollbar]:hidden"
         >
           {tiles.map((item) => (
             <Link
               key={item.slug}
               href={item.href}
-              className="group flex w-[140px] shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:w-[160px]"
+              className="group flex w-[144px] shrink-0 flex-col items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:w-[160px]"
             >
-              <div
-                className="relative flex aspect-square items-center justify-center p-3"
-                style={{ backgroundColor: item.tint }}
-              >
-                <div className="relative h-full w-full">
-                  <Image
-                    src={item.image}
-                    alt={item.label}
-                    fill
-                    className="object-contain drop-shadow-sm transition duration-300 group-hover:scale-105"
-                    sizes="160px"
-                  />
-                </div>
+              <div className="relative aspect-square w-full overflow-hidden rounded-lg">
+                <Image
+                  src={item.image}
+                  alt={item.label}
+                  fill
+                  className="object-cover object-center transition duration-300 group-hover:scale-[1.03]"
+                  sizes="(max-width: 640px) 144px, 160px"
+                />
               </div>
-              <span className="px-2 py-3 text-center text-[10px] font-bold uppercase leading-tight tracking-wide text-slate-900 sm:text-[11px]">
-                {item.label}
-              </span>
+              <div className="w-full px-0.5 text-center">
+                <h3 className="m-0 text-[11px] font-normal uppercase leading-[1.2] tracking-wide text-[#000000] sm:text-xs">
+                  {item.label}
+                </h3>
+              </div>
             </Link>
           ))}
         </div>
