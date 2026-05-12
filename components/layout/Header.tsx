@@ -378,8 +378,8 @@ export default function Header() {
         dir={isRtl ? "rtl" : "ltr"}
         className={`sticky top-0 z-[9998] overflow-x-clip border-b border-white/15 shadow-[0_4px_20px_rgba(15,52,96,0.35)] ${HEADER_BAR_CLASS}`}
       >
-        <div className="mx-auto w-full min-w-0 max-w-7xl px-1.5 py-2 sm:px-4 sm:py-3">
-          <div className="flex min-w-0 flex-nowrap items-center justify-between gap-2 sm:gap-3 md:gap-4">
+        <div className="mx-auto w-full min-w-0 max-w-7xl py-2 sm:py-3 ps-[max(0.375rem,env(safe-area-inset-left,0px))] pe-[max(0.375rem,env(safe-area-inset-right,0px))] sm:ps-[max(1rem,env(safe-area-inset-left,0px))] sm:pe-[max(1rem,env(safe-area-inset-right,0px))]">
+          <div className="flex min-w-0 flex-nowrap items-center justify-between gap-2 sm:gap-3 md:max-lg:gap-2 lg:gap-4">
             {/* LOGO */}
             <Link href="/" className="flex-shrink-0 order-1">
               <Image
@@ -395,7 +395,7 @@ export default function Header() {
             {/* SEARCH - Desktop & Tablet */}
             <form
               onSubmit={handleSearch}
-              className={`hidden md:flex order-2 min-w-0 flex-1 items-center gap-3 px-2 rounded-full h-11 border border-gray-200 bg-white shadow-sm transition-all duration-300 group max-w-3xl hover:bg-gray-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 ${isRtl ? "pr-5" : "pl-5"}`}
+              className={`hidden md:flex order-2 min-w-0 flex-1 items-center gap-2 px-2 rounded-full h-11 border border-gray-200 bg-white shadow-sm transition-all duration-300 group max-w-3xl hover:bg-gray-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 md:max-lg:gap-2 lg:gap-3 ${isRtl ? "pr-5 md:max-lg:pr-3 lg:pr-5" : "pl-5 md:max-lg:pl-3 lg:pl-5"}`}
             >
               <Search
                 className="text-gray-400 group-focus-within:text-primary transition-colors shrink-0"
@@ -415,7 +415,7 @@ export default function Header() {
               />
               <button
                 type="submit"
-                className="relative overflow-hidden active:scale-95 text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-lg transition-all shrink-0 flex items-center gap-2 cursor-pointer bg-primary"
+                className="relative overflow-hidden active:scale-95 text-white px-3 py-2.5 md:max-lg:px-3.5 lg:px-5 rounded-full font-bold text-xs md:max-lg:text-xs lg:text-sm shadow-lg transition-all shrink-0 flex items-center gap-1.5 lg:gap-2 cursor-pointer bg-primary"
                 style={
                   {
                     // background: "linear-gradient(135deg, var(--primary) 0%, #991B1B 100%)",
@@ -429,7 +429,7 @@ export default function Header() {
             </form>
 
             {/* RIGHT ICONS - Integrated Professional Row */}
-            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5 md:gap-3 order-3">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5 md:max-lg:gap-1.5 lg:gap-3 order-3">
               {/* Mobile Search Toggle */}
               <button
                 onClick={() => setShowMobileSearch(!showMobileSearch)}
@@ -468,7 +468,7 @@ export default function Header() {
               {!isAuthenticated && (
                 <button
                   onClick={handleLogin}
-                  className="hidden md:flex h-9 px-4 rounded-full text-sm font-semibold transition-colors cursor-pointer items-center justify-center border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                  className="hidden md:flex h-9 shrink-0 px-3 whitespace-nowrap lg:px-4 rounded-full text-xs lg:text-sm font-semibold transition-colors cursor-pointer items-center justify-center border border-white/20 bg-white/10 text-white hover:bg-white/20"
                 >
                     {copy.login}
                 </button>
@@ -477,7 +477,7 @@ export default function Header() {
               {/* Become a Vendor Button - Fourth */}
               <Link
                 href="/vendor/register"
-                className="hidden md:flex h-9 px-4 rounded-full text-white text-sm font-semibold inline-flex items-center transition-all shadow-sm bg-primary hover:brightness-110"
+                className="hidden md:flex h-9 shrink-0 px-3 whitespace-nowrap lg:px-4 rounded-full text-white text-xs lg:text-sm font-semibold items-center justify-center transition-all shadow-sm bg-primary hover:brightness-110"
               >
                 {copy.becomeVendor}
               </Link>
@@ -533,7 +533,7 @@ export default function Header() {
         dir={isRtl ? "rtl" : "ltr"}
         className="relative z-[9997] overflow-x-clip border-b border-gray-200 bg-white text-gray-900 shadow-[0_2px_8px_rgba(15,23,42,0.06)]"
       >
-        <div className="mx-auto flex h-12 w-full min-w-0 max-w-7xl items-center px-1.5 sm:h-14 sm:px-3 md:px-4">
+        <div className="mx-auto flex h-12 w-full min-w-0 max-w-7xl items-center sm:h-14 ps-[max(0.375rem,env(safe-area-inset-left,0px))] pe-[max(0.375rem,env(safe-area-inset-right,0px))] sm:ps-[max(0.75rem,env(safe-area-inset-left,0px))] sm:pe-[max(0.75rem,env(safe-area-inset-right,0px))] md:ps-[max(1rem,env(safe-area-inset-left,0px))] md:pe-[max(1rem,env(safe-area-inset-right,0px))]">
           {/* CATEGORIES BUTTON */}
           <div className="relative flex-shrink-0" ref={categoriesRef}>
             <button
@@ -1045,18 +1045,40 @@ function LanguageSelector({
   return (
     <div className="relative" ref={ref}>
       <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="listbox"
         onClick={() => setOpen(!open)}
-        className={`h-9 px-3 rounded-full border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${variant === "dark" ? (open ? "bg-white shadow-lg border-white text-primary" : "bg-white/10 border-white/20 text-white hover:bg-white/15") : open ? "bg-white shadow-lg border-primary/30 text-primary" : "bg-gray-50/80 border-gray-100 hover:bg-white text-gray-600"}`}
+        className={`group h-9 min-h-9 rounded-full border flex items-center gap-2 px-2.5 sm:pr-3 sm:pl-2.5 text-xs font-bold transition-all cursor-pointer shadow-sm ${
+          variant === "dark"
+            ? open
+              ? "bg-white border-white text-primary shadow-md ring-2 ring-white/70"
+              : "bg-white border-white text-gray-900 hover:bg-gray-50 hover:border-gray-100"
+            : open
+              ? "bg-white shadow-lg border-primary/30 text-primary"
+              : "bg-white border-gray-200 text-gray-800 hover:bg-gray-50"
+        }`}
       >
-        <span className="text-base w-6 h-6 flex items-center justify-center bg-white rounded-full shadow-sm border border-gray-100">
+        <span
+          className={`text-lg leading-none w-8 h-8 shrink-0 flex items-center justify-center rounded-full border ${
+            variant === "dark"
+              ? "bg-gray-50 border-gray-200"
+              : "bg-gray-50 border-gray-100"
+          }`}
+          aria-hidden
+        >
           {current.flag}
         </span>
-        <span className="uppercase text-[10px] tracking-wider mt-0.5">
+        <span className="hidden min-w-0 truncate text-left text-[12px] font-extrabold tracking-tight text-gray-900 sm:block">
+          {current.label}
+        </span>
+        <span className="sm:hidden text-[11px] font-extrabold uppercase tracking-wide text-gray-900">
           {locale.split("-")[0]}
         </span>
         <ChevronDown
-          size={12}
-          className={`transition-transform duration-300 ${open ? "rotate-180 opacity-100" : "opacity-40"}`}
+          size={14}
+          strokeWidth={2.25}
+          className={`shrink-0 text-gray-600 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
         />
       </button>
       <AnimatePresence>

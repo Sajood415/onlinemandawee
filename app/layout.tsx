@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import {
   Geist_Mono,
   Playfair_Display,
@@ -34,6 +34,12 @@ export const metadata: Metadata = {
   title: "Mandawee | Premium Multi-Vendor Marketplace",
   description:
     "Premium multi-vendor marketplace for gifting, groceries, and meaningful delivery.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
