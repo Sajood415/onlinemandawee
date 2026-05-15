@@ -22,8 +22,7 @@ export class VendorEmailOtpService {
 
     await this.otpCodeRepository.invalidateActiveForEmail(normalized, purpose);
     await this.otpCodeRepository.create({
-      email: normalized,
-      phone: null,
+      phone: normalized,
       purpose,
       codeHash,
       expiresAt,

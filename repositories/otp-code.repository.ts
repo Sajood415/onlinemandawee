@@ -14,13 +14,12 @@ export class OtpCodeRepository {
 
   invalidateActiveForEmail(email: string, purpose: OtpPurpose) {
     return prisma.otpCode.deleteMany({
-      where: { email, purpose },
+      where: { phone: email, purpose },
     });
   }
 
   create(input: {
     phone?: string | null;
-    email?: string | null;
     purpose: OtpPurpose;
     codeHash: string;
     expiresAt: Date;
@@ -49,7 +48,7 @@ export class OtpCodeRepository {
   findLatestActiveForEmail(email: string, purpose: OtpPurpose) {
     return prisma.otpCode.findFirst({
       where: {
-        email,
+        phone: email,
         purpose,
         consumedAt: null,
         expiresAt: {
@@ -65,7 +64,7 @@ export class OtpCodeRepository {
   findLatestForEmail(email: string, purpose: OtpPurpose) {
     return prisma.otpCode.findFirst({
       where: {
-        email,
+        phone: email,
         purpose,
       },
       orderBy: {
