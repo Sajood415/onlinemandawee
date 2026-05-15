@@ -572,7 +572,7 @@ function ProductCard({
 }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
-  const { addItem, itemCount } = useCart();
+  const { addItem } = useCart();
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -582,7 +582,7 @@ function ProductCard({
     try {
       await addItem(product.id, 1);
       toast.success(locale === "en" ? "Added to cart!" : locale === "ps" ? "کارټ ته اضافه شو!" : "به سبد اضافه شد!");
-    } catch (error) {
+    } catch {
       toast.error(locale === "en" ? "Failed to add to cart" : locale === "ps" ? "کارټ ته اضافه کول ناکام شول" : "افزودن به سبد ناموفق بود");
     } finally {
       setIsAdding(false);

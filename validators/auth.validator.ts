@@ -29,3 +29,18 @@ export const loginSchema = z.object({
 export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(20),
 });
+
+export const forgotPasswordRequestSchema = z.object({
+  email: z.email().max(255),
+});
+
+export const forgotPasswordVerifySchema = z.object({
+  email: z.email().max(255),
+  code: z.string().trim().regex(/^\d{6}$/),
+});
+
+export const forgotPasswordResetSchema = z.object({
+  email: z.email().max(255),
+  resetToken: z.string().min(20),
+  newPassword: z.string().min(8).max(128),
+});

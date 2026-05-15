@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
-import { createPortal } from "react-dom";
-import { useRouter, Link as LocaleLink } from "@/i18n/navigation";
+import { usePathname, useRouter, Link as LocaleLink } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { useAuth } from "@/store/auth-context";
 import { useCart } from "@/store/cart-context";
@@ -87,11 +86,15 @@ const localizeProductName = (
 
 export default function Header() {
   const t = useTranslations("Homepage.navbar");
+  const pathname = usePathname();
   const locale = useLocale() as SupportedLocale;
   const safeLocale: SupportedLocale =
     locale === "ps" || locale === "fa-AF" ? locale : "en";
   const isRtl = safeLocale !== "en";
   const copy = headerCopy[safeLocale];
+  const hideSecondaryNav =
+    pathname.includes("/auth/login") ||
+    pathname.includes("/auth/forgot-password");
   const { isAuthenticated } = useAuth();
   const { cart, itemCount, total, removeItem, updateQuantity, refreshCart } = useCart();
 
@@ -102,11 +105,15 @@ export default function Header() {
   const [showTopPromo, setShowTopPromo] = useState(true);
 
   useEffect(() => {
-    try {
-      if (localStorage.getItem(PROMO_DISMISS_KEY) === "1") setShowTopPromo(false);
-    } catch {
-      /* ignore */
-    }
+    queueMicrotask(() => {
+      try {
+        if (localStorage.getItem(PROMO_DISMISS_KEY) === "1") {
+          setShowTopPromo(false);
+        }
+      } catch {
+        /* ignore */
+      }
+    });
   }, []);
 
   const dismissTopPromo = () => {
@@ -364,13 +371,12 @@ export default function Header() {
         </div>
       </header>
 
-      {/* PRIMARY NAV – scrolls normally */}
+      {hideSecondaryNav ? null : (
       <nav
         dir={isRtl ? "rtl" : "ltr"}
         className="relative z-[9997] overflow-x-clip border-b border-gray-200 bg-white text-gray-900 shadow-[0_2px_8px_rgba(15,23,42,0.06)]"
       >
         <div className="mx-auto flex h-12 w-full min-w-0 max-w-7xl items-center sm:h-14 ps-[max(0.375rem,env(safe-area-inset-left,0px))] pe-[max(0.375rem,env(safe-area-inset-right,0px))] sm:ps-[max(0.75rem,env(safe-area-inset-left,0px))] sm:pe-[max(0.75rem,env(safe-area-inset-right,0px))] md:ps-[max(1rem,env(safe-area-inset-left,0px))] md:pe-[max(1rem,env(safe-area-inset-right,0px))]">
-          {/* CATEGORIES BUTTON */}
           <div className="relative flex-shrink-0" ref={categoriesRef}>
             <button
               onClick={() => setShowCategoriesDropdown(!showCategoriesDropdown)}
@@ -506,7 +512,7 @@ export default function Header() {
 
           {/* NAV LINKS */}
           {/* Desktop - All Links */}
-          <div className="hidden lg:flex flex-1 items-center gap-2 px-5 lg:px-7 py-1.5 text-[13px] lg:text-[14px] font-bold text-gray-900">
+          <div className="hidden lg:flex flex-1 items-center gap-2 px-5 py-1.5 text-[13px] lg:text-[14px] font-bold text-gray-900 lg:px-7">
             <Link
               href="/"
               className="inline-flex h-8 items-center rounded-md px-3 transition-all hover:bg-gray-100 hover:text-primary"
@@ -604,8 +610,9 @@ export default function Header() {
               <MobileNavMenu closeAll={closeAll} isRtl={isRtl} surface="light" />
             </div>
           </div>
-        </div>
-      </nav>
+          </div>
+        </nav>
+      )}
 
       {/* ================= CART SHEET (MODERN SIDEBAR) ================= */}
       <AnimatePresence>

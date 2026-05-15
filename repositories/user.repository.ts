@@ -82,6 +82,13 @@ export class UserRepository {
     });
   }
 
+  updatePasswordHash(id: string, passwordHash: string) {
+    return prisma.user.update({
+      where: { id },
+      data: { passwordHash },
+    });
+  }
+
   listAll() {
     return prisma.user.findMany({
       orderBy: {

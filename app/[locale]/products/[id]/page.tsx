@@ -216,7 +216,7 @@ export default function ProductDetailPage() {
     try {
       await addItem(product.id, quantity);
       toast.success(locale === "en" ? `Added ${quantity} item(s) to cart!` : locale === "ps" ? `کارټ ته ${quantity} توکي اضافه شول!` : `${quantity} مورد به سبد اضافه شد!`);
-    } catch (error) {
+    } catch {
       toast.error(locale === "en" ? "Failed to add to cart" : locale === "ps" ? "کارټ ته اضافه کول ناکام شول" : "افزودن به سبد ناموفق بود");
     } finally {
       setIsAdding(false);

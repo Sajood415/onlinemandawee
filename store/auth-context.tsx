@@ -7,6 +7,7 @@ import {
   useState,
   ReactNode,
 } from "react";
+import { parseApiResponse } from "@/lib/http/parse-api-response";
 
 type User = {
   id: string;
@@ -25,6 +26,15 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   refreshToken: () => Promise<void>;
+};
+
+type AuthResult = {
+  user: User;
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+    tokenType: "Bearer";
+  };
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,8 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (response.ok) {
-        const userData = await response.json();
-        setUser(userData.data);
+        const userData = await parseApiResponse<User>(response);
+        setUser(userData);
       } else {
         // Token invalid, clear storage
         localStorage.removeItem("accessToken");
@@ -80,16 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ identifier: email, password }),
       });
 
-      if (!response.ok) {
-        throw new Error("Login failed");
-      }
+      const data = await parseApiResponse<AuthResult>(response);
 
-      const data = await response.json();
-      const { accessToken, refreshToken, user: userData } = data.data;
-
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
-      setUser(userData);
+      localStorage.setItem("accessToken", data.tokens.accessToken);
+      localStorage.setItem("refreshToken", data.tokens.refreshToken);
+      setUser(data.user);
     } catch (error) {
       throw error;
     } finally {
@@ -116,10 +121,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ refreshToken: refresh }),
       });
 
-      if (!response.ok) throw new Error("Token refresh failed");
-
-      const data = await response.json();
-      localStorage.setItem("accessToken", data.data.accessToken);
+      const data = await parseApiResponse<AuthResult>(response);
+      localStorage.setItem("accessToken", data.tokens.accessToken);
     } catch (error) {
       logout();
       throw error;
