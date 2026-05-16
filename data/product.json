@@ -33,7 +33,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "hayat-cooking-oil-16l",
@@ -68,7 +69,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "alkozai-sunflower-oil-5l",
@@ -103,7 +105,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "fish-meat-1kg",
@@ -138,7 +141,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "mak-pasta-fusilli",
@@ -173,7 +177,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "watani-chicken-eggs-30",
@@ -208,7 +213,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "ariel-laundry-powder",
@@ -243,7 +249,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "baheer-towel-roll",
@@ -278,7 +285,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "golrang-laundry-liquid-1l",
@@ -313,7 +321,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "ave-fabric-powder",
@@ -348,7 +357,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "minute-maid-juice-1l",
@@ -383,7 +393,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "mana-cola-250ml",
@@ -418,7 +429,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "red-bull-250ml",
@@ -453,7 +465,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "baby-pino-soap-75g",
@@ -488,7 +501,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "johnsons-baby-soap-125g",
@@ -523,7 +537,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "perfect-tissue-400",
@@ -558,7 +573,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "lima-dishwash-800g",
@@ -593,7 +609,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "black-pepper-1kg",
@@ -628,7 +645,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "momak-flour-50kg",
@@ -663,7 +681,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "afghani-cake-1kg",
@@ -698,7 +717,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "fresh-fruit-mix-box",
@@ -733,7 +753,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "fresh-farm-co"
     },
     {
       "id": "organic-veg-bundle",
@@ -768,7 +789,8 @@
         "Trusted sourcing",
         "Fast delivery"
       ],
-      "inStock": true
+      "inStock": true,
+      "vendorSlug": "fresh-farm-co"
     },
     {
       "id": "basmati-rice-5kg",
@@ -784,7 +806,11 @@
         "ps": "Premium Basmati Rice 5kg – Long Grain Aroma",
         "fa-AF": "Premium Basmati Rice 5kg – Long Grain Aroma"
       },
-      "badge": { "en": "In Stock", "ps": "In Stock", "fa-AF": "In Stock" },
+      "badge": {
+        "en": "In Stock",
+        "ps": "In Stock",
+        "fa-AF": "In Stock"
+      },
       "category": "groceries",
       "rating": 4.8,
       "reviews": 112,
@@ -794,8 +820,13 @@
         "ps": "Aromatic basmati ideal for pilaf, biryani, and everyday meals.",
         "fa-AF": "Aromatic basmati ideal for pilaf, biryani, and everyday meals."
       },
-      "features": ["Long grain", "Aromatic", "Resealable bag"],
-      "inStock": true
+      "features": [
+        "Long grain",
+        "Aromatic",
+        "Resealable bag"
+      ],
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "greek-yogurt-1kg",
@@ -811,7 +842,11 @@
         "ps": "Creamy Greek Yogurt 1kg – High Protein",
         "fa-AF": "Creamy Greek Yogurt 1kg – High Protein"
       },
-      "badge": { "en": "In Stock", "ps": "In Stock", "fa-AF": "In Stock" },
+      "badge": {
+        "en": "In Stock",
+        "ps": "In Stock",
+        "fa-AF": "In Stock"
+      },
       "category": "groceries",
       "rating": 4.6,
       "reviews": 54,
@@ -821,8 +856,13 @@
         "ps": "Thick, strained yogurt for breakfast bowls, dips, and smoothies.",
         "fa-AF": "Thick, strained yogurt for breakfast bowls, dips, and smoothies."
       },
-      "features": ["High protein", "No artificial colours", "Family tub"],
-      "inStock": true
+      "features": [
+        "High protein",
+        "No artificial colours",
+        "Family tub"
+      ],
+      "inStock": true,
+      "vendorSlug": "fresh-farm-co"
     },
     {
       "id": "spring-water-24pk",
@@ -838,7 +878,11 @@
         "ps": "Natural Spring Water 500ml – 24 Pack",
         "fa-AF": "Natural Spring Water 500ml – 24 Pack"
       },
-      "badge": { "en": "In Stock", "ps": "In Stock", "fa-AF": "In Stock" },
+      "badge": {
+        "en": "In Stock",
+        "ps": "In Stock",
+        "fa-AF": "In Stock"
+      },
       "category": "groceries",
       "rating": 4.5,
       "reviews": 203,
@@ -848,8 +892,13 @@
         "ps": "Crisp hydration for home, office, and school lunches.",
         "fa-AF": "Crisp hydration for home, office, and school lunches."
       },
-      "features": ["BPA-free bottles", "Bulk value", "Recyclable"],
-      "inStock": true
+      "features": [
+        "BPA-free bottles",
+        "Bulk value",
+        "Recyclable"
+      ],
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "artisan-dark-chocolate-3bar",
@@ -865,7 +914,11 @@
         "ps": "Artisan Dark Chocolate Bars – 3 × 100g",
         "fa-AF": "Artisan Dark Chocolate Bars – 3 × 100g"
       },
-      "badge": { "en": "In Stock", "ps": "In Stock", "fa-AF": "In Stock" },
+      "badge": {
+        "en": "In Stock",
+        "ps": "In Stock",
+        "fa-AF": "In Stock"
+      },
       "category": "groceries",
       "rating": 4.9,
       "reviews": 87,
@@ -875,8 +928,13 @@
         "ps": "Rich cocoa with balanced bitterness — perfect for gifting or snacking.",
         "fa-AF": "Rich cocoa with balanced bitterness — perfect for gifting or snacking."
       },
-      "features": ["70% cocoa", "Bundle of three", "No palm oil"],
-      "inStock": true
+      "features": [
+        "70% cocoa",
+        "Bundle of three",
+        "No palm oil"
+      ],
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     },
     {
       "id": "kitchen-paper-towels-6rl",
@@ -892,7 +950,11 @@
         "ps": "Ultra Absorbent Kitchen Towels – 6 Rolls",
         "fa-AF": "Ultra Absorbent Kitchen Towels – 6 Rolls"
       },
-      "badge": { "en": "In Stock", "ps": "In Stock", "fa-AF": "In Stock" },
+      "badge": {
+        "en": "In Stock",
+        "ps": "In Stock",
+        "fa-AF": "In Stock"
+      },
       "category": "groceries",
       "rating": 4.4,
       "reviews": 156,
@@ -902,8 +964,13 @@
         "ps": "Strong sheets for spills, drying hands, and quick cleanups.",
         "fa-AF": "Strong sheets for spills, drying hands, and quick cleanups."
       },
-      "features": ["2-ply strength", "Mega pack", "Lint mindful"],
-      "inStock": true
+      "features": [
+        "2-ply strength",
+        "Mega pack",
+        "Lint mindful"
+      ],
+      "inStock": true,
+      "vendorSlug": "mandawee-market"
     }
   ],
   "categories": [
@@ -1032,5 +1099,67 @@
         ]
       }
     ]
-  }
+  },
+  "vendorProfiles": [
+    {
+      "id": "vendor-mandawee-market",
+      "slug": "mandawee-market",
+      "name": "Mandawee Market",
+      "tagline": {
+        "en": "Daily essentials you can trust",
+        "ps": "ورځنۍ اړتیاوې چې باور پرې کېږي",
+        "fa-AF": "نیازهای روزانه که می‌توانید به آن اعتماد کنید"
+      },
+      "description": {
+        "en": "Mandawee Market curates everyday groceries, pantry staples, and household essentials with dependable quality and same-day delivery in key areas.",
+        "ps": "Mandawee Market د ورځنیو خوراکي او کورني اړتیاوو توکي د باوري کیفیت سره وړاندې کوي او په مهمو سیمو کې هماغه ورځ رسونې برابروي.",
+        "fa-AF": "Mandawee Market مواد غذایی روزانه و لوازم ضروری خانه را با کیفیت قابل اعتماد فراهم می‌کند و در مناطق اصلی تحویل همان‌روز ارائه می‌دهد."
+      },
+      "logo": "https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=320&q=80",
+      "coverImage": "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1600&q=80",
+      "location": {
+        "en": "Kabul, Afghanistan",
+        "ps": "کابل، افغانستان",
+        "fa-AF": "کابل، افغانستان"
+      },
+      "joinedYear": 2021,
+      "rating": 4.8,
+      "responseTime": {
+        "en": "Replies in under 1 hour",
+        "ps": "له ۱ ساعت څخه کم کې ځواب ورکوي",
+        "fa-AF": "در کمتر از ۱ ساعت پاسخ می‌دهد"
+      },
+      "fulfillmentRate": "98%"
+    },
+    {
+      "id": "vendor-fresh-farm-co",
+      "slug": "fresh-farm-co",
+      "name": "Fresh Farm Co",
+      "tagline": {
+        "en": "Farm-fresh produce every day",
+        "ps": "هره ورځ د فارم تازه محصولات",
+        "fa-AF": "محصولات تازه فارم هر روز"
+      },
+      "description": {
+        "en": "Fresh Farm Co specializes in seasonal fruits, vegetables, and dairy sourced from trusted farms. Their focus is freshness, clean packaging, and family-size value packs.",
+        "ps": "Fresh Farm Co په فصلي مېوو، سبزیو او لبنیاتو کې تخصص لري چې له باوري فارمونو څخه راټولېږي. تمرکز یې په تازګۍ، پاکه بسته‌بندۍ او کورنۍ اندازې ارزښتمنو بکسونو دی.",
+        "fa-AF": "Fresh Farm Co در میوه‌های فصلی، سبزیجات و لبنیات تخصص دارد که از فارم‌های معتبر تهیه می‌شوند. تمرکز آن بر تازگی، بسته‌بندی پاک و بسته‌های ارزشمند خانوادگی است."
+      },
+      "logo": "https://images.unsplash.com/photo-1542834369-f10ebf06d3e0?auto=format&fit=crop&w=320&q=80",
+      "coverImage": "https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=1600&q=80",
+      "location": {
+        "en": "Kabul Valley",
+        "ps": "کابل دره",
+        "fa-AF": "دره کابل"
+      },
+      "joinedYear": 2022,
+      "rating": 4.7,
+      "responseTime": {
+        "en": "Replies in under 2 hours",
+        "ps": "له ۲ ساعتونو کم کې ځواب ورکوي",
+        "fa-AF": "در کمتر از ۲ ساعت پاسخ می‌دهد"
+      },
+      "fulfillmentRate": "96%"
+    }
+  ]
 }

@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import productCatalog from "@/data/product.json";
 import { useCart } from "@/store/cart-context";
 import { toast } from "@/lib/utils/toast";
+import { localizeVendor } from "@/lib/localization/product-vendor";
 
 type LocaleKey = "en" | "ps" | "fa-AF";
 
@@ -17,6 +18,8 @@ type Row = {
   priceDisplay: string;
   image: string;
   name: Record<LocaleKey, string>;
+  vendor: string;
+  vendorSlug: string;
 };
 
 function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
@@ -51,6 +54,13 @@ function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
           />
         </div>
         <div className="mt-3 flex min-h-0 flex-1 flex-col">
+          <Link
+            href={`/vendors/${p.vendorSlug}`}
+            onClick={(e) => e.stopPropagation()}
+            className="text-[11px] font-medium text-gray-500 hover:text-primary hover:underline"
+          >
+            <bdi dir="ltr">{localizeVendor(p.vendor, locale)}</bdi>
+          </Link>
           <h3 className="line-clamp-2 text-[13px] font-normal leading-snug text-black sm:text-sm">
             {p.name[locale]}
           </h3>

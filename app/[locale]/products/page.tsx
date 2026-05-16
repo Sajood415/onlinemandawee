@@ -656,9 +656,12 @@ function ProductCard({
       {/* Content - Walmart Style */}
       <div className="pt-3">
         {/* Vendor */}
-        <p className="text-xs text-gray-500 mb-1">
+        <Link
+          href={`/vendors/${product.vendorSlug}`}
+          className="mb-1 inline-flex text-xs text-gray-500 hover:text-primary hover:underline"
+        >
           <bdi dir="ltr">{localizeVendor(product.vendor, locale)}</bdi>
-        </p>
+        </Link>
 
         {/* Title */}
         <Link href={`/products/${product.id}`}>

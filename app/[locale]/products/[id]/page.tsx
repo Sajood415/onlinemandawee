@@ -21,24 +21,13 @@ import {
 } from "lucide-react";
 import productData from "@/data/product.json";
 import { useCart } from "@/store/cart-context";
+import {
+  localizeDelivery,
+  localizeVendor,
+} from "@/lib/localization/product-vendor";
 
 // Import data from JSON file
 const allProducts = productData.featuredProducts;
-
-const vendorTranslations = {
-  "Noor Premium Gifts": { ps: "نور پریمیم ډالۍ", "fa-AF": "نور پریمیم هدایا" },
-  "Bloom Avenue": { ps: "بلوم ایونیو", "fa-AF": "بلوم اونیو" },
-  "Mandawee Market": { ps: "منډوي مارکیټ", "fa-AF": "بازار منداوی" },
-  "Cocoa Stories": { ps: "کوکو کیسې", "fa-AF": "داستان‌های کاکائو" },
-  "Fresh Farm Co": { ps: "فریش فارم شرکت", "fa-AF": "شرکت فارم تازه" },
-  "Desert Delights": { ps: "صحرايي خوندونه", "fa-AF": "خوشی‌های صحرا" },
-  "Tiny Tots Store": { ps: "ټایني ټاټس پلورنځی", "fa-AF": "فروشگاه تینی ټاتس" },
-} as const;
-
-const localizeVendor = (vendor: string, locale: "en" | "ps" | "fa-AF") => {
-  if (locale === "en") return vendor;
-  return vendorTranslations[vendor as keyof typeof vendorTranslations]?.[locale] ?? vendor;
-};
 
 const featureTranslations = {
   "Premium quality products": {
@@ -172,29 +161,6 @@ const localizeFeature = (feature: string, locale: "en" | "ps" | "fa-AF") => {
   return featureTranslations[feature as keyof typeof featureTranslations]?.[locale] ?? feature;
 };
 
-const deliveryTranslations = {
-  "Same Day": {
-    ps: "همدا ورځ",
-    "fa-AF": "همان روز",
-  },
-  "Next Day": {
-    ps: "بله ورځ",
-    "fa-AF": "روز بعد",
-  },
-  "2-3 Days": {
-    ps: "2-3 ورځې",
-    "fa-AF": "2-3 روز",
-  },
-} as const;
-
-const localizeDelivery = (delivery: string, locale: "en" | "ps" | "fa-AF") => {
-  if (locale === "en") return delivery;
-  return (
-    deliveryTranslations[delivery as keyof typeof deliveryTranslations]?.[locale] ??
-    delivery
-  );
-};
-
 export default function ProductDetailPage() {
   const params = useParams();
   const locale = useLocale() as "en" | "ps" | "fa-AF";
@@ -281,7 +247,7 @@ export default function ProductDetailPage() {
                   : "محصولات"}
             </Link>
             <ChevronRight className={`h-4 w-4 text-gray-400 ${isRtl ? "rotate-180" : ""}`} />
-            <span className="text-gray-900 font-medium truncate max-w-[9rem] sm:max-w-xs">
+            <span className="text-gray-900 font-medium truncate max-w-36 sm:max-w-xs">
               {product.name[locale]}
             </span>
           </div>
@@ -297,7 +263,7 @@ export default function ProductDetailPage() {
               {/* Thumbnails - Vertical on left with scroll for many images */}
               {product.images.length > 1 && (
                 <div
-                  className="hidden sm:flex flex-col gap-3 w-20 shrink-0 max-h-[26rem] overflow-y-auto pr-1"
+                  className="hidden sm:flex flex-col gap-3 w-20 shrink-0 max-h-104 overflow-y-auto pr-1"
                   style={{
                     scrollbarWidth: "thin",
                     scrollbarColor: "#d1d5db transparent",
@@ -375,7 +341,7 @@ export default function ProductDetailPage() {
           <div className="lg:col-span-5">
             {/* Vendor & Title */}
             <Link
-              href={`/products?vendor=${encodeURIComponent(product.vendor)}`}
+              href={`/vendors/${product.vendorSlug}`}
               className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary hover:underline mb-2"
             >
               <Store className="h-4 w-4" />
