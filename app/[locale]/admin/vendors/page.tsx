@@ -1,7 +1,5 @@
-"use client";
-
-import { RoleSectionPlaceholder } from "@/components/dashboard/RoleSectionPlaceholder";
+import { AdminVendorRequests } from "@/components/admin/vendors/AdminVendorRequests";
 
 export default function AdminVendorsPage() {
-  return <RoleSectionPlaceholder role="ADMIN" title="Vendors" />;
+  return <AdminVendorRequests />;
 }

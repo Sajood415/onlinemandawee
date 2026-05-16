@@ -49,7 +49,7 @@ export function RoleDashboardLayout({
   return (
     <div className="flex min-h-screen w-full bg-[#f3f6fb]">
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 max-w-[min(18rem,88vw)] flex-col border-r border-white/10 bg-linear-to-b from-[#0f3460] to-[#123f74] py-4 text-white transition-transform duration-200 ease-out lg:static lg:z-auto lg:h-screen lg:max-w-none lg:translate-x-0 lg:border-r lg:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 max-w-[min(18rem,88vw)] flex-col border-r border-white/10 bg-linear-to-b from-[#0f3460] to-[#123f74] py-4 text-white transition-transform duration-200 ease-out lg:max-w-none lg:translate-x-0 lg:border-r lg:shadow-none ${
           open ? "translate-x-0 shadow-[4px_0_32px_rgba(15,52,96,0.25)]" : "-translate-x-full lg:translate-x-0 lg:shadow-none"
         }`}
       >
@@ -121,7 +121,7 @@ export function RoleDashboardLayout({
         />
       ) : null}
 
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:pl-64">
         <header className="sticky top-0 z-30 flex shrink-0 items-center gap-3 border-b border-neutral-200/80 bg-white px-4 py-3 shadow-[0_1px_0_rgba(15,23,42,0.06)] sm:px-5">
           <button
             type="button"

@@ -1,8 +1,11 @@
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import { sendTransactionalEmail } from "@/lib/mail/send-transactional-email";
+import { buildVendorReviewStatusEmailHtml } from "@/lib/mail/vendor-review-status-email-html";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { UserRepository } from "@/repositories/user.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
+import { env } from "@/config/env";
 
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import type { VendorStatus } from "@/domain/vendor/vendor-status";
@@ -107,6 +110,17 @@ export class AdminVendorService {
       entityType: "VendorProfile",
       entityId: vendorProfileId,
     });
+    await sendTransactionalEmail({
+      to: vendor.user.email,
+      subject: `${env.APP_NAME} — vendor application approved`,
+      text: `Hi ${vendor.user.fullName},\n\nYour vendor application has been approved. You can now sign in and start managing your vendor account.\n\n${env.APP_NAME} Team`,
+      html: buildVendorReviewStatusEmailHtml({
+        appName: env.APP_NAME,
+        heading: "Your application is approved",
+        message:
+          "Your vendor application has been approved. You can now sign in and start managing your vendor account.",
+      }),
+    });
 
     return {
       id: updated.id,
@@ -148,6 +162,20 @@ export class AdminVendorService {
       metadata: {
         reason: reason ?? null,
       },
+    });
+    await sendTransactionalEmail({
+      to: vendor.user.email,
+      subject: `${env.APP_NAME} — vendor application needs updates`,
+      text: `Hi ${vendor.user.fullName},\n\nYour vendor application was not approved this time.${
+        reason ? `\nReason: ${reason}` : ""
+      }\n\nPlease update your details and submit again.\n\n${env.APP_NAME} Team`,
+      html: buildVendorReviewStatusEmailHtml({
+        appName: env.APP_NAME,
+        heading: "Your application needs updates",
+        message:
+          "Your vendor application was not approved this time. Please update your details and submit again.",
+        ...(reason ? { note: `Reason: ${reason}` } : {}),
+      }),
     });
 
     return {

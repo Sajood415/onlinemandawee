@@ -1,0 +1,143 @@
+"use client";
+
+import {
+  type ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  type PaginationState,
+  useReactTable,
+} from "@tanstack/react-table";
+import { useMemo, useState } from "react";
+
+type DataTableProps<TData> = {
+  data: TData[];
+  columns: ColumnDef<TData>[];
+  getRowId?: (row: TData, index: number) => string;
+  emptyMessage?: string;
+  pageSizeOptions?: number[];
+  initialPageSize?: number;
+};
+
+export function DataTable<TData>({
+  data,
+  columns,
+  getRowId,
+  emptyMessage = "No records found.",
+  pageSizeOptions = [10, 20, 50],
+  initialPageSize = 10,
+}: DataTableProps<TData>) {
+  const safeInitialPageSize = useMemo(() => {
+    if (pageSizeOptions.includes(initialPageSize)) return initialPageSize;
+    return pageSizeOptions[0] ?? 10;
+  }, [initialPageSize, pageSizeOptions]);
+
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: safeInitialPageSize,
+  });
+
+  const table = useReactTable({
+    data,
+    columns,
+    getRowId,
+    state: { pagination },
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
+  const canGoPrev = table.getCanPreviousPage();
+  const canGoNext = table.getCanNextPage();
+  const pageCount = table.getPageCount();
+  const pageNumber = table.getState().pagination.pageIndex + 1;
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[820px] border-collapse">
+          <thead className="bg-neutral-50">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id} className="border-b border-neutral-200">
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-600"
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className="border-b border-neutral-100 transition-colors hover:bg-neutral-50"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-4 py-3 align-top text-sm text-neutral-700">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  className="px-4 py-14 text-center text-sm text-neutral-500"
+                  colSpan={columns.length}
+                >
+                  {emptyMessage}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-neutral-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-sm text-neutral-600">
+          Page {Math.max(pageNumber, 1)} of {Math.max(pageCount, 1)}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={table.getState().pagination.pageSize}
+            onChange={(event) => table.setPageSize(Number(event.target.value))}
+            className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            aria-label="Rows per page"
+          >
+            {pageSizeOptions.map((size) => (
+              <option key={size} value={size}>
+                {size} / page
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => table.previousPage()}
+            disabled={!canGoPrev}
+            className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <button
+            type="button"
+            onClick={() => table.nextPage()}
+            disabled={!canGoNext}
+            className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
