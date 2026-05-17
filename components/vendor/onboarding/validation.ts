@@ -1,9 +1,13 @@
-export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_REGEX = /^\+?[0-9()\-\s]{8,20}$/;
+import {
+  getPasswordValidationMessage,
+  isPasswordValid,
+} from "@/lib/auth/password-policy";
+import {
+  getPhoneValidationMessage,
+  isValidPhone,
+} from "@/lib/phone/phone-policy";
 
-export const isValidPhone = (value: string) => {
-  const trimmed = value.trim();
-  if (!PHONE_REGEX.test(trimmed)) return false;
-  const digits = trimmed.replace(/\D/g, "");
-  return digits.length >= 8 && digits.length <= 15;
-};
+export { getPasswordValidationMessage, isPasswordValid };
+export { getPhoneValidationMessage, isValidPhone };
+
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

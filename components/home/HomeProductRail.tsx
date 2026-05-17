@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -23,6 +23,7 @@ type Row = {
 };
 
 function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
+  const router = useRouter();
   const { addItem } = useCart();
   const [busy, setBusy] = useState(false);
   const t = useTranslations("Homepage.store");
@@ -54,13 +55,17 @@ function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
           />
         </div>
         <div className="mt-3 flex min-h-0 flex-1 flex-col">
-          <Link
-            href={`/vendors/${p.vendorSlug}`}
-            onClick={(e) => e.stopPropagation()}
-            className="text-[11px] font-medium text-gray-500 hover:text-primary hover:underline"
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              router.push(`/vendors/${p.vendorSlug}`);
+            }}
+            className="w-fit text-left text-[11px] font-medium text-gray-500 hover:text-primary hover:underline"
           >
             <bdi dir="ltr">{localizeVendor(p.vendor, locale)}</bdi>
-          </Link>
+          </button>
           <h3 className="line-clamp-2 text-[13px] font-normal leading-snug text-black sm:text-sm">
             {p.name[locale]}
           </h3>

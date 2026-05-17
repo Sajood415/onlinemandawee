@@ -10,9 +10,11 @@ type PublicSiteLayoutProps = {
 
 export function PublicSiteLayout({ children }: PublicSiteLayoutProps) {
   const pathname = usePathname();
+  const isVendorRegisterPage = pathname.includes("/vendor/register");
 
   const isDashboardPage =
-    pathname.includes("/admin/") || pathname.includes("/vendor/");
+    pathname.includes("/admin/") ||
+    (pathname.includes("/vendor/") && !isVendorRegisterPage);
   const hidePublicLayout = isDashboardPage;
 
   if (hidePublicLayout) {

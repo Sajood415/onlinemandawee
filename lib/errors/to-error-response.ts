@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import {
   PrismaClientInitializationError,
   PrismaClientKnownRequestError,
+  PrismaClientUnknownRequestError,
+  PrismaClientValidationError,
 } from "@prisma/client/runtime/library";
 import { ZodError } from "zod";
 
@@ -46,6 +48,32 @@ const buildErrorPayload = (error: unknown) => {
             prismaCode: error.code,
             meta: error.meta,
           },
+        },
+      },
+    };
+  }
+
+  if (error instanceof PrismaClientUnknownRequestError) {
+    return {
+      statusCode: 500,
+      body: {
+        error: {
+          code: ERROR_CODE.INTERNAL_SERVER_ERROR,
+          message: "A database error occurred. Please try again.",
+          details: null,
+        },
+      },
+    };
+  }
+
+  if (error instanceof PrismaClientValidationError) {
+    return {
+      statusCode: 422,
+      body: {
+        error: {
+          code: ERROR_CODE.VALIDATION_ERROR,
+          message: "Invalid data sent to the database. Please check your input.",
+          details: null,
         },
       },
     };

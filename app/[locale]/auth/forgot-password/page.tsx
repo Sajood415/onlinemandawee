@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import { Link } from "@/i18n/navigation";
 
+import { PasswordRequirements } from "@/components/vendor/onboarding/PasswordRequirements";
+import { getPasswordValidationMessage } from "@/components/vendor/onboarding/validation";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
 
@@ -72,8 +74,14 @@ export default function ForgotPasswordPage() {
 
   const submitReset = async (e: FormEvent) => {
     e.preventDefault();
+    const passwordError = getPasswordValidationMessage(newPassword);
+    if (passwordError) {
+      setError(passwordError);
+      toast.error("Password requirements", passwordError);
+      return;
+    }
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("Password and confirm password must match.");
       return;
     }
     if (!resetToken) {
@@ -179,9 +187,13 @@ export default function ForgotPasswordPage() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
-                minLength={8}
+                autoComplete="new-password"
                 className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                aria-describedby="forgot-password-requirements"
               />
+              <div id="forgot-password-requirements" className="mt-2">
+                <PasswordRequirements password={newPassword} />
+              </div>
             </div>
             <div>
               <label className="mb-1 block text-sm font-semibold text-neutral-700">
@@ -192,9 +204,17 @@ export default function ForgotPasswordPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                minLength={8}
+                autoComplete="new-password"
                 className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                aria-invalid={
+                  confirmPassword.length > 0 && newPassword !== confirmPassword
+                }
               />
+              {confirmPassword.length > 0 && newPassword !== confirmPassword ? (
+                <p className="mt-1 text-xs text-red-600" role="alert">
+                  Passwords do not match.
+                </p>
+              ) : null}
             </div>
             <button
               type="submit"

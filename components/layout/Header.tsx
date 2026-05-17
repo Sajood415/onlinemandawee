@@ -28,6 +28,7 @@ import {
   Heart,
   Dumbbell,
   PenTool,
+  UserCircle,
 } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import productData from "@/data/product.json";
@@ -92,10 +93,12 @@ export default function Header() {
     locale === "ps" || locale === "fa-AF" ? locale : "en";
   const isRtl = safeLocale !== "en";
   const copy = headerCopy[safeLocale];
+  const isVendorRegisterPage = pathname.includes("/vendor/register");
   const hideSecondaryNav =
     pathname.includes("/auth/login") ||
-    pathname.includes("/auth/forgot-password");
-  const { isAuthenticated } = useAuth();
+    pathname.includes("/auth/forgot-password") ||
+    isVendorRegisterPage;
+  const { isAuthenticated, user, logout } = useAuth();
   const { cart, itemCount, total, removeItem, updateQuantity, refreshCart } = useCart();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -103,6 +106,8 @@ export default function Header() {
   const [showCategoriesDropdown, setShowCategoriesDropdown] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showTopPromo, setShowTopPromo] = useState(true);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -192,6 +197,12 @@ export default function Header() {
       ) {
         setShowCategoriesDropdown(false);
       }
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowAccountMenu(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -219,7 +230,7 @@ export default function Header() {
       {/* TOP BAR – sticky (logo, search, account, cart) */}
       <header
         dir={isRtl ? "rtl" : "ltr"}
-        className={`sticky top-0 z-[9998] overflow-x-clip border-b border-white/15 shadow-[0_4px_20px_rgba(15,52,96,0.35)] ${HEADER_BAR_CLASS}`}
+        className={`sticky top-0 z-[9998] overflow-x-visible overflow-y-visible border-b border-white/15 shadow-[0_4px_20px_rgba(15,52,96,0.35)] ${HEADER_BAR_CLASS}`}
       >
         <div className="mx-auto w-full min-w-0 max-w-7xl py-2 sm:py-3 ps-[max(0.375rem,env(safe-area-inset-left,0px))] pe-[max(0.375rem,env(safe-area-inset-right,0px))] sm:ps-[max(1rem,env(safe-area-inset-left,0px))] sm:pe-[max(1rem,env(safe-area-inset-right,0px))]">
           <div className="flex min-w-0 flex-nowrap items-center justify-between gap-2 sm:gap-3 md:max-lg:gap-2 lg:gap-4">
@@ -307,13 +318,58 @@ export default function Header() {
                 <ShoppingBasket size={20} />
               </IconButton>
 
-              {/* Login Button - Third */}
-              {!isAuthenticated && (
+              {/* Login / Account - Third */}
+              {isAuthenticated ? (
+                <div className="relative hidden md:block" ref={accountMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowAccountMenu((v) => !v)}
+                    className="flex h-9 shrink-0 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white transition-colors hover:bg-white/20"
+                    aria-label="Account menu"
+                  >
+                    <UserCircle size={18} />
+                    <span className="max-w-[7rem] truncate">{user?.fullName?.split(" ")[0] ?? "Account"}</span>
+                  </button>
+                  {showAccountMenu && (
+                    <div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-neutral-200 bg-white py-1 shadow-xl z-50">
+                      {user?.role === "ADMIN" && (
+                        <LocaleLink
+                          href="/admin/dashboard"
+                          onClick={() => setShowAccountMenu(false)}
+                          className="flex w-full items-center px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
+                        >
+                          Admin dashboard
+                        </LocaleLink>
+                      )}
+                      {user?.role === "VENDOR" && (
+                        <LocaleLink
+                          href="/vendor/dashboard"
+                          onClick={() => setShowAccountMenu(false)}
+                          className="flex w-full items-center px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
+                        >
+                          Vendor dashboard
+                        </LocaleLink>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          logout();
+                          setShowAccountMenu(false);
+                        }}
+                        className="flex w-full items-center px-4 py-2.5 text-sm text-red-600 hover:bg-neutral-50"
+                      >
+                        Sign out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
                 <button
+                  type="button"
                   onClick={handleLogin}
-                  className="hidden md:flex h-9 shrink-0 px-3 whitespace-nowrap lg:px-4 rounded-full text-xs lg:text-sm font-semibold transition-colors cursor-pointer items-center justify-center border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                  className="hidden md:flex h-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 px-3 whitespace-nowrap text-xs font-semibold text-white transition-colors hover:bg-white/20 lg:px-4 lg:text-sm"
                 >
-                    {copy.login}
+                  {copy.login}
                 </button>
               )}
 

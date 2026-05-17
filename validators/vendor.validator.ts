@@ -6,6 +6,8 @@ import {
   payoutMethodTypes,
 } from "@/domain/vendor/vendor-types";
 import { vendorStatuses } from "@/domain/vendor/vendor-status";
+import { passwordFieldSchema } from "@/lib/auth/password-policy";
+import { phoneFieldSchema } from "@/lib/phone/phone-policy";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 
 const vendorOnboardingEmailField = z.preprocess(
@@ -25,8 +27,8 @@ export const vendorEmailVerifyCodeSchema = z.object({
 export const startVendorOnboardingSchema = z.object({
   fullName: z.string().trim().min(2).max(100),
   email: vendorOnboardingEmailField,
-  phone: z.string().trim().min(8).max(20),
-  password: z.string().min(8).max(128),
+  phone: phoneFieldSchema,
+  password: passwordFieldSchema,
   verificationToken: z.string().min(20),
 });
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react";
 
 import {
@@ -13,11 +13,21 @@ import type { BusinessType, KycDocumentType, PayoutMethodType } from "@/domain/v
 import type { VendorUploadKind } from "@/domain/vendor/vendor-upload-kind";
 import { FileAttachmentField } from "@/components/vendor/onboarding/FileAttachmentField";
 import type { OnboardingStatusPayload } from "@/components/vendor/onboarding/types";
-import { EMAIL_REGEX, isValidPhone } from "@/components/vendor/onboarding/validation";
+import { PasswordRequirements } from "@/components/vendor/onboarding/PasswordRequirements";
+import { PhoneNumberField } from "@/components/vendor/onboarding/PhoneNumberField";
+import {
+  EMAIL_REGEX,
+  getPasswordValidationMessage,
+  getPhoneValidationMessage,
+  isValidPhone,
+} from "@/components/vendor/onboarding/validation";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { vendorOnboardingResumeStep } from "@/lib/vendor/vendor-onboarding-wizard-step";
 import { slugify } from "@/lib/utils/slug";
 import { toast } from "@/lib/utils/toast";
+
+/** Matches vendor store step schema (`validators/vendor.validator.ts`) */
+const STORE_DESCRIPTION_MAX_CHARS = 500;
 
 const FIELD = "flex flex-col gap-2.5 sm:gap-3";
 
@@ -27,6 +37,17 @@ const CONTROL =
 const LABEL = "text-[11px] font-semibold uppercase tracking-wider text-neutral-600";
 
 const HINT = "text-xs leading-relaxed text-neutral-500";
+
+function RequiredMark() {
+  return (
+    <>
+      {" "}
+      <abbr className="font-semibold text-red-600 no-underline" title="Required" aria-label="required">
+        *
+      </abbr>
+    </>
+  );
+}
 
 const STEP_STACK = "flex flex-col gap-8 sm:gap-10";
 
@@ -70,6 +91,10 @@ export function VendorOnboardingWizard() {
   const [verificationToken, setVerificationToken] = useState<string | null>(null);
   const [otpUiPhase, setOtpUiPhase] = useState<"email" | "code">("email");
   const [sendingEmailOtp, setSendingEmailOtp] = useState(false);
+  /** Set when the API returns debugCode (SMTP not configured in development). */
+  const [devVerificationCode, setDevVerificationCode] = useState<string | null>(
+    null
+  );
 
   const [storeName, setStoreName] = useState("");
   const [businessType, setBusinessType] = useState<BusinessType>("INDIVIDUAL");
@@ -77,6 +102,10 @@ export function VendorOnboardingWizard() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [description, setDescription] = useState("");
   const slugPreview = useMemo(() => slugify(storeName || "your-store"), [storeName]);
+
+  const descriptionTrimLen = description.trim().length;
+  const descriptionOverLimit =
+    descriptionTrimLen > STORE_DESCRIPTION_MAX_CHARS;
 
   const [documentType, setDocumentType] = useState<KycDocumentType>("PASSPORT");
   const [documentUrl, setDocumentUrl] = useState("");
@@ -185,6 +214,12 @@ export function VendorOnboardingWizard() {
     };
   }, []);
 
+  /** Success view is shorter than the wizard; keep prior scroll from leaving the viewport on the footer */
+  useLayoutEffect(() => {
+    if (!submitted) return;
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [submitted]);
+
   const uploadVendorFile = async (kind: VendorUploadKind, file: File) => {
     if (!accessToken) {
       toast.error("Session", "Start again from step 1.");
@@ -230,10 +265,23 @@ export function VendorOnboardingWizard() {
       const payload = await parseApiResponse<{
         email: string;
         expiresAt: string;
+        debugCode?: string;
       }>(res);
       setEmail(payload.email);
       setOtpUiPhase("code");
-      toast.success("Code sent", "Check your inbox.");
+      if (payload.debugCode) {
+        setDevVerificationCode(payload.debugCode);
+        toast.success(
+          "Verification code ready",
+          "Email is not set up on this machine. Use the code shown on this page."
+        );
+      } else {
+        setDevVerificationCode(null);
+        toast.success(
+          "Email sent",
+          `We sent a 6-digit code to ${payload.email}. Check your inbox and spam folder.`
+        );
+      }
     } catch (e) {
       toast.error("Could not send code", e instanceof Error ? e.message : "Error");
     } finally {
@@ -280,16 +328,18 @@ export function VendorOnboardingWizard() {
       toast.error("Email", "Enter a valid email address.");
       return;
     }
-    if (!isValidPhone(phone)) {
-      toast.error("Phone", "Enter a valid phone number.");
+    const phoneError = getPhoneValidationMessage(phone);
+    if (phoneError) {
+      toast.error("Phone number", phoneError);
       return;
     }
-    if (password.length < 8) {
-      toast.error("Password", "Use at least 8 characters.");
+    const passwordError = getPasswordValidationMessage(password);
+    if (passwordError) {
+      toast.error("Password requirements", passwordError);
       return;
     }
     if (password !== confirmPassword) {
-      toast.error("Password", "Passwords do not match.");
+      toast.error("Password", "Password and confirm password must match.");
       return;
     }
     setBusy(true);
@@ -300,7 +350,7 @@ export function VendorOnboardingWizard() {
         body: JSON.stringify({
           fullName: fullName.trim(),
           email: email.trim(),
-          phone: phone.trim(),
+          phone,
           password,
           verificationToken,
         }),
@@ -355,6 +405,15 @@ export function VendorOnboardingWizard() {
           setBusy(false);
           return;
         }
+        const descTrimmed = description.trim();
+        if (descTrimmed.length > STORE_DESCRIPTION_MAX_CHARS) {
+          toast.error(
+            "Store description too long",
+            `Use ${STORE_DESCRIPTION_MAX_CHARS} characters or fewer. You entered ${descTrimmed.length}.`
+          );
+          setBusy(false);
+          return;
+        }
         let nextLogoUrl = logoUrl.trim();
         if (logoFile) {
           const uploaded = await uploadSelectedFile("logo", logoFile);
@@ -366,7 +425,7 @@ export function VendorOnboardingWizard() {
           storeName: storeName.trim(),
           businessType,
           ...(nextLogoUrl ? { logoUrl: nextLogoUrl } : {}),
-          ...(description.trim() ? { description: description.trim() } : {}),
+          ...(descTrimmed ? { description: descTrimmed } : {}),
         });
         setStep(3);
       } else if (step === 3) {
@@ -471,7 +530,13 @@ export function VendorOnboardingWizard() {
         toast.success("Submitted", "We will review your application.");
       }
     } catch (e) {
-      toast.error("Save failed", e instanceof Error ? e.message : "Error");
+      const msg =
+        e instanceof Error
+          ? e.message
+          : typeof e === "string"
+            ? e
+            : "Something went wrong. Please try again.";
+      toast.error("Could not save", msg);
     } finally {
       setBusy(false);
     }
@@ -605,6 +670,7 @@ export function VendorOnboardingWizard() {
                       <div className={FIELD}>
                         <label className={LABEL} htmlFor="vo-email">
                           Email
+                          <RequiredMark />
                         </label>
                         <input
                           id="vo-email"
@@ -639,8 +705,23 @@ export function VendorOnboardingWizard() {
                       <div>
                         <h2 className={SECTION_HEADING}>Enter your code</h2>
                         <p className={SECTION_LEAD}>
-                          We sent a 6-digit code to{" "}
-                          <span className="font-semibold text-neutral-900">{email.trim()}</span>.
+                          {devVerificationCode ? (
+                            <>
+                              Use the verification code shown below for{" "}
+                              <span className="font-semibold text-neutral-900">
+                                {email.trim()}
+                              </span>
+                              . No email was sent because SMTP is not configured.
+                            </>
+                          ) : (
+                            <>
+                              We sent a 6-digit code to{" "}
+                              <span className="font-semibold text-neutral-900">
+                                {email.trim()}
+                              </span>
+                              . Check your inbox and spam folder.
+                            </>
+                          )}
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-3">
@@ -664,15 +745,38 @@ export function VendorOnboardingWizard() {
                           onClick={() => {
                             setOtpUiPhase("email");
                             setEmailCode("");
+                            setDevVerificationCode(null);
                           }}
                           className="text-sm font-semibold text-primary hover:underline"
                         >
                           Change email
                         </button>
                       </div>
+                      {devVerificationCode ? (
+                        <div
+                          className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-4 sm:px-5 sm:py-5"
+                          role="status"
+                          aria-live="polite"
+                        >
+                          <p className="text-sm font-semibold text-amber-950">
+                            Development mode — no email was sent
+                          </p>
+                          <p className="mt-1.5 text-sm leading-relaxed text-amber-900/90">
+                            Add SMTP settings to <code className="text-xs">.env.local</code> to
+                            receive codes by email. For now, enter this code:
+                          </p>
+                          <p
+                            className="mt-4 text-center font-mono text-3xl font-bold tracking-[0.35em] text-amber-950 tabular-nums sm:text-4xl"
+                            aria-label={`Verification code ${devVerificationCode.split("").join(" ")}`}
+                          >
+                            {devVerificationCode}
+                          </p>
+                        </div>
+                      ) : null}
                       <div className={FIELD}>
                         <label className={LABEL} htmlFor="vo-code">
                           Verification code
+                          <RequiredMark />
                         </label>
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-stretch">
                           <input
@@ -712,6 +816,7 @@ export function VendorOnboardingWizard() {
                       <div className={FIELD}>
                         <label className={LABEL} htmlFor="vo-name">
                           Full name
+                          <RequiredMark />
                         </label>
                         <input
                           id="vo-name"
@@ -721,22 +826,17 @@ export function VendorOnboardingWizard() {
                           autoComplete="name"
                         />
                       </div>
-                      <div className={FIELD}>
-                        <label className={LABEL} htmlFor="vo-phone">
-                          Phone
-                        </label>
-                        <input
-                          id="vo-phone"
-                          type="tel"
-                          className={CONTROL}
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          autoComplete="tel"
-                        />
-                      </div>
+                      <PhoneNumberField
+                        id="vo-phone"
+                        required
+                        value={phone}
+                        onChange={setPhone}
+                        hint="Pick the flag and dial code, then enter your mobile number using digits only (no leading 0)."
+                      />
                       <div className={FIELD}>
                         <label className={LABEL} htmlFor="vo-pass">
                           Password
+                          <RequiredMark />
                         </label>
                         <input
                           id="vo-pass"
@@ -745,12 +845,17 @@ export function VendorOnboardingWizard() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           autoComplete="new-password"
-                          placeholder="At least 8 characters"
+                          placeholder="Create a strong password"
+                          aria-describedby="vo-pass-requirements"
                         />
+                        <div id="vo-pass-requirements">
+                          <PasswordRequirements password={password} />
+                        </div>
                       </div>
                       <div className={FIELD}>
                         <label className={LABEL} htmlFor="vo-pass2">
                           Confirm password
+                          <RequiredMark />
                         </label>
                         <input
                           id="vo-pass2"
@@ -759,7 +864,16 @@ export function VendorOnboardingWizard() {
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           autoComplete="new-password"
+                          placeholder="Re-enter your password"
+                          aria-invalid={
+                            confirmPassword.length > 0 && password !== confirmPassword
+                          }
                         />
+                        {confirmPassword.length > 0 && password !== confirmPassword ? (
+                          <p className={HINT} role="alert">
+                            Passwords do not match.
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   </fieldset>
@@ -771,7 +885,9 @@ export function VendorOnboardingWizard() {
           {step === 2 && (
             <div className={STEP_STACK}>
               <div className={FIELD}>
-                <label className={LABEL}>Store name</label>
+                <label className={LABEL}>Store name
+                  <RequiredMark />
+                </label>
                 <input className={CONTROL} value={storeName} onChange={(e) => setStoreName(e.target.value)} />
               </div>
               <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 px-4 py-4 text-sm text-neutral-600 sm:px-5 sm:py-4">
@@ -782,7 +898,9 @@ export function VendorOnboardingWizard() {
                 <p className={`${HINT} mt-3`}>Saved when you continue; must be unique.</p>
               </div>
               <div className={FIELD}>
-                <label className={LABEL}>Business type</label>
+                <label className={LABEL}>Business type
+                  <RequiredMark />
+                </label>
                 <select
                   className={CONTROL}
                   value={businessType}
@@ -806,8 +924,40 @@ export function VendorOnboardingWizard() {
                 onSelect={setLogoFile}
               />
               <div className={FIELD}>
-                <label className={LABEL}>Description (optional)</label>
-                <textarea className={`${CONTROL} min-h-28 resize-y`} value={description} onChange={(e) => setDescription(e.target.value)} />
+                <label className={LABEL} htmlFor="vendor-store-description">
+                  Description (optional)
+                </label>
+                <textarea
+                  id="vendor-store-description"
+                  className={`${CONTROL} min-h-28 resize-y ${
+                    descriptionOverLimit
+                      ? "border-red-400 focus:border-red-500 focus:ring-red-500/25"
+                      : ""
+                  }`}
+                  value={description}
+                  maxLength={STORE_DESCRIPTION_MAX_CHARS}
+                  onChange={(e) => setDescription(e.target.value)}
+                  aria-invalid={descriptionOverLimit}
+                  aria-describedby="vendor-store-description-hint vendor-store-description-count"
+                />
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p id="vendor-store-description-hint" className={`${HINT}`}>
+                    Optional. Maximum {STORE_DESCRIPTION_MAX_CHARS} characters; longer text is not accepted.
+                  </p>
+                  <p
+                    id="vendor-store-description-count"
+                    className={`text-xs tabular-nums ${
+                      descriptionOverLimit ? "font-medium text-red-600" : "text-neutral-500"
+                    }`}
+                  >
+                    {descriptionTrimLen} / {STORE_DESCRIPTION_MAX_CHARS}
+                  </p>
+                </div>
+                {descriptionOverLimit ? (
+                  <p className="text-xs font-medium text-red-600" role="alert">
+                    Please shorten your description to {STORE_DESCRIPTION_MAX_CHARS} characters or fewer.
+                  </p>
+                ) : null}
               </div>
             </div>
           )}
@@ -818,7 +968,9 @@ export function VendorOnboardingWizard() {
                 We use this to verify who is selling on the marketplace.
               </p>
               <div className={FIELD}>
-                <label className={LABEL}>ID type</label>
+                <label className={LABEL}>ID type
+                  <RequiredMark />
+                </label>
                 <select
                   className={CONTROL}
                   value={documentType}
@@ -832,6 +984,7 @@ export function VendorOnboardingWizard() {
                 </select>
               </div>
               <FileAttachmentField
+                required
                 label="ID document"
                 accept="image/jpeg,image/png,image/webp,application/pdf"
                 disabled={Boolean(uploadKey)}
@@ -857,21 +1010,29 @@ export function VendorOnboardingWizard() {
           {step === 4 && (
             <div className={STEP_STACK}>
               <div className={FIELD}>
-                <label className={LABEL}>Address line 1</label>
+                <label className={LABEL}>Address line 1
+                  <RequiredMark />
+                </label>
                 <input className={CONTROL} value={addressLine1} onChange={(e) => setAddressLine1(e.target.value)} />
               </div>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div className={FIELD}>
-                  <label className={LABEL}>City</label>
+                  <label className={LABEL}>City
+                    <RequiredMark />
+                  </label>
                   <input className={CONTROL} value={city} onChange={(e) => setCity(e.target.value)} />
                 </div>
                 <div className={FIELD}>
-                  <label className={LABEL}>Country</label>
+                  <label className={LABEL}>Country
+                    <RequiredMark />
+                  </label>
                   <input className={CONTROL} value={country} onChange={(e) => setCountry(e.target.value)} />
                 </div>
               </div>
               <div className={FIELD}>
-                <label className={LABEL}>Postal code</label>
+                <label className={LABEL}>Postal code
+                  <RequiredMark />
+                </label>
                 <input className={CONTROL} value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
               </div>
               <FileAttachmentField
@@ -891,7 +1052,9 @@ export function VendorOnboardingWizard() {
             <div className={STEP_STACK}>
               <p className={CALLOUT}>Account name must match your ID or business name.</p>
               <div className={FIELD}>
-                <label className={LABEL}>Payout method</label>
+                <label className={LABEL}>Payout method
+                  <RequiredMark />
+                </label>
                 <select
                   className={CONTROL}
                   value={payoutMethod}
@@ -907,22 +1070,30 @@ export function VendorOnboardingWizard() {
               {payoutMethod === "BANK" && (
                 <div className="flex flex-col gap-6 sm:gap-8">
                   <div className={FIELD}>
-                    <label className={LABEL}>Account name</label>
+                    <label className={LABEL}>Account name
+                      <RequiredMark />
+                    </label>
                     <input className={CONTROL} value={accountName} onChange={(e) => setAccountName(e.target.value)} />
                   </div>
                   <div className={FIELD}>
-                    <label className={LABEL}>Account number / IBAN</label>
+                    <label className={LABEL}>Account number / IBAN
+                      <RequiredMark />
+                    </label>
                     <input className={CONTROL} value={accountNumberOrIban} onChange={(e) => setAccountNumberOrIban(e.target.value)} />
                   </div>
                   <div className={FIELD}>
-                    <label className={LABEL}>Bank name</label>
+                    <label className={LABEL}>Bank name
+                      <RequiredMark />
+                    </label>
                     <input className={CONTROL} value={bankName} onChange={(e) => setBankName(e.target.value)} />
                   </div>
                 </div>
               )}
               {payoutMethod === "STRIPE" && (
                 <div className={FIELD}>
-                  <label className={LABEL}>Stripe email</label>
+                  <label className={LABEL}>Stripe email
+                    <RequiredMark />
+                  </label>
                   <input type="email" className={CONTROL} value={stripeEmail} onChange={(e) => setStripeEmail(e.target.value)} />
                 </div>
               )}
@@ -936,23 +1107,23 @@ export function VendorOnboardingWizard() {
               </p>
               <label className={CHECK_ROW}>
                 <input type="checkbox" checked={ag1} onChange={(e) => setAg1(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>I agree to the Vendor Terms &amp; Conditions.</span>
+                <span>I agree to the Vendor Terms &amp; Conditions.<RequiredMark /></span>
               </label>
               <label className={CHECK_ROW}>
                 <input type="checkbox" checked={ag2} onChange={(e) => setAg2(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>I agree to the membership: USD $5.99 per month, first 3 months free for new vendors.</span>
+                <span>I agree to the membership: USD $5.99 per month, first 3 months free for new vendors.<RequiredMark /></span>
               </label>
               <label className={CHECK_ROW}>
                 <input type="checkbox" checked={ag3} onChange={(e) => setAg3(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>I agree to the commission: 3.99% on product sale price (subtotal only, not shipping).</span>
+                <span>I agree to the commission: 3.99% on product sale price (subtotal only, not shipping).<RequiredMark /></span>
               </label>
               <label className={CHECK_ROW}>
                 <input type="checkbox" checked={ag4} onChange={(e) => setAg4(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>I agree Online Mandawee has final decision on escalated disputes/refunds.</span>
+                <span>I agree Online Mandawee has final decision on escalated disputes/refunds.<RequiredMark /></span>
               </label>
               <label className={CHECK_ROW}>
                 <input type="checkbox" checked={ag5} onChange={(e) => setAg5(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>I agree to follow platform delivery rules.</span>
+                <span>I agree to follow platform delivery rules.<RequiredMark /></span>
               </label>
             </div>
           )}
@@ -974,7 +1145,7 @@ export function VendorOnboardingWizard() {
                 busy ||
                 Boolean(uploadKey) ||
                 sendingEmailOtp ||
-                (step === 1 && (!verificationToken || !fullName.trim() || !phone.trim()))
+                (step === 1 && (!verificationToken || !fullName.trim() || !isValidPhone(phone)))
               }
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-8 py-2.5 text-sm font-semibold text-white shadow-md hover:opacity-95 disabled:opacity-45"
             >

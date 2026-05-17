@@ -8,6 +8,7 @@ type DashboardRole = "ADMIN" | "VENDOR";
 type AuthUser = {
   id: string;
   role: "CUSTOMER" | "VENDOR" | "ADMIN";
+  status?: "ACTIVE" | "PENDING" | "BLOCKED";
   fullName: string;
   email: string;
 };
@@ -47,6 +48,13 @@ export function useDashboardGuard(expectedRole: DashboardRole) {
 
         const json = (await res.json()) as { data: AuthUser };
         const currentUser = json.data;
+
+        if (currentUser.role === "VENDOR" && currentUser.status !== "ACTIVE") {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          router.replace("/auth/login");
+          return;
+        }
 
         if (currentUser.role !== expectedRole) {
           if (currentUser.role === "ADMIN") {

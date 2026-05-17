@@ -147,6 +147,14 @@ export class AuthService {
         statusCode: 403,
       });
     }
+    if (user.role === "VENDOR" && user.status !== "ACTIVE") {
+      throw new AppError({
+        code: ERROR_CODE.FORBIDDEN,
+        message:
+          "Your vendor application is not approved yet. You can sign in once an admin approves it.",
+        statusCode: 403,
+      });
+    }
 
     await this.userRepository.updateLastLogin(user.id, new Date());
     return this.createSessionTokens(user, metadata);
@@ -184,6 +192,14 @@ export class AuthService {
         code: ERROR_CODE.UNAUTHORIZED,
         message: "User is unavailable",
         statusCode: 401,
+      });
+    }
+    if (user.role === "VENDOR" && user.status !== "ACTIVE") {
+      throw new AppError({
+        code: ERROR_CODE.FORBIDDEN,
+        message:
+          "Your vendor application is not approved yet. You can sign in once an admin approves it.",
+        statusCode: 403,
       });
     }
 

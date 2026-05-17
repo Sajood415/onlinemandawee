@@ -73,6 +73,14 @@ export const withAuth = <
         statusCode: 403,
       });
     }
+    if (user.role === "VENDOR" && user.status !== "ACTIVE") {
+      throw new AppError({
+        code: ERROR_CODE.FORBIDDEN,
+        message:
+          "Your vendor application is not approved yet. You can sign in once an admin approves it.",
+        statusCode: 403,
+      });
+    }
 
     return handler(request, {
       ...context,

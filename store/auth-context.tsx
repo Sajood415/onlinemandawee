@@ -3,7 +3,7 @@
 import {
   createContext,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useState,
   ReactNode,
 } from "react";
@@ -45,9 +45,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAuthenticated = !!user;
 
-  // Check authentication on mount
-  useEffect(() => {
-    checkAuth();
+  // useLayoutEffect: resolve no-token path synchronously before paint to avoid
+  // flashing the login control for guests; keep "loading" until /me returns when a token exists.
+  useLayoutEffect(() => {
+    void checkAuth();
   }, []);
 
   const checkAuth = async () => {

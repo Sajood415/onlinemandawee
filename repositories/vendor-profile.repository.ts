@@ -8,9 +8,13 @@ import type { VendorStatus } from "@/domain/vendor/vendor-status";
 
 export class VendorProfileRepository {
   create(input: { userId: string }) {
+    // MongoDB unique indexes treat null as a real value, so every profile needs
+    // a unique storeSlug from creation. We use a draft prefix that gets replaced
+    // with the real slug when the vendor completes step 2 (store information).
     return prisma.vendorProfile.create({
       data: {
         userId: input.userId,
+        storeSlug: `_draft_${input.userId}`,
       },
     });
   }

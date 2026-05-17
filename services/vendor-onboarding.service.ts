@@ -1,7 +1,10 @@
+import { env } from "@/config/env";
 import { verifyOtpProofToken } from "@/lib/auth/otp-proof";
 import { hashPassword } from "@/lib/auth/password";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import { buildVendorReviewStatusEmailHtml } from "@/lib/mail/vendor-review-status-email-html";
+import { sendTransactionalEmail } from "@/lib/mail/send-transactional-email";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 import { slugify } from "@/lib/utils/slug";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
@@ -310,6 +313,33 @@ export class VendorOnboardingService {
       entityType: "VendorProfile",
       entityId: vendorProfile.id,
     });
+
+    try {
+      const recipientName = vendorProfile.user.fullName.trim();
+      const storeLabel = vendorProfile.storeName ?? "your store";
+      await sendTransactionalEmail({
+        to: vendorProfile.user.email,
+        subject: `${env.APP_NAME} — We received your vendor application`,
+        text: [
+          `Hi ${recipientName},`,
+          "",
+          `Thank you for submitting your vendor application for "${storeLabel}" on ${env.APP_NAME}.`,
+          "",
+          "We have received your complete application and our team will review it shortly.",
+          "We will email you again when there is an update on your application.",
+          "",
+          `${env.APP_NAME} Team`,
+        ].join("\n"),
+        html: buildVendorReviewStatusEmailHtml({
+          appName: env.APP_NAME,
+          heading: "We received your application",
+          message: `Thank you for submitting your vendor application for "${storeLabel}". We have received everything and our team will review it shortly. We will email you again when there is an update.`,
+          note: "You do not need to reply to this message.",
+        }),
+      });
+    } catch {
+      /* Submission already persisted; avoid failing the request if mail fails */
+    }
 
     return {
       id: updated.id,
