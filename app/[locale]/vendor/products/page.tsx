@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ImageIcon, Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { ImageIcon, Loader2, Pencil, Plus, Search, SendHorizonal, Trash2, X } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-status";
@@ -110,6 +110,9 @@ export default function VendorProductsPage() {
 
   /* delete */
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  /* submit for approval */
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
 
   /* filters */
   const [searchText, setSearchText]       = useState("");
@@ -288,6 +291,27 @@ export default function VendorProductsPage() {
       toast.error("Could not save", err instanceof Error ? err.message : "Unknown error");
     } finally {
       setSaving(false);
+    }
+  };
+
+  /* ── Submit for approval ────────────────────────────────────────── */
+
+  const onSubmitForApproval = async (productId: string) => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+    setSubmittingId(productId);
+    try {
+      const res = await fetch(`/api/vendor/products/${productId}/submit-for-approval`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      await parseApiResponse<VendorProduct>(res);
+      toast.success("Submitted", "Your product has been sent for admin review.");
+      await fetchData(true);
+    } catch (err) {
+      toast.error("Could not submit", err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setSubmittingId(null);
     }
   };
 
@@ -495,7 +519,23 @@ export default function VendorProductsPage() {
                         </span>
                       </td>
                       <td className="px-3 py-3">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Submit for approval — only for DRAFT or REJECTED */}
+                          {(product.approvalStatus === "DRAFT" || product.approvalStatus === "REJECTED") && (
+                            <button
+                              type="button"
+                              disabled={submittingId === product.id}
+                              onClick={() => void onSubmitForApproval(product.id)}
+                              className="inline-flex items-center gap-1 rounded-md border border-blue-200 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
+                            >
+                              {submittingId === product.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <SendHorizonal className="h-3.5 w-3.5" />
+                              )}
+                              Submit
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => openEdit(product)}
