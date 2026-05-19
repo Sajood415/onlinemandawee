@@ -99,6 +99,15 @@ export default function AdminProductsPage() {
     if (!authLoading && user) void fetchProducts();
   }, [authLoading, user, fetchProducts]);
 
+  /* auto-refresh when admin returns to this tab */
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void fetchProducts(true);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [fetchProducts]);
+
   /* ── Approve ────────────────────────────────────────────────────── */
 
   const onApprove = async (product: AdminProduct) => {

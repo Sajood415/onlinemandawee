@@ -114,6 +114,7 @@ export default function VendorProductsPage() {
 
   /* submit for approval */
   const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [submittingAll, setSubmittingAll] = useState(false);
 
   /* filters */
   const [searchText, setSearchText]       = useState("");
@@ -150,6 +151,15 @@ export default function VendorProductsPage() {
   useEffect(() => {
     if (!authLoading && user) void fetchData();
   }, [authLoading, user, fetchData]);
+
+  /* auto-refresh when tab regains focus so admin status changes are reflected */
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void fetchData(true);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [fetchData]);
 
   /* ── Modal open/close ───────────────────────────────────────────── */
 
@@ -316,6 +326,37 @@ export default function VendorProductsPage() {
     }
   };
 
+  /* ── Submit ALL DRAFT products ─────────────────────────────────── */
+
+  const onSubmitAll = async () => {
+    const drafts = products.filter((p) => p.approvalStatus === "DRAFT");
+    if (drafts.length === 0) return;
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+    setSubmittingAll(true);
+    let successCount = 0;
+    for (const p of drafts) {
+      try {
+        const res = await fetch(`/api/vendor/products/${p.id}/submit-for-approval`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        await parseApiResponse<VendorProduct>(res);
+        successCount++;
+      } catch {
+        // continue with remaining
+      }
+    }
+    if (successCount > 0) {
+      toast.success(
+        "Submitted for review",
+        `${successCount} product${successCount !== 1 ? "s" : ""} sent to admin for approval.`
+      );
+      await fetchData(true);
+    }
+    setSubmittingAll(false);
+  };
+
   /* ── Delete ─────────────────────────────────────────────────────── */
 
   const onDelete = async (productId: string) => {
@@ -419,6 +460,23 @@ export default function VendorProductsPage() {
 
           {/* spacer */}
           <div className="flex-1" />
+
+          {/* Submit all drafts */}
+          {products.some((p) => p.approvalStatus === "DRAFT") && (
+            <button
+              type="button"
+              disabled={submittingAll}
+              onClick={() => void onSubmitAll()}
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-60"
+            >
+              {submittingAll ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <SendHorizonal className="h-4 w-4" />
+              )}
+              Submit all for review
+            </button>
+          )}
 
           {/* Add product button */}
           <button
