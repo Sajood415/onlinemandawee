@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, ImageIcon, Loader2, Pencil, Plus, Search, SendHorizonal, Trash2, X } from "lucide-react";
+import { ImageIcon, Loader2, Pencil, Plus, Search, SendHorizonal, Trash2, X } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-status";
@@ -45,16 +45,13 @@ type ProductVariant = {
 };
 
 type VariantFormRow = {
-  localId: string; // temp id for new rows
-  id?: string;     // set once saved
+  localId: string;
+  id?: string; // set for existing variants (edit mode)
   name: string;
   priceAmount: string;
   stockQty: string;
   sku: string;
   isActive: boolean;
-  saving: boolean;
-  deleting: boolean;
-  dirty: boolean;
 };
 
 type ProductFormState = {
@@ -123,9 +120,6 @@ function newVariantRow(): VariantFormRow {
     stockQty: "0",
     sku: "",
     isActive: true,
-    saving: false,
-    deleting: false,
-    dirty: false,
   };
 }
 
@@ -138,9 +132,6 @@ function variantToRow(v: ProductVariant): VariantFormRow {
     stockQty: String(v.stockQty),
     sku: v.sku ?? "",
     isActive: v.isActive,
-    saving: false,
-    deleting: false,
-    dirty: false,
   };
 }
 
@@ -170,9 +161,9 @@ export default function VendorProductsPage() {
   const [submittingAll, setSubmittingAll] = useState(false);
 
   /* variants */
-  const [variantRows, setVariantRows] = useState<VariantFormRow[]>([]);
-  const [variantsOpen, setVariantsOpen] = useState(false);
-  const [variantsLoading, setVariantsLoading] = useState(false);
+  const [variantRows, setVariantRows]             = useState<VariantFormRow[]>([]);
+  const [deletedVariantIds, setDeletedVariantIds] = useState<string[]>([]);
+  const [variantsLoading, setVariantsLoading]     = useState(false);
 
   /* filters */
   const [searchText, setSearchText]       = useState("");
@@ -224,18 +215,24 @@ export default function VendorProductsPage() {
   const openCreate = () => {
     setEditingProductId(null);
     setForm(emptyForm(categories[0]?.id ?? ""));
+    setVariantRows([]);
+    setDeletedVariantIds([]);
     setModalOpen(true);
   };
 
   const openEdit = (product: VendorProduct) => {
     setEditingProductId(product.id);
     setForm(toFormState(product));
+    setVariantRows([]);
+    setDeletedVariantIds([]);
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
     setEditingProductId(null);
+    setVariantRows([]);
+    setDeletedVariantIds([]);
   };
 
   /* ── Form helpers ───────────────────────────────────────────────── */
@@ -349,10 +346,50 @@ export default function VendorProductsPage() {
           body: JSON.stringify(payload),
         }
       );
-      await parseApiResponse<VendorProduct>(res);
+      const savedProduct = await parseApiResponse<VendorProduct>(res);
+      const productId = savedProduct.id;
+
+      /* ── Save variants ── */
+      // In edit mode: delete removed variants first
+      for (const variantId of deletedVariantIds) {
+        try {
+          await fetch(`/api/vendor/products/${productId}/variants/${variantId}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        } catch { /* ignore */ }
+      }
+      // Create new variants / update existing
+      for (const row of variantRows) {
+        if (!row.name.trim()) continue;
+        const priceRaw = row.priceAmount.trim() ? Number(row.priceAmount) : null;
+        const variantPayload = {
+          name: row.name.trim(),
+          priceAmount: priceRaw != null && priceRaw > 0 ? Math.round(priceRaw * 100) : null,
+          stockQty: Math.max(0, Number(row.stockQty) || 0),
+          sku: row.sku.trim() || null,
+          isActive: row.isActive,
+        };
+        try {
+          if (row.id) {
+            await fetch(`/api/vendor/products/${productId}/variants/${row.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify(variantPayload),
+            });
+          } else {
+            await fetch(`/api/vendor/products/${productId}/variants`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify(variantPayload),
+            });
+          }
+        } catch { /* ignore individual variant errors */ }
+      }
+
       toast.success(
         isEdit ? "Product updated" : "Product created",
-        isEdit ? "Changes saved." : "Your listing is now in draft."
+        isEdit ? "Changes saved." : "Your listing is now under review."
       );
       closeModal();
       await fetchData(true);
@@ -438,100 +475,17 @@ export default function VendorProductsPage() {
   useEffect(() => {
     if (modalOpen && editingProductId) {
       void loadVariants(editingProductId);
-    } else if (!modalOpen) {
-      setVariantRows([]);
-      setVariantsOpen(false);
     }
   }, [modalOpen, editingProductId, loadVariants]);
 
   const updateRow = (localId: string, patch: Partial<VariantFormRow>) =>
     setVariantRows((rows) =>
-      rows.map((r) => (r.localId === localId ? { ...r, ...patch, dirty: true } : r))
+      rows.map((r) => (r.localId === localId ? { ...r, ...patch } : r))
     );
 
-  const saveVariantRow = async (row: VariantFormRow) => {
-    if (!editingProductId) return;
-    const token = localStorage.getItem("accessToken");
-    if (!token || !row.name.trim()) {
-      toast.error("Variant name required", "Enter a name for this variant.");
-      return;
-    }
-
-    const priceRaw = row.priceAmount.trim() ? Number(row.priceAmount) : null;
-    if (priceRaw !== null && (!Number.isFinite(priceRaw) || priceRaw <= 0)) {
-      toast.error("Invalid price", "Price must be a positive number, or leave blank to use the product's base price.");
-      return;
-    }
-    const stockQty = Number(row.stockQty);
-    if (!Number.isInteger(stockQty) || stockQty < 0) {
-      toast.error("Invalid stock", "Stock must be 0 or more.");
-      return;
-    }
-
-    const payload = {
-      name: row.name.trim(),
-      priceAmount: priceRaw != null ? Math.round(priceRaw * 100) : null,
-      stockQty,
-      sku: row.sku.trim() || null,
-      isActive: row.isActive,
-    };
-
-    updateRow(row.localId, { saving: true });
-    try {
-      if (row.id) {
-        const res = await fetch(
-          `/api/vendor/products/${editingProductId}/variants/${row.id}`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify(payload),
-          }
-        );
-        const saved = await parseApiResponse<ProductVariant>(res);
-        setVariantRows((rows) =>
-          rows.map((r) => (r.localId === row.localId ? variantToRow(saved) : r))
-        );
-      } else {
-        const res = await fetch(`/api/vendor/products/${editingProductId}/variants`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify(payload),
-        });
-        const saved = await parseApiResponse<ProductVariant>(res);
-        setVariantRows((rows) =>
-          rows.map((r) => (r.localId === row.localId ? variantToRow(saved) : r))
-        );
-      }
-      toast.success("Saved", "Variant saved.");
-    } catch (err) {
-      toast.error("Could not save variant", err instanceof Error ? err.message : "Unknown error");
-      updateRow(row.localId, { saving: false });
-    }
-  };
-
-  const deleteVariantRow = async (row: VariantFormRow) => {
-    if (!editingProductId) return;
-    if (!window.confirm(`Delete variant "${row.name}"?`)) return;
-
-    if (!row.id) {
-      setVariantRows((rows) => rows.filter((r) => r.localId !== row.localId));
-      return;
-    }
-
-    const token = localStorage.getItem("accessToken");
-    if (!token) return;
-    updateRow(row.localId, { deleting: true });
-    try {
-      const res = await fetch(
-        `/api/vendor/products/${editingProductId}/variants/${row.id}`,
-        { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
-      );
-      await parseApiResponse<null>(res);
-      setVariantRows((rows) => rows.filter((r) => r.localId !== row.localId));
-    } catch (err) {
-      toast.error("Could not delete variant", err instanceof Error ? err.message : "Unknown error");
-      updateRow(row.localId, { deleting: false });
-    }
+  const removeVariantRow = (row: VariantFormRow) => {
+    if (row.id) setDeletedVariantIds((ids) => [...ids, row.id!]);
+    setVariantRows((rows) => rows.filter((r) => r.localId !== row.localId));
   };
 
   /* ── Delete ─────────────────────────────────────────────────────── */
@@ -888,6 +842,109 @@ export default function VendorProductsPage() {
                   </div>
                 </div>
 
+                {/* ── Variants ──────────────────────────────────────── */}
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50/50">
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-neutral-800">Variants</span>
+                      <span className="text-xs text-neutral-400">(optional — size, colour, flavour, etc.)</span>
+                      {variantRows.length > 0 && (
+                        <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                          {variantRows.length}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setVariantRows((rows) => [...rows, newVariantRow()])}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Add variant
+                    </button>
+                  </div>
+
+                  {(variantsLoading && isEdit) ? (
+                    <div className="flex items-center gap-2 px-4 pb-4 text-sm text-neutral-500">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+                    </div>
+                  ) : variantRows.length > 0 ? (
+                    <div className="border-t border-neutral-200 px-4 pb-4 pt-3 space-y-2">
+                      <p className="text-xs text-neutral-500 mb-3">
+                        Each variant can override the base price. Leave price blank to use the product price. Variants are saved when you click <strong>Save product</strong>.
+                      </p>
+                      {/* Column headers */}
+                      <div className="grid grid-cols-[1fr_90px_72px_88px_44px_28px] items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+                        <span>Name <span className="text-red-400">*</span></span>
+                        <span>Price</span>
+                        <span>Stock</span>
+                        <span>SKU</span>
+                        <span>Active</span>
+                        <span />
+                      </div>
+                      {variantRows.map((row) => (
+                        <div
+                          key={row.localId}
+                          className="grid grid-cols-[1fr_90px_72px_88px_44px_28px] items-center gap-2"
+                        >
+                          <input
+                            className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                            value={row.name}
+                            onChange={(e) => updateRow(row.localId, { name: e.target.value })}
+                            placeholder="e.g. Large / Red"
+                            maxLength={100}
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            className="rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                            value={row.priceAmount}
+                            onChange={(e) => updateRow(row.localId, { priceAmount: e.target.value })}
+                            placeholder="Base"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            className="rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                            value={row.stockQty}
+                            onChange={(e) => updateRow(row.localId, { stockQty: e.target.value })}
+                          />
+                          <input
+                            className="rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                            value={row.sku}
+                            onChange={(e) => updateRow(row.localId, { sku: e.target.value })}
+                            placeholder="SKU"
+                            maxLength={100}
+                          />
+                          <label className="flex cursor-pointer items-center justify-center">
+                            <input
+                              type="checkbox"
+                              checked={row.isActive}
+                              onChange={(e) => updateRow(row.localId, { isActive: e.target.checked })}
+                              className="h-4 w-4 accent-primary"
+                              title="Active"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => removeVariantRow(row)}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 text-red-400 hover:bg-red-50"
+                            title="Remove"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="px-4 pb-4 text-xs text-neutral-400">
+                      No variants yet. Click &ldquo;Add variant&rdquo; to define sizes, colours, flavours, or any other options.
+                    </p>
+                  )}
+                </div>
+
                 {/* Description */}
                 <div className="flex flex-col gap-1.5">
                   <label className={LABEL}>Description <span className="text-red-500">*</span></label>
@@ -992,144 +1049,6 @@ export default function VendorProductsPage() {
                   </div>
                 </div>
 
-                {/* ── Variants section (edit mode only) ── */}
-                {isEdit && (
-                  <div className="rounded-xl border border-neutral-200">
-                    {/* header — toggle */}
-                    <button
-                      type="button"
-                      onClick={() => setVariantsOpen((v) => !v)}
-                      className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold text-neutral-800 hover:bg-neutral-50"
-                    >
-                      <span className="flex items-center gap-2">
-                        Variants
-                        {variantRows.length > 0 && (
-                          <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                            {variantRows.length}
-                          </span>
-                        )}
-                      </span>
-                      {variantsOpen ? (
-                        <ChevronUp className="h-4 w-4 text-neutral-400" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4 text-neutral-400" />
-                      )}
-                    </button>
-
-                    {variantsOpen && (
-                      <div className="border-t border-neutral-100 px-4 pb-4 pt-3 space-y-3">
-                        <p className="text-xs text-neutral-500">
-                          Add variants like size, color, or flavor. Each variant can have its own stock and an optional price override. Leave price blank to inherit the product's base price.
-                        </p>
-
-                        {variantsLoading ? (
-                          <div className="flex items-center gap-2 text-sm text-neutral-500">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Loading variants…
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {/* Column headers */}
-                            {variantRows.length > 0 && (
-                              <div className="grid grid-cols-[1fr_80px_70px_80px_auto_auto] items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
-                                <span>Name *</span>
-                                <span>Price</span>
-                                <span>Stock *</span>
-                                <span>SKU</span>
-                                <span>Active</span>
-                                <span />
-                              </div>
-                            )}
-
-                            {variantRows.map((row) => (
-                              <div
-                                key={row.localId}
-                                className="grid grid-cols-[1fr_80px_70px_80px_auto_auto] items-center gap-2"
-                              >
-                                {/* name */}
-                                <input
-                                  className="rounded-lg border border-neutral-300 px-2.5 py-1.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
-                                  value={row.name}
-                                  onChange={(e) => updateRow(row.localId, { name: e.target.value })}
-                                  placeholder="e.g. Large / Red"
-                                  maxLength={100}
-                                />
-                                {/* price override */}
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  className="rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
-                                  value={row.priceAmount}
-                                  onChange={(e) => updateRow(row.localId, { priceAmount: e.target.value })}
-                                  placeholder="Base"
-                                />
-                                {/* stock */}
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="1"
-                                  className="rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
-                                  value={row.stockQty}
-                                  onChange={(e) => updateRow(row.localId, { stockQty: e.target.value })}
-                                />
-                                {/* sku */}
-                                <input
-                                  className="rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
-                                  value={row.sku}
-                                  onChange={(e) => updateRow(row.localId, { sku: e.target.value })}
-                                  placeholder="SKU"
-                                  maxLength={100}
-                                />
-                                {/* active toggle */}
-                                <input
-                                  type="checkbox"
-                                  checked={row.isActive}
-                                  onChange={(e) => updateRow(row.localId, { isActive: e.target.checked })}
-                                  className="h-4 w-4 cursor-pointer accent-primary"
-                                  title="Active"
-                                />
-                                {/* actions */}
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    type="button"
-                                    disabled={row.saving || !row.dirty}
-                                    onClick={() => void saveVariantRow(row)}
-                                    className="rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-40"
-                                    title="Save"
-                                  >
-                                    {row.saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save"}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={row.deleting}
-                                    onClick={() => void deleteVariantRow(row)}
-                                    className="rounded-md border border-red-200 px-2 py-1.5 text-xs text-red-500 hover:bg-red-50 disabled:opacity-40"
-                                    title="Delete"
-                                  >
-                                    {row.deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setVariantRows((rows) => [...rows, newVariantRow()]);
-                                setVariantsOpen(true);
-                              }}
-                              className="mt-1 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-neutral-300 px-3 py-2 text-sm text-neutral-600 hover:border-primary hover:text-primary"
-                            >
-                              <Plus className="h-4 w-4" />
-                              Add variant
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
               </form>
             </div>
 
