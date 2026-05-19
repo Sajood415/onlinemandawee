@@ -18,6 +18,15 @@ import { toast } from "@/lib/utils/toast";
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 
+type ProductVariant = {
+  id: string;
+  name: string;
+  priceAmount: number | null;
+  stockQty: number;
+  sku: string | null;
+  isActive: boolean;
+};
+
 type AdminProduct = {
   id: string;
   name: string;
@@ -77,6 +86,8 @@ export default function AdminProductsPage() {
 
   /* detail drawer */
   const [detailProduct, setDetailProduct] = useState<AdminProduct | null>(null);
+  const [drawerVariants, setDrawerVariants] = useState<ProductVariant[]>([]);
+  const [drawerVariantsLoading, setDrawerVariantsLoading] = useState(false);
 
   /* ── Fetch ──────────────────────────────────────────────────────── */
 
@@ -107,6 +118,20 @@ export default function AdminProductsPage() {
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [fetchProducts]);
+
+  /* load variants when drawer opens */
+  useEffect(() => {
+    if (!detailProduct) {
+      setDrawerVariants([]);
+      return;
+    }
+    setDrawerVariantsLoading(true);
+    fetchWithAuth(`/api/admin/products/${detailProduct.id}/variants`)
+      .then((r) => parseApiResponse<ProductVariant[]>(r))
+      .then((data) => setDrawerVariants(data))
+      .catch(() => {/* silent */})
+      .finally(() => setDrawerVariantsLoading(false));
+  }, [detailProduct]);
 
   /* ── Approve ────────────────────────────────────────────────────── */
 
@@ -445,6 +470,56 @@ export default function AdminProductsPage() {
                   </div>
                 )}
               </dl>
+
+              {/* Variants */}
+              <div>
+                <h5 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                  Variants {drawerVariants.length > 0 && `(${drawerVariants.length})`}
+                </h5>
+                {drawerVariantsLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-neutral-400">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+                  </div>
+                ) : drawerVariants.length === 0 ? (
+                  <p className="text-sm text-neutral-400">No variants defined.</p>
+                ) : (
+                  <div className="overflow-hidden rounded-xl border border-neutral-200">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-neutral-100 bg-neutral-50 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                          <th className="px-3 py-2 text-left">Variant</th>
+                          <th className="px-3 py-2 text-right">Price</th>
+                          <th className="px-3 py-2 text-right">Stock</th>
+                          <th className="px-3 py-2 text-left">SKU</th>
+                          <th className="px-3 py-2 text-left">Active</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {drawerVariants.map((v) => (
+                          <tr key={v.id} className="border-b border-neutral-100 last:border-0">
+                            <td className="px-3 py-2 font-medium text-neutral-800">{v.name}</td>
+                            <td className="px-3 py-2 text-right tabular-nums text-neutral-600">
+                              {v.priceAmount != null
+                                ? (v.priceAmount / 100).toLocaleString(undefined, {
+                                    style: "currency",
+                                    currency: detailProduct.currency || "USD",
+                                  })
+                                : <span className="text-neutral-400">Base</span>}
+                            </td>
+                            <td className="px-3 py-2 text-right tabular-nums">{v.stockQty}</td>
+                            <td className="px-3 py-2 text-neutral-500">{v.sku ?? "—"}</td>
+                            <td className="px-3 py-2">
+                              <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${v.isActive ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-500"}`}>
+                                {v.isActive ? "Yes" : "No"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* drawer footer — only show actions for pending */}

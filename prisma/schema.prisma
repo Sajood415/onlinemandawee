@@ -420,10 +420,26 @@ model Product {
   category           Category              @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   cartItems          CartItem[]
   orderItems         OrderItem[]
+  variants           ProductVariant[]
 
   @@unique([vendorProfileId, slug])
   @@index([vendorProfileId, approvalStatus])
   @@index([categoryId, approvalStatus, isActive])
+}
+
+model ProductVariant {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId   String   @db.ObjectId
+  name        String
+  priceAmount Int?
+  stockQty    Int      @default(0)
+  sku         String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
 }
 
 model CustomerAddress {
