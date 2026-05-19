@@ -269,7 +269,8 @@ export default function AdminProductsPage() {
                   {filtered.map((product) => (
                     <tr
                       key={product.id}
-                      className="border-b border-neutral-100 transition-colors hover:bg-neutral-50"
+                      onClick={() => setDetailProduct(product)}
+                      className="cursor-pointer border-b border-neutral-100 transition-colors hover:bg-primary/5"
                     >
                       {/* Product */}
                       <td className="px-3 py-3">
@@ -287,13 +288,9 @@ export default function AdminProductsPage() {
                             </div>
                           )}
                           <div>
-                            <button
-                              type="button"
-                              onClick={() => setDetailProduct(product)}
-                              className="max-w-[160px] truncate text-left font-medium text-primary hover:underline"
-                            >
+                            <p className="max-w-[160px] truncate font-medium text-neutral-900">
                               {product.name}
-                            </button>
+                            </p>
                             <p className="max-w-[160px] truncate text-xs text-neutral-400">
                               {product.description}
                             </p>
@@ -335,8 +332,8 @@ export default function AdminProductsPage() {
                         )}
                       </td>
 
-                      {/* Actions */}
-                      <td className="px-3 py-3">
+                      {/* Actions — stop propagation so row click doesn't fire */}
+                      <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
                         {product.approvalStatus === "PENDING_APPROVAL" ? (
                           <div className="flex items-center gap-2">
                             <button
