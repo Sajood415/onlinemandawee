@@ -5,6 +5,7 @@ import { ImageIcon, Loader2, Pencil, Plus, Search, SendHorizonal, Trash2, X } fr
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-status";
+import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
 
@@ -164,6 +165,7 @@ export default function VendorProductsPage() {
   const [variantRows, setVariantRows]             = useState<VariantFormRow[]>([]);
   const [deletedVariantIds, setDeletedVariantIds] = useState<string[]>([]);
   const [variantsLoading, setVariantsLoading]     = useState(false);
+  const [variantsError, setVariantsError]         = useState<string | null>(null);
 
   /* filters */
   const [searchText, setSearchText]       = useState("");
@@ -217,6 +219,7 @@ export default function VendorProductsPage() {
     setForm(emptyForm(categories[0]?.id ?? ""));
     setVariantRows([]);
     setDeletedVariantIds([]);
+    setVariantsError(null);
     setModalOpen(true);
   };
 
@@ -225,6 +228,7 @@ export default function VendorProductsPage() {
     setForm(toFormState(product));
     setVariantRows([]);
     setDeletedVariantIds([]);
+    setVariantsError(null);
     setModalOpen(true);
   };
 
@@ -233,6 +237,7 @@ export default function VendorProductsPage() {
     setEditingProductId(null);
     setVariantRows([]);
     setDeletedVariantIds([]);
+    setVariantsError(null);
   };
 
   /* ── Form helpers ───────────────────────────────────────────────── */
@@ -350,16 +355,16 @@ export default function VendorProductsPage() {
       const productId = savedProduct.id;
 
       /* ── Save variants ── */
-      // In edit mode: delete removed variants first
+      // Delete removed variants (edit mode)
       for (const variantId of deletedVariantIds) {
         try {
-          await fetch(`/api/vendor/products/${productId}/variants/${variantId}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-          });
-        } catch { /* ignore */ }
+          await fetchWithAuth(
+            `/api/vendor/products/${productId}/variants/${variantId}`,
+            { method: "DELETE" }
+          );
+        } catch { /* best-effort */ }
       }
-      // Create new variants / update existing
+      // Create new variants / update existing ones
       for (const row of variantRows) {
         if (!row.name.trim()) continue;
         const priceRaw = row.priceAmount.trim() ? Number(row.priceAmount) : null;
@@ -370,21 +375,20 @@ export default function VendorProductsPage() {
           sku: row.sku.trim() || null,
           isActive: row.isActive,
         };
+        const jsonHeaders = { "Content-Type": "application/json" };
         try {
           if (row.id) {
-            await fetch(`/api/vendor/products/${productId}/variants/${row.id}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-              body: JSON.stringify(variantPayload),
-            });
+            await fetchWithAuth(
+              `/api/vendor/products/${productId}/variants/${row.id}`,
+              { method: "PATCH", headers: jsonHeaders, body: JSON.stringify(variantPayload) }
+            );
           } else {
-            await fetch(`/api/vendor/products/${productId}/variants`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-              body: JSON.stringify(variantPayload),
-            });
+            await fetchWithAuth(
+              `/api/vendor/products/${productId}/variants`,
+              { method: "POST", headers: jsonHeaders, body: JSON.stringify(variantPayload) }
+            );
           }
-        } catch { /* ignore individual variant errors */ }
+        } catch { /* best-effort per variant */ }
       }
 
       toast.success(
@@ -455,17 +459,14 @@ export default function VendorProductsPage() {
   /* ── Variants ───────────────────────────────────────────────────── */
 
   const loadVariants = useCallback(async (productId: string) => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) return;
     setVariantsLoading(true);
+    setVariantsError(null);
     try {
-      const res = await fetch(`/api/vendor/products/${productId}/variants`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetchWithAuth(`/api/vendor/products/${productId}/variants`);
       const data = await parseApiResponse<ProductVariant[]>(res);
       setVariantRows(data.map(variantToRow));
-    } catch {
-      // silent
+    } catch (e) {
+      setVariantsError(e instanceof Error ? e.message : "Failed to load variants.");
     } finally {
       setVariantsLoading(false);
     }
@@ -864,9 +865,20 @@ export default function VendorProductsPage() {
                     </button>
                   </div>
 
-                  {(variantsLoading && isEdit) ? (
+                  {variantsLoading ? (
                     <div className="flex items-center gap-2 px-4 pb-4 text-sm text-neutral-500">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+                      <Loader2 className="h-4 w-4 animate-spin" /> Loading variants…
+                    </div>
+                  ) : variantsError ? (
+                    <div className="px-4 pb-4">
+                      <p className="mb-2 text-sm text-red-600">{variantsError}</p>
+                      <button
+                        type="button"
+                        onClick={() => editingProductId && void loadVariants(editingProductId)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                      >
+                        Retry
+                      </button>
                     </div>
                   ) : variantRows.length > 0 ? (
                     <div className="border-t border-neutral-200 px-4 pb-4 pt-3 space-y-2">
