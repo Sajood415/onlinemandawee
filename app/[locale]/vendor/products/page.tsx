@@ -47,7 +47,7 @@ type ProductFormState = {
 
 /* ─── Helpers ─────────────────────────────────────────────────────────── */
 
-const CURRENCIES = ["USD", "AED", "SAR", "PKR", "GBP", "EUR"] as const;
+const CURRENCIES = ["AFN", "USD", "AED", "SAR", "PKR", "GBP", "EUR"] as const;
 
 function emptyForm(defaultCategoryId = ""): ProductFormState {
   return {
