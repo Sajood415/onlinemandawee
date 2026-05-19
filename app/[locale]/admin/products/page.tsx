@@ -129,7 +129,7 @@ export default function AdminProductsPage() {
     fetchWithAuth(`/api/admin/products/${detailProduct.id}/variants`)
       .then((r) => parseApiResponse<ProductVariant[]>(r))
       .then((data) => setDrawerVariants(data))
-      .catch(() => {/* silent */})
+      .catch(() => setDrawerVariants([]))
       .finally(() => setDrawerVariantsLoading(false));
   }, [detailProduct]);
 

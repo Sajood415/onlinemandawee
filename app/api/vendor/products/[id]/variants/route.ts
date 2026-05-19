@@ -11,9 +11,11 @@ const variantService = new VendorProductVariantService();
 
 const createVariantSchema = z.object({
   name: z.string().trim().min(1).max(100),
-  priceAmount: z.number().int().positive().max(100_000_000).nullable().optional(),
+  priceAmount: z
+    .union([z.number().int().positive().max(100_000_000), z.null()])
+    .optional(),
   stockQty: z.number().int().min(0).max(1_000_000),
-  sku: z.string().trim().max(100).nullable().optional(),
+  sku: z.union([z.string().trim().max(100), z.null()]).optional(),
 });
 
 export const GET = withErrorHandling(

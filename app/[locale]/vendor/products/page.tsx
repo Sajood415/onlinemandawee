@@ -355,16 +355,21 @@ export default function VendorProductsPage() {
       const productId = savedProduct.id;
 
       /* ── Save variants ── */
-      // Delete removed variants (edit mode)
+      const jsonHeaders = { "Content-Type": "application/json" };
+      let variantSaveErrors = 0;
+
       for (const variantId of deletedVariantIds) {
         try {
-          await fetchWithAuth(
+          const delRes = await fetchWithAuth(
             `/api/vendor/products/${productId}/variants/${variantId}`,
             { method: "DELETE" }
           );
-        } catch { /* best-effort */ }
+          await parseApiResponse<null>(delRes);
+        } catch {
+          variantSaveErrors++;
+        }
       }
-      // Create new variants / update existing ones
+
       for (const row of variantRows) {
         if (!row.name.trim()) continue;
         const priceRaw = row.priceAmount.trim() ? Number(row.priceAmount) : null;
@@ -375,20 +380,27 @@ export default function VendorProductsPage() {
           sku: row.sku.trim() || null,
           isActive: row.isActive,
         };
-        const jsonHeaders = { "Content-Type": "application/json" };
         try {
-          if (row.id) {
-            await fetchWithAuth(
-              `/api/vendor/products/${productId}/variants/${row.id}`,
-              { method: "PATCH", headers: jsonHeaders, body: JSON.stringify(variantPayload) }
-            );
-          } else {
-            await fetchWithAuth(
-              `/api/vendor/products/${productId}/variants`,
-              { method: "POST", headers: jsonHeaders, body: JSON.stringify(variantPayload) }
-            );
-          }
-        } catch { /* best-effort per variant */ }
+          const variantRes = row.id
+            ? await fetchWithAuth(
+                `/api/vendor/products/${productId}/variants/${row.id}`,
+                { method: "PATCH", headers: jsonHeaders, body: JSON.stringify(variantPayload) }
+              )
+            : await fetchWithAuth(
+                `/api/vendor/products/${productId}/variants`,
+                { method: "POST", headers: jsonHeaders, body: JSON.stringify(variantPayload) }
+              );
+          await parseApiResponse<ProductVariant>(variantRes);
+        } catch {
+          variantSaveErrors++;
+        }
+      }
+
+      if (variantSaveErrors > 0) {
+        toast.error(
+          "Variants partially saved",
+          `${variantSaveErrors} variant change(s) failed. Re-open the product and try again.`
+        );
       }
 
       toast.success(
