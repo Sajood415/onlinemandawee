@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ImageIcon, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ImageIcon, Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-status";
@@ -29,7 +29,6 @@ type VendorProduct = {
   createdAt: string;
 };
 
-/** An image slot: either already uploaded (url) or pending local file */
 type ImageSlot =
   | { kind: "url"; url: string }
   | { kind: "file"; file: File; preview: string; uploading: boolean };
@@ -45,9 +44,13 @@ type ProductFormState = {
   stockQty: string;
 };
 
-/* ─── Helpers ─────────────────────────────────────────────────────────── */
+/* ─── Constants / helpers ─────────────────────────────────────────────── */
 
 const CURRENCIES = ["AFN", "USD", "AED", "SAR", "PKR", "GBP", "EUR"] as const;
+
+const ALL_STATUSES: ProductApprovalStatus[] = [
+  "DRAFT", "PENDING_APPROVAL", "APPROVED", "REJECTED", "ARCHIVED",
+];
 
 function emptyForm(defaultCategoryId = ""): ProductFormState {
   return {
@@ -62,28 +65,26 @@ function emptyForm(defaultCategoryId = ""): ProductFormState {
   };
 }
 
-function toFormState(product: VendorProduct): ProductFormState {
+function toFormState(p: VendorProduct): ProductFormState {
   return {
-    categoryId: product.categoryId,
-    name: product.name,
-    description: product.description,
-    images: product.images.map((url) => ({ kind: "url", url })),
-    sku: product.sku ?? "",
-    currency: product.currency,
-    priceAmount: String(product.priceAmount / 100),
-    stockQty: String(product.stockQty),
+    categoryId: p.categoryId,
+    name: p.name,
+    description: p.description,
+    images: p.images.map((url) => ({ kind: "url", url })),
+    sku: p.sku ?? "",
+    currency: p.currency,
+    priceAmount: String(p.priceAmount / 100),
+    stockQty: String(p.stockQty),
   };
 }
 
-function approvalBadgeClass(status: ProductApprovalStatus) {
-  if (status === "APPROVED") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  if (status === "PENDING_APPROVAL") return "bg-amber-50 text-amber-700 ring-amber-200";
-  if (status === "REJECTED") return "bg-red-50 text-red-700 ring-red-200";
-  if (status === "ARCHIVED") return "bg-neutral-100 text-neutral-600 ring-neutral-200";
+function approvalBadgeClass(s: ProductApprovalStatus) {
+  if (s === "APPROVED")        return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  if (s === "PENDING_APPROVAL") return "bg-amber-50 text-amber-700 ring-amber-200";
+  if (s === "REJECTED")        return "bg-red-50 text-red-700 ring-red-200";
+  if (s === "ARCHIVED")        return "bg-neutral-100 text-neutral-600 ring-neutral-200";
   return "bg-blue-50 text-blue-700 ring-blue-200";
 }
-
-/* ─── Style constants ─────────────────────────────────────────────────── */
 
 const INPUT =
   "w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-60";
@@ -93,20 +94,31 @@ const LABEL = "block text-sm font-medium text-neutral-700";
 
 export default function VendorProductsPage() {
   const { isLoading: authLoading, user } = useDashboardGuard("VENDOR");
-  const [products, setProducts] = useState<VendorProduct[]>([]);
+
+  /* data */
+  const [products, setProducts]   = useState<VendorProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState<string | null>(null);
+
+  /* modal */
+  const [modalOpen, setModalOpen]           = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const [form, setForm] = useState<ProductFormState>(emptyForm());
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const formRef = useRef<HTMLDivElement>(null);
+  const [form, setForm]                     = useState<ProductFormState>(emptyForm());
+  const [saving, setSaving]                 = useState(false);
+  const fileInputRef                        = useRef<HTMLInputElement>(null);
+
+  /* delete */
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  /* filters */
+  const [searchText, setSearchText]       = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterStatus, setFilterStatus]   = useState<ProductApprovalStatus | "">("");
 
   const isEdit = Boolean(editingProductId);
 
-  /* ── Data fetching ────────────────────────────────────────────────── */
+  /* ── Fetch ──────────────────────────────────────────────────────── */
 
   const fetchData = useCallback(async (silent = false) => {
     const token = localStorage.getItem("accessToken");
@@ -114,20 +126,16 @@ export default function VendorProductsPage() {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const [productsRes, categoriesRes] = await Promise.all([
+      const [pr, cr] = await Promise.all([
         fetch("/api/vendor/products", { headers: { Authorization: `Bearer ${token}` } }),
         fetch("/api/catalog/categories"),
       ]);
-      const [productsData, categoriesData] = await Promise.all([
-        parseApiResponse<VendorProduct[]>(productsRes),
-        parseApiResponse<Category[]>(categoriesRes),
+      const [pd, cd] = await Promise.all([
+        parseApiResponse<VendorProduct[]>(pr),
+        parseApiResponse<Category[]>(cr),
       ]);
-      setProducts(productsData);
-      const active = categoriesData.filter((c) => c.isActive);
-      setCategories(active);
-      setForm((prev) =>
-        prev.categoryId ? prev : { ...prev, categoryId: active[0]?.id ?? "" }
-      );
+      setProducts(pd);
+      setCategories(cd.filter((c) => c.isActive));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load products.");
     } finally {
@@ -139,146 +147,116 @@ export default function VendorProductsPage() {
     if (!authLoading && user) void fetchData();
   }, [authLoading, user, fetchData]);
 
-  /* ── Form helpers ─────────────────────────────────────────────────── */
+  /* ── Modal open/close ───────────────────────────────────────────── */
 
-  const updateField = <K extends keyof ProductFormState>(
-    key: K,
-    value: ProductFormState[K]
-  ) => setForm((prev) => ({ ...prev, [key]: value }));
-
-  const resetForm = useCallback(() => {
+  const openCreate = () => {
     setEditingProductId(null);
-    setForm((prev) => emptyForm(prev.categoryId));
-  }, []);
+    setForm(emptyForm(categories[0]?.id ?? ""));
+    setModalOpen(true);
+  };
 
-  const startEdit = (product: VendorProduct) => {
+  const openEdit = (product: VendorProduct) => {
     setEditingProductId(product.id);
     setForm(toFormState(product));
-    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setModalOpen(true);
   };
 
-  /* ── Image slot helpers ───────────────────────────────────────────── */
+  const closeModal = () => {
+    setModalOpen(false);
+    setEditingProductId(null);
+  };
 
-  const addImageSlot = () => {
+  /* ── Form helpers ───────────────────────────────────────────────── */
+
+  const updateField = <K extends keyof ProductFormState>(k: K, v: ProductFormState[K]) =>
+    setForm((prev) => ({ ...prev, [k]: v }));
+
+  const addImageSlot = () =>
     updateField("images", [...form.images, { kind: "url", url: "" }]);
-  };
 
-  const removeImageSlot = (index: number) => {
-    const next = form.images.filter((_, i) => i !== index);
-    // revoke object URL to free memory
-    const removed = form.images[index];
+  const removeImageSlot = (i: number) => {
+    const removed = form.images[i];
     if (removed.kind === "file") URL.revokeObjectURL(removed.preview);
-    updateField("images", next);
+    updateField("images", form.images.filter((_, idx) => idx !== i));
   };
 
-  const updateUrlSlot = (index: number, url: string) => {
+  const updateUrlSlot = (i: number, url: string) =>
     setForm((prev) => {
       const next = [...prev.images];
-      next[index] = { kind: "url", url };
+      next[i] = { kind: "url", url };
       return { ...prev, images: next };
     });
-  };
-
-  /* ── File pick → local preview ────────────────────────────────────── */
 
   const handleFilePick = (files: FileList | null) => {
     if (!files) return;
-    const newSlots: ImageSlot[] = Array.from(files).map((file) => ({
+    const slots: ImageSlot[] = Array.from(files).map((file) => ({
       kind: "file",
       file,
       preview: URL.createObjectURL(file),
       uploading: false,
     }));
-    updateField("images", [...form.images, ...newSlots]);
+    updateField("images", [...form.images, ...slots]);
   };
 
-  /* ── Upload a single file slot → return Cloudinary URL ───────────── */
+  /* ── Upload single file slot ────────────────────────────────────── */
 
   const uploadFileSlot = async (
     slot: Extract<ImageSlot, { kind: "file" }>,
     index: number,
     token: string
   ): Promise<string> => {
-    // mark as uploading
     setForm((prev) => {
       const next = [...prev.images];
       next[index] = { ...slot, uploading: true };
       return { ...prev, images: next };
     });
-
     const fd = new FormData();
     fd.set("file", slot.file);
-    const res = await fetch("/api/vendor/products/upload", {
+    const res  = await fetch("/api/vendor/products/upload", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: fd,
     });
     const data = await parseApiResponse<{ url: string }>(res);
-
-    // replace file slot with resolved URL slot
     setForm((prev) => {
       const next = [...prev.images];
       URL.revokeObjectURL(slot.preview);
       next[index] = { kind: "url", url: data.url };
       return { ...prev, images: next };
     });
-
     return data.url;
   };
 
-  /* ── Submit ───────────────────────────────────────────────────────── */
+  /* ── Submit ─────────────────────────────────────────────────────── */
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem("accessToken");
     if (!token) return;
 
-    // Basic validation
-    if (!form.categoryId) {
-      toast.error("Category required", "Select a category before saving.");
-      return;
-    }
-    if (form.name.trim().length < 2) {
-      toast.error("Name too short", "Product name must be at least 2 characters.");
-      return;
-    }
-    if (form.description.trim().length < 10) {
-      toast.error("Description too short", "Description must be at least 10 characters.");
-      return;
-    }
+    if (!form.categoryId) { toast.error("Category required", "Select a category."); return; }
+    if (form.name.trim().length < 2) { toast.error("Name too short", "At least 2 characters."); return; }
+    if (form.description.trim().length < 10) { toast.error("Description too short", "At least 10 characters."); return; }
 
     const priceRaw = Number(form.priceAmount);
-    if (!Number.isFinite(priceRaw) || priceRaw <= 0) {
-      toast.error("Invalid price", "Enter a price greater than 0.");
-      return;
-    }
+    if (!Number.isFinite(priceRaw) || priceRaw <= 0) { toast.error("Invalid price", "Enter a price > 0."); return; }
     const priceAmount = Math.round(priceRaw * 100);
 
     const stockQty = Number(form.stockQty);
-    if (!Number.isInteger(stockQty) || stockQty < 0) {
-      toast.error("Invalid stock", "Stock quantity must be 0 or more.");
-      return;
-    }
+    if (!Number.isInteger(stockQty) || stockQty < 0) { toast.error("Invalid stock", "Must be 0 or more."); return; }
 
     setSaving(true);
     try {
-      // Upload any pending file slots sequentially
       const resolvedUrls: string[] = [];
       for (let i = 0; i < form.images.length; i++) {
         const slot = form.images[i];
         if (slot.kind === "file") {
-          const url = await uploadFileSlot(slot, i, token);
-          resolvedUrls.push(url);
+          resolvedUrls.push(await uploadFileSlot(slot, i, token));
         } else if (slot.url.trim()) {
           resolvedUrls.push(slot.url.trim());
         }
       }
-
-      if (resolvedUrls.length === 0) {
-        toast.error("Images required", "Add at least one product image.");
-        setSaving(false);
-        return;
-      }
+      if (!resolvedUrls.length) { toast.error("Images required", "Add at least one image."); setSaving(false); return; }
 
       const payload: Record<string, unknown> = {
         categoryId: form.categoryId,
@@ -291,20 +269,20 @@ export default function VendorProductsPage() {
       };
       if (form.sku.trim()) payload.sku = form.sku.trim();
 
-      const endpoint = isEdit
-        ? `/api/vendor/products/${editingProductId}`
-        : "/api/vendor/products";
-      const res = await fetch(endpoint, {
-        method: isEdit ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        isEdit ? `/api/vendor/products/${editingProductId}` : "/api/vendor/products",
+        {
+          method: isEdit ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(payload),
+        }
+      );
       await parseApiResponse<VendorProduct>(res);
       toast.success(
         isEdit ? "Product updated" : "Product created",
-        isEdit ? "Changes saved successfully." : "Your listing is now in draft."
+        isEdit ? "Changes saved." : "Your listing is now in draft."
       );
-      resetForm();
+      closeModal();
       await fetchData(true);
     } catch (err) {
       toast.error("Could not save", err instanceof Error ? err.message : "Unknown error");
@@ -313,13 +291,12 @@ export default function VendorProductsPage() {
     }
   };
 
-  /* ── Delete ───────────────────────────────────────────────────────── */
+  /* ── Delete ─────────────────────────────────────────────────────── */
 
   const onDelete = async (productId: string) => {
     const token = localStorage.getItem("accessToken");
     if (!token) return;
     if (!window.confirm("Delete this product listing? This cannot be undone.")) return;
-
     setDeletingId(productId);
     try {
       const res = await fetch(`/api/vendor/products/${productId}`, {
@@ -327,8 +304,7 @@ export default function VendorProductsPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       await parseApiResponse<VendorProduct>(res);
-      toast.success("Product deleted", "The listing has been removed.");
-      if (editingProductId === productId) resetForm();
+      toast.success("Deleted", "Listing removed.");
       await fetchData(true);
     } catch (err) {
       toast.error("Could not delete", err instanceof Error ? err.message : "Unknown error");
@@ -337,7 +313,7 @@ export default function VendorProductsPage() {
     }
   };
 
-  /* ── Guard ────────────────────────────────────────────────────────── */
+  /* ── Auth guard ─────────────────────────────────────────────────── */
 
   if (authLoading || !user) {
     return (
@@ -347,11 +323,24 @@ export default function VendorProductsPage() {
     );
   }
 
-  /* ─── Render ──────────────────────────────────────────────────────── */
+  /* ── Filtered products ──────────────────────────────────────────── */
+
+  const filtered = products.filter((p) => {
+    const matchText =
+      !searchText ||
+      p.name.toLowerCase().includes(searchText.toLowerCase()) ||
+      (p.sku ?? "").toLowerCase().includes(searchText.toLowerCase());
+    const matchCat = !filterCategory || p.categoryId === filterCategory;
+    const matchStatus = !filterStatus || p.approvalStatus === filterStatus;
+    return matchText && matchCat && matchStatus;
+  });
+
+  /* ─── Render ────────────────────────────────────────────────────── */
 
   return (
-    <div className="space-y-6 pb-16">
-      {/* Page header */}
+    <div className="space-y-5 pb-16">
+
+      {/* ── Page header ─────────────────────────────────────────── */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-[#0f3460]">
           Product Management
@@ -362,385 +351,386 @@ export default function VendorProductsPage() {
         </p>
       </div>
 
-      {/* ── Create / Edit form ──────────────────────────────────────── */}
-      <div
-        ref={formRef}
-        className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6"
-      >
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-neutral-900">
-            {isEdit ? "Edit product" : "New product listing"}
-          </h2>
-          {isEdit && (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-            >
-              Cancel
-            </button>
-          )}
+      {/* ── Listings card ───────────────────────────────────────── */}
+      <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+
+        {/* toolbar */}
+        <div className="flex flex-wrap items-center gap-3 border-b border-neutral-100 px-5 py-4 sm:px-6">
+
+          {/* search */}
+          <div className="relative min-w-0 flex-1 sm:max-w-xs">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+            <input
+              className="w-full rounded-lg border border-neutral-300 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              placeholder="Search by name or SKU…"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+          </div>
+
+          {/* category filter */}
+          <select
+            className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+          >
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+
+          {/* status filter */}
+          <select
+            className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as ProductApprovalStatus | "")}
+          >
+            <option value="">All statuses</option>
+            {ALL_STATUSES.map((s) => (
+              <option key={s} value={s}>{s.replaceAll("_", " ")}</option>
+            ))}
+          </select>
+
+          {/* spacer */}
+          <div className="flex-1" />
+
+          {/* Add product button */}
+          <button
+            type="button"
+            onClick={openCreate}
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-95"
+          >
+            <Plus className="h-4 w-4" />
+            Add product
+          </button>
         </div>
 
-        <form onSubmit={(e) => void onSubmit(e)} className="space-y-5">
-          {/* Name + Category */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <label className={LABEL}>
-                Product name <span className="text-red-500">*</span>
-              </label>
-              <input
-                className={INPUT}
-                value={form.name}
-                onChange={(e) => updateField("name", e.target.value)}
-                maxLength={160}
-                placeholder="e.g. Premium Saffron Honey"
-              />
+        {/* table body */}
+        <div className="p-5 sm:p-6">
+          {loading ? (
+            <div className="flex items-center gap-2 text-sm text-neutral-500">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading…
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className={LABEL}>
-                Category <span className="text-red-500">*</span>
-              </label>
-              <select
-                className={INPUT}
-                value={form.categoryId}
-                onChange={(e) => updateField("categoryId", e.target.value)}
-              >
-                <option value="">Select category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Price row */}
-          <div className="grid gap-4 sm:grid-cols-4">
-            <div className="flex flex-col gap-1.5">
-              <label className={LABEL}>
-                Currency <span className="text-red-500">*</span>
-              </label>
-              <select
-                className={INPUT}
-                value={form.currency}
-                onChange={(e) => updateField("currency", e.target.value)}
-              >
-                {CURRENCIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className={LABEL}>
-                Price <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                className={INPUT}
-                value={form.priceAmount}
-                onChange={(e) => updateField("priceAmount", e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className={LABEL}>
-                Stock qty <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                className={INPUT}
-                value={form.stockQty}
-                onChange={(e) => updateField("stockQty", e.target.value)}
-                placeholder="0"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className={LABEL}>SKU (optional)</label>
-              <input
-                className={INPUT}
-                value={form.sku}
-                onChange={(e) => updateField("sku", e.target.value)}
-                maxLength={100}
-                placeholder="SKU-001"
-              />
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="flex flex-col gap-1.5">
-            <label className={LABEL}>
-              Description <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              rows={4}
-              className={`${INPUT} resize-y`}
-              value={form.description}
-              onChange={(e) => updateField("description", e.target.value)}
-              maxLength={5000}
-              placeholder="Describe your product — materials, features, dimensions, etc."
-            />
-            <p className="text-xs text-neutral-400">Min 10 characters · max 5 000</p>
-          </div>
-
-          {/* Images */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <label className={LABEL}>
-                Product images <span className="text-red-500">*</span>
-                <span className="ml-1.5 font-normal text-neutral-400">(max 10)</span>
-              </label>
-              <div className="flex gap-2">
-                {/* Upload from device */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => handleFilePick(e.target.files)}
-                />
-                <button
-                  type="button"
-                  disabled={form.images.length >= 10}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
-                >
-                  <ImageIcon className="h-3.5 w-3.5" />
-                  Upload from device
-                </button>
-                {/* Paste URL */}
-                <button
-                  type="button"
-                  disabled={form.images.length >= 10}
-                  onClick={addImageSlot}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Add URL
-                </button>
+          ) : error ? (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </p>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100">
+                <ImageIcon className="h-7 w-7 text-neutral-300" />
               </div>
+              <p className="text-sm font-medium text-neutral-700">
+                {products.length === 0 ? "No products yet" : "No products match your filters"}
+              </p>
+              {products.length === 0 && (
+                <button
+                  type="button"
+                  onClick={openCreate}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add your first product
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-100 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                    <th className="px-3 py-2">Product</th>
+                    <th className="px-3 py-2">Category</th>
+                    <th className="px-3 py-2">Price</th>
+                    <th className="px-3 py-2">Stock</th>
+                    <th className="px-3 py-2">Images</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((product) => (
+                    <tr
+                      key={product.id}
+                      className="border-b border-neutral-100 transition-colors hover:bg-neutral-50"
+                    >
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-3">
+                          {product.images[0] ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={product.images[0]}
+                              alt={product.name}
+                              className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-100">
+                              <ImageIcon className="h-5 w-5 text-neutral-300" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="max-w-[180px] truncate font-medium text-neutral-900">
+                              {product.name}
+                            </p>
+                            <p className="max-w-[180px] truncate text-xs text-neutral-400">
+                              {product.description}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">{product.category?.name ?? "—"}</td>
+                      <td className="px-3 py-3 tabular-nums">
+                        {(product.priceAmount / 100).toLocaleString(undefined, {
+                          style: "currency",
+                          currency: product.currency || "USD",
+                        })}
+                      </td>
+                      <td className="px-3 py-3 tabular-nums">{product.stockQty}</td>
+                      <td className="px-3 py-3">{product.images.length}</td>
+                      <td className="px-3 py-3">
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${approvalBadgeClass(product.approvalStatus)}`}>
+                          {product.approvalStatus.replaceAll("_", " ")}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEdit(product)}
+                            className="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void onDelete(product.id)}
+                            disabled={deletingId === product.id}
+                            className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                          >
+                            {deletingId === product.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Modal ───────────────────────────────────────────────────── */}
+      {modalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
+        >
+          <div className="relative flex max-h-[92vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl">
+
+            {/* modal header */}
+            <div className="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
+              <h2 className="text-base font-semibold text-neutral-900">
+                {isEdit ? "Edit product" : "Add new product"}
+              </h2>
+              <button
+                type="button"
+                onClick={closeModal}
+                className="rounded-lg p-1.5 text-neutral-500 hover:bg-neutral-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
-            {form.images.length === 0 && (
-              <p className="rounded-lg border border-dashed border-neutral-300 py-6 text-center text-sm text-neutral-400">
-                No images yet — upload files or paste URLs above.
-              </p>
-            )}
+            {/* scrollable form body */}
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              <form id="product-form" onSubmit={(e) => void onSubmit(e)} className="space-y-5">
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {form.images.map((slot, index) => (
-                <div
-                  key={index}
-                  className="group relative flex flex-col gap-1.5"
-                >
-                  {slot.kind === "file" ? (
-                    /* Local file preview */
-                    <div className="relative aspect-square overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={slot.preview}
-                        alt="preview"
-                        className="h-full w-full object-cover"
+                {/* Name + Category */}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
+                    <label className={LABEL}>Product name <span className="text-red-500">*</span></label>
+                    <input
+                      className={INPUT}
+                      value={form.name}
+                      onChange={(e) => updateField("name", e.target.value)}
+                      maxLength={160}
+                      placeholder="e.g. Premium Saffron Honey"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className={LABEL}>Category <span className="text-red-500">*</span></label>
+                    <select
+                      className={INPUT}
+                      value={form.categoryId}
+                      onChange={(e) => updateField("categoryId", e.target.value)}
+                    >
+                      <option value="">Select category</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Price row */}
+                <div className="grid gap-4 sm:grid-cols-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className={LABEL}>Currency <span className="text-red-500">*</span></label>
+                    <select className={INPUT} value={form.currency} onChange={(e) => updateField("currency", e.target.value)}>
+                      {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className={LABEL}>Price <span className="text-red-500">*</span></label>
+                    <input type="number" min="0.01" step="0.01" className={INPUT} value={form.priceAmount} onChange={(e) => updateField("priceAmount", e.target.value)} placeholder="0.00" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className={LABEL}>Stock qty <span className="text-red-500">*</span></label>
+                    <input type="number" min="0" step="1" className={INPUT} value={form.stockQty} onChange={(e) => updateField("stockQty", e.target.value)} placeholder="0" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className={LABEL}>SKU (optional)</label>
+                    <input className={INPUT} value={form.sku} onChange={(e) => updateField("sku", e.target.value)} maxLength={100} placeholder="SKU-001" />
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="flex flex-col gap-1.5">
+                  <label className={LABEL}>Description <span className="text-red-500">*</span></label>
+                  <textarea
+                    rows={4}
+                    className={`${INPUT} resize-y`}
+                    value={form.description}
+                    onChange={(e) => updateField("description", e.target.value)}
+                    maxLength={5000}
+                    placeholder="Describe your product — materials, features, dimensions, etc."
+                  />
+                  <p className="text-xs text-neutral-400">Min 10 characters · max 5 000</p>
+                </div>
+
+                {/* Images */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <label className={LABEL}>
+                      Product images <span className="text-red-500">*</span>
+                      <span className="ml-1.5 font-normal text-neutral-400">(max 10)</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => handleFilePick(e.target.files)}
                       />
-                      {slot.uploading && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-white/70">
-                          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                        </div>
-                      )}
                       <button
                         type="button"
-                        onClick={() => removeImageSlot(index)}
-                        className="absolute right-1 top-1 hidden rounded-full bg-white p-1 shadow group-hover:flex"
+                        disabled={form.images.length >= 10}
+                        onClick={() => fileInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
                       >
-                        <X className="h-3.5 w-3.5 text-neutral-700" />
+                        <ImageIcon className="h-3.5 w-3.5" />
+                        Upload from device
+                      </button>
+                      <button
+                        type="button"
+                        disabled={form.images.length >= 10}
+                        onClick={addImageSlot}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add URL
                       </button>
                     </div>
-                  ) : (
-                    /* URL slot */
-                    <div className="relative flex flex-col gap-1">
-                      {slot.url ? (
-                        <div className="relative aspect-square overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={slot.url}
-                            alt="product"
-                            className="h-full w-full object-cover"
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).style.display = "none";
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImageSlot(index)}
-                            className="absolute right-1 top-1 hidden rounded-full bg-white p-1 shadow group-hover:flex"
-                          >
-                            <X className="h-3.5 w-3.5 text-neutral-700" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="relative flex aspect-square items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50">
-                          <ImageIcon className="h-6 w-6 text-neutral-300" />
-                          <button
-                            type="button"
-                            onClick={() => removeImageSlot(index)}
-                            className="absolute right-1 top-1 hidden rounded-full bg-white p-1 shadow group-hover:flex"
-                          >
-                            <X className="h-3.5 w-3.5 text-neutral-700" />
-                          </button>
-                        </div>
-                      )}
-                      <input
-                        className="w-full rounded border border-neutral-200 px-2 py-1 text-[11px] text-neutral-600 outline-none focus:border-primary"
-                        value={slot.url}
-                        onChange={(e) => updateUrlSlot(index, e.target.value)}
-                        placeholder="https://..."
-                      />
-                    </div>
+                  </div>
+
+                  {form.images.length === 0 && (
+                    <p className="rounded-lg border border-dashed border-neutral-300 py-6 text-center text-sm text-neutral-400">
+                      No images yet — upload files or paste URLs above.
+                    </p>
                   )}
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Submit */}
-          <div className="flex justify-end pt-1">
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-95 disabled:opacity-60"
-            >
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              {saving
-                ? isEdit
-                  ? "Saving…"
-                  : "Creating…"
-                : isEdit
-                  ? "Save changes"
-                  : "Create listing"}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* ── Listings table ──────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
-        <h2 className="mb-4 text-base font-semibold text-neutral-900">Your listings</h2>
-
-        {loading ? (
-          <div className="flex items-center gap-2 text-sm text-neutral-500">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading…
-          </div>
-        ) : error ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </p>
-        ) : products.length === 0 ? (
-          <p className="text-sm text-neutral-500">
-            No listings yet. Create your first product above.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-neutral-100 text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                  <th className="px-3 py-2">Product</th>
-                  <th className="px-3 py-2">Category</th>
-                  <th className="px-3 py-2">Price</th>
-                  <th className="px-3 py-2">Stock</th>
-                  <th className="px-3 py-2">Images</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => (
-                  <tr
-                    key={product.id}
-                    className={`border-b border-neutral-100 text-neutral-700 transition-colors ${
-                      editingProductId === product.id ? "bg-primary/5" : "hover:bg-neutral-50"
-                    }`}
-                  >
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-3">
-                        {product.images[0] ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={product.images[0]}
-                            alt={product.name}
-                            className="h-10 w-10 shrink-0 rounded-lg object-cover"
-                          />
+                  <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                    {form.images.map((slot, index) => (
+                      <div key={index} className="group relative flex flex-col gap-1.5">
+                        {slot.kind === "file" ? (
+                          <div className="relative aspect-square overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={slot.preview} alt="preview" className="h-full w-full object-cover" />
+                            {slot.uploading && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                              </div>
+                            )}
+                            <button type="button" onClick={() => removeImageSlot(index)} className="absolute right-1 top-1 hidden rounded-full bg-white p-1 shadow group-hover:flex">
+                              <X className="h-3.5 w-3.5 text-neutral-700" />
+                            </button>
+                          </div>
                         ) : (
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-100">
-                            <ImageIcon className="h-5 w-5 text-neutral-300" />
+                          <div className="relative flex flex-col gap-1">
+                            {slot.url ? (
+                              <div className="relative aspect-square overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={slot.url} alt="product" className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                                <button type="button" onClick={() => removeImageSlot(index)} className="absolute right-1 top-1 hidden rounded-full bg-white p-1 shadow group-hover:flex">
+                                  <X className="h-3.5 w-3.5 text-neutral-700" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="relative flex aspect-square items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50">
+                                <ImageIcon className="h-6 w-6 text-neutral-300" />
+                                <button type="button" onClick={() => removeImageSlot(index)} className="absolute right-1 top-1 hidden rounded-full bg-white p-1 shadow group-hover:flex">
+                                  <X className="h-3.5 w-3.5 text-neutral-700" />
+                                </button>
+                              </div>
+                            )}
+                            <input
+                              className="w-full rounded border border-neutral-200 px-2 py-1 text-[11px] text-neutral-600 outline-none focus:border-primary"
+                              value={slot.url}
+                              onChange={(e) => updateUrlSlot(index, e.target.value)}
+                              placeholder="https://..."
+                            />
                           </div>
                         )}
-                        <div>
-                          <p className="max-w-[180px] truncate font-medium text-neutral-900">
-                            {product.name}
-                          </p>
-                          <p className="max-w-[180px] truncate text-xs text-neutral-400">
-                            {product.description}
-                          </p>
-                        </div>
                       </div>
-                    </td>
-                    <td className="px-3 py-3">{product.category?.name ?? "—"}</td>
-                    <td className="px-3 py-3 tabular-nums">
-                      {(product.priceAmount / 100).toLocaleString(undefined, {
-                        style: "currency",
-                        currency: product.currency || "USD",
-                      })}
-                    </td>
-                    <td className="px-3 py-3 tabular-nums">{product.stockQty}</td>
-                    <td className="px-3 py-3">{product.images.length}</td>
-                    <td className="px-3 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${approvalBadgeClass(product.approvalStatus)}`}
-                      >
-                        {product.approvalStatus.replaceAll("_", " ")}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => startEdit(product)}
-                          className="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void onDelete(product.id)}
-                          disabled={deletingId === product.id}
-                          className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-                        >
-                          {deletingId === product.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-3.5 w-3.5" />
-                          )}
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    ))}
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            {/* modal footer */}
+            <div className="flex items-center justify-end gap-3 border-t border-neutral-100 px-6 py-4">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="product-form"
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-60"
+              >
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                {saving ? (isEdit ? "Saving…" : "Creating…") : (isEdit ? "Save changes" : "Create listing")}
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
