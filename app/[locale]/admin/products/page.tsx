@@ -12,6 +12,7 @@ import {
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-status";
+import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
 
@@ -80,15 +81,11 @@ export default function AdminProductsPage() {
   /* ── Fetch ──────────────────────────────────────────────────────── */
 
   const fetchProducts = useCallback(async (silent = false) => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) return;
     if (!silent) setLoading(true);
     setError(null);
     try {
       const qs = activeTab !== "ALL" ? `?approvalStatus=${activeTab}` : "";
-      const res = await fetch(`/api/admin/products${qs}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetchWithAuth(`/api/admin/products${qs}`);
       const data = await parseApiResponse<AdminProduct[]>(res);
       setProducts(data);
     } catch (e) {
@@ -105,13 +102,10 @@ export default function AdminProductsPage() {
   /* ── Approve ────────────────────────────────────────────────────── */
 
   const onApprove = async (product: AdminProduct) => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) return;
     setActionId(product.id);
     try {
-      const res = await fetch(`/api/admin/products/${product.id}/approve`, {
+      const res = await fetchWithAuth(`/api/admin/products/${product.id}/approve`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
       });
       await parseApiResponse<AdminProduct>(res);
       toast.success("Approved", `"${product.name}" is now live.`);
@@ -132,13 +126,12 @@ export default function AdminProductsPage() {
   };
 
   const onRejectConfirm = async () => {
-    const token = localStorage.getItem("accessToken");
-    if (!token || !rejectTarget) return;
+    if (!rejectTarget) return;
     setRejecting(true);
     try {
-      const res = await fetch(`/api/admin/products/${rejectTarget.id}/reject`, {
+      const res = await fetchWithAuth(`/api/admin/products/${rejectTarget.id}/reject`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason: rejectReason.trim() || undefined }),
       });
       await parseApiResponse<AdminProduct>(res);

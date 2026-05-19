@@ -44,6 +44,7 @@ export class VendorProductService {
       currency: input.currency,
       priceAmount: input.priceAmount,
       stockQty: input.stockQty,
+      approvalStatus: "PENDING_APPROVAL",
     });
 
     await this.auditLogRepository.create({

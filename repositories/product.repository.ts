@@ -13,6 +13,7 @@ export class ProductRepository {
     currency: string;
     priceAmount: number;
     stockQty: number;
+    approvalStatus?: ProductApprovalStatus;
   }) {
     return prisma.product.create({
       data: {
@@ -26,6 +27,7 @@ export class ProductRepository {
         currency: input.currency,
         priceAmount: input.priceAmount,
         stockQty: input.stockQty,
+        ...(input.approvalStatus ? { approvalStatus: input.approvalStatus } : {}),
       },
       include: {
         category: true,

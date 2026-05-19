@@ -25,6 +25,7 @@ type VendorProduct = {
   priceAmount: number;
   stockQty: number;
   approvalStatus: ProductApprovalStatus;
+  rejectionReason: string | null;
   isActive: boolean;
   createdAt: string;
 };
@@ -514,9 +515,18 @@ export default function VendorProductsPage() {
                       <td className="px-3 py-3 tabular-nums">{product.stockQty}</td>
                       <td className="px-3 py-3">{product.images.length}</td>
                       <td className="px-3 py-3">
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${approvalBadgeClass(product.approvalStatus)}`}>
-                          {product.approvalStatus.replaceAll("_", " ")}
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${approvalBadgeClass(product.approvalStatus)}`}
+                        >
+                          {product.approvalStatus === "PENDING_APPROVAL"
+                            ? "Under review"
+                            : product.approvalStatus.replaceAll("_", " ")}
                         </span>
+                        {product.approvalStatus === "REJECTED" && product.rejectionReason && (
+                          <p className="mt-1 max-w-[160px] truncate text-xs text-red-500" title={product.rejectionReason}>
+                            {product.rejectionReason}
+                          </p>
+                        )}
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex flex-wrap items-center gap-2">
