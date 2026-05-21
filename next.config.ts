@@ -15,6 +15,21 @@ const nextConfig: NextConfig = {
         hostname: "onlinemandawee.com",
         pathname: "/cdn/**",
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "encrypted-tbn0.gstatic.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.googleusercontent.com",
+        pathname: "/**",
+      },
     ],
   },
 };

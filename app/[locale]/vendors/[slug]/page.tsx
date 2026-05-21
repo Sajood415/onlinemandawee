@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { CatalogImage } from "@/components/catalog/CatalogImage";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
@@ -281,7 +282,7 @@ export default function VendorStorePage() {
               >
                 <Link href={`/products/${product.id}`} className="flex flex-1 flex-col">
                   <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-50">
-                    <Image
+                    <CatalogImage
                       src={product.image}
                       alt={product.name[locale]}
                       fill

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { CatalogImage } from "@/components/catalog/CatalogImage";
 import { useLocale } from "next-intl";
 import { toast } from "@/lib/utils/toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -676,7 +676,7 @@ function ProductCard({
         href={`/products/${product.id}`}
         className="relative block aspect-square overflow-hidden bg-gray-50 rounded-lg"
       >
-        <Image
+        <CatalogImage
           src={product.image}
           alt={product.name[locale]}
           fill

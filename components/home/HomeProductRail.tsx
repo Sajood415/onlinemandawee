@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import productCatalog from "@/data/product.json";
+import { CatalogImage } from "@/components/catalog/CatalogImage";
 import { useCart } from "@/store/cart-context";
 import { toast } from "@/lib/utils/toast";
 import { localizeVendor } from "@/lib/localization/product-vendor";
@@ -62,7 +62,7 @@ function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
     <div className="flex h-full min-h-0 flex-col bg-white">
       <Link href={`/products/${p.id}`} className="flex min-h-0 flex-1 flex-col text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">
         <div className="relative aspect-square w-full min-w-0 overflow-hidden rounded-md bg-neutral-50">
-          <Image
+          <CatalogImage
             src={p.image}
             alt={p.name[locale]}
             fill

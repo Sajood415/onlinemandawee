@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { CatalogImage } from "@/components/catalog/CatalogImage";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
 import { toast } from "@/lib/utils/toast";
@@ -362,7 +362,7 @@ export default function ProductDetailPage() {
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
-                      <Image src={img} alt="" fill className="object-cover" />
+                      <CatalogImage src={img} alt="" fill className="object-cover" />
                     </button>
                   ))}
                 </div>
@@ -374,7 +374,7 @@ export default function ProductDetailPage() {
                 animate={{ opacity: 1 }}
                 className="relative flex-1 aspect-square bg-gray-50 rounded-lg overflow-hidden"
               >
-                <Image
+                <CatalogImage
                   src={product.images[selectedImage]}
                   alt={product.name[locale]}
                   fill
@@ -413,7 +413,7 @@ export default function ProductDetailPage() {
                         : "border-gray-200"
                     }`}
                   >
-                    <Image src={img} alt="" fill className="object-cover" />
+                    <CatalogImage src={img} alt="" fill className="object-cover" />
                   </button>
                 ))}
               </div>
@@ -739,7 +739,7 @@ export default function ProductDetailPage() {
                   className="group block"
                 >
                   <div className="relative aspect-square bg-gray-50 rounded-lg overflow-hidden mb-3">
-                    <Image
+                    <CatalogImage
                       src={related.image}
                       alt={related.name[locale]}
                       fill
