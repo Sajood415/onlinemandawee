@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import productData from "@/data/product.json";
+import { fetchPublicCatalogProduct } from "@/lib/products/public-catalog";
 
 type CartItem = {
   id: string;
@@ -32,9 +33,27 @@ const CART_STORAGE_KEY = "onlinemandawee-cart";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Get product details from JSON
-const getProductDetails = (productId: string) => {
-  return productData.featuredProducts.find((p) => p.id === productId);
+const getStaticProductDetails = (productId: string) =>
+  productData.featuredProducts.find((p) => p.id === productId);
+
+const resolveProductDetails = async (productId: string) => {
+  const staticProduct = getStaticProductDetails(productId);
+  if (staticProduct) {
+    return {
+      name: staticProduct.name.en,
+      price: staticProduct.price,
+      image: staticProduct.image,
+      vendor: staticProduct.vendor,
+    };
+  }
+
+  const catalogProduct = await fetchPublicCatalogProduct(productId);
+  return {
+    name: catalogProduct.name.en,
+    price: catalogProduct.price,
+    image: catalogProduct.image,
+    vendor: catalogProduct.vendor,
+  };
 };
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -69,47 +88,43 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = async (productId: string, quantity: number) => {
     setIsLoading(true);
-    
-    const product = getProductDetails(productId);
-    if (!product) {
+
+    try {
+      const product = await resolveProductDetails(productId);
+
+      setCart((prev) => {
+        const existingItem = prev.items.find((item) => item.productId === productId);
+
+        let newCart;
+        if (existingItem) {
+          newCart = {
+            items: prev.items.map((item) =>
+              item.productId === productId
+                ? { ...item, quantity: item.quantity + quantity }
+                : item
+            ),
+          };
+        } else {
+          const newItem: CartItem = {
+            id: `${productId}-${Date.now()}`,
+            productId,
+            quantity,
+            productName: product.name,
+            productPrice: product.price,
+            productImage: product.image,
+            vendor: product.vendor,
+          };
+          newCart = {
+            items: [...prev.items, newItem],
+          };
+        }
+
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newCart));
+        return newCart;
+      });
+    } finally {
       setIsLoading(false);
-      throw new Error("Product not found");
     }
-
-    setCart((prev) => {
-      const existingItem = prev.items.find((item) => item.productId === productId);
-      
-      let newCart;
-      if (existingItem) {
-        // Update quantity if item exists
-        newCart = {
-          items: prev.items.map((item) =>
-            item.productId === productId
-              ? { ...item, quantity: item.quantity + quantity }
-              : item
-          ),
-        };
-      } else {
-        // Add new item
-        const newItem: CartItem = {
-          id: `${productId}-${Date.now()}`,
-          productId,
-          quantity,
-          productName: product.name.en,
-          productPrice: product.price,
-          productImage: product.image,
-          vendor: product.vendor,
-        };
-        newCart = {
-          items: [...prev.items, newItem],
-        };
-      }
-      
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newCart));
-      return newCart;
-    });
-
-    setIsLoading(false);
   };
 
   const removeItem = async (itemId: string) => {

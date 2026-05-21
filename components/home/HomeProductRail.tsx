@@ -3,12 +3,16 @@
 import Image from "next/image";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import productCatalog from "@/data/product.json";
 import { useCart } from "@/store/cart-context";
 import { toast } from "@/lib/utils/toast";
 import { localizeVendor } from "@/lib/localization/product-vendor";
+import {
+  fetchPublicCatalogProducts,
+  type PublicCatalogProduct,
+} from "@/lib/products/public-catalog";
 
 type LocaleKey = "en" | "ps" | "fa-AF";
 
@@ -21,6 +25,18 @@ type Row = {
   vendor: string;
   vendorSlug: string;
 };
+
+function toRow(product: PublicCatalogProduct | (typeof productCatalog.featuredProducts)[number]): Row {
+  return {
+    id: product.id,
+    price: product.price,
+    priceDisplay: product.priceDisplay,
+    image: product.image,
+    name: product.name,
+    vendor: product.vendor,
+    vendorSlug: product.vendorSlug,
+  };
+}
 
 function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
   const router = useRouter();
@@ -92,12 +108,23 @@ type Props = {
 export function HomeProductRail({ productIds, showTitle = true }: Props) {
   const locale = useLocale() as LocaleKey;
   const t = useTranslations("Homepage.store");
-  const all = productCatalog.featuredProducts as Row[];
-  const rows = productIds?.length
+  const staticAll = productCatalog.featuredProducts;
+  const [vendorRows, setVendorRows] = useState<Row[]>([]);
+
+  useEffect(() => {
+    void fetchPublicCatalogProducts()
+      .then((products) => setVendorRows(products.map(toRow)))
+      .catch(() => setVendorRows([]));
+  }, []);
+
+  const staticRows = productIds?.length
     ? (productIds
-        .map((id) => all.find((p) => p.id === id))
-        .filter((p): p is Row => Boolean(p)) as Row[])
-    : all;
+        .map((id) => staticAll.find((p) => p.id === id))
+        .filter((p): p is (typeof staticAll)[number] => Boolean(p))
+        .map(toRow))
+    : staticAll.map(toRow);
+
+  const rows = [...vendorRows, ...staticRows.filter((p) => !vendorRows.some((v) => v.id === p.id))];
 
   const scrollRef = useRef<HTMLDivElement>(null);
 

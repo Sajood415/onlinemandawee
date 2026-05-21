@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useLocale } from "next-intl";
@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Check,
   Filter,
+  Loader2,
 } from "lucide-react";
 import productData from "@/data/product.json";
 import {
@@ -27,12 +28,24 @@ import {
   filterCatalogProducts,
   sortCatalogProducts,
 } from "@/lib/products/catalog-filters";
+import {
+  fetchPublicCatalogProducts,
+  type PublicCatalogProduct,
+} from "@/lib/products/public-catalog";
+import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { useCart } from "@/store/cart-context";
 
-// Import data from JSON file
-const allProducts = productData.featuredProducts;
-const categories = productData.categories;
-const vendors = productData.vendors;
+const staticProducts = productData.featuredProducts;
+const staticCategories = productData.categories;
+const staticVendors = productData.vendors;
+
+type CatalogRow = (typeof staticProducts)[number] | PublicCatalogProduct;
+
+type CategoryOption = {
+  id: string;
+  label: Record<SupportedLocale, string>;
+};
+
 type ProductSortBy = "featured" | "price-low" | "price-high" | "rating";
 
 export default function ProductsPage() {
@@ -41,9 +54,71 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedVendor, setSelectedVendor] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 100]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [maxPrice, setMaxPrice] = useState(1000);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [sortBy, setSortBy] = useState<ProductSortBy>("featured");
+  const [vendorProducts, setVendorProducts] = useState<PublicCatalogProduct[]>([]);
+  const [apiCategories, setApiCategories] = useState<CategoryOption[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setCatalogLoading(true);
+      try {
+        const [products, categoriesRes] = await Promise.all([
+          fetchPublicCatalogProducts(),
+          fetch("/api/catalog/categories"),
+        ]);
+        const categories = categoriesRes.ok
+          ? await parseApiResponse<{ id: string; name: string; slug: string }[]>(categoriesRes)
+          : [];
+
+        if (!mounted) return;
+
+        setVendorProducts(products);
+        setApiCategories(
+          categories.map((c) => ({
+            id: c.slug,
+            label: { en: c.name, ps: c.name, "fa-AF": c.name },
+          }))
+        );
+
+        const prices = [...staticProducts, ...products].map((p) => p.price);
+        const computedMax = Math.max(100, ...prices, 0);
+        setMaxPrice(computedMax);
+        setPriceRange([0, computedMax]);
+      } catch {
+        if (mounted) setVendorProducts([]);
+      } finally {
+        if (mounted) setCatalogLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const allProducts = useMemo<CatalogRow[]>(
+    () => [...vendorProducts, ...staticProducts],
+    [vendorProducts]
+  );
+
+  const categories = useMemo(() => {
+    const merged = [...staticCategories];
+    for (const cat of apiCategories) {
+      if (!merged.some((item) => item.id === cat.id)) merged.push(cat);
+    }
+    return merged;
+  }, [apiCategories]);
+
+  const vendors = useMemo(() => {
+    const names = new Set<string>(staticVendors);
+    for (const product of vendorProducts) names.add(product.vendor);
+    return Array.from(names);
+  }, [vendorProducts]);
 
   const filteredProducts = useMemo(
     () =>
@@ -73,14 +148,14 @@ export default function ProductsPage() {
   const clearFilters = () => {
     setSelectedCategory("all");
     setSelectedVendor([]);
-    setPriceRange([0, 100]);
+    setPriceRange([0, maxPrice]);
     setSearchQuery("");
   };
 
   const hasActiveFilters =
     selectedCategory !== "all" ||
     selectedVendor.length > 0 ||
-    priceRange[1] < 100 ||
+    priceRange[1] < maxPrice ||
     searchQuery;
 
   return (
@@ -187,7 +262,7 @@ export default function ProductsPage() {
                     [
                       selectedCategory !== "all",
                       selectedVendor.length > 0,
-                      priceRange[1] < 100,
+                      priceRange[1] < maxPrice,
                       searchQuery,
                     ].filter(Boolean).length
                   }
@@ -301,7 +376,7 @@ export default function ProductsPage() {
                   <input
                     type="range"
                     min="0"
-                    max="100"
+                    max={maxPrice}
                     value={priceRange[1]}
                     onChange={(e) =>
                       setPriceRange([0, parseInt(e.target.value)])
@@ -433,7 +508,7 @@ export default function ProductsPage() {
                       <input
                         type="range"
                         min="0"
-                        max="100"
+                        max={maxPrice}
                         value={priceRange[1]}
                         onChange={(e) =>
                           setPriceRange([0, parseInt(e.target.value)])
@@ -512,7 +587,12 @@ export default function ProductsPage() {
 
           {/* Products Grid */}
           <div className="flex-1">
-            {sortedProducts.length > 0 ? (
+            {catalogLoading ? (
+              <div className="flex items-center justify-center py-20 text-gray-500">
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                {locale === "en" ? "Loading products…" : locale === "ps" ? "محصولات پورته کېږي…" : "در حال بارگذاری محصولات…"}
+              </div>
+            ) : sortedProducts.length > 0 ? (
               <div className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                 {sortedProducts.map((product, index) => (
                   <motion.div
@@ -567,7 +647,7 @@ function ProductCard({
   product,
   locale,
 }: {
-  product: (typeof allProducts)[0];
+  product: CatalogRow;
   locale: "en" | "ps" | "fa-AF";
 }) {
   const [isWishlisted, setIsWishlisted] = useState(false);

@@ -77,6 +77,10 @@ export class ProductRepository {
       where: { id },
       include: {
         category: true,
+        variants: {
+          where: { isActive: true },
+          orderBy: { createdAt: "asc" },
+        },
         vendorProfile: {
           include: {
             user: true,

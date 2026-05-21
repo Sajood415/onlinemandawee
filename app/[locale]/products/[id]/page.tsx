@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useLocale } from "next-intl";
@@ -18,6 +18,7 @@ import {
   RotateCcw,
   Store,
   CheckCircle,
+  Loader2,
 } from "lucide-react";
 import productData from "@/data/product.json";
 import { useCart } from "@/store/cart-context";
@@ -25,9 +26,16 @@ import {
   localizeDelivery,
   localizeVendor,
 } from "@/lib/localization/product-vendor";
+import {
+  fetchPublicCatalogProduct,
+  fetchPublicCatalogProducts,
+  formatCatalogPrice,
+  type PublicCatalogProduct,
+} from "@/lib/products/public-catalog";
 
-// Import data from JSON file
 const allProducts = productData.featuredProducts;
+
+type DetailProduct = (typeof allProducts)[number] | PublicCatalogProduct;
 
 const featureTranslations = {
   "Premium quality products": {
@@ -167,13 +175,79 @@ export default function ProductDetailPage() {
   const isRtl = locale !== "en";
   const productId = params.id as string;
 
-  const product = allProducts.find((p) => p.id === productId);
+  const staticProduct = allProducts.find((p) => p.id === productId);
+  const [product, setProduct] = useState<DetailProduct | null>(staticProduct ?? null);
+  const [relatedProducts, setRelatedProducts] = useState<DetailProduct[]>([]);
+  const [loading, setLoading] = useState(!staticProduct);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const { addItem } = useCart();
+
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      if (staticProduct) {
+        setRelatedProducts(
+          allProducts
+            .filter((p) => p.category === staticProduct.category && p.id !== staticProduct.id)
+            .slice(0, 4)
+        );
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const fetched = await fetchPublicCatalogProduct(productId);
+        if (!mounted) return;
+        setProduct(fetched);
+
+        const catalog = await fetchPublicCatalogProducts({
+          category: fetched.category,
+        });
+        if (!mounted) return;
+        setRelatedProducts(
+          catalog.filter((p) => p.id !== fetched.id).slice(0, 4)
+        );
+      } catch {
+        if (mounted) setProduct(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    void load();
+    return () => {
+      mounted = false;
+    };
+  }, [productId, staticProduct]);
+
+  const activeVariant = useMemo(() => {
+    if (!product || !("variants" in product) || !product.variants?.length) return null;
+    return product.variants.find((v) => v.id === selectedVariantId) ?? product.variants[0];
+  }, [product, selectedVariantId]);
+
+  const displayPrice = useMemo(() => {
+    if (!product) return "";
+    if (activeVariant?.priceAmount != null) {
+      return formatCatalogPrice(
+        activeVariant.priceAmount / 100,
+        "currency" in product ? product.currency : "USD"
+      );
+    }
+    return product.priceDisplay;
+  }, [product, activeVariant]);
+
+  const inStock = useMemo(() => {
+    if (!product) return false;
+    if (activeVariant) return activeVariant.stockQty > 0;
+    return product.inStock;
+  }, [product, activeVariant]);
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -188,6 +262,14 @@ export default function ProductDetailPage() {
       setIsAdding(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -219,9 +301,10 @@ export default function ProductDetailPage() {
     );
   }
 
-  const relatedProducts = allProducts
-    .filter((p) => p.category === product.category && p.id !== product.id)
-    .slice(0, 4);
+  const productFeatures =
+    product.features.length > 0
+      ? product.features
+      : [product.description[locale]].filter(Boolean);
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-white">
@@ -376,11 +459,17 @@ export default function ProductDetailPage() {
                 )
               </span>
               <span className={`text-sm text-green-600 font-medium ${isRtl ? "mr-2" : "ml-2"}`}>
-                {locale === "en"
-                  ? "In stock"
-                  : locale === "ps"
-                    ? "په ذخیره کې"
-                    : "موجود"}
+                {inStock
+                  ? locale === "en"
+                    ? "In stock"
+                    : locale === "ps"
+                      ? "په ذخیره کې"
+                      : "موجود"
+                  : locale === "en"
+                    ? "Out of stock"
+                    : locale === "ps"
+                      ? "په ذخیره کې نشته"
+                      : "ناموجود"}
               </span>
             </div>
 
@@ -388,9 +477,9 @@ export default function ProductDetailPage() {
             <div className="mb-6">
               <div className="flex items-baseline gap-3">
                 <span className="text-3xl font-bold text-gray-900">
-                  {product.priceDisplay}
+                  {displayPrice}
                 </span>
-                {product.price > 50 && (
+                {product.price > 50 && !activeVariant && (
                   <span className="text-sm text-gray-500">
                     {locale === "en" ? "Was" : locale === "ps" ? "و" : "بود"}{" "}
                     <span className="line-through">
@@ -400,6 +489,30 @@ export default function ProductDetailPage() {
                 )}
               </div>
             </div>
+
+            {"variants" in product && product.variants && product.variants.length > 0 && (
+              <div className="mb-6">
+                <span className="text-sm font-medium text-gray-700 mb-2 block">
+                  {locale === "en" ? "Options" : locale === "ps" ? "انتخابونه" : "گزینه‌ها"}
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {product.variants.map((variant) => (
+                    <button
+                      key={variant.id}
+                      type="button"
+                      onClick={() => setSelectedVariantId(variant.id)}
+                      className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                        (selectedVariantId ?? product.variants?.[0]?.id) === variant.id
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-gray-300 text-gray-700 hover:border-gray-400"
+                      }`}
+                    >
+                      {variant.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Delivery Options - Walmart Style */}
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
@@ -458,7 +571,7 @@ export default function ProductDetailPage() {
             <div className="flex flex-wrap sm:flex-nowrap gap-3 mb-6">
               <button
                 onClick={handleAddToCart}
-                disabled={isAdding}
+                disabled={isAdding || !inStock}
                 className="flex-1 py-3.5 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {isAdding ? (
@@ -496,7 +609,7 @@ export default function ProductDetailPage() {
                     : "درباره این کالا"}
               </h3>
               <ul className="space-y-2">
-                {product.features.map((feature, idx) => (
+                {productFeatures.map((feature, idx) => (
                   <li
                     key={idx}
                     className="flex items-start gap-3 text-sm text-gray-700"
@@ -592,7 +705,7 @@ export default function ProductDetailPage() {
                 : "ویژگی‌های محصول"}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {product.features.map((feature, idx) => (
+            {productFeatures.map((feature, idx) => (
               <div
                 key={idx}
                 className="flex items-center gap-3 bg-white rounded-lg p-3 shadow-sm"
