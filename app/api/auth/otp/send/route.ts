@@ -9,7 +9,10 @@ const otpService = new OtpService();
 
 export const POST = withErrorHandling(async (request) => {
   const input = await parseBody(request, sendOtpSchema);
-  const result = await otpService.sendOtp(input);
+  const result = await otpService.sendOtp({
+    identifier: input.identifier ?? input.phone ?? "",
+    purpose: input.purpose,
+  });
 
   return NextResponse.json({ data: result }, { status: 200 });
 });

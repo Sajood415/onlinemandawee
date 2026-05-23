@@ -4,23 +4,28 @@ import { FormEvent, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 
+import { resolvePostAuthRedirect } from "@/lib/auth/client-auth-routing";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
+import { useAuth } from "@/store/auth-context";
 
 type LoginResponse = {
-  user: { role: "CUSTOMER" | "VENDOR" | "ADMIN" };
-  tokens: { accessToken: string; refreshToken: string };
-};
-
-const roleHome = (role: "CUSTOMER" | "VENDOR" | "ADMIN") => {
-  if (role === "ADMIN") return "/admin/dashboard";
-  if (role === "VENDOR") return "/vendor/dashboard";
-  return "/";
+  user: {
+    id: string;
+    sessionId: string;
+    role: "CUSTOMER" | "VENDOR" | "ADMIN";
+    email: string;
+    phone: string;
+    fullName: string;
+    status: "ACTIVE" | "PENDING" | "BLOCKED";
+  };
+  tokens: { accessToken: string; refreshToken: string; tokenType: "Bearer" };
 };
 
 export function LoginPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { establishSession } = useAuth();
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -39,13 +44,14 @@ export function LoginPageClient() {
         body: JSON.stringify({ identifier: identifier.trim(), password }),
       });
       const data = await parseApiResponse<LoginResponse>(res);
-      localStorage.setItem("accessToken", data.tokens.accessToken);
-      localStorage.setItem("refreshToken", data.tokens.refreshToken);
+      establishSession(data);
 
-      const redirect = searchParams.get("redirect");
-      const safeRedirect =
-        redirect && redirect.startsWith("/") ? redirect : roleHome(data.user.role);
-      router.replace(safeRedirect);
+      router.replace(
+        resolvePostAuthRedirect({
+          role: data.user.role,
+          redirect: searchParams.get("redirect"),
+        })
+      );
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Login failed";
       setError(msg);
@@ -106,6 +112,15 @@ export function LoginPageClient() {
         >
           Forgot password?
         </Link>
+        <p className="mt-3 text-sm text-neutral-600">
+          New customer?{" "}
+          <Link
+            href="/auth/signup"
+            className="font-semibold text-[#0f3460] hover:underline"
+          >
+            Create an account
+          </Link>
+        </p>
       </div>
     </div>
   );

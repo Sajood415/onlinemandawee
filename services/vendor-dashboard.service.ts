@@ -69,6 +69,7 @@ export class VendorDashboardService {
 
     return {
       storeName: vendor.storeName ?? null,
+      storeSlug: vendor.storeSlug ?? null,
       vendorStatus: vendor.status,
       totalOrders,
       recentSales: {

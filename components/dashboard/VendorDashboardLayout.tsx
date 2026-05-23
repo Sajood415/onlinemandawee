@@ -10,16 +10,15 @@ import {
 } from "lucide-react";
 
 import { RoleDashboardLayout } from "@/components/dashboard/RoleDashboardLayout";
-import { useAuth } from "@/store/auth-context";
+import { useVendorStoreName } from "@/components/dashboard/use-vendor-store-name";
 
 type VendorDashboardLayoutProps = {
   children: React.ReactNode;
 };
 
 export function VendorDashboardLayout({ children }: VendorDashboardLayoutProps) {
-  const { user } = useAuth();
-  const name = user?.fullName?.trim();
-  const topBarTitle = name ? `${name}'s Dashboard` : "Vendor Dashboard";
+  const { storeName } = useVendorStoreName();
+  const topBarTitle = storeName ? `${storeName}'s Dashboard` : "Vendor Dashboard";
 
   return (
     <RoleDashboardLayout

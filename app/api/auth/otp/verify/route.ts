@@ -9,7 +9,11 @@ const otpService = new OtpService();
 
 export const POST = withErrorHandling(async (request) => {
   const input = await parseBody(request, verifyOtpSchema);
-  const result = await otpService.verifyOtp(input);
+  const result = await otpService.verifyOtp({
+    identifier: input.identifier ?? input.phone ?? "",
+    purpose: input.purpose,
+    code: input.code,
+  });
 
   return NextResponse.json({ data: result }, { status: 200 });
 });

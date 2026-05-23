@@ -46,6 +46,7 @@ import {
   localizeVendor,
   type SupportedLocale,
 } from "@/lib/localization/product-vendor";
+import { buildLoginRedirectPath } from "@/lib/auth/client-auth-routing";
 
 // --- Framer Motion Configuration ---
 const dropdownVariants: Variants = {
@@ -94,9 +95,11 @@ export default function Header() {
   const isRtl = safeLocale !== "en";
   const copy = headerCopy[safeLocale];
   const isVendorRegisterPage = pathname.includes("/vendor/register");
+  const isAuthSignupPage = pathname.includes("/auth/signup");
   const hideSecondaryNav =
     pathname.includes("/auth/login") ||
     pathname.includes("/auth/forgot-password") ||
+    isAuthSignupPage ||
     isVendorRegisterPage;
   const { isAuthenticated, user, logout } = useAuth();
   const { cart, itemCount, total, removeItem, updateQuantity, refreshCart } = useCart();
@@ -182,7 +185,13 @@ export default function Header() {
     }
   };
 
-  const handleLogin = () => router.push("/auth/login");
+  const handleLogin = () => {
+    if (pathname.startsWith("/auth/")) {
+      router.push("/auth/login");
+      return;
+    }
+    router.push(buildLoginRedirectPath(pathname));
+  };
 
   const closeAll = useCallback(() => {
     setShowCategoriesDropdown(false);
@@ -348,6 +357,15 @@ export default function Header() {
                           className="flex w-full items-center px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
                         >
                           Vendor dashboard
+                        </LocaleLink>
+                      )}
+                      {user?.role === "CUSTOMER" && (
+                        <LocaleLink
+                          href="/account"
+                          onClick={() => setShowAccountMenu(false)}
+                          className="flex w-full items-center px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
+                        >
+                          My account
                         </LocaleLink>
                       )}
                       <button
@@ -859,7 +877,7 @@ export default function Header() {
                       ${total.toFixed(2)}
                     </span>
                   </div>
-                  <Link
+                  <LocaleLink
                     href="/cart"
                     onClick={() => setIsCartOpen(false)}
                     className="w-full py-4 bg-gray-900 text-white rounded-full font-bold shadow-lg flex items-center justify-center gap-2 hover:bg-black transition-all group"
@@ -869,7 +887,7 @@ export default function Header() {
                       size={18}
                       className="group-hover:translate-x-1 transition-transform"
                     />
-                  </Link>
+                  </LocaleLink>
                 </motion.div>
               )}
             </motion.div>

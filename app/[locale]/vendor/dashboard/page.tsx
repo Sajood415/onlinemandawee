@@ -17,9 +17,11 @@ import {
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
+import { formatVendorStoreName } from "@/lib/utils/slug";
 
 type DashboardSummary = {
   storeName: string | null;
+  storeSlug: string | null;
   vendorStatus: string;
   totalOrders: number;
   recentSales: {
@@ -93,6 +95,7 @@ function MetricCard({
   sub,
   accent,
   badge,
+  className,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -100,12 +103,17 @@ function MetricCard({
   sub?: React.ReactNode;
   accent: string;
   badge?: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+    <div
+      className={`group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md ${className ?? ""}`}
+    >
       <div className={`absolute right-0 top-0 h-24 w-24 translate-x-6 -translate-y-6 rounded-full opacity-[0.07] ${accent}`} />
       <div className="flex items-start justify-between gap-4">
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${accent} bg-opacity-10`}>
+        <div
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm ${accent}`}
+        >
           {icon}
         </div>
         {badge}
@@ -123,9 +131,11 @@ function MetricCard({
   );
 }
 
-function SkeletonCard() {
+function SkeletonCard({ className }: { className?: string }) {
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+    <div
+      className={`flex flex-col gap-4 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm ${className ?? ""}`}
+    >
       <div className="h-11 w-11 animate-pulse rounded-xl bg-neutral-100" />
       <div className="flex flex-col gap-2">
         <div className="h-3.5 w-24 animate-pulse rounded bg-neutral-100" />
@@ -174,7 +184,9 @@ export default function VendorDashboardPage() {
     );
   }
 
-  const storeName = summary?.storeName ?? user.fullName;
+  const storeName = summary
+    ? formatVendorStoreName(summary.storeName, summary.storeSlug)
+    : null;
 
   return (
     <div className="min-h-screen w-full bg-neutral-50 pb-16">
@@ -183,7 +195,13 @@ export default function VendorDashboardPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">
-              {storeName ? `${storeName}` : "Vendor Dashboard"}
+              {dataLoading && !storeName ? (
+                <span className="inline-block h-8 w-48 animate-pulse rounded bg-neutral-100" />
+              ) : storeName ? (
+                storeName
+              ) : (
+                "Vendor Dashboard"
+              )}
             </h1>
             <p className="mt-1 text-sm text-neutral-500">
               Here&apos;s an overview of your store&apos;s performance.
@@ -210,21 +228,22 @@ export default function VendorDashboardPage() {
         )}
 
         {/* Metric tiles */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-6">
           {dataLoading || !summary ? (
             <>
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
+              <SkeletonCard className="xl:col-span-2" />
+              <SkeletonCard className="xl:col-span-2" />
+              <SkeletonCard className="xl:col-span-2" />
+              <SkeletonCard className="xl:col-span-3" />
+              <SkeletonCard className="xl:col-span-3" />
             </>
           ) : (
             <>
               {/* Total orders */}
               <MetricCard
                 accent="bg-blue-500"
-                icon={<ShoppingCart className="h-5 w-5 text-blue-600" />}
+                className="xl:col-span-2"
+                icon={<ShoppingCart className="h-5 w-5" />}
                 label="Total Orders"
                 value={summary.totalOrders.toLocaleString()}
                 sub="All orders placed with your store"
@@ -233,7 +252,8 @@ export default function VendorDashboardPage() {
               {/* Recent sales */}
               <MetricCard
                 accent="bg-violet-500"
-                icon={<TrendingUp className="h-5 w-5 text-violet-600" />}
+                className="xl:col-span-2"
+                icon={<TrendingUp className="h-5 w-5" />}
                 label="Recent Sales (30 days)"
                 value={formatCurrency(
                   summary.recentSales.amount,
@@ -245,7 +265,8 @@ export default function VendorDashboardPage() {
               {/* Net earnings */}
               <MetricCard
                 accent="bg-emerald-500"
-                icon={<Wallet className="h-5 w-5 text-emerald-600" />}
+                className="xl:col-span-2"
+                icon={<Wallet className="h-5 w-5" />}
                 label="Net Earnings"
                 value={formatCurrency(
                   summary.netEarnings.amount,
@@ -257,7 +278,8 @@ export default function VendorDashboardPage() {
               {/* Subscription status */}
               <MetricCard
                 accent="bg-amber-500"
-                icon={<CreditCard className="h-5 w-5 text-amber-600" />}
+                className="xl:col-span-3"
+                icon={<CreditCard className="h-5 w-5" />}
                 label="Subscription"
                 value={
                   summary.subscription.status === "PAID" ||
@@ -286,11 +308,12 @@ export default function VendorDashboardPage() {
                     ? "bg-orange-500"
                     : "bg-neutral-400"
                 }
+                className="xl:col-span-3"
                 icon={
                   summary.products.pendingApprovals > 0 ? (
-                    <Clock className="h-5 w-5 text-orange-600" />
+                    <Clock className="h-5 w-5" />
                   ) : (
-                    <Package className="h-5 w-5 text-neutral-500" />
+                    <Package className="h-5 w-5" />
                   )
                 }
                 label="Pending Approvals"

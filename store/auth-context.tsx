@@ -24,6 +24,7 @@ type AuthContextType = {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  establishSession: (session: AuthResult) => void;
   logout: () => void;
   refreshToken: () => Promise<void>;
 };
@@ -80,6 +81,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const establishSession = (session: AuthResult) => {
+    localStorage.setItem("accessToken", session.tokens.accessToken);
+    localStorage.setItem("refreshToken", session.tokens.refreshToken);
+    setUser(session.user);
+    setIsLoading(false);
+  };
+
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
@@ -92,10 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const data = await parseApiResponse<AuthResult>(response);
-
-      localStorage.setItem("accessToken", data.tokens.accessToken);
-      localStorage.setItem("refreshToken", data.tokens.refreshToken);
-      setUser(data.user);
+      establishSession(data);
     } catch (error) {
       throw error;
     } finally {
@@ -137,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated,
         isLoading,
         login,
+        establishSession,
         logout,
         refreshToken,
       }}

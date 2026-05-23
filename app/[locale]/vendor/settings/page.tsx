@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
+import { invalidateVendorStoreNameCache } from "@/components/dashboard/use-vendor-store-name";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
 import { industryTypes, industryTypeLabels } from "@/domain/vendor/vendor-types";
@@ -165,6 +166,7 @@ function BusinessInfoTab({
         body: JSON.stringify(body),
       });
       const data = await parseApiResponse<Partial<VendorProfile>>(res);
+      invalidateVendorStoreNameCache();
       onSaved(data);
       toast.success("Saved", "Business info updated successfully.");
     } catch (e) {

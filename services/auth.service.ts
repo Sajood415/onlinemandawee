@@ -7,6 +7,7 @@ import { env } from "@/config/env";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { durationFromNow } from "@/lib/utils/duration";
+import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 import { getClientIpAddress, getUserAgent } from "@/lib/utils/request-metadata";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { SessionRepository } from "@/repositories/session.repository";
@@ -63,17 +64,21 @@ export class AuthService {
 
   async registerCustomer(input: RegisterCustomerInput, metadata: RequestMetadata) {
     const proof = await verifyOtpProofToken(input.verificationToken);
+    const normalizedEmail = normalizeEmailForAuth(input.email);
 
-    if (proof.purpose !== "CUSTOMER_SIGNUP" || proof.sub !== input.phone) {
+    if (
+      proof.purpose !== "CUSTOMER_SIGNUP" ||
+      (proof.sub !== input.phone && proof.sub !== normalizedEmail)
+    ) {
       throw new AppError({
         code: ERROR_CODE.UNAUTHORIZED,
-        message: "Phone verification is invalid for registration",
+        message: "Verification is invalid for registration",
         statusCode: 401,
       });
     }
 
     const [existingEmail, existingPhone] = await Promise.all([
-      this.userRepository.findByEmail(input.email),
+      this.userRepository.findByEmail(normalizedEmail),
       this.userRepository.findByPhone(input.phone),
     ]);
 
@@ -96,7 +101,7 @@ export class AuthService {
     const passwordHash = await hashPassword(input.password);
     const user = await this.userRepository.createCustomer({
       fullName: input.fullName,
-      email: input.email,
+      email: normalizedEmail,
       phone: input.phone,
       passwordHash,
     });
