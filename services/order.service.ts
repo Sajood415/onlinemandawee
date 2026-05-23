@@ -2,6 +2,13 @@ import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import type { VendorOrderStatus } from "@/domain/order/order-status";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import {
+  buildOrderCancelledEmail,
+  buildOrderDeliveredEmail,
+  buildOrderShippedEmail,
+} from "@/lib/mail/order-status-email";
+import { sendTransactionalEmail } from "@/lib/mail/send-transactional-email";
+import { sendVendorOrderNotifications } from "@/lib/mail/send-vendor-order-notifications";
 import { generateOpaqueToken } from "@/lib/utils/crypto";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { CartItemRepository } from "@/repositories/cart-item.repository";
@@ -139,6 +146,33 @@ export class OrderService {
       },
     });
 
+    await sendVendorOrderNotifications({
+      orderNumber: order.orderNumber,
+      customerName: order.shippingFullName,
+      customerEmail: auth.email,
+      customerPhone: order.shippingPhone,
+      currency: order.currency,
+      paymentMethod: order.paymentStatus === "PAID" ? "card" : "cod",
+      paymentStatus: order.paymentStatus === "PAID" ? "PAID" : "UNPAID",
+      shippingAddress: {
+        addressLine1: order.shippingAddressLine1,
+        city: order.shippingCity,
+        country: order.shippingCountry,
+        postalCode: order.shippingPostalCode || undefined,
+        phone: order.shippingPhone || undefined,
+      },
+      vendorGroups: order.vendorOrders.map((vendorOrder) => ({
+        vendorProfileId: vendorOrder.vendorProfileId,
+        grandTotalAmount: vendorOrder.grandTotalAmount,
+        items: vendorOrder.items.map((item) => ({
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPriceAmount: item.unitPriceAmount,
+          currency: item.currency,
+        })),
+      })),
+    });
+
     return this.getOrderForCustomer(auth, order.id);
   }
 
@@ -211,18 +245,6 @@ export class OrderService {
 
     this.assertVendorOrderTransition(vendorOrder.status, status);
 
-    if (
-      status !== "CANCELLED" &&
-      vendorOrder.order.paymentStatus !== "PAID" &&
-      vendorOrder.order.paymentStatus !== "PARTIALLY_REFUNDED"
-    ) {
-      throw new AppError({
-        code: ERROR_CODE.BAD_REQUEST,
-        message: "Only paid orders can move into fulfillment",
-        statusCode: 400,
-      });
-    }
-
     const updatedVendorOrder = await this.orderRepository.updateVendorOrderStatus(
       vendorOrderId,
       status
@@ -235,11 +257,13 @@ export class OrderService {
       action: "vendor.order_status_updated",
       entityType: "OrderVendor",
       entityId: updatedVendorOrder.id,
-      metadata: {
-        status,
-        orderStatus: overallStatus,
-      },
+      metadata: { status, orderStatus: overallStatus },
     });
+
+    // Send email notification to customer on key status changes
+    if (status === "SHIPPED" || status === "DELIVERED" || status === "CANCELLED") {
+      await this.sendOrderStatusEmail(vendorOrder.order.id, status);
+    }
 
     return {
       id: updatedVendorOrder.id,
@@ -445,6 +469,52 @@ export class OrderService {
     }
 
     return vendor;
+  }
+
+  private async sendOrderStatusEmail(orderId: string, status: VendorOrderStatus) {
+    try {
+      const order = await this.orderRepository.findById(orderId);
+      if (!order) return;
+
+      const customerEmail = order.guestEmail ?? order.user?.email;
+      const customerName = order.shippingFullName;
+      if (!customerEmail) return;
+
+      const ctx = {
+        customerName,
+        orderNumber: order.orderNumber,
+        grandTotalAmount: order.grandTotalAmount,
+        currency: order.currency,
+        shippingAddress: {
+          addressLine1: order.shippingAddressLine1,
+          city: order.shippingCity,
+          country: order.shippingCountry,
+          postalCode: order.shippingPostalCode || undefined,
+          phone: order.shippingPhone || undefined,
+        },
+        items: order.vendorOrders.flatMap((vo) =>
+          vo.items.map((item) => ({
+            productName: item.productName,
+            quantity: item.quantity,
+            unitPriceAmount: item.unitPriceAmount,
+            currency: item.currency,
+          }))
+        ),
+      };
+
+      let emailPayload: { subject: string; html: string; text: string };
+      if (status === "SHIPPED") {
+        emailPayload = buildOrderShippedEmail(ctx);
+      } else if (status === "DELIVERED") {
+        emailPayload = buildOrderDeliveredEmail(ctx);
+      } else {
+        emailPayload = buildOrderCancelledEmail(ctx);
+      }
+
+      await sendTransactionalEmail({ to: customerEmail, ...emailPayload });
+    } catch {
+      // Email failures must not block the status update
+    }
   }
 
   private assertActiveCustomer(auth: AuthenticatedUser) {

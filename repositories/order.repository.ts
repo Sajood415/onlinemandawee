@@ -7,7 +7,9 @@ import { prisma } from "@/lib/db/prisma";
 
 export class OrderRepository {
   create(input: {
-    userId: string;
+    userId?: string | null;
+    guestEmail?: string | null;
+    stripePaymentIntentId?: string | null;
     orderNumber: string;
     currency: string;
     subtotalAmount: number;
@@ -44,7 +46,9 @@ export class OrderRepository {
   }) {
     return prisma.order.create({
       data: {
-        userId: input.userId,
+        userId: input.userId ?? undefined,
+        guestEmail: input.guestEmail ?? undefined,
+        stripePaymentIntentId: input.stripePaymentIntentId ?? undefined,
         orderNumber: input.orderNumber,
         currency: input.currency,
         subtotalAmount: input.subtotalAmount,

@@ -1,0 +1,314 @@
+export type OrderEmailContext = {
+  customerName: string;
+  orderNumber: string;
+  items: Array<{
+    productName: string;
+    quantity: number;
+    unitPriceAmount: number;
+    currency: string;
+  }>;
+  grandTotalAmount: number;
+  currency: string;
+  shippingAddress: {
+    addressLine1: string;
+    city: string;
+    country: string;
+    postalCode?: string;
+    phone?: string;
+  };
+};
+
+function formatCurrency(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(amount / 100);
+  } catch {
+    return `${currency} ${(amount / 100).toFixed(2)}`;
+  }
+}
+
+function baseLayout(title: string, body: string) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
+  <style>
+    body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .wrapper { max-width: 560px; margin: 32px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+    .header { background: #0f3460; padding: 32px 40px; text-align: center; }
+    .header h1 { color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.3px; }
+    .header p { color: rgba(255,255,255,.7); margin: 6px 0 0; font-size: 13px; }
+    .body { padding: 32px 40px; }
+    .badge { display: inline-block; background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; border-radius: 999px; padding: 4px 14px; font-size: 12px; font-weight: 600; letter-spacing: .3px; margin-bottom: 20px; }
+    .badge.blue { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    h2 { margin: 0 0 8px; font-size: 20px; color: #0f172a; }
+    p { margin: 0 0 16px; font-size: 14px; color: #64748b; line-height: 1.6; }
+    .order-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 20px 0; }
+    .order-box .label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 4px; }
+    .order-box .value { font-size: 16px; font-weight: 700; color: #0f3460; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    td { font-size: 13px; color: #334155; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+    td:last-child { text-align: right; font-weight: 600; color: #0f172a; }
+    .total-row td { font-weight: 700; font-size: 14px; color: #0f3460; border-bottom: none; padding-top: 14px; }
+    .address-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; font-size: 13px; color: #334155; line-height: 1.7; }
+    .footer { background: #f8fafc; padding: 24px 40px; text-align: center; border-top: 1px solid #e2e8f0; }
+    .footer p { margin: 0; font-size: 12px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h1>Online Mandawee</h1>
+      <p>Your trusted marketplace</p>
+    </div>
+    <div class="body">${body}</div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} Online Mandawee. All rights reserved.</p>
+      <p style="margin-top:4px">If you have questions, reply to this email or contact our support team.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+function itemsTable(ctx: OrderEmailContext) {
+  const rows = ctx.items
+    .map(
+      (item) => `
+    <tr>
+      <td>${item.productName}</td>
+      <td style="text-align:center;color:#64748b">× ${item.quantity}</td>
+      <td>${formatCurrency(item.unitPriceAmount * item.quantity, item.currency)}</td>
+    </tr>`
+    )
+    .join("");
+  return `
+    <table>
+      <thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Total</th></tr></thead>
+      <tbody>
+        ${rows}
+        <tr class="total-row">
+          <td colspan="2">Order Total</td>
+          <td>${formatCurrency(ctx.grandTotalAmount, ctx.currency)}</td>
+        </tr>
+      </tbody>
+    </table>`;
+}
+
+function addressBlock(ctx: OrderEmailContext) {
+  const { addressLine1, city, country, postalCode, phone } = ctx.shippingAddress;
+  return `<div class="address-box">
+    <strong>${ctx.customerName}</strong><br/>
+    ${addressLine1}<br/>
+    ${city}${postalCode ? `, ${postalCode}` : ""}<br/>
+    ${country}${phone ? `<br/>${phone}` : ""}
+  </div>`;
+}
+
+export function buildOrderPlacedEmail(
+  ctx: OrderEmailContext,
+  options: { paymentMethod: "cod" | "card" }
+) {
+  const paymentNote =
+    options.paymentMethod === "cod"
+      ? "Payment method: <strong>Cash on Delivery</strong>. Please have cash ready when your order arrives."
+      : "Payment: <strong>Paid by card</strong>. Your payment was processed successfully.";
+
+  const body = `
+    <span class="badge">✅ Order Confirmed</span>
+    <h2>Thank you, ${ctx.customerName}!</h2>
+    <p>We have received your order and will email you again when it ships.</p>
+
+    <div class="order-box">
+      <div class="label">Order Number</div>
+      <div class="value">${ctx.orderNumber}</div>
+    </div>
+
+    ${itemsTable(ctx)}
+
+    <p style="margin-top:20px;font-size:13px;color:#64748b;font-weight:600">Delivering to:</p>
+    ${addressBlock(ctx)}
+
+    <p style="margin-top:20px">${paymentNote}</p>
+    <p style="margin-top:12px">If you need to cancel, do so before the vendor accepts your order from the checkout confirmation page.</p>
+  `;
+
+  const paymentText =
+    options.paymentMethod === "cod"
+      ? "Payment: Cash on Delivery."
+      : "Payment: Paid by card.";
+
+  return {
+    subject: `Order confirmed — ${ctx.orderNumber}`,
+    html: baseLayout(`Order Confirmed — ${ctx.orderNumber}`, body),
+    text: [
+      `Hi ${ctx.customerName},`,
+      "",
+      `Thank you for your order ${ctx.orderNumber}.`,
+      `Total: ${formatCurrency(ctx.grandTotalAmount, ctx.currency)}.`,
+      paymentText,
+      "",
+      "We will email you again when your order ships.",
+    ].join("\n"),
+  };
+}
+
+export type VendorOrderEmailContext = {
+  vendorName: string;
+  storeName: string;
+  orderNumber: string;
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  items: OrderEmailContext["items"];
+  vendorTotalAmount: number;
+  currency: string;
+  paymentMethod: "cod" | "card";
+  paymentStatus: "PAID" | "UNPAID";
+  shippingAddress: OrderEmailContext["shippingAddress"];
+};
+
+export function buildVendorNewOrderEmail(ctx: VendorOrderEmailContext) {
+  const itemsCtx: OrderEmailContext = {
+    customerName: ctx.customerName,
+    orderNumber: ctx.orderNumber,
+    items: ctx.items,
+    grandTotalAmount: ctx.vendorTotalAmount,
+    currency: ctx.currency,
+    shippingAddress: ctx.shippingAddress,
+  };
+
+  const paymentNote =
+    ctx.paymentMethod === "cod"
+      ? "Payment: <strong>Cash on Delivery</strong> — collect payment when you deliver."
+      : ctx.paymentStatus === "PAID"
+        ? "Payment: <strong>Paid by card</strong> — payment has been received."
+        : "Payment: <strong>Pending</strong> — payment has not been collected yet.";
+
+  const customerContact = [
+    ctx.customerEmail ? `<strong>Email:</strong> ${ctx.customerEmail}` : null,
+    ctx.customerPhone ? `<strong>Phone:</strong> ${ctx.customerPhone}` : null,
+  ]
+    .filter(Boolean)
+    .join("<br/>");
+
+  const body = `
+    <span class="badge blue">🛒 New Order</span>
+    <h2>You have a new order, ${ctx.vendorName}!</h2>
+    <p>A customer just placed an order for <strong>${ctx.storeName}</strong>. Review the details below and accept it from your vendor portal.</p>
+
+    <div class="order-box">
+      <div class="label">Order Number</div>
+      <div class="value">${ctx.orderNumber}</div>
+    </div>
+
+    <p style="margin-top:20px;font-size:13px;color:#64748b;font-weight:600">Customer:</p>
+    <div class="address-box">
+      <strong>${ctx.customerName}</strong><br/>
+      ${customerContact}
+    </div>
+
+    ${itemsTable(itemsCtx)}
+
+    <p style="margin-top:20px;font-size:13px;color:#64748b;font-weight:600">Deliver to:</p>
+    ${addressBlock(itemsCtx)}
+
+    <p style="margin-top:20px">${paymentNote}</p>
+    <p style="margin-top:12px">Sign in to your vendor dashboard to accept and fulfil this order.</p>
+  `;
+
+  const paymentText =
+    ctx.paymentMethod === "cod"
+      ? "Payment: Cash on Delivery."
+      : ctx.paymentStatus === "PAID"
+        ? "Payment: Paid by card."
+        : "Payment: Pending.";
+
+  return {
+    subject: `New order ${ctx.orderNumber} — ${ctx.storeName}`,
+    html: baseLayout(`New Order — ${ctx.orderNumber}`, body),
+    text: [
+      `Hi ${ctx.vendorName},`,
+      "",
+      `You have a new order ${ctx.orderNumber} for ${ctx.storeName}.`,
+      `Customer: ${ctx.customerName}${ctx.customerEmail ? ` (${ctx.customerEmail})` : ""}`,
+      `Your total: ${formatCurrency(ctx.vendorTotalAmount, ctx.currency)}.`,
+      paymentText,
+      "",
+      "Sign in to your vendor dashboard to accept and fulfil this order.",
+    ].join("\n"),
+  };
+}
+
+export function buildOrderShippedEmail(ctx: OrderEmailContext) {
+  const body = `
+    <span class="badge blue">🚚 Your order is on its way!</span>
+    <h2>Great news, ${ctx.customerName}!</h2>
+    <p>Your order has been <strong>shipped</strong> and is on its way to you. Keep an eye out for your delivery!</p>
+
+    <div class="order-box">
+      <div class="label">Order Number</div>
+      <div class="value">${ctx.orderNumber}</div>
+    </div>
+
+    ${itemsTable(ctx)}
+
+    <p style="margin-top:20px;font-size:13px;color:#64748b;font-weight:600">Delivering to:</p>
+    ${addressBlock(ctx)}
+
+    <p style="margin-top:20px">Thank you for shopping with us. We hope you enjoy your order!</p>
+  `;
+  return {
+    subject: `Your order ${ctx.orderNumber} is on its way! 🚚`,
+    html: baseLayout(`Order Shipped — ${ctx.orderNumber}`, body),
+    text: `Hi ${ctx.customerName}, your order ${ctx.orderNumber} has been shipped and is on the way! Total: ${formatCurrency(ctx.grandTotalAmount, ctx.currency)}.`,
+  };
+}
+
+export function buildOrderDeliveredEmail(ctx: OrderEmailContext) {
+  const body = `
+    <span class="badge">✅ Order Delivered</span>
+    <h2>Your order has arrived, ${ctx.customerName}!</h2>
+    <p>We're happy to let you know that your order has been <strong>delivered</strong>. We hope you love what you ordered!</p>
+
+    <div class="order-box">
+      <div class="label">Order Number</div>
+      <div class="value">${ctx.orderNumber}</div>
+    </div>
+
+    ${itemsTable(ctx)}
+
+    <p style="margin-top:20px">Thank you for choosing <strong>Online Mandawee</strong>. We look forward to serving you again!</p>
+  `;
+  return {
+    subject: `Your order ${ctx.orderNumber} has been delivered! ✅`,
+    html: baseLayout(`Order Delivered — ${ctx.orderNumber}`, body),
+    text: `Hi ${ctx.customerName}, your order ${ctx.orderNumber} has been delivered. Thank you for shopping with us!`,
+  };
+}
+
+export function buildOrderCancelledEmail(ctx: OrderEmailContext) {
+  const body = `
+    <span class="badge" style="background:#fef2f2;color:#b91c1c;border-color:#fecaca">❌ Order Cancelled</span>
+    <h2>Your order has been cancelled</h2>
+    <p>Hi ${ctx.customerName}, your order <strong>${ctx.orderNumber}</strong> has been successfully cancelled.</p>
+    <div class="order-box">
+      <div class="label">Order Number</div>
+      <div class="value">${ctx.orderNumber}</div>
+    </div>
+    ${itemsTable(ctx)}
+    <p style="margin-top:20px">If you didn't request this cancellation or have any questions, please contact our support team.</p>
+  `;
+  return {
+    subject: `Order ${ctx.orderNumber} has been cancelled`,
+    html: baseLayout(`Order Cancelled — ${ctx.orderNumber}`, body),
+    text: `Hi ${ctx.customerName}, your order ${ctx.orderNumber} has been cancelled.`,
+  };
+}

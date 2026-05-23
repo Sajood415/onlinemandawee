@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import productData from "@/data/product.json";
+import { parseApiResponse } from "@/lib/http/parse-api-response";
 import {
   HEADER_BAR_CLASS,
   HEADER_LOGO_SRC,
@@ -107,6 +108,9 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showCategoriesDropdown, setShowCategoriesDropdown] = useState(false);
+  const [catalogCategories, setCatalogCategories] = useState<
+    { id: string; name: string; slug: string }[]
+  >([]);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showTopPromo, setShowTopPromo] = useState(true);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
@@ -150,6 +154,24 @@ export default function Header() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const categoriesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadCategories = async () => {
+      try {
+        const res = await fetch("/api/catalog/categories");
+        if (!res.ok) return;
+        const data = await parseApiResponse<{ id: string; name: string; slug: string }[]>(res);
+        if (mounted) setCatalogCategories(data);
+      } catch {
+        // keep fallback hardcoded items
+      }
+    };
+    void loadCategories();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Typewriter effect - stops when user focuses on search
   useEffect(() => {
@@ -484,87 +506,84 @@ export default function Header() {
                       {copy.storeDepartments}
                     </p>
 
-                    {/* Food & Grocery */}
-                    <CategoryItem
-                      href="/category/breakfast"
-                      icon={<Croissant size={18} />}
-                      label={safeLocale === "en" ? "Breakfast Items" : safeLocale === "ps" ? "د ناشتې توکي" : "اقلام صبحانه"}
-                      onClick={closeAll}
-                    />
-                    <CategoryItem
-                      href="/category/grocery"
-                      icon={<ShoppingBag size={18} />}
-                      label={safeLocale === "en" ? "Edible Grocery" : safeLocale === "ps" ? "خوراکي توکي" : "مواد خوراکی"}
-                      onClick={closeAll}
-                    />
-                    <CategoryItem
-                      href="/category/snacks"
-                      icon={<Cookie size={18} />}
-                      label={safeLocale === "en" ? "Snack Bar" : safeLocale === "ps" ? "سنک بار" : "اسنک بار"}
-                      onClick={closeAll}
-                    />
-                    <CategoryItem
-                      href="/category/beverages"
-                      icon={<Wine size={18} />}
-                      label={safeLocale === "en" ? "Beverages" : safeLocale === "ps" ? "مشروبات" : "نوشیدنی‌ها"}
-                      onClick={closeAll}
-                    />
-                    <CategoryItem
-                      href="/category/fruits"
-                      icon={<Cherry size={18} />}
-                      label={safeLocale === "en" ? "Fruits" : safeLocale === "ps" ? "مېوې" : "میوه‌ها"}
-                      onClick={closeAll}
-                    />
-                    <CategoryItem
-                      href="/category/vegetables"
-                      icon={<Carrot size={18} />}
-                      label={safeLocale === "en" ? "Vegetables" : safeLocale === "ps" ? "سبزیجات" : "سبزیجات"}
-                      onClick={closeAll}
-                    />
-                    <CategoryItem
-                      href="/category/dairy"
-                      icon={<GlassWater size={18} />}
-                      label={safeLocale === "en" ? "Dairy Products" : safeLocale === "ps" ? "لبنیات" : "لبنیات"}
-                      onClick={closeAll}
-                    />
-
-                    <div className="h-px bg-gray-100 my-2 mx-4" />
-
-                    {/* Home & Personal Care */}
-                    <CategoryItem
-                      href="/category/cleaning-products"
-                      icon={<SprayCanIcon size={18} />}
-                      label={safeLocale === "en" ? "Cleaning Products" : safeLocale === "ps" ? "د پاکولو توکي" : "محصولات نظافتی"}
-                      onClick={closeAll}
-                    />
-                    <CategoryItem
-                      href="/category/baby-care"
-                      icon={<Baby size={18} />}
-                      label={copy.babyCare}
-                      onClick={closeAll}
-                    />
-                    <CategoryItem
-                      href="/category/personal-care"
-                      icon={<Heart size={18} />}
-                      label={safeLocale === "en" ? "Personal Care" : safeLocale === "ps" ? "شخصي پاملرنه" : "مراقبت شخصی"}
-                      onClick={closeAll}
-                    />
-
-                    <div className="h-px bg-gray-100 my-2 mx-4" />
-
-                    {/* Health & Stationery */}
-                    <CategoryItem
-                      href="/category/whey-proteins"
-                      icon={<Dumbbell size={18} />}
-                      label={safeLocale === "en" ? "Whey Proteins" : safeLocale === "ps" ? "وی پروټین" : "پروتئین وی"}
-                      onClick={closeAll}
-                    />
-                    <CategoryItem
-                      href="/category/stationery-items"
-                      icon={<PenTool size={18} />}
-                      label={safeLocale === "en" ? "Stationery Items" : safeLocale === "ps" ? "د قرطاسیه توکي" : "اقلام قرطاسیه"}
-                      onClick={closeAll}
-                    />
+                    {catalogCategories.length > 0 ? (
+                      <>
+                        {catalogCategories.map((category, idx) => (
+                          <CategoryItem
+                            key={category.id}
+                            href={`/category/${category.slug}`}
+                            icon={<ShoppingBag size={18} />}
+                            label={category.name}
+                            onClick={closeAll}
+                            showSeparator={idx > 0 && idx % 6 === 0}
+                          />
+                        ))}
+                      </>
+                    ) : (
+                      <>
+                        {/* Fallback categories */}
+                        <CategoryItem
+                          href="/category/breakfast"
+                          icon={<Croissant size={18} />}
+                          label={
+                            safeLocale === "en"
+                              ? "Breakfast Items"
+                              : safeLocale === "ps"
+                                ? "د ناشتې توکي"
+                                : "اقلام صبحانه"
+                          }
+                          onClick={closeAll}
+                        />
+                        <CategoryItem
+                          href="/category/grocery"
+                          icon={<ShoppingBag size={18} />}
+                          label={
+                            safeLocale === "en"
+                              ? "Edible Grocery"
+                              : safeLocale === "ps"
+                                ? "خوراکي توکي"
+                                : "مواد خوراکی"
+                          }
+                          onClick={closeAll}
+                        />
+                        <CategoryItem
+                          href="/category/snacks"
+                          icon={<Cookie size={18} />}
+                          label={
+                            safeLocale === "en"
+                              ? "Snack Bar"
+                              : safeLocale === "ps"
+                                ? "سنک بار"
+                                : "اسنک بار"
+                          }
+                          onClick={closeAll}
+                        />
+                        <CategoryItem
+                          href="/category/beverages"
+                          icon={<Wine size={18} />}
+                          label={
+                            safeLocale === "en"
+                              ? "Beverages"
+                              : safeLocale === "ps"
+                                ? "مشروبات"
+                                : "نوشیدنی‌ها"
+                          }
+                          onClick={closeAll}
+                        />
+                        <CategoryItem
+                          href="/category/fruits"
+                          icon={<Cherry size={18} />}
+                          label={
+                            safeLocale === "en"
+                              ? "Fruits"
+                              : safeLocale === "ps"
+                                ? "مېوې"
+                                : "میوه‌ها"
+                          }
+                          onClick={closeAll}
+                        />
+                      </>
+                    )}
 
                     <div className="h-px bg-gray-100 my-2 mx-4" />
                     <Link
@@ -905,29 +924,34 @@ function CategoryItem({
   icon,
   label,
   onClick,
+  showSeparator = false,
 }: {
   href: string;
   icon: ReactNode;
   label: string;
   onClick: () => void;
+  showSeparator?: boolean;
 }) {
   return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className="flex items-center gap-4 px-4 py-4 rounded-[1.25rem] hover:bg-primary/5 group transition-all duration-300"
-    >
-      <div className="w-11 h-11 flex items-center justify-center bg-gray-50 rounded-2xl group-hover:bg-white shadow-sm border border-gray-100 group-hover:border-primary/30 transition-all text-gray-400 group-hover:text-primary group-hover:scale-110 group-hover:rotate-3 shadow-inner">
-        {icon}
-      </div>
-      <span className="font-bold text-gray-700 group-hover:text-gray-950 transition-colors text-[15px] tracking-tight">
-        {label}
-      </span>
-      <ArrowRight
-        size={16}
-        className="ml-auto opacity-0 group-hover:opacity-100 transition-all text-primary translate-x-[-10px] group-hover:translate-x-0"
-      />
-    </Link>
+    <>
+      {showSeparator ? <div className="h-px bg-gray-100 my-2 mx-4" /> : null}
+      <Link
+        href={href}
+        onClick={onClick}
+        className="flex items-center gap-4 px-4 py-4 rounded-[1.25rem] hover:bg-primary/5 group transition-all duration-300"
+      >
+        <div className="w-11 h-11 flex items-center justify-center bg-gray-50 rounded-2xl group-hover:bg-white shadow-sm border border-gray-100 group-hover:border-primary/30 transition-all text-gray-400 group-hover:text-primary group-hover:scale-110 group-hover:rotate-3 shadow-inner">
+          {icon}
+        </div>
+        <span className="font-bold text-gray-700 group-hover:text-gray-950 transition-colors text-[15px] tracking-tight">
+          {label}
+        </span>
+        <ArrowRight
+          size={16}
+          className="ml-auto opacity-0 group-hover:opacity-100 transition-all text-primary translate-x-[-10px] group-hover:translate-x-0"
+        />
+      </Link>
+    </>
   );
 }
 
