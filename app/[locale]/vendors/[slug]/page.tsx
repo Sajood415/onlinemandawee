@@ -59,8 +59,10 @@ export default function VendorStorePage() {
 
   useEffect(() => {
     let mounted = true;
+    setLoading(true);
+    setApiStore(null);
+
     const load = async () => {
-      setLoading(true);
       try {
         const res = await fetch(`/api/vendors/${encodeURIComponent(slug)}`);
         if (res.ok) {
@@ -69,23 +71,20 @@ export default function VendorStorePage() {
           return;
         }
       } catch {
-        // fall through to static
+        // fall through to static catalog data
       }
 
       if (mounted) setApiStore(null);
-      setLoading(false);
     };
-    void load();
+
+    void load().finally(() => {
+      if (mounted) setLoading(false);
+    });
+
     return () => {
       mounted = false;
     };
   }, [slug]);
-
-  useEffect(() => {
-    if (apiStore) setLoading(false);
-    if (!apiStore && staticVendor) setLoading(false);
-    if (!apiStore && !staticVendor) setLoading(false);
-  }, [apiStore, staticVendor]);
 
   const vendorProducts = useMemo(() => {
     if (apiStore) return apiStore.products.map(mapApiProductToCatalog);
@@ -110,8 +109,15 @@ export default function VendorStorePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-white">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm font-medium text-neutral-500">
+          {locale === "en"
+            ? "Loading vendor store..."
+            : locale === "ps"
+              ? "د پلورونکي پلورنځي پورته کېږي..."
+              : "در حال بارگذاری فروشگاه..."}
+        </p>
       </div>
     );
   }
