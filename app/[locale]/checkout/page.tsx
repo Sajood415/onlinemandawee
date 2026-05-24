@@ -538,130 +538,68 @@ function SuccessScreen({
 }) {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const [cancelling, setCancelling] = useState(false);
-  const [cancelled, setCancelled] = useState(false);
-  const [cancelError, setCancelError] = useState<string | null>(null);
 
   const signupHref = `/auth/signup?redirect=${encodeURIComponent("/account")}${guestEmail ? `&email=${encodeURIComponent(guestEmail)}` : ""}`;
-
-  const handleCancel = async () => {
-    if (!confirm("Are you sure you want to cancel this order?")) return;
-    setCancelling(true);
-    setCancelError(null);
-    try {
-      const res = await fetch("/api/orders/guest/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderNumber, guestEmail }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setCancelError(data?.error?.message ?? "Could not cancel order.");
-        return;
-      }
-      setCancelled(true);
-    } catch {
-      setCancelError("Network error. Please try again.");
-    } finally {
-      setCancelling(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-xl p-10 max-w-md w-full text-center space-y-6">
-        {cancelled ? (
-          <>
-            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle size={40} className="text-red-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Order Cancelled</h1>
-              <p className="text-gray-500 mt-2 text-sm">
-                Your order <strong>{orderNumber}</strong> has been cancelled. A confirmation email has been sent.
-              </p>
-            </div>
-            <button onClick={() => router.push("/")}
-              className="w-full rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors">
-              Continue Shopping
-            </button>
-          </>
-        ) : (
-          <>
-            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle size={40} className="text-green-500" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Order Placed!</h1>
-              <p className="text-gray-500 mt-2 text-sm">
-                {paymentMethod === "cod"
-                  ? "Your order is confirmed. Please have cash ready when your delivery arrives."
-                  : "Your payment was successful and the vendor has been notified."}
-              </p>
-              {guestEmail ? (
-                <p className="text-gray-500 mt-2 text-sm">
-                  A confirmation email has been sent to <strong>{guestEmail}</strong>.
-                </p>
-              ) : null}
-            </div>
-
-            <div className="bg-gray-50 rounded-2xl px-6 py-4">
-              <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Order Number</p>
-              <p className="text-xl font-black text-[#0f3460] mt-1">{orderNumber}</p>
-            </div>
-
-            {paymentMethod === "cod" && (
-              <div className="flex items-center gap-2 bg-green-50 rounded-xl px-4 py-3 text-sm text-green-700">
-                <Banknote size={18} className="flex-shrink-0" />
-                <span>Payment: Cash on Delivery</span>
-              </div>
-            )}
-
-            <p className="text-xs text-gray-400">Keep this order number for your records.</p>
-
-            {!isAuthenticated ? (
-              <div className="rounded-2xl border border-[#0f3460]/15 bg-[#0f3460]/5 px-5 py-4 text-left space-y-3">
-                <p className="text-sm font-semibold text-[#0f3460]">Want to track this order?</p>
-                <p className="text-sm text-gray-600">
-                  Create a free account with the same email to track this order, view status updates, and save addresses for next time.
-                </p>
-                <Link
-                  href={signupHref}
-                  className="inline-flex w-full items-center justify-center rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
-                >
-                  Create account
-                </Link>
-                <Link
-                  href="/auth/login"
-                  className="inline-flex w-full items-center justify-center rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-                >
-                  Already have an account? Sign in
-                </Link>
-              </div>
-            ) : null}
-
-            {cancelError && (
-              <p className="text-xs text-red-500 bg-red-50 rounded-xl px-4 py-2">{cancelError}</p>
-            )}
-
-            <button onClick={() => router.push("/")}
-              className="w-full rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors">
-              Continue Shopping
-            </button>
-
-            {/* Cancel — only possible before vendor accepts */}
-            <button
-              onClick={handleCancel}
-              disabled={cancelling}
-              className="w-full rounded-xl border border-red-200 text-red-500 text-sm font-medium py-3 hover:bg-red-50 transition-colors disabled:opacity-50"
-            >
-              {cancelling ? "Cancelling…" : "Cancel this order"}
-            </button>
-            <p className="text-xs text-gray-400 -mt-3">
-              You can cancel only while the vendor hasn&apos;t accepted yet.
+        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto">
+          <CheckCircle size={40} className="text-green-500" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Order Placed!</h1>
+          <p className="text-gray-500 mt-2 text-sm">
+            {paymentMethod === "cod"
+              ? "Your order is confirmed. Please have cash ready when your delivery arrives."
+              : "Your payment was successful and the vendor has been notified."}
+          </p>
+          {guestEmail ? (
+            <p className="text-gray-500 mt-2 text-sm">
+              A confirmation email has been sent to <strong>{guestEmail}</strong>.
             </p>
-          </>
+          ) : null}
+        </div>
+
+        <div className="bg-gray-50 rounded-2xl px-6 py-4">
+          <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Order Number</p>
+          <p className="text-xl font-black text-[#0f3460] mt-1">{orderNumber}</p>
+        </div>
+
+        {paymentMethod === "cod" && (
+          <div className="flex items-center gap-2 bg-green-50 rounded-xl px-4 py-3 text-sm text-green-700">
+            <Banknote size={18} className="flex-shrink-0" />
+            <span>Payment: Cash on Delivery</span>
+          </div>
         )}
+
+        <p className="text-xs text-gray-400">Keep this order number for your records.</p>
+
+        {!isAuthenticated ? (
+          <div className="rounded-2xl border border-[#0f3460]/15 bg-[#0f3460]/5 px-5 py-4 text-left space-y-3">
+            <p className="text-sm font-semibold text-[#0f3460]">Want to track this order?</p>
+            <p className="text-sm text-gray-600">
+              Create a free account with the same email to track this order, view status updates, and save addresses for next time.
+            </p>
+            <Link
+              href={signupHref}
+              className="inline-flex w-full items-center justify-center rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+            >
+              Create account
+            </Link>
+            <Link
+              href="/auth/login"
+              className="inline-flex w-full items-center justify-center rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              Already have an account? Sign in
+            </Link>
+          </div>
+        ) : null}
+
+        <button onClick={() => router.push("/")}
+          className="w-full rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors">
+          Continue Shopping
+        </button>
       </div>
     </div>
   );

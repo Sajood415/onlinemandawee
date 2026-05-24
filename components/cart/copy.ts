@@ -1,0 +1,33 @@
+export function getCartCopy() {
+  return {
+    title: "Your cart",
+    subtitle: "Review your items and checkout securely when you're ready.",
+    items: "items",
+    item: "item",
+    emptyTitle: "Your cart is empty",
+    emptyDescription:
+      "Looks like you haven't added anything yet. Explore our marketplace and find something you'll love.",
+    browseProducts: "Browse products",
+    continueShopping: "Continue shopping",
+    orderSummary: "Order summary",
+    subtotal: "Subtotal",
+    shipping: "Shipping",
+    shippingFree: "Free",
+    shippingCalculated: "Calculated at checkout",
+    tax: "Estimated tax",
+    total: "Total",
+    deliveryEstimate: "Delivery estimate",
+    deliveryWindow: "2–4 business days",
+    deliveryNote: "Express same-day options may be available at checkout.",
+    checkout: "Proceed to checkout",
+    secureCheckout: "Secure checkout",
+    remove: "Remove",
+    each: "each",
+    lineTotal: "Line total",
+    recommended: "You may also like",
+    loading: "Loading your cart...",
+  };
+}
+
+export const STANDARD_SHIPPING_FEE = 5.99;
+export const ESTIMATED_TAX_RATE = 0.08;
