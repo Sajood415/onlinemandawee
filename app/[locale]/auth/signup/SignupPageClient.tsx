@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 
@@ -53,6 +53,13 @@ export function SignupPageClient() {
   const [busyAction, setBusyAction] = useState<"send" | "verify" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const emailFromQuery = searchParams.get("email");
+    if (emailFromQuery) {
+      setEmail(emailFromQuery);
+    }
+  }, [searchParams]);
 
   const sendOtpFromCreate = async (e: FormEvent) => {
     e.preventDefault();
@@ -206,7 +213,7 @@ export function SignupPageClient() {
       <div className="mx-auto max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
         <h1 className="text-2xl font-bold text-[#0f3460]">Create account</h1>
         <p className="mt-2 text-sm text-neutral-600">
-          Sign up as a customer to continue to cart and checkout.
+          Create a free account to track orders, save addresses, and check out faster.
         </p>
 
         {step === "details" ? (

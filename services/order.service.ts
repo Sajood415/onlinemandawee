@@ -10,6 +10,7 @@ import {
 import { sendTransactionalEmail } from "@/lib/mail/send-transactional-email";
 import { sendVendorOrderNotifications } from "@/lib/mail/send-vendor-order-notifications";
 import { generateOpaqueToken } from "@/lib/utils/crypto";
+import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { CartItemRepository } from "@/repositories/cart-item.repository";
 import { CartRepository } from "@/repositories/cart.repository";
@@ -178,15 +179,17 @@ export class OrderService {
 
   async listMyOrders(auth: AuthenticatedUser) {
     this.assertActiveCustomer(auth);
+    await this.orderRepository.claimGuestOrdersForUser(auth.id, auth.email);
     const orders = await this.orderRepository.listByUserId(auth.id);
     return orders.map((order) => this.serializeOrder(order));
   }
 
   async getOrderForCustomer(auth: AuthenticatedUser, orderId: string) {
     this.assertActiveCustomer(auth);
+    await this.orderRepository.claimGuestOrdersForUser(auth.id, auth.email);
     const order = await this.orderRepository.findById(orderId);
 
-    if (!order || order.userId !== auth.id) {
+    if (!order || !this.customerOwnsOrder(auth, order)) {
       throw new AppError({
         code: ERROR_CODE.NOT_FOUND,
         message: "Order not found",
@@ -585,6 +588,21 @@ export class OrderService {
 
     const updatedOrder = await this.orderRepository.updateOrderStatus(orderId, nextStatus);
     return updatedOrder.status;
+  }
+
+  private customerOwnsOrder(
+    auth: AuthenticatedUser,
+    order: NonNullable<Awaited<ReturnType<OrderRepository["findById"]>>>
+  ) {
+    if (order.userId === auth.id) {
+      return true;
+    }
+
+    if (!order.guestEmail) {
+      return false;
+    }
+
+    return normalizeEmailForAuth(order.guestEmail) === normalizeEmailForAuth(auth.email);
   }
 
   private serializeOrder(order: Awaited<ReturnType<OrderRepository["findById"]>> extends infer T ? NonNullable<T> : never) {

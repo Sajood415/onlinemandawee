@@ -4,12 +4,10 @@ import Image from "next/image";
 import { Loader2, Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 
-import { useCustomerRouteGuard } from "@/components/customer/use-customer-route-guard";
 import { useCart } from "@/store/cart-context";
 
 export default function CartPage() {
-  const { isLoading } = useCustomerRouteGuard();
-  const { cart, itemCount, total, removeItem, updateQuantity } = useCart();
+  const { cart, itemCount, total, removeItem, updateQuantity, isLoading } = useCart();
 
   if (isLoading) {
     return (
@@ -123,12 +121,15 @@ export default function CartPage() {
                   <span>${total.toFixed(2)}</span>
                 </div>
               </div>
-              <button
-                type="button"
+              <p className="mt-4 text-xs text-neutral-500">
+                No account needed — checkout as a guest or sign in later to track orders.
+              </p>
+              <Link
+                href="/checkout"
                 className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
               >
                 Proceed to checkout
-              </button>
+              </Link>
             </aside>
           </div>
         )}

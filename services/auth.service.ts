@@ -10,6 +10,7 @@ import { durationFromNow } from "@/lib/utils/duration";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 import { getClientIpAddress, getUserAgent } from "@/lib/utils/request-metadata";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
+import { OrderRepository } from "@/repositories/order.repository";
 import { SessionRepository } from "@/repositories/session.repository";
 import { UserRepository } from "@/repositories/user.repository";
 
@@ -59,7 +60,8 @@ export class AuthService {
   constructor(
     private readonly userRepository = new UserRepository(),
     private readonly sessionRepository = new SessionRepository(),
-    private readonly auditLogRepository = new AuditLogRepository()
+    private readonly auditLogRepository = new AuditLogRepository(),
+    private readonly orderRepository = new OrderRepository()
   ) {}
 
   async registerCustomer(input: RegisterCustomerInput, metadata: RequestMetadata) {
@@ -121,6 +123,8 @@ export class AuthService {
       },
     });
 
+    await this.orderRepository.claimGuestOrdersForUser(user.id, normalizedEmail);
+
     return authResult;
   }
 
@@ -162,6 +166,11 @@ export class AuthService {
     }
 
     await this.userRepository.updateLastLogin(user.id, new Date());
+
+    if (user.role === "CUSTOMER") {
+      await this.orderRepository.claimGuestOrdersForUser(user.id, user.email);
+    }
+
     return this.createSessionTokens(user, metadata);
   }
 

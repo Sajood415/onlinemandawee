@@ -4,6 +4,7 @@ import type {
   VendorOrderStatus,
 } from "@/domain/order/order-status";
 import { prisma } from "@/lib/db/prisma";
+import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 
 export class OrderRepository {
   create(input: {
@@ -111,6 +112,37 @@ export class OrderRepository {
         createdAt: "desc",
       },
     });
+  }
+
+  async claimGuestOrdersForUser(userId: string, email: string) {
+    const normalizedEmail = normalizeEmailForAuth(email);
+
+    // Prisma + MongoDB: `userId: null` in where does not match unset/null fields reliably.
+    // Load candidate guest orders and filter unclaimed rows in application code.
+    const candidates = await prisma.order.findMany({
+      where: { guestEmail: { not: null } },
+      select: { id: true, guestEmail: true, userId: true },
+    });
+
+    const orderIds = candidates
+      .filter(
+        (order) =>
+          order.userId == null &&
+          order.guestEmail != null &&
+          normalizeEmailForAuth(order.guestEmail) === normalizedEmail
+      )
+      .map((order) => order.id);
+
+    if (orderIds.length === 0) {
+      return 0;
+    }
+
+    await prisma.order.updateMany({
+      where: { id: { in: orderIds } },
+      data: { userId },
+    });
+
+    return orderIds.length;
   }
 
   findById(id: string) {

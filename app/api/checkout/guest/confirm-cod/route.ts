@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db/prisma";
 import { sendGuestOrderConfirmationEmail } from "@/lib/mail/send-guest-order-confirmation-email";
 import { sendVendorOrderNotifications } from "@/lib/mail/send-vendor-order-notifications";
 import { generateOpaqueToken } from "@/lib/utils/crypto";
+import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 
 const lineItemSchema = z.object({
   productId: z.string().min(1),
@@ -81,7 +82,7 @@ export const POST = withErrorHandling(async (request) => {
 
   const order = await prisma.order.create({
     data: {
-      guestEmail: input.guestEmail,
+      guestEmail: normalizeEmailForAuth(input.guestEmail),
       orderNumber,
       status: "CREATED",
       paymentStatus: "UNPAID",

@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -25,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { useCart } from "@/store/cart-context";
+import { useAuth } from "@/store/auth-context";
 import { toast } from "@/lib/utils/toast";
 
 /* ─── Stripe setup ───────────────────────────────────────────────────── */
@@ -537,10 +537,12 @@ function SuccessScreen({
   guestEmail: string;
 }) {
   const router = useRouter();
-  const locale = useLocale();
+  const { isAuthenticated } = useAuth();
   const [cancelling, setCancelling] = useState(false);
   const [cancelled, setCancelled] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+
+  const signupHref = `/auth/signup?redirect=${encodeURIComponent("/account")}${guestEmail ? `&email=${encodeURIComponent(guestEmail)}` : ""}`;
 
   const handleCancel = async () => {
     if (!confirm("Are you sure you want to cancel this order?")) return;
@@ -579,7 +581,7 @@ function SuccessScreen({
                 Your order <strong>{orderNumber}</strong> has been cancelled. A confirmation email has been sent.
               </p>
             </div>
-            <button onClick={() => router.push(`/${locale}`)}
+            <button onClick={() => router.push("/")}
               className="w-full rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors">
               Continue Shopping
             </button>
@@ -617,11 +619,32 @@ function SuccessScreen({
 
             <p className="text-xs text-gray-400">Keep this order number for your records.</p>
 
+            {!isAuthenticated ? (
+              <div className="rounded-2xl border border-[#0f3460]/15 bg-[#0f3460]/5 px-5 py-4 text-left space-y-3">
+                <p className="text-sm font-semibold text-[#0f3460]">Want to track this order?</p>
+                <p className="text-sm text-gray-600">
+                  Create a free account with the same email to track this order, view status updates, and save addresses for next time.
+                </p>
+                <Link
+                  href={signupHref}
+                  className="inline-flex w-full items-center justify-center rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+                >
+                  Create account
+                </Link>
+                <Link
+                  href="/auth/login"
+                  className="inline-flex w-full items-center justify-center rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                >
+                  Already have an account? Sign in
+                </Link>
+              </div>
+            ) : null}
+
             {cancelError && (
               <p className="text-xs text-red-500 bg-red-50 rounded-xl px-4 py-2">{cancelError}</p>
             )}
 
-            <button onClick={() => router.push(`/${locale}`)}
+            <button onClick={() => router.push("/")}
               className="w-full rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors">
               Continue Shopping
             </button>
@@ -648,7 +671,6 @@ function SuccessScreen({
 
 export default function CheckoutPage() {
   const { cart, removeItem } = useCart();
-  const locale = useLocale();
   const router = useRouter();
 
   const [step, setStep] = useState(0);
@@ -672,9 +694,9 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (cartItems.length === 0 && !successOrderNumber) {
-      router.replace(`/${locale}`);
+      router.replace("/");
     }
-  }, [cartItems.length, router, locale, successOrderNumber]);
+  }, [cartItems.length, router, successOrderNumber]);
 
   // Fetch a Stripe payment intent when card method is selected and we reach step 2
   const fetchStripeQuote = useCallback(async () => {

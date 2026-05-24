@@ -1,6 +1,6 @@
 export type AppRole = "CUSTOMER" | "VENDOR" | "ADMIN";
 
-const CUSTOMER_ONLY_PREFIXES = ["/cart", "/checkout"];
+const CUSTOMER_ONLY_PREFIXES = ["/account"];
 
 export const roleHomePath = (role: AppRole) => {
   if (role === "ADMIN") return "/admin/dashboard";

@@ -2,7 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { Loader2, MapPin, Pencil, Plus, ShoppingBag, UserCircle2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  MapPin,
+  Pencil,
+  Plus,
+  RefreshCw,
+  ShoppingBag,
+  UserCircle2,
+} from "lucide-react";
 
 import { useCustomerRouteGuard } from "@/components/customer/use-customer-route-guard";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
@@ -10,6 +20,27 @@ import { parseApiResponse } from "@/lib/http/parse-api-response";
 
 const INPUT_CLASS =
   "mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
+
+type VendorOrderStatus = "NEW" | "PREPARING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+
+type CustomerOrderItem = {
+  id: string;
+  productName: string;
+  productImage: string | null;
+  quantity: number;
+  currency: string;
+  unitPriceAmount: number;
+  lineTotalAmount: number;
+};
+
+type CustomerVendorOrder = {
+  id: string;
+  vendorStoreName: string | null;
+  status: VendorOrderStatus;
+  currency: string;
+  grandTotalAmount: number;
+  items: CustomerOrderItem[];
+};
 
 type CustomerOrder = {
   id: string;
@@ -19,6 +50,7 @@ type CustomerOrder = {
   currency: string;
   grandTotalAmount: number;
   createdAt: string;
+  updatedAt: string;
   shippingAddress: {
     fullName: string;
     phone: string;
@@ -27,7 +59,145 @@ type CustomerOrder = {
     country: string;
     postalCode: string | null;
   };
+  vendorOrders: CustomerVendorOrder[];
 };
+
+const STATUS_COLORS: Record<VendorOrderStatus, string> = {
+  NEW: "bg-blue-50 text-blue-700 border border-blue-200",
+  PREPARING: "bg-yellow-50 text-yellow-700 border border-yellow-200",
+  SHIPPED: "bg-cyan-50 text-cyan-700 border border-cyan-200",
+  DELIVERED: "bg-green-50 text-green-700 border border-green-200",
+  CANCELLED: "bg-red-50 text-red-700 border border-red-200",
+};
+
+const STATUS_LABELS: Record<VendorOrderStatus, string> = {
+  NEW: "New",
+  PREPARING: "Preparing",
+  SHIPPED: "Shipped",
+  DELIVERED: "Delivered",
+  CANCELLED: "Cancelled",
+};
+
+function formatMoney(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(amount / 100);
+  } catch {
+    return `${currency} ${(amount / 100).toFixed(2)}`;
+  }
+}
+
+function overallOrderStatus(order: CustomerOrder) {
+  const statuses = order.vendorOrders.map((vendorOrder) => vendorOrder.status);
+  if (statuses.every((status) => status === "CANCELLED")) return "CANCELLED";
+  if (statuses.every((status) => status === "DELIVERED")) return "DELIVERED";
+  if (statuses.some((status) => status === "SHIPPED")) return "SHIPPED";
+  if (statuses.some((status) => status === "PREPARING")) return "PREPARING";
+  return "NEW";
+}
+
+function OrderCard({ order }: { order: CustomerOrder }) {
+  const [expanded, setExpanded] = useState(false);
+  const summaryStatus = overallOrderStatus(order);
+
+  return (
+    <article className="rounded-xl border border-neutral-200 bg-neutral-50 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setExpanded((current) => !current)}
+        className="flex w-full items-start justify-between gap-3 px-4 py-4 text-left transition hover:bg-neutral-100/80"
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold text-neutral-900">{order.orderNumber}</p>
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_COLORS[summaryStatus]}`}
+            >
+              {STATUS_LABELS[summaryStatus]}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-neutral-600">
+            Placed {new Date(order.createdAt).toLocaleString()}
+          </p>
+          <p className="mt-1 text-xs text-neutral-500">
+            Payment: {order.paymentStatus.replaceAll("_", " ")}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <p className="text-sm font-semibold text-neutral-900">
+            {formatMoney(order.grandTotalAmount, order.currency)}
+          </p>
+          {expanded ? (
+            <ChevronUp className="h-4 w-4 text-neutral-500" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-neutral-500" />
+          )}
+        </div>
+      </button>
+
+      {expanded ? (
+        <div className="border-t border-neutral-200 bg-white px-4 py-4 space-y-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+              Delivery address
+            </p>
+            <p className="mt-1 text-sm text-neutral-700">
+              {order.shippingAddress.fullName} · {order.shippingAddress.phone}
+            </p>
+            <p className="text-sm text-neutral-700">
+              {order.shippingAddress.addressLine1}, {order.shippingAddress.city},{" "}
+              {order.shippingAddress.country}
+              {order.shippingAddress.postalCode
+                ? `, ${order.shippingAddress.postalCode}`
+                : ""}
+            </p>
+          </div>
+
+          {order.vendorOrders.map((vendorOrder) => (
+            <div
+              key={vendorOrder.id}
+              className="rounded-xl border border-neutral-200 bg-neutral-50 p-4"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-neutral-900">
+                  {vendorOrder.vendorStoreName ?? "Vendor"}
+                </p>
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_COLORS[vendorOrder.status]}`}
+                >
+                  {STATUS_LABELS[vendorOrder.status]}
+                </span>
+              </div>
+
+              <div className="mt-3 space-y-2">
+                {vendorOrder.items.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-neutral-900 truncate">
+                        {item.productName}
+                      </p>
+                      <p className="text-xs text-neutral-500">Qty: {item.quantity}</p>
+                    </div>
+                    <p className="font-semibold text-neutral-900">
+                      {formatMoney(item.lineTotalAmount, item.currency)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </article>
+  );
+}
 
 type CustomerAddress = {
   id: string;
@@ -203,6 +373,19 @@ export default function CustomerAccountPage() {
   }, [guardLoading, user, loadAccountData]);
 
   useEffect(() => {
+    if (guardLoading || !user) return;
+
+    const refreshOnVisible = () => {
+      if (document.visibilityState === "visible") {
+        void loadAccountData();
+      }
+    };
+
+    document.addEventListener("visibilitychange", refreshOnVisible);
+    return () => document.removeEventListener("visibilitychange", refreshOnVisible);
+  }, [guardLoading, user, loadAccountData]);
+
+  useEffect(() => {
     if (!user) return;
     setAddressForm((current) =>
       emptyAddressForm({
@@ -370,7 +553,7 @@ export default function CustomerAccountPage() {
                   {orderCount} total
                 </p>
                 <p className="mt-1 text-sm text-neutral-600">
-                  Total spent: ${totalSpent.toFixed(2)}
+                  Total spent: {formatMoney(totalSpent, orders[0]?.currency ?? "USD")}
                 </p>
               </article>
 
@@ -391,10 +574,26 @@ export default function CustomerAccountPage() {
             </section>
 
             <section className="mt-8 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
-              <h2 className="text-lg font-semibold text-neutral-900">Past orders</h2>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-neutral-900">Your orders</h2>
+                  <p className="mt-1 text-sm text-neutral-600">
+                    Track delivery status for each vendor in your order.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void loadAccountData()}
+                  className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh
+                </button>
+              </div>
               {orders.length === 0 ? (
                 <p className="mt-3 text-sm text-neutral-600">
-                  You have no orders yet.{" "}
+                  You have no orders yet. Guest orders placed with your email will
+                  appear here after you sign up or sign in.{" "}
                   <Link href="/products" className="font-semibold text-primary hover:underline">
                     Start shopping
                   </Link>
@@ -402,22 +601,7 @@ export default function CustomerAccountPage() {
               ) : (
                 <div className="mt-4 space-y-3">
                   {orders.map((order) => (
-                    <div
-                      key={order.id}
-                      className="flex flex-col gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-neutral-900">
-                          {order.orderNumber}
-                        </p>
-                        <p className="text-xs text-neutral-600">
-                          {new Date(order.createdAt).toLocaleDateString()} - {order.status}
-                        </p>
-                      </div>
-                      <div className="text-sm font-semibold text-neutral-900">
-                        ${order.grandTotalAmount.toFixed(2)}
-                      </div>
-                    </div>
+                    <OrderCard key={order.id} order={order} />
                   ))}
                 </div>
               )}
