@@ -9,7 +9,6 @@ import { useParams } from "next/navigation";
 import {
   CalendarDays,
   ChevronRight,
-  Loader2,
   MapPin,
   ShoppingCart,
   Star,
@@ -17,6 +16,7 @@ import {
   Truck,
 } from "lucide-react";
 
+import { PageLoader } from "@/components/ui/PageLoader";
 import productData from "@/data/product.json";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -109,16 +109,17 @@ export default function VendorStorePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-white">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm font-medium text-neutral-500">
-          {locale === "en"
+      <PageLoader
+        message={
+          locale === "en"
             ? "Loading vendor store..."
             : locale === "ps"
               ? "د پلورونکي پلورنځي پورته کېږي..."
-              : "در حال بارگذاری فروشگاه..."}
-        </p>
-      </div>
+              : "در حال بارگذاری فروشگاه..."
+        }
+        className="bg-white"
+        fullScreen
+      />
     );
   }
 

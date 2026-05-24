@@ -14,6 +14,7 @@ import {
   UserCircle2,
 } from "lucide-react";
 
+import { PageLoader } from "@/components/ui/PageLoader";
 import { useCustomerRouteGuard } from "@/components/customer/use-customer-route-guard";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -495,14 +496,7 @@ export default function CustomerAccountPage() {
   );
 
   if (guardLoading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center bg-white px-4 py-10">
-        <div className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-600 shadow-sm">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Checking account...
-        </div>
-      </div>
-    );
+    return <PageLoader message="Checking account..." fullScreen />;
   }
 
   return (

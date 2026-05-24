@@ -29,7 +29,6 @@ export type HeaderCopy = {
   languageSelect: string;
   login: string;
   becomeVendor: string;
-  freeDeliveryAbove100: string;
 };
 
 export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
@@ -69,7 +68,6 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     languageSelect: "Language Select",
     login: "Login",
     becomeVendor: "Become a Vendor",
-    freeDeliveryAbove100: "Free Delivery on Orders Above $100",
   },
   ps: {
     searchSuggestions: [
@@ -107,7 +105,6 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     languageSelect: "ژبه وټاکئ",
     login: "ننوتل",
     becomeVendor: "پلورونکی شئ",
-    freeDeliveryAbove100: "د $100 څخه پورته فرمایشونو لپاره وړیا تحویل",
   },
   "fa-AF": {
     searchSuggestions: [
@@ -145,12 +142,9 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     languageSelect: "انتخاب زبان",
     login: "ورود",
     becomeVendor: "فروشنده شوید",
-    freeDeliveryAbove100: "تحویل رایگان برای سفارش‌های بالاتر از $100",
   },
 };
 
-export const PROMO_DISMISS_KEY = "mw-free-delivery-dismiss";
 export const HEADER_LOGO_SRC =
   "https://onlinemandawee.com/cdn/shop/files/ON_4_150x.png?v=1763220040";
 export const HEADER_BAR_CLASS = "bg-[#0f3460]";
-export const TOP_PROMO_BAR_CLASS = "bg-[#0f3460]";

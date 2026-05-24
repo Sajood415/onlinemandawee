@@ -14,7 +14,6 @@ import {
   Menu,
   X,
   Cookie,
-  Sparkles,
   Zap,
   ArrowRight,
   Croissant,
@@ -36,8 +35,6 @@ import { parseApiResponse } from "@/lib/http/parse-api-response";
 import {
   HEADER_BAR_CLASS,
   HEADER_LOGO_SRC,
-  PROMO_DISMISS_KEY,
-  TOP_PROMO_BAR_CLASS,
   headerCopy,
 } from "@/components/layout/header/header-copy";
 import { IconButton } from "@/components/layout/header/IconButton";
@@ -112,30 +109,8 @@ export default function Header() {
     { id: string; name: string; slug: string }[]
   >([]);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
-  const [showTopPromo, setShowTopPromo] = useState(true);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    queueMicrotask(() => {
-      try {
-        if (localStorage.getItem(PROMO_DISMISS_KEY) === "1") {
-          setShowTopPromo(false);
-        }
-      } catch {
-        /* ignore */
-      }
-    });
-  }, []);
-
-  const dismissTopPromo = () => {
-    try {
-      localStorage.setItem(PROMO_DISMISS_KEY, "1");
-    } catch {
-      /* ignore */
-    }
-    setShowTopPromo(false);
-  };
 
   // Refresh cart when drawer opens
   useEffect(() => {
@@ -241,23 +216,6 @@ export default function Header() {
 
   return (
     <>
-      {showTopPromo ? (
-        <div className={`relative ${TOP_PROMO_BAR_CLASS} text-white`}>
-          <div className="relative mx-auto flex min-h-9 max-w-7xl items-center px-4 py-1 text-xs sm:text-[13px]">
-            <p className="flex-1 px-10 text-center font-semibold leading-tight sm:px-14">
-              {copy.freeDeliveryAbove100}
-            </p>
-            <button
-              type="button"
-              onClick={dismissTopPromo}
-              className={`absolute top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-white/85 transition hover:bg-white/15 hover:text-white ${isRtl ? "left-1.5 sm:left-3" : "right-1.5 sm:right-3"}`}
-              aria-label="Close announcement"
-            >
-              <X size={15} strokeWidth={2.5} />
-            </button>
-          </div>
-        </div>
-      ) : null}
       {/* TOP BAR – sticky (logo, search, account, cart) */}
       <header
         dir={isRtl ? "rtl" : "ltr"}
@@ -280,11 +238,11 @@ export default function Header() {
             {/* SEARCH - Desktop & Tablet */}
             <form
               onSubmit={handleSearch}
-              className={`hidden md:flex order-2 min-w-0 flex-1 items-center gap-2 px-2 rounded-full h-11 border border-gray-200 bg-white shadow-sm transition-all duration-300 group max-w-3xl hover:bg-gray-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 md:max-lg:gap-2 lg:gap-3 ${isRtl ? "pr-5 md:max-lg:pr-3 lg:pr-5" : "pl-5 md:max-lg:pl-3 lg:pl-5"}`}
+              className={`group hidden md:flex order-2 h-11 min-w-0 max-w-3xl flex-1 items-center gap-2 rounded-full border border-gray-200 bg-white p-1 shadow-sm transition-all duration-300 hover:bg-gray-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 ${isRtl ? "pr-3 pl-1" : "pl-3 pr-1"}`}
             >
               <Search
-                className="text-gray-400 group-focus-within:text-primary transition-colors shrink-0"
-                size={20}
+                className="shrink-0 text-gray-400 transition-colors group-focus-within:text-primary"
+                size={18}
               />
               <input
                 value={searchQuery}
@@ -296,20 +254,14 @@ export default function Header() {
                     ? t("searchPlaceholder")
                     : placeholderText
                 }
-                className="w-full bg-transparent outline-none text-[15px] font-medium placeholder:text-gray-400"
+                className="min-w-0 flex-1 bg-transparent text-[15px] font-medium outline-none placeholder:text-gray-400"
               />
               <button
                 type="submit"
-                className="relative overflow-hidden active:scale-95 text-white px-3 py-2.5 md:max-lg:px-3.5 lg:px-5 rounded-full font-bold text-xs md:max-lg:text-xs lg:text-sm shadow-lg transition-all shrink-0 flex items-center gap-1.5 lg:gap-2 cursor-pointer bg-primary"
-                style={
-                  {
-                    // background: "linear-gradient(135deg, var(--primary) 0%, #991B1B 100%)",
-                  }
-                }
+                className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-xs font-bold text-white shadow-sm transition-all hover:brightness-110 active:scale-[0.98] lg:px-5 lg:text-sm"
               >
-                <span className="relative z-10">{copy.searchButton}</span>
-                <Sparkles className="relative z-10 h-4 w-4" />
-                <div className="absolute inset-0 bg-white/20 opacity-0 hover:opacity-100 transition-opacity" />
+                <span>{copy.searchButton}</span>
+                <Search className="h-4 w-4 text-white" strokeWidth={2.5} />
               </button>
             </form>
 
@@ -434,9 +386,9 @@ export default function Header() {
               >
                 <form
                   onSubmit={handleSearch}
-                  className="relative flex items-center gap-2 bg-white px-3 py-2 rounded-full border border-gray-200 shadow-sm"
+                  className="relative flex h-11 items-center gap-2 rounded-full border border-gray-200 bg-white p-1 shadow-sm"
                 >
-                  <Search className="text-gray-400 shrink-0" size={18} />
+                  <Search className="ms-2 shrink-0 text-gray-400" size={18} />
                   <input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -447,18 +399,14 @@ export default function Header() {
                         ? copy.mobileSearchPlaceholder
                         : placeholderText
                     }
-                    className="flex-1 bg-transparent outline-none text-[15px] font-medium placeholder:text-gray-400 min-w-0"
+                    className="min-w-0 flex-1 bg-transparent text-[15px] font-medium outline-none placeholder:text-gray-400"
                   />
                   <button
                     type="submit"
-                    className="relative overflow-hidden active:scale-95 text-white px-4 py-2 rounded-full font-bold text-xs shadow-lg transition-all shrink-0 flex items-center gap-1.5"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, var(--primary) 0%, #991B1B 100%)",
-                    }}
+                    className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-xs font-bold text-white shadow-sm transition-all hover:brightness-110 active:scale-[0.98]"
                   >
-                    <span className="relative z-10">{copy.searchButton}</span>
-                    <Sparkles className="relative z-10 h-3 w-3" />
+                    <span>{copy.searchButton}</span>
+                    <Search className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
                   </button>
                 </form>
               </motion.div>

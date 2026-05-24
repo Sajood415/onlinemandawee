@@ -25,6 +25,12 @@ type LanguageSelectorProps = {
   variant?: "default" | "dark";
 };
 
+const localeRegionCode: Record<string, string> = {
+  en: "US",
+  ps: "AF",
+  "fa-AF": "AF",
+};
+
 export function LanguageSelector({
   locale,
   languages,
@@ -55,31 +61,35 @@ export function LanguageSelector({
         aria-expanded={open}
         aria-haspopup="listbox"
         onClick={() => setOpen(!open)}
-        className={`group h-9 min-h-9 rounded-full border flex items-center gap-2 px-2.5 sm:pr-3 sm:pl-2.5 text-xs font-bold transition-all cursor-pointer shadow-sm ${
+        className={`group inline-flex h-9 min-h-9 items-center gap-2 rounded-full border px-2.5 text-xs font-bold shadow-sm transition-all cursor-pointer sm:ps-2 sm:pe-3 ${
           variant === "dark"
             ? open
-              ? "bg-white border-white text-primary shadow-md ring-2 ring-white/70"
-              : "bg-white border-white text-gray-900 hover:bg-gray-50 hover:border-gray-100"
+              ? "border-white bg-white text-primary shadow-md ring-2 ring-white/70"
+              : "border-white bg-white text-gray-900 hover:border-gray-100 hover:bg-gray-50"
             : open
-              ? "bg-white shadow-lg border-primary/30 text-primary"
-              : "bg-white border-gray-200 text-gray-800 hover:bg-gray-50"
+              ? "border-primary/30 bg-white text-primary shadow-lg"
+              : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
         }`}
       >
         <span
-          className={`text-lg leading-none w-8 h-8 shrink-0 flex items-center justify-center rounded-full border ${
+          className={`grid size-7 shrink-0 place-items-center rounded-full border ${
             variant === "dark"
-              ? "bg-gray-50 border-gray-200"
-              : "bg-gray-50 border-gray-100"
+              ? "border-gray-200 bg-gray-50"
+              : "border-gray-100 bg-gray-50"
           }`}
           aria-hidden
         >
-          {current.flag}
+          <span className="text-[10px] font-extrabold leading-none tracking-tight text-gray-800">
+            {localeRegionCode[current.code] ??
+              current.code.slice(0, 2).toUpperCase()}
+          </span>
         </span>
-        <span className="hidden min-w-0 truncate text-left text-[12px] font-extrabold tracking-tight text-gray-900 sm:block">
+        <span className="hidden min-w-0 truncate text-left text-[12px] font-extrabold leading-none tracking-tight text-gray-900 sm:block">
           {current.label}
         </span>
-        <span className="sm:hidden text-[11px] font-extrabold uppercase tracking-wide text-gray-900">
-          {locale.split("-")[0]}
+        <span className="text-[11px] font-extrabold uppercase leading-none tracking-wide text-gray-900 sm:hidden">
+          {localeRegionCode[current.code] ??
+            locale.split("-")[0].toUpperCase()}
         </span>
         <ChevronDown
           size={14}

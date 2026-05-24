@@ -1,29 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { CatalogImage } from "@/components/catalog/CatalogImage";
 import { useLocale } from "next-intl";
-import { toast } from "@/lib/utils/toast";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Search,
-  Star,
-  ShoppingCart,
-  Heart,
-  X,
-  ChevronDown,
-  ChevronRight,
-  Check,
-  Filter,
-  Loader2,
-} from "lucide-react";
-import productData from "@/data/product.json";
-import {
-  localizeDelivery,
-  localizeVendor,
-  type SupportedLocale,
-} from "@/lib/localization/product-vendor";
+import { motion } from "framer-motion";
+
+import { getProductsCopy } from "@/components/products/copy";
+import { ProductCard } from "@/components/products/ProductCard";
+import { ProductsEmptyState } from "@/components/products/ProductsEmptyState";
+import { ProductsFiltersPanel } from "@/components/products/ProductsFiltersPanel";
+import { ProductsGridSkeleton } from "@/components/products/ProductsGridSkeleton";
+import { ProductsMobileFiltersDrawer } from "@/components/products/ProductsMobileFiltersDrawer";
+import { ProductsPageHeader } from "@/components/products/ProductsPageHeader";
+import { ProductsToolbar } from "@/components/products/ProductsToolbar";
+import type {
+  CatalogRow,
+  CategoryOption,
+  ProductSortBy,
+} from "@/components/products/types";
 import {
   filterCatalogProducts,
   sortCatalogProducts,
@@ -33,24 +26,18 @@ import {
   type PublicCatalogProduct,
 } from "@/lib/products/public-catalog";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
-import { useCart } from "@/store/cart-context";
+import type { SupportedLocale } from "@/lib/localization/product-vendor";
+import productData from "@/data/product.json";
 
 const staticProducts = productData.featuredProducts;
 const staticCategories = productData.categories;
 const staticVendors = productData.vendors;
 
-type CatalogRow = (typeof staticProducts)[number] | PublicCatalogProduct;
-
-type CategoryOption = {
-  id: string;
-  label: Record<SupportedLocale, string>;
-};
-
-type ProductSortBy = "featured" | "price-low" | "price-high" | "rating";
-
 export default function ProductsPage() {
   const locale = useLocale() as SupportedLocale;
   const isRtl = locale !== "en";
+  const copy = getProductsCopy(locale);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedVendor, setSelectedVendor] = useState<string[]>([]);
@@ -64,6 +51,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     let mounted = true;
+
     const load = async () => {
       setCatalogLoading(true);
       try {
@@ -72,20 +60,22 @@ export default function ProductsPage() {
           fetch("/api/catalog/categories"),
         ]);
         const categories = categoriesRes.ok
-          ? await parseApiResponse<{ id: string; name: string; slug: string }[]>(categoriesRes)
+          ? await parseApiResponse<{ id: string; name: string; slug: string }[]>(
+              categoriesRes
+            )
           : [];
 
         if (!mounted) return;
 
         setVendorProducts(products);
         setApiCategories(
-          categories.map((c) => ({
-            id: c.slug,
-            label: { en: c.name, ps: c.name, "fa-AF": c.name },
+          categories.map((category) => ({
+            id: category.slug,
+            label: { en: category.name, ps: category.name, "fa-AF": category.name },
           }))
         );
 
-        const prices = [...staticProducts, ...products].map((p) => p.price);
+        const prices = [...staticProducts, ...products].map((product) => product.price);
         const computedMax = Math.max(100, ...prices, 0);
         setMaxPrice(computedMax);
         setPriceRange([0, computedMax]);
@@ -95,6 +85,7 @@ export default function ProductsPage() {
         if (mounted) setCatalogLoading(false);
       }
     };
+
     void load();
     return () => {
       mounted = false;
@@ -108,8 +99,8 @@ export default function ProductsPage() {
 
   const categories = useMemo(() => {
     const merged = [...staticCategories];
-    for (const cat of apiCategories) {
-      if (!merged.some((item) => item.id === cat.id)) merged.push(cat);
+    for (const category of apiCategories) {
+      if (!merged.some((item) => item.id === category.id)) merged.push(category);
     }
     return merged;
   }, [apiCategories]);
@@ -129,7 +120,7 @@ export default function ProductsPage() {
         priceRange,
         locale,
       }),
-    [searchQuery, selectedCategory, selectedVendor, priceRange, locale]
+    [allProducts, searchQuery, selectedCategory, selectedVendor, priceRange, locale]
   );
 
   const sortedProducts = useMemo(
@@ -139,9 +130,7 @@ export default function ProductsPage() {
 
   const toggleVendor = (vendor: string) => {
     setSelectedVendor((prev) =>
-      prev.includes(vendor)
-        ? prev.filter((v) => v !== vendor)
-        : [...prev, vendor],
+      prev.includes(vendor) ? prev.filter((item) => item !== vendor) : [...prev, vendor]
     );
   };
 
@@ -156,625 +145,116 @@ export default function ProductsPage() {
     selectedCategory !== "all" ||
     selectedVendor.length > 0 ||
     priceRange[1] < maxPrice ||
-    searchQuery;
+    Boolean(searchQuery);
+
+  const activeFilterCount = [
+    selectedCategory !== "all",
+    selectedVendor.length > 0,
+    priceRange[1] < maxPrice,
+    searchQuery,
+  ].filter(Boolean).length;
+
+  const filterLabels = {
+    filters: copy.filter,
+    category: copy.category,
+    price: copy.price,
+    brand: copy.brand,
+    maxPrice: copy.maxPrice,
+    showProducts: copy.showProducts,
+    products: copy.products,
+  };
 
   return (
-    <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-white">
-      {/* Breadcrumb & Header Bar */}
-      <div className="bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Breadcrumb */}
-          <div className="flex min-w-0 items-center gap-2 text-sm text-gray-500 mb-4 overflow-hidden">
-            <Link href="/" className="hover:text-primary hover:underline">
-              {locale === "en" ? "Home" : locale === "ps" ? "کور" : "خانه"}
-            </Link>
-            <ChevronRight className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
-            <span className="text-gray-900 font-medium">
-              {locale === "en"
-                ? "All Products"
-                : locale === "ps"
-                  ? "ټول محصولات"
-                  : "همه محصولات"}
-            </span>
-          </div>
+    <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-[#f6f8fc]">
+      <ProductsPageHeader
+        isRtl={isRtl}
+        copy={copy}
+        resultCount={catalogLoading ? 0 : sortedProducts.length}
+        hasActiveFilters={hasActiveFilters}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onClearSearch={() => setSearchQuery("")}
+      />
 
-          {/* Title & Search Row */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-                {locale === "en"
-                  ? "All Products"
-                  : locale === "ps"
-                    ? "ټول محصولات"
-                    : "همه محصولات"}
-              </h1>
-              <p className="text-gray-500 text-sm mt-1">
-                {sortedProducts.length}{" "}
-                {locale === "en"
-                  ? "results"
-                  : locale === "ps"
-                    ? "پایلې"
-                    : "نتایج"}
-                {hasActiveFilters && (
-                  <span>
-                    {" "}
-                    {locale === "en"
-                      ? "with filters applied"
-                      : locale === "ps"
-                        ? "د فلټرونو سره"
-                        : "با فیلترهای اعمال شده"}
-                  </span>
-                )}
-              </p>
-            </div>
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <ProductsToolbar
+          isRtl={isRtl}
+          sortBy={sortBy}
+          activeFilterCount={activeFilterCount}
+          hasActiveFilters={hasActiveFilters}
+          onSortChange={setSortBy}
+          onOpenFilters={() => setMobileFiltersOpen(true)}
+          onClearFilters={clearFilters}
+          labels={copy}
+        />
 
-            {/* Search Bar */}
-            <div className="relative w-full lg:w-96">
-              <Search
-                className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 ${
-                  isRtl ? "right-4" : "left-4"
-                }`}
+        <div className="flex gap-8">
+          <aside className="hidden w-[17.5rem] shrink-0 lg:block">
+            <div className="sticky top-24 rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-[0_12px_40px_rgba(15,52,96,0.06)]">
+              <ProductsFiltersPanel
+                locale={locale}
+                isRtl={isRtl}
+                categories={categories}
+                vendors={vendors}
+                selectedCategory={selectedCategory}
+                selectedVendor={selectedVendor}
+                priceRange={priceRange}
+                maxPrice={maxPrice}
+                onCategoryChange={setSelectedCategory}
+                onToggleVendor={toggleVendor}
+                onPriceChange={(max) => setPriceRange([0, max])}
+                labels={filterLabels}
               />
-              <input
-                type="text"
-                placeholder={
-                  locale === "en"
-                    ? "Search for products..."
-                    : locale === "ps"
-                      ? "د محصولاتو لټون..."
-                      : "جستجوی محصولات..."
-                }
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full py-3 rounded-full border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors ${
-                  isRtl ? "pr-12 pl-10 text-right" : "pl-12 pr-10 text-left"
-                }`}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className={`absolute top-1/2 -translate-y-1/2 ${
-                    isRtl ? "left-4" : "right-4"
-                  }`}
-                >
-                  <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-3">
-            {/* Mobile Filter Button */}
-            <button
-              onClick={() => setMobileFiltersOpen(true)}
-              className="lg:hidden flex items-center gap-2 px-4 py-2.5 rounded-full border-2 border-gray-200 bg-white text-gray-700 font-medium hover:border-primary transition-colors"
-            >
-              <Filter className="h-4 w-4" />
-              {locale === "en" ? "Filter" : locale === "ps" ? "فلټر" : "فیلتر"}
-              {hasActiveFilters && (
-                <span className="ml-1 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center">
-                  {
-                    [
-                      selectedCategory !== "all",
-                      selectedVendor.length > 0,
-                      priceRange[1] < maxPrice,
-                      searchQuery,
-                    ].filter(Boolean).length
-                  }
-                </span>
-              )}
-            </button>
-
-            {/* Sort Dropdown */}
-            <div className="relative w-full sm:w-auto">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as ProductSortBy)}
-                className="w-full sm:w-auto appearance-none pl-4 pr-10 py-2.5 rounded-full border-2 border-gray-200 focus:border-primary focus:outline-none bg-white cursor-pointer font-medium text-gray-700 text-sm"
-              >
-                <option value="featured">
-                  {locale === "en"
-                    ? "Best Match"
-                    : locale === "ps"
-                      ? "غوره تطابق"
-                      : "بهترین تطابق"}
-                </option>
-                <option value="price-low">
-                  {locale === "en"
-                    ? "Price: Low to High"
-                    : locale === "ps"
-                      ? "قیمت: کم به زیاد"
-                      : "قیمت: کم به زیاد"}
-                </option>
-                <option value="price-high">
-                  {locale === "en"
-                    ? "Price: High to Low"
-                    : locale === "ps"
-                      ? "قیمت: زیاد به کم"
-                      : "قیمت: زیاد به کم"}
-                </option>
-                <option value="rating">
-                  {locale === "en"
-                    ? "Top Rated"
-                    : locale === "ps"
-                      ? "ترټولو ښه"
-                      : "بالاترین امتیاز"}
-                </option>
-              </select>
-              <ChevronDown
-                className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none ${
-                  isRtl ? "left-3" : "right-3"
-                }`}
-              />
-            </div>
-          </div>
-
-          {/* Clear Filters */}
-          {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1 px-3 py-1.5 rounded-full hover:bg-primary/5 transition-colors"
-            >
-              <X className="h-4 w-4" />
-              {locale === "en"
-                ? "Clear all"
-                : locale === "ps"
-                  ? "ټول پاک کړئ"
-                  : "پاک کردن همه"}
-            </button>
-          )}
-        </div>
-
-        <div className="flex gap-6">
-          {/* Sidebar Filters - Desktop */}
-          <aside className="hidden lg:block w-60 shrink-0">
-            <div className="sticky top-4">
-              {/* Categories */}
-              <div className="mb-6">
-                <h3 className="font-bold text-gray-900 mb-3 text-sm uppercase tracking-wide">
-                  {locale === "en"
-                    ? "Category"
-                    : locale === "ps"
-                      ? "کټګوري"
-                      : "دسته"}
-                </h3>
-                <div className="space-y-1">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all ${isRtl ? "text-right" : "text-left"} ${
-                        selectedCategory === cat.id
-                          ? "bg-primary text-white font-medium"
-                          : "text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      <span>{cat.label[locale]}</span>
-                      {selectedCategory === cat.id && (
-                        <Check className="h-4 w-4" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Price Range */}
-              <div className="mb-6 pb-6 border-b">
-                <h3 className="font-bold text-gray-900 mb-3 text-sm uppercase tracking-wide">
-                  {locale === "en"
-                    ? "Price"
-                    : locale === "ps"
-                      ? "قیمت"
-                      : "قیمت"}
-                </h3>
-                <div className="px-1">
-                  <input
-                    type="range"
-                    min="0"
-                    max={maxPrice}
-                    value={priceRange[1]}
-                    onChange={(e) =>
-                      setPriceRange([0, parseInt(e.target.value)])
-                    }
-                    className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-primary"
-                  />
-                  <div className="flex justify-between mt-3 text-sm text-gray-700">
-                    <span className="font-medium">$0</span>
-                    <span className="font-bold text-primary">
-                      Max: ${priceRange[1]}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Vendors */}
-              <div>
-                <h3 className="font-bold text-gray-900 mb-3 text-sm uppercase tracking-wide">
-                  {locale === "en"
-                    ? "Brand"
-                    : locale === "ps"
-                      ? "برانډ"
-                      : "برند"}
-                </h3>
-                <div className="space-y-2 max-h-56 overflow-y-auto pr-2">
-                  {vendors.slice(1).map((vendor) => (
-                    <label
-                      key={vendor}
-                      className="flex items-center gap-3 cursor-pointer group"
-                    >
-                      <div
-                        className={`w-4 h-4 rounded flex items-center justify-center transition-all ${
-                          selectedVendor.includes(vendor)
-                            ? "bg-primary"
-                            : "border-2 border-gray-300 group-hover:border-gray-400"
-                        }`}
-                      >
-                        {selectedVendor.includes(vendor) && (
-                          <Check className="h-3 w-3 text-white" />
-                        )}
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={selectedVendor.includes(vendor)}
-                        onChange={() => toggleVendor(vendor)}
-                        className="sr-only"
-                      />
-                      <span
-                        className={`text-sm ${selectedVendor.includes(vendor) ? "text-gray-900 font-medium" : "text-gray-600"}`}
-                      >
-                        <bdi dir="ltr">{localizeVendor(vendor, locale)}</bdi>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
             </div>
           </aside>
 
-          {/* Mobile Filters Drawer */}
-          <AnimatePresence>
-            {mobileFiltersOpen && (
-              <>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setMobileFiltersOpen(false)}
-                  className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-                />
-                <motion.div
-                  initial={{ x: isRtl ? "100%" : "-100%" }}
-                  animate={{ x: 0 }}
-                  exit={{ x: isRtl ? "100%" : "-100%" }}
-                  transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                  className={`fixed top-0 bottom-0 w-[85vw] max-w-sm bg-white z-50 overflow-y-auto lg:hidden ${
-                    isRtl ? "right-0" : "left-0"
-                  }`}
-                >
-                  <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
-                    <h2 className="text-lg font-bold">
-                      {locale === "en"
-                        ? "Filters"
-                        : locale === "ps"
-                          ? "فلټرونه"
-                          : "فیلترها"}
-                    </h2>
-                    <button onClick={() => setMobileFiltersOpen(false)}>
-                      <X className="h-6 w-6" />
-                    </button>
-                  </div>
+          <ProductsMobileFiltersDrawer
+            open={mobileFiltersOpen}
+            isRtl={isRtl}
+            locale={locale}
+            categories={categories}
+            vendors={vendors}
+            selectedCategory={selectedCategory}
+            selectedVendor={selectedVendor}
+            priceRange={priceRange}
+            maxPrice={maxPrice}
+            resultCount={sortedProducts.length}
+            onClose={() => setMobileFiltersOpen(false)}
+            onCategoryChange={setSelectedCategory}
+            onToggleVendor={toggleVendor}
+            onPriceChange={(max) => setPriceRange([0, max])}
+            labels={filterLabels}
+          />
 
-                  <div className="p-4 space-y-6">
-                    {/* Categories */}
-                    <div>
-                      <h3 className="font-bold text-gray-900 mb-3 text-sm uppercase">
-                        {locale === "en"
-                          ? "Category"
-                          : locale === "ps"
-                            ? "کټګوري"
-                            : "دسته"}
-                      </h3>
-                      <div className="space-y-1">
-                        {categories.map((cat) => (
-                          <button
-                            key={cat.id}
-                            onClick={() => setSelectedCategory(cat.id)}
-                            className={`w-full px-3 py-2.5 rounded-lg text-sm ${isRtl ? "text-right" : "text-left"} ${
-                              selectedCategory === cat.id
-                                ? "bg-primary text-white font-medium"
-                                : "text-gray-700 hover:bg-gray-100"
-                            }`}
-                          >
-                            {cat.label[locale]}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Price */}
-                    <div className="pb-6 border-b">
-                      <h3 className="font-bold text-gray-900 mb-3 text-sm uppercase">
-                        {locale === "en"
-                          ? "Price"
-                          : locale === "ps"
-                            ? "قیمت"
-                            : "قیمت"}
-                      </h3>
-                      <input
-                        type="range"
-                        min="0"
-                        max={maxPrice}
-                        value={priceRange[1]}
-                        onChange={(e) =>
-                          setPriceRange([0, parseInt(e.target.value)])
-                        }
-                        className="w-full accent-primary"
-                      />
-                      <div className="flex justify-between text-sm mt-2">
-                        <span>$0</span>
-                        <span className="font-bold">${priceRange[1]}</span>
-                      </div>
-                    </div>
-
-                    {/* Vendors */}
-                    <div>
-                      <h3 className="font-bold text-gray-900 mb-3 text-sm uppercase">
-                        {locale === "en"
-                          ? "Brand"
-                          : locale === "ps"
-                            ? "برانډ"
-                            : "برند"}
-                      </h3>
-                      <div className="space-y-2">
-                        {vendors.slice(1).map((vendor) => (
-                          <label
-                            key={vendor}
-                            className="flex items-center gap-3"
-                          >
-                            <div
-                              className={`w-4 h-4 rounded flex items-center justify-center ${
-                                selectedVendor.includes(vendor)
-                                  ? "bg-primary"
-                                  : "border-2 border-gray-300"
-                              }`}
-                            >
-                              {selectedVendor.includes(vendor) && (
-                                <Check className="h-3 w-3 text-white" />
-                              )}
-                            </div>
-                            <input
-                              type="checkbox"
-                              checked={selectedVendor.includes(vendor)}
-                              onChange={() => toggleVendor(vendor)}
-                              className="sr-only"
-                            />
-                            <span className="text-sm text-gray-700">
-                              <bdi dir="ltr">{localizeVendor(vendor, locale)}</bdi>
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 border-t sticky bottom-0 bg-white">
-                    <button
-                      onClick={() => setMobileFiltersOpen(false)}
-                      className="w-full py-3 bg-primary text-white rounded-full font-bold"
-                    >
-                      {locale === "en"
-                        ? "Show"
-                        : locale === "ps"
-                          ? "ښودل"
-                          : "نمایش"}{" "}
-                      {sortedProducts.length}{" "}
-                      {locale === "en"
-                        ? "Products"
-                        : locale === "ps"
-                          ? "محصولات"
-                          : "محصول"}
-                    </button>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-
-          {/* Products Grid */}
-          <div className="flex-1">
+          <section className="min-w-0 flex-1 pb-10">
             {catalogLoading ? (
-              <div className="flex items-center justify-center py-20 text-gray-500">
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                {locale === "en" ? "Loading products…" : locale === "ps" ? "محصولات پورته کېږي…" : "در حال بارگذاری محصولات…"}
-              </div>
+              <ProductsGridSkeleton />
             ) : sortedProducts.length > 0 ? (
-              <div className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-2 xl:grid-cols-3 xl:gap-5 2xl:grid-cols-4">
                 {sortedProducts.map((product, index) => (
                   <motion.div
                     key={product.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: index * 0.03 }}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: Math.min(index * 0.03, 0.24) }}
                   >
-                    <ProductCard product={product} locale={locale} />
+                    <ProductCard
+                      product={product}
+                      locale={locale}
+                      priority={index < 4}
+                    />
                   </motion.div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-16">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Search className="h-12 w-12 text-gray-400" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  {locale === "en"
-                    ? "No products found"
-                    : locale === "ps"
-                      ? "هیڅ محصول ونه موندل شو"
-                      : "محصولی یافت نشد"}
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  {locale === "en"
-                    ? "Try adjusting your filters"
-                    : locale === "ps"
-                      ? "خپل فلټرونه تنظیم کړئ"
-                      : "فیلترهای خود را تنظیم کنید"}
-                </p>
-                <button
-                  onClick={clearFilters}
-                  className="px-6 py-3 bg-primary text-white rounded-full font-bold hover:bg-primary/90 transition-colors"
-                >
-                  {locale === "en"
-                    ? "Clear all filters"
-                    : locale === "ps"
-                      ? "ټول فلټرونه پاک کړئ"
-                      : "پاک کردن همه فیلترها"}
-                </button>
-              </div>
+              <ProductsEmptyState
+                title={copy.noProducts}
+                description={copy.noProductsHint}
+                actionLabel={copy.clearFilters}
+                onClearFilters={clearFilters}
+              />
             )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ProductCard({
-  product,
-  locale,
-}: {
-  product: CatalogRow;
-  locale: "en" | "ps" | "fa-AF";
-}) {
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const [isAdding, setIsAdding] = useState(false);
-  const { addItem } = useCart();
-
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    setIsAdding(true);
-    try {
-      await addItem(product.id, 1);
-      toast.success(locale === "en" ? "Added to cart!" : locale === "ps" ? "کارټ ته اضافه شو!" : "به سبد اضافه شد!");
-    } catch {
-      toast.error(locale === "en" ? "Failed to add to cart" : locale === "ps" ? "کارټ ته اضافه کول ناکام شول" : "افزودن به سبد ناموفق بود");
-    } finally {
-      setIsAdding(false);
-    }
-  };
-
-  return (
-    <div className="group relative">
-      {/* Image Container - Walmart Style */}
-      <Link
-        href={`/products/${product.id}`}
-        className="relative block aspect-square overflow-hidden bg-gray-50 rounded-lg"
-      >
-        <CatalogImage
-          src={product.image}
-          alt={product.name[locale]}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-
-        {/* Badge - Walmart Style (top left, pill) */}
-        {product.badge && (
-          <div className="absolute top-2 left-2">
-            <span
-              className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                product.badge.en === "Best Seller"
-                  ? "bg-primary text-white"
-                  : "bg-green-100 text-green-700 border border-green-200"
-              }`}
-            >
-              {product.badge[locale]}
-            </span>
-          </div>
-        )}
-
-        {/* Wishlist - small button top right */}
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setIsWishlisted(!isWishlisted);
-          }}
-          className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110 z-10"
-        >
-          <Heart
-            className={`h-4 w-4 ${isWishlisted ? "fill-red-500 text-red-500" : "text-gray-500"}`}
-          />
-        </button>
-
-        {/* Add to Cart Button - appears on hover at bottom */}
-        <div className="absolute bottom-3 left-3 right-3 opacity-100 md:opacity-0 translate-y-0 md:translate-y-2 md:group-hover:translate-y-0 md:group-hover:opacity-100 transition-all duration-200">
-          <button
-            onClick={handleAddToCart}
-            disabled={isAdding}
-            className="w-full py-2.5 bg-primary text-white text-sm font-bold rounded-full hover:bg-primary/90 transition-colors shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {isAdding ? (
-              <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-            ) : (
-              <ShoppingCart className="h-4 w-4" />
-            )}
-            {locale === "en"
-              ? "Add to cart"
-              : locale === "ps"
-                ? "کارټ ته اضافه کړئ"
-                : "افزودن به سبد"}
-          </button>
-        </div>
-      </Link>
-
-      {/* Content - Walmart Style */}
-      <div className="pt-3">
-        {/* Vendor */}
-        <Link
-          href={`/vendors/${product.vendorSlug}`}
-          className="mb-1 inline-flex text-xs text-gray-500 hover:text-primary hover:underline"
-        >
-          <bdi dir="ltr">{localizeVendor(product.vendor, locale)}</bdi>
-        </Link>
-
-        {/* Title */}
-        <Link href={`/products/${product.id}`}>
-          <h3 className="text-sm text-gray-900 mb-2 line-clamp-2 hover:text-primary hover:underline transition-colors leading-snug">
-            {product.name[locale]}
-          </h3>
-        </Link>
-
-        {/* Price - Walmart Blue Style */}
-        <div className="flex items-baseline gap-2 mb-2">
-          <span className="text-lg font-bold text-gray-900">
-            ${product.price.toFixed(2)}
-          </span>
-          {product.price > 50 && (
-            <span className="text-xs text-gray-500">
-              {locale === "en" ? "Was" : locale === "ps" ? "و" : "بود"} $
-              {(product.price * 1.2).toFixed(2)}
-            </span>
-          )}
-        </div>
-
-        {/* Rating & Delivery */}
-        <div className="flex items-center gap-3 text-xs">
-          {/* Stars */}
-          <div className="flex items-center gap-0.5">
-            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-          </div>
-          <span className="font-medium text-gray-900">{product.rating}</span>
-          <span className="text-gray-500">({product.reviews})</span>
-          <span className="mx-1 text-gray-300">|</span>
-          <span className="text-green-600 font-medium">
-            {localizeDelivery(product.delivery, locale)}
-          </span>
+          </section>
         </div>
       </div>
     </div>

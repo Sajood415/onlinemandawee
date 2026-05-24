@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 
+import { PageLoader } from "@/components/ui/PageLoader";
 import { resolvePostAuthRedirect } from "@/lib/auth/client-auth-routing";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
@@ -25,12 +26,30 @@ type LoginResponse = {
 export function LoginPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { establishSession } = useAuth();
+  const { establishSession, isAuthenticated, isLoading, user } = useAuth();
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isLoading || !isAuthenticated || !user) return;
+    router.replace(
+      resolvePostAuthRedirect({
+        role: user.role,
+        redirect: searchParams.get("redirect"),
+      })
+    );
+  }, [isAuthenticated, isLoading, router, searchParams, user]);
+
+  if (isLoading) {
+    return <PageLoader message="Loading login..." fullScreen />;
+  }
+
+  if (isAuthenticated && user) {
+    return <PageLoader message="Redirecting..." fullScreen />;
+  }
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();

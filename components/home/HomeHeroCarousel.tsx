@@ -12,7 +12,7 @@ const sectionClass =
   "w-full min-w-0 bg-white lg:bg-[#004795]";
 
 const shellClass =
-  "w-full min-w-0 px-0 pt-2 sm:px-4 sm:pt-3 lg:px-0 lg:pt-0";
+  "w-full min-w-0 px-0 sm:px-4 lg:px-0";
 
 const linkClass =
   "relative block w-full min-w-0 overflow-hidden rounded-none bg-[#004795] outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-white sm:rounded-2xl sm:shadow-[0_2px_12px_rgba(15,52,96,0.12)] lg:rounded-none lg:shadow-none";
