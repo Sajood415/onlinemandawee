@@ -72,21 +72,30 @@ export class ProductRepository {
     });
   }
 
+  private publicProductInclude = {
+    category: true,
+    variants: {
+      where: { isActive: true },
+      orderBy: { createdAt: "asc" as const },
+    },
+    vendorProfile: {
+      include: {
+        user: true,
+      },
+    },
+  } as const;
+
   findById(id: string) {
     return prisma.product.findUnique({
       where: { id },
-      include: {
-        category: true,
-        variants: {
-          where: { isActive: true },
-          orderBy: { createdAt: "asc" },
-        },
-        vendorProfile: {
-          include: {
-            user: true,
-          },
-        },
-      },
+      include: this.publicProductInclude,
+    });
+  }
+
+  findBySlug(slug: string) {
+    return prisma.product.findFirst({
+      where: { slug },
+      include: this.publicProductInclude,
     });
   }
 

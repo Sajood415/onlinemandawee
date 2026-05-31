@@ -200,6 +200,11 @@ enum DeliveryPriceModel {
   FREE_ABOVE
 }
 
+enum CouponDiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
 model User {
   id              String        @id @default(auto()) @map("_id") @db.ObjectId
   fullName        String
@@ -321,8 +326,52 @@ model VendorProfile {
   orderSplits              OrderVendor[]
   deliveryRules            DeliveryRule[]
   membershipInvoices       MembershipInvoice[]
+  coupons                  VendorCoupon[]
+  promoBanners             VendorPromoBanner[]
 
   @@index([status, onboardingStep])
+}
+
+model VendorCoupon {
+  id                   String             @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId      String             @db.ObjectId
+  code                 String
+  discountType         CouponDiscountType
+  discountValue        Int
+  isActive             Boolean            @default(true)
+  appliesToAllProducts Boolean            @default(true)
+  productIds           String[]           @default([]) @db.ObjectId
+  startsAt             DateTime?
+  expiresAt            DateTime?
+  maxUses              Int?
+  usedCount            Int                @default(0)
+  minOrderAmount       Int?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  vendorProfile        VendorProfile      @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  promoBanners         VendorPromoBanner[]
+
+  @@unique([vendorProfileId, code])
+  @@index([vendorProfileId, isActive])
+}
+
+model VendorPromoBanner {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId String        @db.ObjectId
+  title           String
+  subtitle        String?
+  imageUrl        String
+  couponId        String?       @db.ObjectId
+  isActive        Boolean       @default(true)
+  sortOrder       Int           @default(0)
+  startsAt        DateTime?
+  expiresAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  coupon          VendorCoupon? @relation(fields: [couponId], references: [id], onDelete: SetNull)
+
+  @@index([vendorProfileId, isActive, sortOrder])
 }
 
 model VendorKycDocument {
@@ -529,6 +578,7 @@ model OrderVendor {
   deliveryAmount     Int
   discountAmount     Int
   grandTotalAmount   Int
+  couponCode         String?
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   order              Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)

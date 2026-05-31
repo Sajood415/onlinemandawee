@@ -1,3 +1,8 @@
+import {
+  listPublicCouponsForProduct,
+  listPublicStorefrontOffers,
+} from "@/lib/checkout/list-public-vendor-offers";
+import { isMongoObjectId } from "@/lib/db/object-id";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { CategoryRepository } from "@/repositories/category.repository";
@@ -28,7 +33,9 @@ export class CatalogQueryService {
   }
 
   async getProduct(productId: string) {
-    const product = await this.productRepository.findById(productId);
+    const product = isMongoObjectId(productId)
+      ? await this.productRepository.findById(productId)
+      : await this.productRepository.findBySlug(productId);
 
     if (
       !product ||
@@ -43,7 +50,12 @@ export class CatalogQueryService {
       });
     }
 
-    return product;
+    const availableCoupons = await listPublicCouponsForProduct(
+      product.id,
+      product.vendorProfileId
+    );
+
+    return { ...product, availableCoupons };
   }
 
   async getVendorStore(storeSlug: string) {
@@ -61,9 +73,13 @@ export class CatalogQueryService {
       vendorStoreSlug: storeSlug,
     });
 
+    const offers = await listPublicStorefrontOffers(storeSlug);
+
     return {
       vendor,
       products,
+      promoBanners: offers?.banners ?? [],
+      publicCoupons: offers?.coupons ?? [],
     };
   }
 }

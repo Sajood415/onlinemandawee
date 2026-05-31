@@ -30,6 +30,17 @@ export type ApiCatalogProduct = {
     sku: string | null;
     isActive: boolean;
   }[];
+  availableCoupons?: PublicProductCoupon[];
+};
+
+export type PublicProductCoupon = {
+  code: string;
+  discountType: "PERCENTAGE" | "FIXED_AMOUNT";
+  discountValue: number;
+  minOrderAmount: number | null;
+  label: string;
+  appliesToAllProducts: boolean;
+  scopeLabel: string;
 };
 
 export type PublicCatalogProduct = {
@@ -50,10 +61,12 @@ export type PublicCatalogProduct = {
   features: string[];
   inStock: boolean;
   vendorSlug: string;
+  vendorProfileId: string;
   stockQty: number;
   currency: string;
   isVendorProduct: true;
   variants?: ApiCatalogProduct["variants"];
+  availableCoupons?: PublicProductCoupon[];
 };
 
 export function formatCatalogPrice(amountMajor: number, currency: string) {
@@ -97,11 +110,23 @@ export function mapApiProductToCatalog(product: ApiCatalogProduct): PublicCatalo
     features: [],
     inStock,
     vendorSlug: product.vendorProfile.storeSlug ?? product.vendorProfile.id,
+    vendorProfileId: product.vendorProfile.id,
     stockQty: product.stockQty,
     currency,
     isVendorProduct: true,
     variants: product.variants,
+    availableCoupons: product.availableCoupons,
   };
+}
+
+const catalogProductsRequests = new Map<string, Promise<PublicCatalogProduct[]>>();
+
+function catalogProductsCacheKey(filters?: {
+  category?: string;
+  vendor?: string;
+  search?: string;
+}) {
+  return JSON.stringify(filters ?? {});
 }
 
 export async function fetchPublicCatalogProducts(filters?: {
@@ -109,15 +134,30 @@ export async function fetchPublicCatalogProducts(filters?: {
   vendor?: string;
   search?: string;
 }) {
-  const params = new URLSearchParams();
-  if (filters?.category) params.set("category", filters.category);
-  if (filters?.vendor) params.set("vendor", filters.vendor);
-  if (filters?.search) params.set("search", filters.search);
+  const cacheKey = catalogProductsCacheKey(filters);
+  const inFlight = catalogProductsRequests.get(cacheKey);
+  if (inFlight) return inFlight;
 
-  const qs = params.toString();
-  const res = await fetch(`/api/catalog/products${qs ? `?${qs}` : ""}`);
-  const data = await parseApiResponse<ApiCatalogProduct[]>(res);
-  return data.map(mapApiProductToCatalog);
+  const request = (async () => {
+    const params = new URLSearchParams();
+    if (filters?.category) params.set("category", filters.category);
+    if (filters?.vendor) params.set("vendor", filters.vendor);
+    if (filters?.search) params.set("search", filters.search);
+
+    const qs = params.toString();
+    const res = await fetch(`/api/catalog/products${qs ? `?${qs}` : ""}`);
+    const data = await parseApiResponse<ApiCatalogProduct[]>(res);
+    return data.map(mapApiProductToCatalog);
+  })();
+
+  catalogProductsRequests.set(cacheKey, request);
+
+  try {
+    return await request;
+  } catch (error) {
+    catalogProductsRequests.delete(cacheKey);
+    throw error;
+  }
 }
 
 export async function fetchPublicCatalogProduct(productId: string) {

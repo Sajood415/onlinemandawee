@@ -12,6 +12,8 @@ type CartItem = {
   productPrice: number;
   productImage: string;
   vendor: string;
+  vendorProfileId?: string | null;
+  isVendorProduct?: boolean;
 };
 
 type Cart = {
@@ -44,6 +46,8 @@ const resolveProductDetails = async (productId: string) => {
       price: staticProduct.price,
       image: staticProduct.image,
       vendor: staticProduct.vendor,
+      vendorProfileId: null,
+      isVendorProduct: false,
     };
   }
 
@@ -53,6 +57,8 @@ const resolveProductDetails = async (productId: string) => {
     price: catalogProduct.price,
     image: catalogProduct.image,
     vendor: catalogProduct.vendor,
+    vendorProfileId: catalogProduct.vendorProfileId,
+    isVendorProduct: catalogProduct.isVendorProduct,
   };
 };
 
@@ -113,6 +119,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
             productPrice: product.price,
             productImage: product.image,
             vendor: product.vendor,
+            vendorProfileId: product.vendorProfileId,
+            isVendorProduct: product.isVendorProduct,
           };
           newCart = {
             items: [...prev.items, newItem],

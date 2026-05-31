@@ -14,6 +14,7 @@ function getHostname(url: string) {
 const NEXT_IMAGE_HOSTS = new Set([
   "images.unsplash.com",
   "onlinemandawee.com",
+  "order.jazaaglobal.com",
   "encrypted-tbn0.gstatic.com",
   "res.cloudinary.com",
 ]);

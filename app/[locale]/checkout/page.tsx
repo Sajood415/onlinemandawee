@@ -19,12 +19,15 @@ import {
   MapPin,
   Package,
   ShoppingBag,
+  Tag,
   Truck,
   User,
+  X,
 } from "lucide-react";
 
 import { useCart } from "@/store/cart-context";
 import { useAuth } from "@/store/auth-context";
+import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
 
 /* ─── Stripe setup ───────────────────────────────────────────────────── */
@@ -55,17 +58,50 @@ type QuoteSummary = {
   paymentIntentId: string;
   subtotalAmount: number;
   deliveryAmount: number;
+  discountAmount: number;
   grandTotalAmount: number;
   currency: string;
   lineItems: LineItem[];
+  appliedCoupons: AppliedCouponSummary[];
+};
+
+type AppliedCouponSummary = {
+  code: string;
+  vendorProfileId: string;
+  vendorStoreName: string | null;
+  discountAmount: number;
+};
+
+type CouponEligibleVendor = {
+  vendorProfileId: string;
+  storeName: string;
+};
+
+type VendorCouponEntry = {
+  code: string;
+  vendorProfileId: string;
+};
+
+type CheckoutVendorOffer = {
+  vendorProfileId: string;
+  storeName: string | null;
+  coupons: Array<{
+    code: string;
+    label: string;
+    discountType: "PERCENTAGE" | "FIXED_AMOUNT";
+    discountValue: number;
+    minOrderAmount: number | null;
+  }>;
 };
 
 type PriceSummary = {
   subtotalAmount: number;
   deliveryAmount: number;
+  discountAmount: number;
   grandTotalAmount: number;
   currency: string;
   lineItems: LineItem[];
+  appliedCoupons: AppliedCouponSummary[];
 };
 
 type ContactForm = {
@@ -113,6 +149,102 @@ function InputField({
         {...props}
         className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10 transition placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400"
       />
+    </div>
+  );
+}
+
+/* ─── Coupon input ───────────────────────────────────────────────────── */
+
+function CouponSection({
+  storeName,
+  couponInput,
+  onCouponInputChange,
+  appliedCoupons,
+  availableOffers,
+  fieldError,
+  onApply,
+  onRemove,
+  applying,
+}: {
+  storeName: string;
+  couponInput: string;
+  onCouponInputChange: (value: string) => void;
+  appliedCoupons: AppliedCouponSummary[];
+  availableOffers: Array<{ code: string; label: string }>;
+  fieldError?: string;
+  onApply: () => void;
+  onRemove: (code: string) => void;
+  applying: boolean;
+}) {
+  return (
+    <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50/80 p-4">
+      <p className="text-sm font-semibold text-gray-800">
+        Discount code for <span className="text-[#0f3460]">{storeName}</span>
+      </p>
+      {availableOffers.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {availableOffers.map((offer) => (
+            <button
+              key={offer.code}
+              type="button"
+              onClick={() => onCouponInputChange(offer.code)}
+              className="rounded-full border border-[#0f3460]/25 bg-white px-3 py-1 text-xs font-semibold text-[#0f3460] transition hover:bg-[#0f3460]/5"
+            >
+              {offer.code} · {offer.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <div className="flex gap-2">
+        <input
+          value={couponInput}
+          onChange={(event) => onCouponInputChange(event.target.value.toUpperCase())}
+          placeholder="SAVE10"
+          className={`flex-1 rounded-xl border px-4 py-3 text-sm uppercase outline-none focus:ring-2 focus:ring-[#0f3460]/10 ${
+            fieldError
+              ? "border-red-300 focus:border-red-500"
+              : "border-gray-200 focus:border-[#0f3460]"
+          }`}
+        />
+        <button
+          type="button"
+          onClick={onApply}
+          disabled={applying || !couponInput.trim()}
+          className="rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-50"
+        >
+          {applying ? "Applying…" : "Apply"}
+        </button>
+      </div>
+      {fieldError ? <p className="text-xs text-red-600">{fieldError}</p> : null}
+      {appliedCoupons.length > 0 ? (
+        <div className="space-y-2">
+          {appliedCoupons.map((coupon) => (
+            <div
+              key={coupon.code}
+              className="flex items-center justify-between rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-sm"
+            >
+              <div>
+                <p className="font-semibold text-green-800">{coupon.code}</p>
+                <p className="text-xs text-green-700">
+                  {coupon.vendorStoreName ?? "Vendor"} · -{formatAmount(coupon.discountAmount, "USD")}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onRemove(coupon.code)}
+                className="rounded-lg p-1.5 text-green-700 hover:bg-green-100"
+                aria-label={`Remove coupon ${coupon.code}`}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-gray-500">
+          Applies only to {storeName}&apos;s products in your cart.
+        </p>
+      )}
     </div>
   );
 }
@@ -292,12 +424,16 @@ function CodForm({
   summary,
   contact,
   address,
+  cartItems,
+  vendorCoupons,
   onBack,
   onSuccess,
 }: {
   summary: PriceSummary;
   contact: ContactForm;
   address: AddressForm;
+  cartItems: Array<{ productId: string; quantity: number }>;
+  vendorCoupons: VendorCouponEntry[];
   onBack: () => void;
   onSuccess: (orderNumber: string) => void;
 }) {
@@ -318,10 +454,8 @@ function CodForm({
           country: address.country,
           postalCode: address.postalCode,
           currency: summary.currency,
-          subtotalAmount: summary.subtotalAmount,
-          deliveryAmount: summary.deliveryAmount,
-          grandTotalAmount: summary.grandTotalAmount,
-          lineItems: summary.lineItems,
+          items: cartItems,
+          vendorCoupons,
         }),
       });
       const data = await res.json();
@@ -369,12 +503,16 @@ function StripePayForm({
   quote,
   contact,
   address,
+  cartItems,
+  vendorCoupons,
   onBack,
   onSuccess,
 }: {
   quote: QuoteSummary;
   contact: ContactForm;
   address: AddressForm;
+  cartItems: Array<{ productId: string; quantity: number }>;
+  vendorCoupons: VendorCouponEntry[];
   onBack: () => void;
   onSuccess: (orderNumber: string) => void;
 }) {
@@ -427,10 +565,8 @@ function StripePayForm({
             country: address.country,
             postalCode: address.postalCode,
             currency: quote.currency,
-            subtotalAmount: quote.subtotalAmount,
-            deliveryAmount: quote.deliveryAmount,
-            grandTotalAmount: quote.grandTotalAmount,
-            lineItems: quote.lineItems,
+            items: cartItems,
+            vendorCoupons,
           }),
         });
         const data = await res.json();
@@ -516,6 +652,12 @@ function OrderSummary({ summary, loading }: { summary: PriceSummary | null; load
           <span>Delivery</span>
           <span>{summary.deliveryAmount === 0 ? "Free" : formatAmount(summary.deliveryAmount, summary.currency)}</span>
         </div>
+        {summary.discountAmount > 0 ? (
+          <div className="flex justify-between text-green-600">
+            <span>Discount</span>
+            <span>-{formatAmount(summary.discountAmount, summary.currency)}</span>
+          </div>
+        ) : null}
         <div className="flex justify-between font-bold text-base text-[#0f3460] pt-2 border-t border-gray-100">
           <span>Total</span>
           <span>{formatAmount(summary.grandTotalAmount, summary.currency)}</span>
@@ -626,9 +768,28 @@ export default function CheckoutPage() {
 
   const [successOrderNumber, setSuccessOrderNumber] = useState<string | null>(null);
   const [successEmail, setSuccessEmail] = useState<string>("");
+  const [couponInputs, setCouponInputs] = useState<Record<string, string>>({});
+  const [vendorCoupons, setVendorCoupons] = useState<VendorCouponEntry[]>([]);
+  const [couponFieldErrors, setCouponFieldErrors] = useState<Record<string, string>>({});
+  const [checkoutOffers, setCheckoutOffers] = useState<CheckoutVendorOffer[]>([]);
+  const [applyingCouponVendorId, setApplyingCouponVendorId] = useState<string | null>(null);
   const stripeAvailable = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
   const cartItems = cart.items;
+  const cartItemsPayload = useMemo(
+    () => cartItems.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+    [cartItems]
+  );
+
+  const mapQuoteToSummary = (data: PriceSummary & Partial<QuoteSummary>): PriceSummary => ({
+    subtotalAmount: data.subtotalAmount,
+    deliveryAmount: data.deliveryAmount,
+    discountAmount: data.discountAmount ?? 0,
+    grandTotalAmount: data.grandTotalAmount,
+    currency: data.currency,
+    lineItems: data.lineItems,
+    appliedCoupons: data.appliedCoupons ?? [],
+  });
 
   useEffect(() => {
     if (cartItems.length === 0 && !successOrderNumber) {
@@ -636,8 +797,7 @@ export default function CheckoutPage() {
     }
   }, [cartItems.length, router, successOrderNumber]);
 
-  // Fetch a Stripe payment intent when card method is selected and we reach step 2
-  const fetchStripeQuote = useCallback(async () => {
+  const fetchStripeQuote = useCallback(async (coupons: VendorCouponEntry[]) => {
     if (cartItems.length === 0) return;
     setQuoteLoading(true);
     setQuoteError(null);
@@ -646,32 +806,24 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: cartItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+          items: cartItemsPayload,
           currency: "USD",
+          vendorCoupons: coupons,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setQuoteError(data?.error?.message ?? "Could not load pricing. Please try again.");
-        return;
-      }
-      setQuote(data.data);
-      setPriceSummary({
-        subtotalAmount: data.data.subtotalAmount,
-        deliveryAmount: data.data.deliveryAmount,
-        grandTotalAmount: data.data.grandTotalAmount,
-        currency: data.data.currency,
-        lineItems: data.data.lineItems,
-      });
-    } catch {
-      setQuoteError("Network error. Please try again.");
+      const data = await parseApiResponse<QuoteSummary>(res);
+      setQuote(data);
+      setPriceSummary(mapQuoteToSummary(data));
+    } catch (error) {
+      setQuoteError(
+        error instanceof Error ? error.message : "Could not load pricing. Please try again."
+      );
     } finally {
       setQuoteLoading(false);
     }
-  }, [cartItems]);
+  }, [cartItems.length, cartItemsPayload]);
 
-  // Fetch COD pricing — no Stripe involved, just DB lookup
-  const fetchCodPricing = useCallback(async () => {
+  const fetchCodPricing = useCallback(async (coupons: VendorCouponEntry[]) => {
     if (cartItems.length === 0) return;
     setQuoteLoading(true);
     setQuoteError(null);
@@ -680,39 +832,103 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: cartItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+          items: cartItemsPayload,
           currency: "USD",
+          vendorCoupons: coupons,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setQuoteError(data?.error?.message ?? "Could not load pricing. Please try again.");
-        return;
-      }
-      setPriceSummary({
-        subtotalAmount: data.data.subtotalAmount,
-        deliveryAmount: data.data.deliveryAmount,
-        grandTotalAmount: data.data.grandTotalAmount,
-        currency: data.data.currency,
-        lineItems: data.data.lineItems,
-      });
-    } catch {
-      setQuoteError("Network error. Please try again.");
+      const data = await parseApiResponse<PriceSummary>(res);
+      setPriceSummary(mapQuoteToSummary(data));
+    } catch (error) {
+      setQuoteError(
+        error instanceof Error ? error.message : "Could not load pricing. Please try again."
+      );
     } finally {
       setQuoteLoading(false);
     }
-  }, [cartItems]);
+  }, [cartItems.length, cartItemsPayload]);
 
-  // When reaching step 2 (or switching method on step 2), load the right pricing
-  useEffect(() => {
-    if (step !== 2) return;
-    if (paymentMethod === "cod") {
-      void fetchCodPricing();
-    } else if (paymentMethod === "card" && stripeAvailable) {
-      void fetchStripeQuote();
+  const refreshPricing = useCallback(
+    async (coupons: VendorCouponEntry[]) => {
+      if (paymentMethod === "cod") {
+        await fetchCodPricing(coupons);
+      } else if (paymentMethod === "card" && stripeAvailable) {
+        await fetchStripeQuote(coupons);
+      }
+    },
+    [paymentMethod, stripeAvailable, fetchCodPricing, fetchStripeQuote]
+  );
+
+  const handleApplyCoupon = async (vendorProfileId: string) => {
+    const code = (couponInputs[vendorProfileId] ?? "").trim().toUpperCase();
+    if (!code) return;
+
+    if (
+      vendorCoupons.some(
+        (entry) => entry.code === code && entry.vendorProfileId === vendorProfileId
+      )
+    ) {
+      toast.error("This coupon is already applied.");
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, paymentMethod]);
+
+    const nextCoupons = [...vendorCoupons, { code, vendorProfileId }];
+    setApplyingCouponVendorId(vendorProfileId);
+    setQuoteError(null);
+    setCouponFieldErrors((current) => ({ ...current, [vendorProfileId]: "" }));
+
+    try {
+      const endpoint =
+        paymentMethod === "card" && stripeAvailable
+          ? "/api/checkout/guest/intent"
+          : "/api/checkout/guest/pricing";
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: cartItemsPayload,
+          currency: "USD",
+          vendorCoupons: nextCoupons,
+        }),
+      });
+      const data = await parseApiResponse<PriceSummary & Partial<QuoteSummary>>(res);
+      const summary = mapQuoteToSummary(data);
+      const applied = summary.appliedCoupons.some(
+        (coupon) => coupon.code === code && coupon.vendorProfileId === vendorProfileId
+      );
+
+      if (!applied) {
+        const message = `Coupon "${code}" is not valid for ${couponEligibleVendors.find((v) => v.vendorProfileId === vendorProfileId)?.storeName ?? "this store"}.`;
+        setCouponFieldErrors((current) => ({ ...current, [vendorProfileId]: message }));
+        toast.error(message);
+        return;
+      }
+
+      setVendorCoupons(nextCoupons);
+      setCouponInputs((current) => ({ ...current, [vendorProfileId]: "" }));
+      setPriceSummary(summary);
+      if (paymentMethod === "card" && stripeAvailable) {
+        setQuote(data as QuoteSummary);
+      }
+      toast.success(`Coupon ${code} applied`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not apply coupon.";
+      setCouponFieldErrors((current) => ({ ...current, [vendorProfileId]: message }));
+      toast.error(message);
+    } finally {
+      setApplyingCouponVendorId(null);
+    }
+  };
+
+  const handleRemoveCoupon = async (code: string, vendorProfileId: string) => {
+    const nextCoupons = vendorCoupons.filter(
+      (entry) => !(entry.code === code && entry.vendorProfileId === vendorProfileId)
+    );
+    setVendorCoupons(nextCoupons);
+    setQuoteError(null);
+    setCouponFieldErrors((current) => ({ ...current, [vendorProfileId]: "" }));
+    await refreshPricing(nextCoupons);
+  };
 
   const stripeOptions = useMemo(
     () =>
@@ -742,13 +958,82 @@ export default function CheckoutPage() {
   const handleMethodChange = (m: PaymentMethod) => {
     setPaymentMethod(m);
     setQuoteError(null);
-    if (m === "card") {
-      setQuote(null);
-      setPriceSummary(null);
-    } else {
-      setPriceSummary(null);
-    }
+    setQuote(null);
+    setPriceSummary(null);
   };
+
+  const displaySummary = priceSummary ?? (quote ? mapQuoteToSummary(quote) : null);
+
+  const couponEligibleVendors = useMemo<CouponEligibleVendor[]>(() => {
+    const vendors = new Map<string, string>();
+
+    for (const item of cartItems) {
+      if (item.isVendorProduct === false) continue;
+      if (item.isVendorProduct && item.vendorProfileId) {
+        vendors.set(item.vendorProfileId, item.vendor);
+      }
+    }
+
+    for (const lineItem of displaySummary?.lineItems ?? []) {
+      const cartItem = cartItems.find((item) => item.productId === lineItem.productId);
+      if (cartItem?.isVendorProduct === false) continue;
+
+      const isMarketplaceItem =
+        cartItem?.isVendorProduct === true ||
+        (cartItem != null &&
+          cartItem.isVendorProduct !== false &&
+          /^[a-f0-9]{24}$/i.test(cartItem.productId));
+
+      if (!isMarketplaceItem) continue;
+
+      const storeName =
+        displaySummary?.appliedCoupons.find(
+          (coupon) => coupon.vendorProfileId === lineItem.vendorProfileId
+        )?.vendorStoreName ??
+        cartItem?.vendor ??
+        "Vendor";
+      vendors.set(lineItem.vendorProfileId, storeName);
+    }
+
+    return Array.from(vendors, ([vendorProfileId, storeName]) => ({
+      vendorProfileId,
+      storeName,
+    }));
+  }, [cartItems, displaySummary]);
+
+  useEffect(() => {
+    if (step !== 2) return;
+    void refreshPricing(vendorCoupons);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, paymentMethod]);
+
+  useEffect(() => {
+    if (step !== 2 || couponEligibleVendors.length === 0) return;
+
+    void fetch("/api/checkout/guest/offers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        vendorProfileIds: couponEligibleVendors.map((vendor) => vendor.vendorProfileId),
+      }),
+    })
+      .then(async (res) => parseApiResponse<CheckoutVendorOffer[]>(res))
+      .then(setCheckoutOffers)
+      .catch(() => setCheckoutOffers([]));
+  }, [step, couponEligibleVendors]);
+
+  const hasUnappliedCouponInput = useMemo(() => {
+    return couponEligibleVendors.some((vendor) => {
+      const code = (couponInputs[vendor.vendorProfileId] ?? "").trim().toUpperCase();
+      if (!code) return false;
+      return !vendorCoupons.some(
+        (entry) => entry.code === code && entry.vendorProfileId === vendor.vendorProfileId
+      );
+    });
+  }, [couponEligibleVendors, couponInputs, vendorCoupons]);
+
+  const canPlaceOrder =
+    Boolean(displaySummary) && !quoteLoading && !quoteError && !hasUnappliedCouponInput;
 
   if (successOrderNumber) {
     return (
@@ -761,13 +1046,6 @@ export default function CheckoutPage() {
   }
 
   const stepIcons = [<User key="u" size={18} />, <MapPin key="m" size={18} />, <CreditCard key="c" size={18} />];
-  const displaySummary = priceSummary ?? (quote ? {
-    subtotalAmount: quote.subtotalAmount,
-    deliveryAmount: quote.deliveryAmount,
-    grandTotalAmount: quote.grandTotalAmount,
-    currency: quote.currency,
-    lineItems: quote.lineItems,
-  } : null);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -830,6 +1108,45 @@ export default function CheckoutPage() {
 
             {step === 2 && (
               <div className="space-y-6">
+                {couponEligibleVendors.length > 0 ? (
+                  <div className="space-y-4">
+                    {couponEligibleVendors.map((vendor) => {
+                      const vendorOffers = checkoutOffers.find(
+                        (offer) => offer.vendorProfileId === vendor.vendorProfileId
+                      );
+                      return (
+                        <CouponSection
+                          key={vendor.vendorProfileId}
+                          storeName={vendor.storeName}
+                          couponInput={couponInputs[vendor.vendorProfileId] ?? ""}
+                          onCouponInputChange={(value) => {
+                            setCouponInputs((current) => ({
+                              ...current,
+                              [vendor.vendorProfileId]: value,
+                            }));
+                            setCouponFieldErrors((current) => ({
+                              ...current,
+                              [vendor.vendorProfileId]: "",
+                            }));
+                          }}
+                          availableOffers={vendorOffers?.coupons ?? []}
+                          fieldError={couponFieldErrors[vendor.vendorProfileId]}
+                          appliedCoupons={(displaySummary?.appliedCoupons ?? []).filter(
+                            (coupon) => coupon.vendorProfileId === vendor.vendorProfileId
+                          )}
+                          onApply={() => void handleApplyCoupon(vendor.vendorProfileId)}
+                          onRemove={(code) =>
+                            void handleRemoveCoupon(code, vendor.vendorProfileId)
+                          }
+                          applying={applyingCouponVendorId === vendor.vendorProfileId}
+                        />
+                      );
+                    })}
+                  </div>
+                ) : null}
+
+                {couponEligibleVendors.length > 0 ? <div className="h-px bg-gray-100" /> : null}
+
                 {/* Payment method picker */}
                 <PaymentMethodSelector
                   selected={paymentMethod}
@@ -850,7 +1167,7 @@ export default function CheckoutPage() {
                   <div className="text-center py-6 space-y-3">
                     <p className="text-sm text-red-500">{quoteError}</p>
                     <button
-                      onClick={() => paymentMethod === "card" ? fetchStripeQuote() : fetchCodPricing()}
+                      onClick={() => void refreshPricing(vendorCoupons)}
                       className="text-sm text-[#0f3460] underline"
                     >
                       Try again
@@ -858,22 +1175,32 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {!quoteLoading && !quoteError && paymentMethod === "cod" && priceSummary && (
+                {hasUnappliedCouponInput && !quoteLoading ? (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    Apply your discount code or clear the field before placing your order.
+                  </div>
+                ) : null}
+
+                {canPlaceOrder && paymentMethod === "cod" && priceSummary && (
                   <CodForm
                     summary={priceSummary}
                     contact={contact}
                     address={address}
+                    cartItems={cartItemsPayload}
+                    vendorCoupons={vendorCoupons}
                     onBack={() => setStep(1)}
                     onSuccess={handleSuccess}
                   />
                 )}
 
-                {!quoteLoading && !quoteError && paymentMethod === "card" && quote && stripeOptions && stripePromise && (
+                {canPlaceOrder && paymentMethod === "card" && quote && stripeOptions && stripePromise && (
                   <Elements stripe={stripePromise} options={stripeOptions}>
                     <StripePayForm
                       quote={quote}
                       contact={contact}
                       address={address}
+                      cartItems={cartItemsPayload}
+                      vendorCoupons={vendorCoupons}
                       onBack={() => setStep(1)}
                       onSuccess={handleSuccess}
                     />

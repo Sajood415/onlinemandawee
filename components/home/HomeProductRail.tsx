@@ -103,19 +103,32 @@ function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
 type Props = {
   productIds?: string[];
   showTitle?: boolean;
+  /** When set (including `[]`), skips fetching the full catalog — use on homepage sections. */
+  sharedVendorProducts?: PublicCatalogProduct[];
 };
 
-export function HomeProductRail({ productIds, showTitle = true }: Props) {
+export function HomeProductRail({
+  productIds,
+  showTitle = true,
+  sharedVendorProducts,
+}: Props) {
   const locale = useLocale() as LocaleKey;
   const t = useTranslations("Homepage.store");
   const staticAll = productCatalog.featuredProducts;
-  const [vendorRows, setVendorRows] = useState<Row[]>([]);
+  const [vendorRows, setVendorRows] = useState<Row[]>(() =>
+    sharedVendorProducts ? sharedVendorProducts.map(toRow) : []
+  );
 
   useEffect(() => {
+    if (sharedVendorProducts !== undefined) {
+      setVendorRows(sharedVendorProducts.map(toRow));
+      return;
+    }
+
     void fetchPublicCatalogProducts()
       .then((products) => setVendorRows(products.map(toRow)))
       .catch(() => setVendorRows([]));
-  }, []);
+  }, [sharedVendorProducts]);
 
   const staticRows = productIds?.length
     ? (productIds

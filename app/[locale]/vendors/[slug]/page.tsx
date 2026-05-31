@@ -30,6 +30,19 @@ import { useCart } from "@/store/cart-context";
 const allProducts = productData.featuredProducts;
 const vendorProfiles = productData.vendorProfiles ?? [];
 
+type PublicPromoBanner = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  imageUrl: string;
+  couponCode: string | null;
+};
+
+type PublicStoreCoupon = {
+  code: string;
+  label: string;
+};
+
 type ApiVendorStore = {
   vendor: {
     id: string;
@@ -40,6 +53,8 @@ type ApiVendorStore = {
     approvedAt: string | null;
   };
   products: ApiCatalogProduct[];
+  promoBanners?: PublicPromoBanner[];
+  publicCoupons?: PublicStoreCoupon[];
 };
 
 export default function VendorStorePage() {
@@ -102,7 +117,13 @@ export default function VendorStorePage() {
         ? "د دې پلورونکي محصولات وګورئ."
         : "محصولات این فروشنده را ببینید.");
   const vendorLogo = apiStore?.vendor.logoUrl ?? staticVendor?.logo ?? null;
-  const vendorCover = staticVendor?.coverImage ?? vendorLogo ?? "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=80";
+  const promoBanners = apiStore?.promoBanners ?? [];
+  const publicCoupons = apiStore?.publicCoupons ?? [];
+  const vendorCover =
+    promoBanners[0]?.imageUrl ??
+    staticVendor?.coverImage ??
+    vendorLogo ??
+    "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=80";
   const joinedYear = apiStore?.vendor.approvedAt
     ? new Date(apiStore.vendor.approvedAt).getFullYear()
     : staticVendor?.joinedYear ?? new Date().getFullYear();
@@ -193,6 +214,52 @@ export default function VendorStorePage() {
       </div>
 
       <section className="mx-auto max-w-7xl px-4 pb-6 sm:px-6 lg:px-8">
+        {promoBanners.length > 0 ? (
+          <div className="mb-6 space-y-4">
+            {promoBanners.map((banner) => (
+              <div
+                key={banner.id}
+                className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm"
+              >
+                <div className="relative h-40 sm:h-48">
+                  <CatalogImage
+                    src={banner.imageUrl}
+                    alt={banner.title}
+                    fill
+                    className="object-cover"
+                    sizes="100vw"
+                  />
+                  <div className="absolute inset-0 bg-linear-to-t from-[#0f3460]/90 via-[#0f3460]/50 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+                    <p className="text-lg font-bold sm:text-xl">{banner.title}</p>
+                    {banner.subtitle ? (
+                      <p className="mt-1 text-sm text-white/90">{banner.subtitle}</p>
+                    ) : null}
+                    {banner.couponCode ? (
+                      <p className="mt-2 inline-block rounded-full bg-white/95 px-3 py-1 font-mono text-sm font-bold text-[#0f3460]">
+                        {locale === "en" ? "Use code" : locale === "ps" ? "کوډ" : "کد"}: {banner.couponCode}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {publicCoupons.length > 0 ? (
+          <div className="mb-6 flex flex-wrap gap-2">
+            {publicCoupons.map((coupon) => (
+              <span
+                key={coupon.code}
+                className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary"
+              >
+                {coupon.code} · {coupon.label}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
         <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
           <div className="relative h-44 sm:h-56 lg:h-64">
             <Image src={vendorCover} alt={vendorName} fill className="object-cover" sizes="100vw" priority />

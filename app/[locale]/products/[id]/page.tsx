@@ -19,6 +19,7 @@ import {
   Store,
   CheckCircle,
   Loader2,
+  Tag,
 } from "lucide-react";
 import productData from "@/data/product.json";
 import { useCart } from "@/store/cart-context";
@@ -489,6 +490,39 @@ export default function ProductDetailPage() {
                 )}
               </div>
             </div>
+
+            {"availableCoupons" in product &&
+            product.availableCoupons &&
+            product.availableCoupons.length > 0 ? (
+              <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary">
+                  <Tag className="h-4 w-4" />
+                  {locale === "en"
+                    ? "Available offers"
+                    : locale === "ps"
+                      ? "شتونل شوي وړاندیزونه"
+                      : "پیشنهادهای موجود"}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {product.availableCoupons.map((coupon) => (
+                    <span
+                      key={coupon.code}
+                      className="rounded-full border border-primary/30 bg-white px-3 py-1.5 text-xs font-semibold text-primary"
+                    >
+                      {coupon.code} · {coupon.label}
+                      {!coupon.appliesToAllProducts ? ` · ${coupon.scopeLabel}` : ""}
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-neutral-600">
+                  {locale === "en"
+                    ? "Use this code at checkout for this product."
+                    : locale === "ps"
+                      ? "د دې توکي لپاره په چک آوټ کې دا کوډ وکاروئ."
+                      : "این کد را در تسویه‌حساب برای این محصول وارد کنید."}
+                </p>
+              </div>
+            ) : null}
 
             {"variants" in product && product.variants && product.variants.length > 0 && (
               <div className="mb-6">

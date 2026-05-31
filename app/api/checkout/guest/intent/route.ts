@@ -2,30 +2,39 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { z } from "zod";
 
+import {
+  buildGuestCheckoutQuote,
+  GuestCheckoutQuoteError,
+} from "@/lib/checkout/build-guest-checkout-quote";
 import { withErrorHandling } from "@/middlewares/with-error-handling";
-import { prisma } from "@/lib/db/prisma";
 
-const cartItemSchema = z.object({
-  productId: z.string().min(1),
-  quantity: z.number().int().min(1),
-});
+import {
+  guestCheckoutCartItemSchema,
+  guestCheckoutCouponsSchema,
+} from "@/validators/checkout.validator";
 
-const intentBodySchema = z.object({
-  items: z.array(cartItemSchema).min(1),
-  currency: z.string().length(3).default("USD"),
-});
+const intentBodySchema = z
+  .object({
+    items: z.array(guestCheckoutCartItemSchema).min(1),
+    currency: z.string().length(3).default("USD"),
+  })
+  .merge(guestCheckoutCouponsSchema);
 
 export const POST = withErrorHandling(async (request) => {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeSecretKey) {
     return NextResponse.json(
-      { error: { code: "CONFIG_ERROR", message: "Stripe is not configured. Please add STRIPE_SECRET_KEY to your environment." } },
+      {
+        error: {
+          code: "CONFIG_ERROR",
+          message: "Stripe is not configured. Please add STRIPE_SECRET_KEY to your environment.",
+        },
+      },
       { status: 503 }
     );
   }
 
   const stripe = new Stripe(stripeSecretKey);
-
   const body = await request.json();
   const parsed = intentBodySchema.safeParse(body);
 
@@ -36,53 +45,25 @@ export const POST = withErrorHandling(async (request) => {
     );
   }
 
-  const { items, currency } = parsed.data;
-
-  // Fetch product details from DB to get real prices
-  const products = await Promise.all(
-    items.map(async (item) => {
-      const product = await prisma.product.findUnique({
-        where: { id: item.productId },
-        include: {
-          vendorProfile: true,
-          category: true,
-        },
-      });
-      return { item, product };
-    })
-  );
-
-  const unavailable = products.filter(
-    ({ product }) =>
-      !product ||
-      product.approvalStatus !== "APPROVED" ||
-      !product.isActive ||
-      product.vendorProfile.status !== "ACTIVE"
-  );
-
-  if (unavailable.length > 0) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "UNAVAILABLE_ITEMS",
-          message: "Some items in your cart are no longer available",
-        },
-      },
-      { status: 400 }
-    );
+  let quote;
+  try {
+    quote = await buildGuestCheckoutQuote({
+      items: parsed.data.items,
+      currency: parsed.data.currency,
+      couponCodes: parsed.data.couponCodes,
+      vendorCoupons: parsed.data.vendorCoupons,
+    });
+  } catch (error) {
+    if (error instanceof GuestCheckoutQuoteError) {
+      return NextResponse.json(
+        { error: { code: error.code, message: error.message } },
+        { status: error.status }
+      );
+    }
+    throw error;
   }
 
-  // Calculate total in smallest currency unit (cents)
-  const subtotalAmount = products.reduce(
-    (sum, { item, product }) => sum + product!.priceAmount * item.quantity,
-    0
-  );
-
-  const deliveryAmount = 0; // flat free delivery for guest checkout
-  const grandTotalAmount = subtotalAmount + deliveryAmount;
-
-  // Minimum Stripe charge is 50 cents
-  if (grandTotalAmount < 50) {
+  if (quote.grandTotalAmount < 50) {
     return NextResponse.json(
       { error: { code: "AMOUNT_TOO_LOW", message: "Order total is too low" } },
       { status: 400 }
@@ -92,12 +73,13 @@ export const POST = withErrorHandling(async (request) => {
   let paymentIntent: Stripe.PaymentIntent;
   try {
     paymentIntent = await stripe.paymentIntents.create({
-      amount: grandTotalAmount,
-      currency: currency.toLowerCase(),
+      amount: quote.grandTotalAmount,
+      currency: quote.currency.toLowerCase(),
       automatic_payment_methods: { enabled: true },
       metadata: {
         source: "guest_checkout",
-        itemCount: String(items.length),
+        itemCount: String(parsed.data.items.length),
+        couponCount: String(quote.appliedCoupons.length),
       },
     });
   } catch (err) {
@@ -106,10 +88,7 @@ export const POST = withErrorHandling(async (request) => {
       stripeErr.type === "StripeAuthenticationError"
         ? "Invalid Stripe API key. Please check your STRIPE_SECRET_KEY in .env.local."
         : (stripeErr.message ?? "Stripe error. Please try again.");
-    return NextResponse.json(
-      { error: { code: "STRIPE_ERROR", message: msg } },
-      { status: 502 }
-    );
+    return NextResponse.json({ error: { code: "STRIPE_ERROR", message: msg } }, { status: 502 });
   }
 
   return NextResponse.json(
@@ -117,22 +96,7 @@ export const POST = withErrorHandling(async (request) => {
       data: {
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
-        subtotalAmount,
-        deliveryAmount,
-        grandTotalAmount,
-        currency,
-        lineItems: products.map(({ item, product }) => ({
-          productId: item.productId,
-          productName: product!.name,
-          productImage: product!.images[0] ?? null,
-          productSku: product!.sku ?? null,
-          vendorProfileId: product!.vendorProfileId,
-          categoryId: product!.categoryId,
-          quantity: item.quantity,
-          unitPriceAmount: product!.priceAmount,
-          lineTotalAmount: product!.priceAmount * item.quantity,
-          currency: product!.currency,
-        })),
+        ...quote,
       },
     },
     { status: 200 }

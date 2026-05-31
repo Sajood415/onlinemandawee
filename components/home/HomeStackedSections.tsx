@@ -2,11 +2,25 @@
 
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
+import { useEffect, useState } from "react";
 import productData from "@/data/product.json";
+import {
+  fetchPublicCatalogProducts,
+  type PublicCatalogProduct,
+} from "@/lib/products/public-catalog";
 import { HomeProductRail } from "./HomeProductRail";
 
 export function HomeStackedSections() {
   const { sections } = productData.homeStackedSections;
+  const [sharedVendorProducts, setSharedVendorProducts] = useState<
+    PublicCatalogProduct[] | undefined
+  >(undefined);
+
+  useEffect(() => {
+    void fetchPublicCatalogProducts()
+      .then(setSharedVendorProducts)
+      .catch(() => setSharedVendorProducts([]));
+  }, []);
 
   return (
     <div className="w-full min-w-0 bg-white">
@@ -27,7 +41,11 @@ export function HomeStackedSections() {
             />
           </Link>
           <div className="w-full min-w-0 px-3 py-6 sm:px-4 sm:py-10 lg:px-5">
-            <HomeProductRail productIds={section.productIds} showTitle={false} />
+            <HomeProductRail
+              productIds={section.productIds}
+              showTitle={false}
+              sharedVendorProducts={sharedVendorProducts}
+            />
           </div>
         </div>
       ))}

@@ -92,12 +92,18 @@ const buildErrorPayload = (error: unknown) => {
     };
   }
 
+  const message =
+    error instanceof Error ? error.message : "Internal server error";
+
   return {
     statusCode: 500,
     body: {
       error: {
         code: ERROR_CODE.INTERNAL_SERVER_ERROR,
-        message: "Internal server error",
+        message:
+          process.env.NODE_ENV === "production"
+            ? "Internal server error"
+            : message,
         details: null,
       },
     },

@@ -1,9 +1,18 @@
 import { formatFlattenedValidationError } from "@/lib/http/format-validation-error-message";
 
 export async function parseApiResponse<T>(res: Response): Promise<T> {
-  const json = (await res.json()) as
-    | { data: T }
-    | { error?: { message?: string; details?: unknown } };
+  const raw = await res.text();
+  let json: { data: T } | { error?: { message?: string; details?: unknown } };
+
+  try {
+    json = JSON.parse(raw) as typeof json;
+  } catch {
+    throw new Error(
+      res.ok
+        ? "Invalid response from server"
+        : "Server error. Please refresh the page and try again."
+    );
+  }
 
   if (!res.ok) {
     const baseMessage =

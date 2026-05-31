@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { CatalogImage } from "@/components/catalog/CatalogImage";
 import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
 import { usePathname, useRouter, Link as LocaleLink } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
@@ -771,7 +772,7 @@ export default function Header() {
                         className="flex gap-4 p-3 bg-gray-50 rounded-xl"
                       >
                         <div className="relative w-20 h-20 bg-white rounded-lg overflow-hidden flex-shrink-0">
-                          <Image
+                          <CatalogImage
                             src={item.productImage}
                             alt={localizeProductName(
                               item.productId,
@@ -779,6 +780,7 @@ export default function Header() {
                               safeLocale,
                             )}
                             fill
+                            sizes="80px"
                             className="object-cover"
                           />
                         </div>
