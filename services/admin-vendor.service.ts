@@ -218,11 +218,70 @@ export class AdminVendorService {
       },
     });
 
+    const suspensionMessage = reason ?? "Vendor account was suspended";
+    await sendTransactionalEmail({
+      to: vendor.user.email,
+      subject: `${env.APP_NAME} — vendor account suspended`,
+      text: `Hi ${vendor.user.fullName},\n\nYour vendor account has been suspended.\nReason: ${suspensionMessage}\n\nYour store is hidden from customers until further notice.\n\n${env.APP_NAME} Team`,
+      html: buildVendorReviewStatusEmailHtml({
+        appName: env.APP_NAME,
+        heading: "Your vendor account is suspended",
+        message:
+          "Your vendor account has been suspended and your store is hidden from customers until further notice.",
+        note: `Reason: ${suspensionMessage}`,
+      }),
+    });
+
     return {
       id: updated.id,
       status: updated.status,
       suspendedAt: updated.suspendedAt?.toISOString() ?? null,
       suspensionReason: updated.suspensionReason,
+    };
+  }
+
+  async reactivate(vendorProfileId: string, admin: AuthenticatedUser) {
+    const vendor = await this.requireVendor(vendorProfileId);
+
+    if (vendor.status !== "SUSPENDED") {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Only suspended vendors can be reactivated",
+        statusCode: 400,
+      });
+    }
+
+    const updated = await this.vendorProfileRepository.updateStep({
+      vendorProfileId,
+      onboardingStep: vendor.onboardingStep,
+      status: "ACTIVE",
+      suspendedAt: null,
+      suspensionReason: null,
+    });
+
+    await this.userRepository.updateStatus(vendor.userId, "ACTIVE");
+    await this.auditLogRepository.create({
+      actorUserId: admin.id,
+      actorRole: admin.role,
+      action: "admin.vendor_reactivated",
+      entityType: "VendorProfile",
+      entityId: vendorProfileId,
+    });
+    await sendTransactionalEmail({
+      to: vendor.user.email,
+      subject: `${env.APP_NAME} — vendor account reactivated`,
+      text: `Hi ${vendor.user.fullName},\n\nYour vendor account has been reactivated. You can sign in and your store is visible to customers again.\n\n${env.APP_NAME} Team`,
+      html: buildVendorReviewStatusEmailHtml({
+        appName: env.APP_NAME,
+        heading: "Your vendor account is active again",
+        message:
+          "Your vendor account has been reactivated. You can sign in and your store is visible to customers again.",
+      }),
+    });
+
+    return {
+      id: updated.id,
+      status: updated.status,
     };
   }
 

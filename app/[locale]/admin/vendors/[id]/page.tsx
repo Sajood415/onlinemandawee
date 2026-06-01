@@ -67,7 +67,7 @@ type VendorDetail = {
 
 type PendingAction =
   | {
-      type: "approve" | "reject";
+      type: "approve" | "reject" | "suspend" | "reactivate";
     }
   | null;
 
@@ -100,6 +100,7 @@ export default function AdminVendorDetailPage() {
   const [loading, setLoading] = useState(true);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [actionReason, setActionReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const loadVendor = useCallback(async (opts?: { silent?: boolean }) => {
@@ -159,29 +160,60 @@ export default function AdminVendorDetailPage() {
       toast.error("Reason is required", "Please provide at least 3 characters.");
       return;
     }
+    if (pendingAction.type === "suspend" && actionReason.trim().length < 3) {
+      toast.error("Reason is required", "Please provide at least 3 characters.");
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const response =
-        pendingAction.type === "approve"
-          ? await fetchWithAuth(`/api/admin/vendors/${vendor.id}/approve`, {
-              method: "POST",
-            })
-          : await fetchWithAuth(`/api/admin/vendors/${vendor.id}/reject`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ reason: rejectReason.trim() }),
-            });
+      let response: Response;
+
+      if (pendingAction.type === "approve") {
+        response = await fetchWithAuth(`/api/admin/vendors/${vendor.id}/approve`, {
+          method: "POST",
+        });
+      } else if (pendingAction.type === "reject") {
+        response = await fetchWithAuth(`/api/admin/vendors/${vendor.id}/reject`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason: rejectReason.trim() }),
+        });
+      } else if (pendingAction.type === "suspend") {
+        response = await fetchWithAuth(`/api/admin/vendors/${vendor.id}/suspend`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason: actionReason.trim() }),
+        });
+      } else {
+        response = await fetchWithAuth(`/api/admin/vendors/${vendor.id}/reactivate`, {
+          method: "POST",
+        });
+      }
+
       await parseApiResponse(response);
       toast.success(
-        pendingAction.type === "approve" ? "Vendor approved" : "Vendor disapproved"
+        pendingAction.type === "approve"
+          ? "Vendor approved"
+          : pendingAction.type === "reject"
+            ? "Vendor disapproved"
+            : pendingAction.type === "suspend"
+              ? "Vendor suspended"
+              : "Vendor reactivated"
       );
       setPendingAction(null);
       setRejectReason("");
+      setActionReason("");
       await loadVendor();
     } catch (error) {
       toast.error(
-        pendingAction.type === "approve" ? "Approval failed" : "Disapproval failed",
+        pendingAction.type === "approve"
+          ? "Approval failed"
+          : pendingAction.type === "reject"
+            ? "Disapproval failed"
+            : pendingAction.type === "suspend"
+              ? "Suspension failed"
+              : "Reactivation failed",
         toErrorMessage(error)
       );
     } finally {
@@ -226,13 +258,51 @@ export default function AdminVendorDetailPage() {
             </h2>
             <p className="mt-1 text-sm text-neutral-600">{vendor.user.fullName}</p>
           </div>
-          <span
-            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-              statusBadgeClass[vendor.status]
-            }`}
-          >
-            {vendor.status.replaceAll("_", " ")}
-          </span>
+          <div className="flex flex-col items-end gap-3">
+            <span
+              className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                statusBadgeClass[vendor.status]
+              }`}
+            >
+              {vendor.status.replaceAll("_", " ")}
+            </span>
+            {vendor.status === "PENDING_APPROVAL" ? (
+              <div className="flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPendingAction({ type: "approve" })}
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPendingAction({ type: "reject" })}
+                  className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Disapprove
+                </button>
+              </div>
+            ) : null}
+            {vendor.status === "ACTIVE" ? (
+              <button
+                type="button"
+                onClick={() => setPendingAction({ type: "suspend" })}
+                className="rounded-lg bg-neutral-800 px-4 py-2 text-sm font-semibold text-white"
+              >
+                Suspend Vendor
+              </button>
+            ) : null}
+            {vendor.status === "SUSPENDED" ? (
+              <button
+                type="button"
+                onClick={() => setPendingAction({ type: "reactivate" })}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
+              >
+                Reactivate Vendor
+              </button>
+            ) : null}
+          </div>
         </div>
       </section>
 
@@ -252,6 +322,8 @@ export default function AdminVendorDetailPage() {
             <p>Approved at: {displayDate(vendor.approvedAt)}</p>
             <p>Rejected at: {displayDate(vendor.rejectedAt)}</p>
             {vendor.rejectionReason ? <p>Rejection reason: {vendor.rejectionReason}</p> : null}
+            <p>Suspended at: {displayDate(vendor.suspendedAt)}</p>
+            {vendor.suspensionReason ? <p>Suspension reason: {vendor.suspensionReason}</p> : null}
           </div>
         </section>
 
@@ -411,37 +483,26 @@ export default function AdminVendorDetailPage() {
         )}
       </section>
 
-      {vendor.status === "PENDING_APPROVAL" ? (
-        <section className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => setPendingAction({ type: "approve" })}
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
-          >
-            Approve Vendor
-          </button>
-          <button
-            type="button"
-            onClick={() => setPendingAction({ type: "reject" })}
-            className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white"
-          >
-            Disapprove Vendor
-          </button>
-        </section>
-      ) : null}
-
       {pendingAction ? (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/45 p-4">
           <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-5 shadow-xl">
             <h4 className="text-lg font-semibold text-neutral-900">
               {pendingAction.type === "approve"
                 ? "Approve vendor?"
-                : "Disapprove vendor?"}
+                : pendingAction.type === "reject"
+                  ? "Disapprove vendor?"
+                  : pendingAction.type === "suspend"
+                    ? "Suspend vendor?"
+                    : "Reactivate vendor?"}
             </h4>
             <p className="mt-1 text-sm text-neutral-600">
               {pendingAction.type === "approve"
                 ? "This will activate the vendor account."
-                : "This will reject the vendor request."}
+                : pendingAction.type === "reject"
+                  ? "This will reject the vendor request."
+                  : pendingAction.type === "suspend"
+                    ? "This will hide their store from customers and block vendor login."
+                    : "This will restore vendor access and show their store again."}
             </p>
 
             {pendingAction.type === "reject" ? (
@@ -454,12 +515,23 @@ export default function AdminVendorDetailPage() {
               />
             ) : null}
 
+            {pendingAction.type === "suspend" ? (
+              <textarea
+                value={actionReason}
+                onChange={(event) => setActionReason(event.target.value)}
+                rows={4}
+                className="mt-3 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                placeholder="Reason for suspension"
+              />
+            ) : null}
+
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => {
                   setPendingAction(null);
                   setRejectReason("");
+                  setActionReason("");
                 }}
                 className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
               >
@@ -470,14 +542,22 @@ export default function AdminVendorDetailPage() {
                 onClick={() => void submitAction()}
                 disabled={submitting}
                 className={`rounded-lg px-3 py-2 text-sm font-semibold text-white disabled:opacity-50 ${
-                  pendingAction.type === "approve" ? "bg-emerald-600" : "bg-rose-600"
+                  pendingAction.type === "approve" || pendingAction.type === "reactivate"
+                    ? "bg-emerald-600"
+                    : pendingAction.type === "reject"
+                      ? "bg-rose-600"
+                      : "bg-neutral-700"
                 }`}
               >
                 {submitting
                   ? "Submitting..."
                   : pendingAction.type === "approve"
                     ? "Approve"
-                    : "Disapprove"}
+                    : pendingAction.type === "reject"
+                      ? "Disapprove"
+                      : pendingAction.type === "suspend"
+                        ? "Suspend"
+                        : "Reactivate"}
               </button>
             </div>
           </div>
