@@ -1134,7 +1134,7 @@ export function VendorOnboardingWizard() {
               </label>
               <label className={CHECK_ROW}>
                 <input type="checkbox" checked={ag2} onChange={(e) => setAg2(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>I agree to the membership: USD $5.99 per month, first 3 months free for new vendors.<RequiredMark /></span>
+                <span>I agree to the membership: USD $6.99 per month, first 3 months free for new vendors.<RequiredMark /></span>
               </label>
               <label className={CHECK_ROW}>
                 <input type="checkbox" checked={ag3} onChange={(e) => setAg3(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />

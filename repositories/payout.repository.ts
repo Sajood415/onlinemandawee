@@ -96,4 +96,11 @@ export class PayoutRepository {
       },
     });
   }
+
+  updateHoldUntil(id: string, holdUntil: Date) {
+    return prisma.payout.update({
+      where: { id },
+      data: { holdUntil },
+    });
+  }
 }

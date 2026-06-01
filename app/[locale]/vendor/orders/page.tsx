@@ -379,16 +379,22 @@ export default function VendorOrdersPage() {
           toast.error(data?.error?.message ?? "Could not update status.");
           return;
         }
-        toast.success(`Order marked as ${STATUS_LABELS[status]}.`);
-        // Update order locally for instant feedback
-        setOrders((prev) =>
-          prev.map((o) => (o.id === vendorOrderId ? { ...o, status } : o))
-        );
+        if (status === "DELIVERED") {
+          toast.success(
+            "Order delivered. Net earnings recorded after the 3.99% fee. With bank or PayPal on file, payout is sent automatically; otherwise earnings stay on hold until admin releases payment."
+          );
+          await fetchOrders(true);
+        } else {
+          toast.success(`Order marked as ${STATUS_LABELS[status]}.`);
+          setOrders((prev) =>
+            prev.map((o) => (o.id === vendorOrderId ? { ...o, status } : o))
+          );
+        }
       } catch {
         toast.error("Network error. Please try again.");
       }
     },
-    []
+    [fetchOrders]
   );
 
   useEffect(() => {

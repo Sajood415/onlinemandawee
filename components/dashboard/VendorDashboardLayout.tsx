@@ -7,11 +7,11 @@ import {
   Settings,
   ShoppingCart,
   Tag,
-  Wallet,
   Megaphone,
 } from "lucide-react";
 
 import { RoleDashboardLayout } from "@/components/dashboard/RoleDashboardLayout";
+import { SubscriptionBillingBanner } from "@/components/vendor/SubscriptionBillingBanner";
 import { useVendorStoreName } from "@/components/dashboard/use-vendor-store-name";
 
 type VendorDashboardLayoutProps = {
@@ -31,11 +31,11 @@ export function VendorDashboardLayout({ children }: VendorDashboardLayoutProps) 
         { label: "Coupons", href: "/vendor/coupons", icon: <Tag size={16} /> },
         { label: "Promotions", href: "/vendor/promotions", icon: <Megaphone size={16} /> },
         { label: "Orders", href: "/vendor/orders", icon: <ShoppingCart size={16} /> },
-        { label: "Payouts", href: "/vendor/payouts", icon: <Wallet size={16} /> },
         { label: "Reports", href: "/vendor/reports", icon: <BarChart3 size={16} /> },
         { label: "Settings", href: "/vendor/settings", icon: <Settings size={16} /> },
       ]}
     >
+      <SubscriptionBillingBanner />
       {children}
     </RoleDashboardLayout>
   );

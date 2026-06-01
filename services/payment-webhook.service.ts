@@ -1,15 +1,12 @@
 import type { PaymentProvider } from "@/domain/payment/payment-types";
-import { env } from "@/config/env";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { durationFromNow } from "@/lib/utils/duration";
 import { sha256 } from "@/lib/utils/crypto";
-import { CommissionLedgerRepository } from "@/repositories/commission-ledger.repository";
 import { IdempotencyKeyRepository } from "@/repositories/idempotency-key.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { PaymentTransactionRepository } from "@/repositories/payment-transaction.repository";
-import { PayoutRepository } from "@/repositories/payout.repository";
-import { VendorLedgerEntryRepository } from "@/repositories/vendor-ledger-entry.repository";
+import { OrderSettlementService } from "@/services/order-settlement.service";
 
 type PaymentWebhookInput = {
   eventId: string;
@@ -25,9 +22,7 @@ export class PaymentWebhookService {
   constructor(
     private readonly orderRepository = new OrderRepository(),
     private readonly paymentTransactionRepository = new PaymentTransactionRepository(),
-    private readonly commissionLedgerRepository = new CommissionLedgerRepository(),
-    private readonly vendorLedgerEntryRepository = new VendorLedgerEntryRepository(),
-    private readonly payoutRepository = new PayoutRepository(),
+    private readonly orderSettlementService = new OrderSettlementService(),
     private readonly idempotencyKeyRepository = new IdempotencyKeyRepository()
   ) {}
 
@@ -165,63 +160,22 @@ export class PaymentWebhookService {
           processedAt: new Date(),
         }));
 
-      for (const vendorOrder of order.vendorOrders) {
-        const existingCommission =
-          await this.commissionLedgerRepository.findByOrderVendorId(vendorOrder.id);
+      await this.orderSettlementService.settlePaidOrder({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        vendorOrders: order.vendorOrders,
+        paymentTransactionId: transaction.id,
+      });
 
-        if (existingCommission) {
-          continue;
-        }
+      const updatedOrder = await this.orderRepository.findById(order.id);
 
-        const commissionAmount = Math.round(
-          (vendorOrder.subtotalAmount * env.COMMISSION_RATE_BPS) / 10000
-        );
-        const holdAmount = vendorOrder.grandTotalAmount - commissionAmount;
-
-        await this.commissionLedgerRepository.create({
-          orderId: order.id,
-          orderVendorId: vendorOrder.id,
-          vendorProfileId: vendorOrder.vendorProfileId,
-          rateBps: env.COMMISSION_RATE_BPS,
-          baseAmount: vendorOrder.subtotalAmount,
-          commissionAmount,
-          currency: vendorOrder.currency,
+      if (!updatedOrder) {
+        throw new AppError({
+          code: ERROR_CODE.NOT_FOUND,
+          message: "Order not found after settlement",
+          statusCode: 404,
         });
-
-        await this.vendorLedgerEntryRepository.create({
-          vendorProfileId: vendorOrder.vendorProfileId,
-          orderId: order.id,
-          orderVendorId: vendorOrder.id,
-          paymentTransactionId: transaction.id,
-          bucket: "HOLD",
-          entryType: "SALE_HOLD",
-          amount: holdAmount,
-          currency: vendorOrder.currency,
-          description: `Held earnings for ${order.orderNumber}`,
-        });
-
-        const existingPayout = await this.payoutRepository.findByOrderVendorId(
-          vendorOrder.id
-        );
-
-        if (!existingPayout) {
-          await this.payoutRepository.create({
-            vendorProfileId: vendorOrder.vendorProfileId,
-            orderVendorId: vendorOrder.id,
-            amount: holdAmount,
-            currency: vendorOrder.currency,
-            holdUntil: new Date(
-              Date.now() + env.PAYOUT_HOLD_DAYS * 24 * 60 * 60 * 1000
-            ),
-          });
-        }
       }
-
-      const updatedOrder = await this.orderRepository.updateOrderStatus(
-        order.id,
-        "PAID",
-        "PAID"
-      );
 
       const response = {
         provider,

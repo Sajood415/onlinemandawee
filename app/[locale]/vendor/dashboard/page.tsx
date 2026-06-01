@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
+import { FeeEarningsDashboard } from "@/components/vendor/FeeEarningsDashboard";
+import { Link } from "@/i18n/navigation";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { formatVendorStoreName } from "@/lib/utils/slug";
 
@@ -33,6 +35,8 @@ type DashboardSummary = {
   netEarnings: {
     amount: number;
     currency: string;
+    holdBalance?: number;
+    availableBalance?: number;
   };
   subscription: {
     status: string;
@@ -43,6 +47,36 @@ type DashboardSummary = {
     total: number;
     active: number;
     pendingApprovals: number;
+  };
+  feeEarnings: {
+    currency: string;
+    transactionFeeRatePercent: number;
+    subscription: {
+      monthlyAmount: number;
+      currency: string;
+      status: string;
+      periodLabel: string | null;
+      dueAt: string | null;
+      invoiceAmount: number;
+    };
+    orders: Array<{
+      id: string;
+      orderNumber: string;
+      vendorOrderStatus: string;
+      paymentStatus: string;
+      orderTotal: number;
+      transactionFee: number | null;
+      netEarnings: number | null;
+      currency: string;
+      isSettled: boolean;
+      createdAt: string;
+    }>;
+    totals: {
+      settledOrderCount: number;
+      orderTotal: number;
+      transactionFees: number;
+      netEarnings: number;
+    };
   };
 };
 
@@ -176,6 +210,17 @@ export default function VendorDashboardPage() {
     }
   }, [authLoading, user, fetchSummary]);
 
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted && user && !authLoading) {
+        void fetchSummary();
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, [authLoading, user, fetchSummary]);
+
   if (authLoading || !user) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -272,7 +317,11 @@ export default function VendorDashboardPage() {
                   summary.netEarnings.amount,
                   summary.netEarnings.currency
                 )}
-                sub="Available balance after commissions"
+                sub={
+                  summary.netEarnings.holdBalance != null
+                    ? `${formatCurrency(summary.netEarnings.holdBalance, summary.netEarnings.currency)} on hold · ${formatCurrency(summary.netEarnings.availableBalance ?? 0, summary.netEarnings.currency)} available`
+                    : "After 3.99% order fee; includes hold + available"
+                }
               />
 
               {/* Subscription status */}
@@ -335,6 +384,10 @@ export default function VendorDashboardPage() {
           )}
         </div>
 
+        {summary?.feeEarnings ? (
+          <FeeEarningsDashboard data={summary.feeEarnings} />
+        ) : null}
+
         {/* Quick links */}
         {summary && (
           <div className="mt-10">
@@ -345,17 +398,17 @@ export default function VendorDashboardPage() {
               {[
                 { label: "View all orders", href: "/vendor/orders", icon: <ShoppingCart className="h-4 w-4" /> },
                 { label: "Manage products", href: "/vendor/products", icon: <Package className="h-4 w-4" /> },
-                { label: "Payouts & earnings", href: "/vendor/payouts", icon: <Wallet className="h-4 w-4" /> },
+                { label: "Payout history", href: "/vendor/reports?tab=payouts", icon: <Wallet className="h-4 w-4" /> },
                 { label: "Sales reports", href: "/vendor/reports", icon: <TrendingUp className="h-4 w-4" /> },
               ].map((link) => (
-                <a
+                <Link
                   key={link.href}
                   href={link.href}
                   className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3.5 text-sm font-medium text-neutral-700 shadow-sm transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
                 >
                   <span className="text-neutral-400">{link.icon}</span>
                   {link.label}
-                </a>
+                </Link>
               ))}
             </div>
           </div>

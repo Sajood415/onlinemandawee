@@ -124,4 +124,26 @@ export class VendorProfileRepository {
       },
     });
   }
+
+  listForMembershipBilling() {
+    return prisma.vendorProfile.findMany({
+      where: {
+        OR: [
+          { status: "ACTIVE" },
+          {
+            status: "SUSPENDED",
+            suspensionReason: {
+              startsWith: "Shop suspended: unpaid marketplace subscription",
+            },
+          },
+        ],
+      },
+      include: {
+        user: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  }
 }

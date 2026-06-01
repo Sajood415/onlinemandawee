@@ -5,6 +5,7 @@ const membershipInvoiceDelegate = (prisma as typeof prisma & {
     create: (...args: never[]) => ReturnType<typeof prisma.order.create>;
     findFirst: (...args: never[]) => ReturnType<typeof prisma.order.findFirst>;
     findMany: (...args: never[]) => ReturnType<typeof prisma.order.findMany>;
+    update: (...args: never[]) => ReturnType<typeof prisma.order.update>;
   };
 }).membershipInvoice;
 
@@ -87,6 +88,36 @@ export class MembershipInvoiceRepository {
         },
       },
       orderBy: [{ periodStart: "desc" }, { createdAt: "desc" }],
+    });
+  }
+
+  markPaid(id: string, paidAt = new Date()) {
+    return membershipInvoiceDelegate.update({
+      where: { id },
+      data: {
+        status: "PAID",
+        paidAt,
+      },
+      include: {
+        vendorProfile: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+  }
+
+  findById(id: string) {
+    return membershipInvoiceDelegate.findFirst({
+      where: { id },
+      include: {
+        vendorProfile: {
+          include: {
+            user: true,
+          },
+        },
+      },
     });
   }
 }

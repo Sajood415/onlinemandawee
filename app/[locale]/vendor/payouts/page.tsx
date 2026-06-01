@@ -1,7 +1,15 @@
 "use client";
 
-import { RoleSectionPlaceholder } from "@/components/dashboard/RoleSectionPlaceholder";
+import { useEffect } from "react";
+
+import { useRouter } from "@/i18n/navigation";
 
 export default function VendorPayoutsPage() {
-  return <RoleSectionPlaceholder role="VENDOR" title="Payouts" />;
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/vendor/reports?tab=payouts");
+  }, [router]);
+
+  return null;
 }

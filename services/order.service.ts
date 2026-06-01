@@ -18,6 +18,7 @@ import { CustomerAddressRepository } from "@/repositories/customer-address.repos
 import { OrderRepository } from "@/repositories/order.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
 import { DeliveryPricingService } from "@/services/delivery-pricing.service";
+import { OrderSettlementService } from "@/services/order-settlement.service";
 
 type QuoteLine = {
   cartItemId: string;
@@ -78,7 +79,8 @@ export class OrderService {
     private readonly orderRepository = new OrderRepository(),
     private readonly vendorProfileRepository = new VendorProfileRepository(),
     private readonly auditLogRepository = new AuditLogRepository(),
-    private readonly deliveryPricingService = new DeliveryPricingService()
+    private readonly deliveryPricingService = new DeliveryPricingService(),
+    private readonly orderSettlementService = new OrderSettlementService()
   ) {}
 
   async createOrder(
@@ -266,6 +268,10 @@ export class OrderService {
     // Send email notification to customer on key status changes
     if (status === "SHIPPED" || status === "DELIVERED" || status === "CANCELLED") {
       await this.sendOrderStatusEmail(vendorOrder.order.id, status);
+    }
+
+    if (status === "DELIVERED") {
+      await this.orderSettlementService.settleCodOnVendorDelivery(vendorOrderId);
     }
 
     return {

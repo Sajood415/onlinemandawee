@@ -21,7 +21,7 @@ const envSchema = z.object({
   COMMISSION_RATE_BPS: z.coerce.number().int().min(1).max(10000).default(399),
   PAYOUT_HOLD_DAYS: z.coerce.number().int().min(0).max(30).default(5),
   STRIPE_WEBHOOK_SECRET: z.string().min(16),
-  MEMBERSHIP_FEE_AMOUNT: z.coerce.number().int().min(0).default(599),
+  MEMBERSHIP_FEE_AMOUNT: z.coerce.number().int().min(0).default(699),
   MEMBERSHIP_TRIAL_DAYS: z.coerce.number().int().min(0).max(365).default(90),
   MEMBERSHIP_INVOICE_CURRENCY: z.string().trim().length(3).default("USD"),
   SMTP_HOST: z.string().trim().min(1).optional(),
