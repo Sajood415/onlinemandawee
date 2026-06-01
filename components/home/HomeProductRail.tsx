@@ -92,7 +92,7 @@ function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
         type="button"
         onClick={onAdd}
         disabled={busy}
-        className="mt-3 w-full rounded-sm border border-neutral-900 bg-white py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-900 transition-colors hover:bg-neutral-50 disabled:opacity-45 sm:text-[11px]"
+        className="mt-3 w-full rounded-sm border border-neutral-900 bg-white py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-900 transition-colors duration-200 hover:bg-neutral-100 active:bg-neutral-200/70 disabled:opacity-45 sm:text-[11px]"
       >
         {busy ? "…" : t("addToCart")}
       </button>

@@ -25,10 +25,12 @@ import {
   X,
 } from "lucide-react";
 
-import { useCart } from "@/store/cart-context";
-import { useAuth } from "@/store/auth-context";
+import { PageLoader } from "@/components/ui/PageLoader";
+import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
+import { useAuth } from "@/store/auth-context";
+import { useCart } from "@/store/cart-context";
 
 /* ─── Stripe setup ───────────────────────────────────────────────────── */
 
@@ -115,6 +117,17 @@ type AddressForm = {
   city: string;
   country: string;
   postalCode: string;
+};
+
+type CustomerAddress = {
+  id: string;
+  fullName: string;
+  phone: string;
+  country: string;
+  city: string;
+  addressLine1: string;
+  postalCode: string | null;
+  isDefault: boolean;
 };
 
 /* ─── Helpers ────────────────────────────────────────────────────────── */
@@ -752,11 +765,13 @@ function SuccessScreen({
 export default function CheckoutPage() {
   const { cart, removeItem } = useCart();
   const router = useRouter();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
   const [step, setStep] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const [contact, setContact] = useState<ContactForm>({ guestName: "", guestEmail: "", guestPhone: "" });
   const [address, setAddress] = useState<AddressForm>({ addressLine1: "", city: "", country: "", postalCode: "" });
+  const [customerPrefillReady, setCustomerPrefillReady] = useState(false);
 
   // Stripe quote (only needed when card payment is selected)
   const [quote, setQuote] = useState<QuoteSummary | null>(null);
@@ -796,6 +811,59 @@ export default function CheckoutPage() {
       router.replace("/");
     }
   }, [cartItems.length, router, successOrderNumber]);
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!isAuthenticated || !user || user.role !== "CUSTOMER") {
+      setCustomerPrefillReady(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    setContact((prev) => ({
+      guestName: prev.guestName || user.fullName,
+      guestEmail: prev.guestEmail || user.email,
+      guestPhone: prev.guestPhone || user.phone,
+    }));
+
+    void (async () => {
+      try {
+        const response = await fetchWithAuth("/api/customer/addresses");
+        const addresses = await parseApiResponse<CustomerAddress[]>(response);
+        if (cancelled) return;
+
+        const preferred = addresses.find((item) => item.isDefault) ?? addresses[0];
+        if (preferred) {
+          setContact((prev) => ({
+            guestName: prev.guestName || preferred.fullName || user.fullName,
+            guestEmail: prev.guestEmail || user.email,
+            guestPhone: prev.guestPhone || preferred.phone || user.phone,
+          }));
+          setAddress((prev) => ({
+            addressLine1: prev.addressLine1 || preferred.addressLine1,
+            city: prev.city || preferred.city,
+            country: prev.country || preferred.country,
+            postalCode: prev.postalCode || preferred.postalCode || "",
+          }));
+        }
+      } catch {
+      } finally {
+        if (!cancelled) setCustomerPrefillReady(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, isAuthenticated, user]);
+
+  const awaitingCustomerPrefill =
+    !authLoading &&
+    isAuthenticated &&
+    user?.role === "CUSTOMER" &&
+    !customerPrefillReady;
 
   const fetchStripeQuote = useCallback(async (coupons: VendorCouponEntry[]) => {
     if (cartItems.length === 0) return;
@@ -1043,6 +1111,10 @@ export default function CheckoutPage() {
         guestEmail={successEmail}
       />
     );
+  }
+
+  if (awaitingCustomerPrefill) {
+    return <PageLoader message="Loading checkout..." fullScreen />;
   }
 
   const stepIcons = [<User key="u" size={18} />, <MapPin key="m" size={18} />, <CreditCard key="c" size={18} />];
