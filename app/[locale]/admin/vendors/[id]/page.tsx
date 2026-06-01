@@ -63,6 +63,45 @@ type VendorDetail = {
     agreedToDeliveryRules: boolean;
     acceptedAt: string;
   } | null;
+  outstandingFees: {
+    currency: string;
+    pendingMembershipAmount: number;
+    pendingMembershipCount: number;
+    totalPlatformCommissionCollected: number;
+  };
+  products: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    priceAmount: number;
+    currency: string;
+    stockQty: number;
+    approvalStatus: string;
+    isActive: boolean;
+    categoryName: string;
+    createdAt: string;
+  }>;
+  orders: Array<{
+    id: string;
+    status: string;
+    orderNumber: string;
+    paymentStatus: string;
+    grandTotalAmount: number;
+    currency: string;
+    itemCount: number;
+    createdAt: string;
+  }>;
+  subscriptionHistory: Array<{
+    id: string;
+    status: string;
+    amount: number;
+    currency: string;
+    periodStart: string;
+    periodEnd: string;
+    dueAt: string;
+    paidAt: string | null;
+    waivedReason: string | null;
+  }>;
 };
 
 type PendingAction =
@@ -84,6 +123,42 @@ const displayDate = (iso: string | null) => {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "—";
   return date.toLocaleString();
+};
+
+const formatMoney = (amount: number, currency: string) => {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency || "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount / 100);
+  } catch {
+    return `${currency} ${(amount / 100).toFixed(2)}`;
+  }
+};
+
+const productStatusClass = (status: string) => {
+  if (status === "APPROVED") return "bg-emerald-50 text-emerald-700";
+  if (status === "PENDING_APPROVAL") return "bg-amber-50 text-amber-700";
+  if (status === "REJECTED") return "bg-rose-50 text-rose-700";
+  if (status === "ARCHIVED") return "bg-neutral-100 text-neutral-600";
+  return "bg-sky-50 text-sky-700";
+};
+
+const invoiceStatusClass = (status: string) => {
+  if (status === "PAID") return "bg-emerald-50 text-emerald-700";
+  if (status === "PENDING") return "bg-amber-50 text-amber-700";
+  if (status === "WAIVED") return "bg-sky-50 text-sky-700";
+  return "bg-neutral-100 text-neutral-600";
+};
+
+const orderStatusClass = (status: string) => {
+  if (status === "DELIVERED") return "bg-emerald-50 text-emerald-700";
+  if (status === "SHIPPED") return "bg-cyan-50 text-cyan-700";
+  if (status === "PREPARING") return "bg-yellow-50 text-yellow-700";
+  if (status === "CANCELLED") return "bg-rose-50 text-rose-700";
+  return "bg-blue-50 text-blue-700";
 };
 
 const toErrorMessage = (error: unknown) =>
@@ -480,6 +555,177 @@ export default function AdminVendorDetailPage() {
           </div>
         ) : (
           <p className="mt-2 text-sm text-neutral-500">No KYC documents available.</p>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
+          Outstanding Fees
+        </h3>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
+              Pending subscription fees
+            </p>
+            <p className="mt-2 text-2xl font-bold text-neutral-900">
+              {formatMoney(
+                vendor.outstandingFees.pendingMembershipAmount,
+                vendor.outstandingFees.currency
+              )}
+            </p>
+            <p className="mt-1 text-sm text-neutral-600">
+              {vendor.outstandingFees.pendingMembershipCount} unpaid invoice
+              {vendor.outstandingFees.pendingMembershipCount === 1 ? "" : "s"}
+            </p>
+          </div>
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              Platform commission collected
+            </p>
+            <p className="mt-2 text-2xl font-bold text-neutral-900">
+              {formatMoney(
+                vendor.outstandingFees.totalPlatformCommissionCollected,
+                vendor.outstandingFees.currency
+              )}
+            </p>
+            <p className="mt-1 text-sm text-neutral-600">Total $3.99 fees from orders</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
+          Products ({vendor.products.length})
+        </h3>
+        {vendor.products.length ? (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[640px] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wider text-neutral-500">
+                  <th className="px-3 py-2">Product</th>
+                  <th className="px-3 py-2">Category</th>
+                  <th className="px-3 py-2">Price</th>
+                  <th className="px-3 py-2">Stock</th>
+                  <th className="px-3 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vendor.products.map((product) => (
+                  <tr key={product.id} className="border-b border-neutral-100">
+                    <td className="px-3 py-3">
+                      <p className="font-medium text-neutral-900">{product.name}</p>
+                      <p className="text-xs text-neutral-500">{product.slug}</p>
+                    </td>
+                    <td className="px-3 py-3 text-neutral-700">{product.categoryName}</td>
+                    <td className="px-3 py-3 text-neutral-700">
+                      {formatMoney(product.priceAmount, product.currency)}
+                    </td>
+                    <td className="px-3 py-3 text-neutral-700">{product.stockQty}</td>
+                    <td className="px-3 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${productStatusClass(product.approvalStatus)}`}
+                      >
+                        {product.approvalStatus.replaceAll("_", " ")}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-neutral-500">No products yet.</p>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
+          Orders ({vendor.orders.length})
+        </h3>
+        {vendor.orders.length ? (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[720px] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wider text-neutral-500">
+                  <th className="px-3 py-2">Order</th>
+                  <th className="px-3 py-2">Date</th>
+                  <th className="px-3 py-2">Items</th>
+                  <th className="px-3 py-2">Total</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Payment</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vendor.orders.map((order) => (
+                  <tr key={order.id} className="border-b border-neutral-100">
+                    <td className="px-3 py-3 font-medium text-neutral-900">{order.orderNumber}</td>
+                    <td className="px-3 py-3 text-neutral-700">{displayDate(order.createdAt)}</td>
+                    <td className="px-3 py-3 text-neutral-700">{order.itemCount}</td>
+                    <td className="px-3 py-3 text-neutral-700">
+                      {formatMoney(order.grandTotalAmount, order.currency)}
+                    </td>
+                    <td className="px-3 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${orderStatusClass(order.status)}`}
+                      >
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-neutral-700">
+                      {order.paymentStatus.replaceAll("_", " ")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-neutral-500">No orders yet.</p>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
+          Subscription Payment History
+        </h3>
+        {vendor.subscriptionHistory.length ? (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[760px] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wider text-neutral-500">
+                  <th className="px-3 py-2">Period</th>
+                  <th className="px-3 py-2">Amount</th>
+                  <th className="px-3 py-2">Due</th>
+                  <th className="px-3 py-2">Paid</th>
+                  <th className="px-3 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vendor.subscriptionHistory.map((invoice) => (
+                  <tr key={invoice.id} className="border-b border-neutral-100">
+                    <td className="px-3 py-3 text-neutral-700">
+                      {new Date(invoice.periodStart).toLocaleDateString()} –{" "}
+                      {new Date(invoice.periodEnd).toLocaleDateString()}
+                    </td>
+                    <td className="px-3 py-3 text-neutral-700">
+                      {formatMoney(invoice.amount, invoice.currency)}
+                    </td>
+                    <td className="px-3 py-3 text-neutral-700">{displayDate(invoice.dueAt)}</td>
+                    <td className="px-3 py-3 text-neutral-700">{displayDate(invoice.paidAt)}</td>
+                    <td className="px-3 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${invoiceStatusClass(invoice.status)}`}
+                      >
+                        {invoice.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-neutral-500">No subscription invoices yet.</p>
         )}
       </section>
 

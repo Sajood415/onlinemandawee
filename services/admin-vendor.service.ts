@@ -3,6 +3,10 @@ import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { sendTransactionalEmail } from "@/lib/mail/send-transactional-email";
 import { buildVendorReviewStatusEmailHtml } from "@/lib/mail/vendor-review-status-email-html";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
+import { CommissionLedgerRepository } from "@/repositories/commission-ledger.repository";
+import { MembershipInvoiceRepository } from "@/repositories/membership-invoice.repository";
+import { OrderRepository } from "@/repositories/order.repository";
+import { ProductRepository } from "@/repositories/product.repository";
 import { UserRepository } from "@/repositories/user.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
 import { env } from "@/config/env";
@@ -14,7 +18,11 @@ export class AdminVendorService {
   constructor(
     private readonly vendorProfileRepository = new VendorProfileRepository(),
     private readonly userRepository = new UserRepository(),
-    private readonly auditLogRepository = new AuditLogRepository()
+    private readonly auditLogRepository = new AuditLogRepository(),
+    private readonly orderRepository = new OrderRepository(),
+    private readonly productRepository = new ProductRepository(),
+    private readonly membershipInvoiceRepository = new MembershipInvoiceRepository(),
+    private readonly commissionLedgerRepository = new CommissionLedgerRepository()
   ) {}
 
   async list(status?: VendorStatus) {
@@ -42,6 +50,31 @@ export class AdminVendorService {
 
   async detail(vendorProfileId: string) {
     const vendor = await this.requireVendor(vendorProfileId);
+
+    const [products, vendorOrders, membershipInvoices, commissionEntries] =
+      await Promise.all([
+        this.productRepository.listByVendor(vendorProfileId),
+        this.orderRepository.listByVendorProfileId(vendorProfileId),
+        this.membershipInvoiceRepository.listByVendorProfileId(vendorProfileId),
+        this.commissionLedgerRepository.listByVendorProfileId(vendorProfileId),
+      ]);
+
+    const pendingInvoices = membershipInvoices.filter(
+      (invoice) => invoice.status === "PENDING"
+    );
+    const outstandingMembershipAmount = pendingInvoices.reduce(
+      (sum, invoice) => sum + invoice.amount,
+      0
+    );
+    const feesCurrency =
+      pendingInvoices[0]?.currency ??
+      membershipInvoices[0]?.currency ??
+      commissionEntries[0]?.currency ??
+      "USD";
+    const totalPlatformCommissionCollected = commissionEntries.reduce(
+      (sum, entry) => sum + entry.commissionAmount,
+      0
+    );
 
     return {
       id: vendor.id,
@@ -77,6 +110,45 @@ export class AdminVendorService {
       address: vendor.address,
       payoutMethod: vendor.payoutMethod,
       agreementAcceptance: vendor.agreementAcceptance,
+      outstandingFees: {
+        currency: feesCurrency,
+        pendingMembershipAmount: outstandingMembershipAmount,
+        pendingMembershipCount: pendingInvoices.length,
+        totalPlatformCommissionCollected,
+      },
+      products: products.map((product) => ({
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        priceAmount: product.priceAmount,
+        currency: product.currency,
+        stockQty: product.stockQty,
+        approvalStatus: product.approvalStatus,
+        isActive: product.isActive,
+        categoryName: product.category.name,
+        createdAt: product.createdAt.toISOString(),
+      })),
+      orders: vendorOrders.map((vendorOrder) => ({
+        id: vendorOrder.id,
+        status: vendorOrder.status,
+        orderNumber: vendorOrder.order.orderNumber,
+        paymentStatus: vendorOrder.order.paymentStatus,
+        grandTotalAmount: vendorOrder.grandTotalAmount,
+        currency: vendorOrder.currency,
+        itemCount: vendorOrder.items.length,
+        createdAt: vendorOrder.createdAt.toISOString(),
+      })),
+      subscriptionHistory: membershipInvoices.map((invoice) => ({
+        id: invoice.id,
+        status: invoice.status,
+        amount: invoice.amount,
+        currency: invoice.currency,
+        periodStart: invoice.periodStart.toISOString(),
+        periodEnd: invoice.periodEnd.toISOString(),
+        dueAt: invoice.dueAt.toISOString(),
+        paidAt: invoice.paidAt?.toISOString() ?? null,
+        waivedReason: invoice.waivedReason,
+      })),
     };
   }
 
