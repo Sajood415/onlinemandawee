@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Ellipsis, Eye } from "lucide-react";
+import { Ellipsis, Eye, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
@@ -77,7 +77,8 @@ export function AdminVendorRequests() {
   const router = useRouter();
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [vendors, setVendors] = useState<VendorListItem[]>([]);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("PENDING_APPROVAL");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
   const [loadingList, setLoadingList] = useState(true);
   const [busyMap, setBusyMap] = useState<Record<string, boolean>>({});
   const [actionMenu, setActionMenu] = useState<ActionMenuState | null>(null);
@@ -108,6 +109,17 @@ export function AdminVendorRequests() {
       void loadVendors();
     }
   }, [authLoading, user, loadVendors]);
+
+  const filteredVendors = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return vendors;
+
+    return vendors.filter((vendor) => {
+      const storeName = (vendor.storeName ?? "").toLowerCase();
+      const ownerName = vendor.user.fullName.toLowerCase();
+      return storeName.includes(query) || ownerName.includes(query);
+    });
+  }, [vendors, searchQuery]);
 
   const openActionMenu = (
     vendor: VendorListItem,
@@ -258,17 +270,29 @@ export function AdminVendorRequests() {
               Review submitted vendor applications and approve or disapprove them.
             </p>
           </div>
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-            className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-          >
-            {statusFilters.map((status) => (
-              <option key={status} value={status}>
-                {status === "ALL" ? "All statuses" : status.replaceAll("_", " ")}
-              </option>
-            ))}
-          </select>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <label className="relative w-full sm:w-64">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search by name"
+                className="w-full rounded-lg border border-neutral-300 bg-white py-2 pe-3 ps-9 text-sm text-neutral-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+              className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            >
+              {statusFilters.map((status) => (
+                <option key={status} value={status}>
+                  {status === "ALL" ? "All statuses" : status.replaceAll("_", " ")}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </section>
 
@@ -278,10 +302,14 @@ export function AdminVendorRequests() {
         </div>
       ) : (
         <DataTable
-          data={vendors}
+          data={filteredVendors}
           columns={columns}
           getRowId={(row) => row.id}
-          emptyMessage="No vendors match the selected status."
+          emptyMessage={
+            searchQuery.trim()
+              ? "No vendors match your search."
+              : "No vendors match the selected status."
+          }
           initialPageSize={10}
           pageSizeOptions={[10, 20, 50]}
         />
