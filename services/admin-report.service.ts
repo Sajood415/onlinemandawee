@@ -38,9 +38,15 @@ export class AdminReportService {
     const payouts = (await this.payoutRepository.listAll()).filter((payout) =>
       this.isWithinRange(payout.createdAt, range)
     );
+    const membershipInvoices = (await this.membershipInvoiceRepository.listAll()).filter(
+      (invoice) => this.isWithinRange(invoice.createdAt, range)
+    );
     const refundCases = (await this.refundCaseRepository.listAll()).filter((refundCase) =>
       this.isWithinRange(refundCase.createdAt, range)
     );
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentOrdersCount = orders.filter((order) => order.createdAt >= thirtyDaysAgo).length;
 
     return {
       customersCount: customers.length,
@@ -63,6 +69,10 @@ export class AdminReportService {
       payoutsSentAmount: payouts
         .filter((payout) => payout.status === "SENT")
         .reduce((sum, payout) => sum + payout.amount, 0),
+      totalSubscriptionRevenue: membershipInvoices
+        .filter((invoice) => invoice.status === "PAID")
+        .reduce((sum, invoice) => sum + invoice.amount, 0),
+      recentOrdersCount,
       openRefundCasesCount: refundCases.filter(
         (refundCase) => refundCase.status !== "RESOLVED"
       ).length,
