@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
@@ -17,8 +17,15 @@ const TAB_FROM_QUERY: Record<string, ReportTab> = {
   payouts: "payouts",
 };
 
-export default function VendorReportsPage() {
-  const { isLoading: guardLoading } = useDashboardGuard("VENDOR");
+function ReportsLoading() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center">
+      <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+    </div>
+  );
+}
+
+function VendorReportsContent() {
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<ReportTab>("sales");
 
@@ -28,14 +35,6 @@ export default function VendorReportsPage() {
       setTab(TAB_FROM_QUERY[fromQuery]);
     }
   }, [searchParams]);
-
-  if (guardLoading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -90,5 +89,19 @@ export default function VendorReportsPage() {
         <PayoutHistorySection />
       )}
     </div>
+  );
+}
+
+export default function VendorReportsPage() {
+  const { isLoading: guardLoading } = useDashboardGuard("VENDOR");
+
+  if (guardLoading) {
+    return <ReportsLoading />;
+  }
+
+  return (
+    <Suspense fallback={<ReportsLoading />}>
+      <VendorReportsContent />
+    </Suspense>
   );
 }
