@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { industryTypes } from "@/domain/vendor/vendor-types";
 import { productApprovalStatuses } from "@/domain/catalog/product-approval-status";
 
 export const createCategorySchema = z.object({
@@ -55,4 +56,8 @@ export const publicProductsQuerySchema = z.object({
 
 export const storeSlugParamsSchema = z.object({
   storeSlug: z.string().min(1),
+});
+
+export const publicVendorsQuerySchema = z.object({
+  industry: z.enum(industryTypes).optional(),
 });

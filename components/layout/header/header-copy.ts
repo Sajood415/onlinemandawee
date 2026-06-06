@@ -9,6 +9,7 @@ export type HeaderCopy = {
   discoverEverything: string;
   home: string;
   products: string;
+  vendors: string;
   giftSets: string;
   gifts: string;
   new: string;
@@ -47,6 +48,7 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     discoverEverything: "Discover Everything",
     home: "Home",
     products: "Products",
+    vendors: "Vendors",
     giftSets: "Gift Sets",
     gifts: "Gifts",
     new: "New",
@@ -84,6 +86,7 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     discoverEverything: "هر څه ومومئ",
     home: "کور",
     products: "محصولات",
+    vendors: "پلورونکي",
     giftSets: "د ډالۍ بستې",
     gifts: "ډالۍ",
     new: "نوی",
@@ -121,6 +124,7 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     discoverEverything: "همه چیز را ببینید",
     home: "خانه",
     products: "محصولات",
+    vendors: "فروشندگان",
     giftSets: "بسته‌های هدیه",
     gifts: "هدایا",
     new: "جدید",

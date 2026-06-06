@@ -60,26 +60,10 @@ export class VendorOnboardingService {
       });
     }
 
-    const [existingEmail, existingPhone] = await Promise.all([
-      this.userRepository.findByEmail(input.email),
-      this.userRepository.findByPhone(input.phone),
-    ]);
-
-    if (existingEmail) {
-      throw new AppError({
-        code: ERROR_CODE.CONFLICT,
-        message: "Email is already in use",
-        statusCode: 409,
-      });
-    }
-
-    if (existingPhone) {
-      throw new AppError({
-        code: ERROR_CODE.CONFLICT,
-        message: "Phone is already in use",
-        statusCode: 409,
-      });
-    }
+    await this.authService.assertSignupIdentifiersAvailable({
+      email: input.email,
+      phone: input.phone,
+    });
 
     const passwordHash = await hashPassword(input.password);
     const user = await this.userRepository.createVendor({

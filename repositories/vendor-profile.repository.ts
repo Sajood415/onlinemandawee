@@ -125,6 +125,44 @@ export class VendorProfileRepository {
     });
   }
 
+  listPublic(filters?: { industryType?: IndustryType }) {
+    return prisma.vendorProfile.findMany({
+      where: {
+        status: "ACTIVE",
+        storeName: { not: null },
+        storeSlug: { not: null },
+        NOT: {
+          storeSlug: {
+            startsWith: "_draft_",
+          },
+        },
+        ...(filters?.industryType ? { industryType: filters.industryType } : {}),
+      },
+      select: {
+        id: true,
+        storeName: true,
+        storeSlug: true,
+        logoUrl: true,
+        description: true,
+        industryType: true,
+        approvedAt: true,
+        _count: {
+          select: {
+            products: {
+              where: {
+                approvalStatus: "APPROVED",
+                isActive: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        storeName: "asc",
+      },
+    });
+  }
+
   listForMembershipBilling() {
     return prisma.vendorProfile.findMany({
       where: {

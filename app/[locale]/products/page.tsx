@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
 
@@ -23,22 +24,30 @@ import {
 } from "@/lib/products/catalog-filters";
 import {
   fetchPublicCatalogProducts,
+  invalidatePublicCatalogCache,
   type PublicCatalogProduct,
 } from "@/lib/products/public-catalog";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import productData from "@/data/product.json";
 
 const staticProducts = productData.featuredProducts;
 const staticCategories = productData.categories;
 const staticVendors = productData.vendors;
 
-export default function ProductsPage() {
+function ProductsPageContent() {
   const locale = useLocale() as SupportedLocale;
   const isRtl = locale !== "en";
   const copy = getProductsCopy(locale);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get("search") ?? ""
+  );
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedVendor, setSelectedVendor] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
@@ -48,6 +57,59 @@ export default function ProductsPage() {
   const [vendorProducts, setVendorProducts] = useState<PublicCatalogProduct[]>([]);
   const [apiCategories, setApiCategories] = useState<CategoryOption[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
+  const internalSearchUpdate = useRef(false);
+
+  useEffect(() => {
+    if (internalSearchUpdate.current) {
+      internalSearchUpdate.current = false;
+      return;
+    }
+    const next = searchParams.get("search") ?? "";
+    setSearchQuery(next);
+    setDebouncedSearch(next);
+  }, [searchParams]);
+
+  const clearSearch = useCallback(() => {
+    setSearchQuery("");
+    setDebouncedSearch("");
+    invalidatePublicCatalogCache();
+    internalSearchUpdate.current = true;
+    router.replace(pathname, { scroll: false });
+  }, [pathname, router]);
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchQuery(value);
+      if (!value.trim()) {
+        clearSearch();
+      }
+    },
+    [clearSearch]
+  );
+
+  useEffect(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
+    const timer = window.setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const trimmed = debouncedSearch.trim();
+    const current = searchParams.get("search") ?? "";
+    if (trimmed === current) return;
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (trimmed) {
+      params.set("search", trimmed);
+    } else {
+      params.delete("search");
+    }
+
+    const qs = params.toString();
+    internalSearchUpdate.current = true;
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [debouncedSearch, pathname, router, searchParams]);
 
   useEffect(() => {
     let mounted = true;
@@ -55,8 +117,11 @@ export default function ProductsPage() {
     const load = async () => {
       setCatalogLoading(true);
       try {
+        const trimmedSearch = debouncedSearch.trim();
         const [products, categoriesRes] = await Promise.all([
-          fetchPublicCatalogProducts(),
+          fetchPublicCatalogProducts(
+            trimmedSearch ? { search: trimmedSearch } : undefined
+          ),
           fetch("/api/catalog/categories"),
         ]);
         const categories = categoriesRes.ok
@@ -78,7 +143,7 @@ export default function ProductsPage() {
         const prices = [...staticProducts, ...products].map((product) => product.price);
         const computedMax = Math.max(100, ...prices, 0);
         setMaxPrice(computedMax);
-        setPriceRange([0, computedMax]);
+        setPriceRange((current) => [current[0], Math.max(current[1], computedMax)]);
       } catch {
         if (mounted) setVendorProducts([]);
       } finally {
@@ -90,7 +155,7 @@ export default function ProductsPage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [debouncedSearch]);
 
   const allProducts = useMemo<CatalogRow[]>(
     () => [...vendorProducts, ...staticProducts],
@@ -114,13 +179,20 @@ export default function ProductsPage() {
   const filteredProducts = useMemo(
     () =>
       filterCatalogProducts(allProducts, {
-        searchQuery,
+        searchQuery: debouncedSearch,
         selectedCategory,
         selectedVendor,
         priceRange,
         locale,
       }),
-    [allProducts, searchQuery, selectedCategory, selectedVendor, priceRange, locale]
+    [
+      allProducts,
+      debouncedSearch,
+      selectedCategory,
+      selectedVendor,
+      priceRange,
+      locale,
+    ]
   );
 
   const sortedProducts = useMemo(
@@ -134,24 +206,24 @@ export default function ProductsPage() {
     );
   };
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setSelectedCategory("all");
     setSelectedVendor([]);
     setPriceRange([0, maxPrice]);
-    setSearchQuery("");
-  };
+    clearSearch();
+  }, [maxPrice, clearSearch]);
 
   const hasActiveFilters =
     selectedCategory !== "all" ||
     selectedVendor.length > 0 ||
     priceRange[1] < maxPrice ||
-    Boolean(searchQuery);
+    Boolean(debouncedSearch.trim());
 
   const activeFilterCount = [
     selectedCategory !== "all",
     selectedVendor.length > 0,
     priceRange[1] < maxPrice,
-    searchQuery,
+    debouncedSearch.trim(),
   ].filter(Boolean).length;
 
   const filterLabels = {
@@ -164,16 +236,24 @@ export default function ProductsPage() {
     products: copy.products,
   };
 
+  const headerCopy = debouncedSearch.trim()
+    ? {
+        ...copy,
+        allProducts: copy.searchResults,
+        shopSubtitle: copy.searchResultsFor(debouncedSearch.trim()),
+      }
+    : copy;
+
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-[#f6f8fc]">
       <ProductsPageHeader
         isRtl={isRtl}
-        copy={copy}
+        copy={headerCopy}
         resultCount={catalogLoading ? 0 : sortedProducts.length}
         hasActiveFilters={hasActiveFilters}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onClearSearch={() => setSearchQuery("")}
+        onSearchChange={handleSearchChange}
+        onClearSearch={clearSearch}
       />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
@@ -248,8 +328,10 @@ export default function ProductsPage() {
               </div>
             ) : (
               <ProductsEmptyState
-                title={copy.noProducts}
-                description={copy.noProductsHint}
+                title={debouncedSearch.trim() ? copy.noSearchResults : copy.noProducts}
+                description={
+                  debouncedSearch.trim() ? copy.noSearchResultsHint : copy.noProductsHint
+                }
                 actionLabel={copy.clearFilters}
                 onClearFilters={clearFilters}
               />
@@ -258,5 +340,21 @@ export default function ProductsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#f6f8fc]">
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <ProductsGridSkeleton />
+          </div>
+        </div>
+      }
+    >
+      <ProductsPageContent />
+    </Suspense>
   );
 }

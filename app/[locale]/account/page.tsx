@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import {
   ChevronDown,
@@ -11,7 +12,6 @@ import {
   Plus,
   RefreshCw,
   ShoppingBag,
-  UserCircle2,
 } from "lucide-react";
 
 import { PageLoader } from "@/components/ui/PageLoader";
@@ -71,17 +71,9 @@ const STATUS_COLORS: Record<VendorOrderStatus, string> = {
   CANCELLED: "bg-red-50 text-red-700 border border-red-200",
 };
 
-const STATUS_LABELS: Record<VendorOrderStatus, string> = {
-  NEW: "New",
-  PREPARING: "Preparing",
-  SHIPPED: "Shipped",
-  DELIVERED: "Delivered",
-  CANCELLED: "Cancelled",
-};
-
-function formatMoney(amount: number, currency: string) {
+function formatMoney(amount: number, currency: string, locale: string) {
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(locale === "fa-AF" ? "fa-AF" : locale === "ps" ? "ps-AF" : "en-US", {
       style: "currency",
       currency,
       minimumFractionDigits: 0,
@@ -103,6 +95,8 @@ function overallOrderStatus(order: CustomerOrder) {
 
 function OrderCard({ order }: { order: CustomerOrder }) {
   const [expanded, setExpanded] = useState(false);
+  const t = useTranslations("Account.overview");
+  const locale = useLocale();
   const summaryStatus = overallOrderStatus(order);
 
   return (
@@ -118,19 +112,21 @@ function OrderCard({ order }: { order: CustomerOrder }) {
             <span
               className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_COLORS[summaryStatus]}`}
             >
-              {STATUS_LABELS[summaryStatus]}
+              {t(`orderStatus.${summaryStatus}`)}
             </span>
           </div>
           <p className="mt-1 text-xs text-neutral-600">
-            Placed {new Date(order.createdAt).toLocaleString()}
+            {t("orders.placed", {
+              date: new Date(order.createdAt).toLocaleString(locale),
+            })}
           </p>
           <p className="mt-1 text-xs text-neutral-500">
-            Payment: {order.paymentStatus.replaceAll("_", " ")}
+            {t("orders.payment")}: {order.paymentStatus.replaceAll("_", " ")}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <p className="text-sm font-semibold text-neutral-900">
-            {formatMoney(order.grandTotalAmount, order.currency)}
+            {formatMoney(order.grandTotalAmount, order.currency, locale)}
           </p>
           {expanded ? (
             <ChevronUp className="h-4 w-4 text-neutral-500" />
@@ -144,7 +140,7 @@ function OrderCard({ order }: { order: CustomerOrder }) {
         <div className="border-t border-neutral-200 bg-white px-4 py-4 space-y-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-              Delivery address
+              {t("orders.deliveryAddress")}
             </p>
             <p className="mt-1 text-sm text-neutral-700">
               {order.shippingAddress.fullName} · {order.shippingAddress.phone}
@@ -165,12 +161,12 @@ function OrderCard({ order }: { order: CustomerOrder }) {
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-neutral-900">
-                  {vendorOrder.vendorStoreName ?? "Vendor"}
+                  {vendorOrder.vendorStoreName ?? t("orders.vendor")}
                 </p>
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_COLORS[vendorOrder.status]}`}
                 >
-                  {STATUS_LABELS[vendorOrder.status]}
+                  {t(`orderStatus.${vendorOrder.status}`)}
                 </span>
               </div>
 
@@ -184,10 +180,12 @@ function OrderCard({ order }: { order: CustomerOrder }) {
                       <p className="font-medium text-neutral-900 truncate">
                         {item.productName}
                       </p>
-                      <p className="text-xs text-neutral-500">Qty: {item.quantity}</p>
+                      <p className="text-xs text-neutral-500">
+                        {t("orders.qty")}: {item.quantity}
+                      </p>
                     </div>
                     <p className="font-semibold text-neutral-900">
-                      {formatMoney(item.lineTotalAmount, item.currency)}
+                      {formatMoney(item.lineTotalAmount, item.currency, locale)}
                     </p>
                   </div>
                 ))}
@@ -267,10 +265,12 @@ function AddressFields({
   form: AddressFormState;
   onChange: (next: AddressFormState) => void;
 }) {
+  const t = useTranslations("Account.overview.fields");
+
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="block text-sm text-neutral-700">
-        Full name
+        {t("fullName")}
         <input
           className={INPUT_CLASS}
           value={form.fullName}
@@ -279,7 +279,7 @@ function AddressFields({
         />
       </label>
       <label className="block text-sm text-neutral-700">
-        Phone
+        {t("phone")}
         <input
           className={INPUT_CLASS}
           value={form.phone}
@@ -288,7 +288,7 @@ function AddressFields({
         />
       </label>
       <label className="block text-sm text-neutral-700 sm:col-span-2">
-        Address line
+        {t("addressLine1")}
         <input
           className={INPUT_CLASS}
           value={form.addressLine1}
@@ -297,7 +297,7 @@ function AddressFields({
         />
       </label>
       <label className="block text-sm text-neutral-700">
-        City
+        {t("city")}
         <input
           className={INPUT_CLASS}
           value={form.city}
@@ -306,7 +306,7 @@ function AddressFields({
         />
       </label>
       <label className="block text-sm text-neutral-700">
-        Country
+        {t("country")}
         <input
           className={INPUT_CLASS}
           value={form.country}
@@ -315,7 +315,7 @@ function AddressFields({
         />
       </label>
       <label className="block text-sm text-neutral-700">
-        Postal code
+        {t("postalCode")}
         <input
           className={INPUT_CLASS}
           value={form.postalCode}
@@ -329,9 +329,13 @@ function AddressFields({
 
 export default function CustomerAccountPage() {
   const { isLoading: guardLoading, user } = useCustomerRouteGuard();
+  const t = useTranslations("Account.overview");
+  const tc = useTranslations("Common");
+  const locale = useLocale();
+
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const [loadingOrders, setLoadingOrders] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
@@ -344,8 +348,11 @@ export default function CustomerAccountPage() {
   const [savingAddress, setSavingAddress] = useState(false);
   const [addressFormError, setAddressFormError] = useState<string | null>(null);
 
+  const customerId = user?.id;
+  const hasLoadedOrdersRef = useRef(false);
+
   const loadAccountData = useCallback(async () => {
-    setLoadingData(true);
+    setLoadingOrders(true);
     setError(null);
     try {
       const [ordersResponse, addressesResponse] = await Promise.all([
@@ -359,22 +366,23 @@ export default function CustomerAccountPage() {
       ]);
       setOrders(ordersData);
       setAddresses(addressesData);
+      hasLoadedOrdersRef.current = true;
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to load account information."
+        err instanceof Error ? err.message : t("errors.loadFailed")
       );
     } finally {
-      setLoadingData(false);
+      setLoadingOrders(false);
     }
   }, []);
 
   useEffect(() => {
-    if (guardLoading || !user) return;
+    if (guardLoading || !customerId) return;
     void loadAccountData();
-  }, [guardLoading, user, loadAccountData]);
+  }, [guardLoading, customerId, loadAccountData]);
 
   useEffect(() => {
-    if (guardLoading || !user) return;
+    if (guardLoading || !customerId) return;
 
     const refreshOnVisible = () => {
       if (document.visibilityState === "visible") {
@@ -384,7 +392,7 @@ export default function CustomerAccountPage() {
 
     document.addEventListener("visibilitychange", refreshOnVisible);
     return () => document.removeEventListener("visibilitychange", refreshOnVisible);
-  }, [guardLoading, user, loadAccountData]);
+  }, [guardLoading, customerId, loadAccountData]);
 
   useEffect(() => {
     if (!user) return;
@@ -496,58 +504,47 @@ export default function CustomerAccountPage() {
   );
 
   if (guardLoading) {
-    return <PageLoader message="Checking account..." fullScreen />;
+    return <PageLoader message={tc("checkingAccount")} fullScreen />;
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[#0f3460] sm:text-3xl">
-            My Account
-          </h1>
-          <p className="mt-1 text-sm text-neutral-600">
-            View your profile, previous orders, and saved addresses.
-          </p>
-        </div>
+    <div className="w-full bg-neutral-50 pb-16">
+      <div className="border-b border-neutral-200 bg-white px-6 py-6 sm:px-8">
+        <h1 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">
+          {t("title")}
+        </h1>
+        <p className="mt-1 text-sm text-neutral-500">{t("subtitle")}</p>
+      </div>
 
-        {loadingData ? (
-          <div className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-600 shadow-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading account data...
-          </div>
-        ) : error ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <div className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-8">
+        {error ? (
+          <p className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </p>
+        ) : null}
+
+        {loadingOrders && !hasLoadedOrdersRef.current ? (
+          <div className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-600 shadow-sm">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {t("loadingData")}
+          </div>
         ) : (
           <>
-            <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <article className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-                <div className="mb-3 inline-flex rounded-full bg-primary/10 p-2 text-primary">
-                  <UserCircle2 className="h-5 w-5" />
-                </div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                  Profile
-                </p>
-                <p className="mt-2 text-lg font-semibold text-neutral-900">
-                  {user?.fullName}
-                </p>
-                <p className="mt-1 text-sm text-neutral-600">{user?.email}</p>
-              </article>
-
+            <section className="grid gap-4 sm:grid-cols-2">
               <article className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
                 <div className="mb-3 inline-flex rounded-full bg-primary/10 p-2 text-primary">
                   <ShoppingBag className="h-5 w-5" />
                 </div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                  Orders
+                  {t("stats.orders")}
                 </p>
                 <p className="mt-2 text-lg font-semibold text-neutral-900">
-                  {orderCount} total
+                  {t("stats.ordersTotal", { count: orderCount })}
                 </p>
                 <p className="mt-1 text-sm text-neutral-600">
-                  Total spent: {formatMoney(totalSpent, orders[0]?.currency ?? "USD")}
+                  {t("stats.totalSpent", {
+                    amount: formatMoney(totalSpent, orders[0]?.currency ?? "USD", locale),
+                  })}
                 </p>
               </article>
 
@@ -556,13 +553,13 @@ export default function CustomerAccountPage() {
                   <MapPin className="h-5 w-5" />
                 </div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                  Addresses
+                  {t("stats.addresses")}
                 </p>
                 <p className="mt-2 text-lg font-semibold text-neutral-900">
-                  {addresses.length} saved
+                  {t("stats.addressesSaved", { count: addresses.length })}
                 </p>
                 <p className="mt-1 text-sm text-neutral-600">
-                  Keep delivery details ready for checkout.
+                  {t("stats.addressesHint")}
                 </p>
               </article>
             </section>
@@ -570,9 +567,11 @@ export default function CustomerAccountPage() {
             <section className="mt-8 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-neutral-900">Your orders</h2>
+                  <h2 className="text-lg font-semibold text-neutral-900">
+                    {t("orders.title")}
+                  </h2>
                   <p className="mt-1 text-sm text-neutral-600">
-                    Track delivery status for each vendor in your order.
+                    {t("orders.subtitle")}
                   </p>
                 </div>
                 <button
@@ -581,15 +580,14 @@ export default function CustomerAccountPage() {
                   className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
                 >
                   <RefreshCw className="h-4 w-4" />
-                  Refresh
+                  {tc("refresh")}
                 </button>
               </div>
               {orders.length === 0 ? (
                 <p className="mt-3 text-sm text-neutral-600">
-                  You have no orders yet. Guest orders placed with your email will
-                  appear here after you sign up or sign in.{" "}
+                  {t("orders.emptyDescriptionLong")}{" "}
                   <Link href="/products" className="font-semibold text-primary hover:underline">
-                    Start shopping
+                    {t("orders.startShopping")}
                   </Link>
                 </p>
               ) : (
@@ -605,11 +603,10 @@ export default function CustomerAccountPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold text-neutral-900">
-                    Saved addresses
+                    {t("addresses.title")}
                   </h2>
                   <p className="mt-1 text-sm text-neutral-600">
-                    Checkout addresses are not saved automatically. Add one here for
-                    faster checkout next time.
+                    {t("addresses.subtitleLong")}
                   </p>
                 </div>
                 <button
@@ -618,7 +615,7 @@ export default function CustomerAccountPage() {
                   className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
                 >
                   <Plus className="h-4 w-4" />
-                  Add address
+                  {t("addresses.add")}
                 </button>
               </div>
 
@@ -628,7 +625,7 @@ export default function CustomerAccountPage() {
                   className="mt-5 w-full rounded-xl border border-neutral-200 bg-neutral-50 p-4 sm:p-5"
                 >
                   <h3 className="text-sm font-semibold text-neutral-900">
-                    New address
+                    {t("addresses.newTitle")}
                   </h3>
                   <div className="mt-4">
                     <AddressFields form={addressForm} onChange={setAddressForm} />
@@ -645,7 +642,7 @@ export default function CustomerAccountPage() {
                       }
                       className="h-4 w-4 rounded border-neutral-300 text-primary focus:ring-primary/30"
                     />
-                    Set as default address
+                    {t("addresses.setDefault")}
                   </label>
                   {addressFormError ? (
                     <p className="mt-3 text-sm text-red-600">{addressFormError}</p>
@@ -659,10 +656,10 @@ export default function CustomerAccountPage() {
                       {savingAddress ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Saving...
+                          {t("addresses.saving")}
                         </>
                       ) : (
-                        "Save address"
+                        tc("save")
                       )}
                     </button>
                     <button
@@ -673,7 +670,7 @@ export default function CustomerAccountPage() {
                       }}
                       className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
                     >
-                      Cancel
+                      {tc("cancel")}
                     </button>
                   </div>
                 </form>
@@ -714,8 +711,7 @@ export default function CustomerAccountPage() {
 
               {addresses.length === 0 && !latestOrderAddress ? (
                 <p className="mt-4 text-sm text-neutral-600">
-                  No saved addresses yet. Click <strong>Add address</strong> to create
-                  one.
+                  {t("addresses.empty")}
                 </p>
               ) : null}
 
@@ -734,7 +730,7 @@ export default function CustomerAccountPage() {
                           className="w-full"
                         >
                           <h3 className="text-sm font-semibold text-neutral-900">
-                            Edit address
+                            {t("addresses.editTitle")}
                           </h3>
                           <div className="mt-4">
                             <AddressFields
@@ -754,7 +750,7 @@ export default function CustomerAccountPage() {
                               }
                               className="h-4 w-4 rounded border-neutral-300 text-primary focus:ring-primary/30"
                             />
-                            Set as default address
+                            {t("addresses.setDefault")}
                           </label>
                           {addressFormError ? (
                             <p className="mt-3 text-sm text-red-600">
@@ -770,10 +766,10 @@ export default function CustomerAccountPage() {
                               {savingAddress ? (
                                 <>
                                   <Loader2 className="h-4 w-4 animate-spin" />
-                                  Saving...
+                                  {t("addresses.saving")}
                                 </>
                               ) : (
-                                "Save changes"
+                                tc("saveChanges")
                               )}
                             </button>
                             <button
@@ -784,7 +780,7 @@ export default function CustomerAccountPage() {
                               }}
                               className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
                             >
-                              Cancel
+                              {tc("cancel")}
                             </button>
                           </div>
                         </form>
@@ -797,7 +793,7 @@ export default function CustomerAccountPage() {
                               </p>
                               {address.isDefault ? (
                                 <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
-                                  Default
+                                  {tc("default")}
                                 </span>
                               ) : null}
                             </div>
@@ -813,7 +809,7 @@ export default function CustomerAccountPage() {
                             className="inline-flex shrink-0 items-center gap-2 self-start rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
                           >
                             <Pencil className="h-4 w-4" />
-                            Edit
+                            {tc("edit")}
                           </button>
                         </div>
                       )}

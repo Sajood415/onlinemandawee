@@ -1,0 +1,421 @@
+{
+  "Common": {
+    "brandName": "Mandawee",
+    "loading": "Loading...",
+    "loadingLogin": "Loading login...",
+    "loadingSignup": "Loading signup...",
+    "loadingCheckout": "Loading checkout...",
+    "loadingCart": "Loading your cart...",
+    "redirecting": "Redirecting...",
+    "checkingAccount": "Checking account...",
+    "saving": "Saving...",
+    "save": "Save",
+    "saveChanges": "Save changes",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "refresh": "Refresh",
+    "remove": "Remove",
+    "continue": "Continue",
+    "back": "Back",
+    "apply": "Apply",
+    "applying": "Applying…",
+    "free": "Free",
+    "default": "Default",
+    "vendor": "Vendor",
+    "qty": "Qty",
+    "new": "New",
+    "home": "Home",
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "network": "Network error. Please try again."
+    }
+  },
+  "Dashboard": {
+    "shell": {
+      "logOut": "Log out",
+      "openSidebar": "Open sidebar",
+      "closeSidebar": "Close sidebar",
+      "closeBackdrop": "Close sidebar backdrop"
+    },
+    "admin": {
+      "title": "Admin Dashboard",
+      "nav": {
+        "dashboard": "Dashboard",
+        "vendors": "Vendors",
+        "products": "Products",
+        "categories": "Categories",
+        "users": "Users"
+      }
+    },
+    "vendor": {
+      "title": "Vendor Dashboard",
+      "titleWithStore": "{storeName}'s Dashboard",
+      "nav": {
+        "dashboard": "Dashboard",
+        "products": "Products",
+        "coupons": "Coupons",
+        "promotions": "Promotions",
+        "orders": "Orders",
+        "reports": "Reports",
+        "settings": "Settings"
+      }
+    },
+    "customer": {
+      "title": "My Account",
+      "titleWithName": "{firstName}'s Account",
+      "nav": {
+        "overview": "Overview",
+        "settings": "Settings"
+      }
+    }
+  },
+  "Account": {
+    "overview": {
+      "title": "Overview",
+      "subtitle": "Track your orders and manage saved delivery addresses.",
+      "loadingData": "Loading orders and addresses...",
+      "stats": {
+        "orders": "Orders",
+        "addresses": "Addresses",
+        "ordersTotal": "{count} total",
+        "addressesSaved": "{count} saved",
+        "totalSpent": "Total spent: {amount}",
+        "addressesHint": "Keep delivery details ready for checkout."
+      },
+      "orders": {
+        "title": "Your orders",
+        "subtitle": "Track delivery status for each vendor in your order.",
+        "emptyTitle": "No orders yet",
+        "emptyDescription": "When you place an order, it will show up here.",
+        "startShopping": "Start shopping",
+        "placed": "Placed {date}",
+        "payment": "Payment",
+        "deliveryAddress": "Delivery address"
+      },
+      "addresses": {
+        "title": "Saved addresses",
+        "subtitle": "Use a saved address for faster checkout.",
+        "add": "Add address",
+        "newTitle": "New address",
+        "editTitle": "Edit address",
+        "latestOrderPrompt": "Save your latest order delivery address?",
+        "saveLatest": "Save as default address",
+        "setDefault": "Set as default address",
+        "empty": "No saved addresses yet."
+      },
+      "fields": {
+        "fullName": "Full name",
+        "phone": "Phone",
+        "addressLine1": "Address line",
+        "city": "City",
+        "country": "Country",
+        "postalCode": "Postal code"
+      },
+      "orderStatus": {
+        "NEW": "New",
+        "PREPARING": "Preparing",
+        "SHIPPED": "Shipped",
+        "DELIVERED": "Delivered",
+        "CANCELLED": "Cancelled"
+      },
+      "errors": {
+        "loadFailed": "Failed to load account information."
+      }
+    },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Manage your profile and password."
+    }
+  },
+  "CustomerProfile": {
+    "loading": "Loading profile...",
+    "sections": {
+      "profileSecurity": "Profile & security",
+      "profileSecurityLead": "Update your details or reset your password via email.",
+      "profile": "Profile",
+      "profileLead": "Update your name and phone number.",
+      "changePassword": "Change password",
+      "changePasswordLead": "Know your current password? Update it directly below.",
+      "changePasswordHint": "Know your current password? Update it directly below.",
+      "resetViaEmail": "Reset via email",
+      "resetViaEmailLead": "Forgot your password? We will send a verification code to your email.",
+      "accountDetails": "Account details"
+    },
+    "fields": {
+      "fullName": "Full name",
+      "email": "Email",
+      "phone": "Phone",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "verificationCode": "Verification code",
+      "emailReadonlyHint": "Email cannot be changed here. Contact support if you need to update it."
+    },
+    "actions": {
+      "saveProfile": "Save profile",
+      "savingProfile": "Saving...",
+      "updatePassword": "Update password",
+      "updatingPassword": "Updating...",
+      "sendResetCode": "Send reset code to my email",
+      "sending": "Sending...",
+      "verifyCode": "Verify code",
+      "verifying": "Verifying...",
+      "resendCode": "Resend code",
+      "setNewPassword": "Set new password",
+      "savingPassword": "Saving..."
+    },
+    "reset": {
+      "codeSent": "A reset code was sent to {email}.",
+      "codeSentDev": "Code sent. Dev code: {code}",
+      "codeVerified": "Code verified. Enter your new password below.",
+      "passwordUpdated": "Password updated successfully.",
+      "forgotPrompt": "Forgot your password? We will send a verification code to {email}."
+    },
+    "validation": {
+      "currentPasswordRequired": "Enter your current password.",
+      "passwordMismatch": "New password and confirmation must match.",
+      "resetMismatch": "Password and confirmation must match.",
+      "invalidCode": "Enter a valid 6-digit code.",
+      "resetExpired": "Reset session expired. Request a new code."
+    },
+    "toasts": {
+      "profileUpdated": "Profile updated",
+      "profileUpdatedDesc": "Your account details were saved.",
+      "profileFailed": "Could not save profile",
+      "passwordUpdated": "Password updated",
+      "passwordUpdatedDesc": "Your password was changed successfully.",
+      "passwordFailed": "Could not update password",
+      "codeSent": "Code sent",
+      "codeSentDesc": "Check your email for the reset code.",
+      "codeFailed": "Could not send code",
+      "verified": "Code verified",
+      "verifiedDesc": "You can set a new password now.",
+      "verifyFailed": "Verification failed",
+      "resetSuccess": "Password reset",
+      "resetSuccessDesc": "Your password has been updated.",
+      "resetFailed": "Reset failed"
+    },
+    "errors": {
+      "loadFailed": "Could not load profile."
+    }
+  },
+  "Auth": {
+    "login": {
+      "title": "Login",
+      "subtitle": "Sign in to access your dashboard.",
+      "identifier": "Email or phone",
+      "password": "Password",
+      "signIn": "Sign in",
+      "signingIn": "Signing in...",
+      "forgotPassword": "Forgot password?",
+      "newCustomer": "New customer?",
+      "createAccount": "Create an account",
+      "failed": "Login failed"
+    },
+    "signup": {
+      "title": "Create account",
+      "subtitle": "Join Mandawee to shop from trusted local vendors.",
+      "fullName": "Full name",
+      "email": "Email",
+      "phone": "Phone",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "create": "Create account",
+      "creating": "Creating account...",
+      "alreadyHave": "Already have an account?",
+      "signIn": "Sign in",
+      "otpTitle": "Verify your email",
+      "otpSubtitle": "Enter the 6-digit code we sent to {email}.",
+      "verificationCode": "Verification code",
+      "verify": "Verify",
+      "verifying": "Verifying...",
+      "resendCode": "Resend code",
+      "editDetails": "Edit account details"
+    },
+    "forgotPassword": {
+      "title": "Forgot password",
+      "subtitle": "We'll email you a code to reset your password.",
+      "email": "Email",
+      "sendCode": "Send code",
+      "sending": "Sending…",
+      "verificationCode": "Verification code",
+      "verifyCode": "Verify code",
+      "verifying": "Verifying…",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "resetPassword": "Reset password",
+      "saving": "Saving…",
+      "backToLogin": "Back to login",
+      "codeSent": "Code sent to your email.",
+      "codeSentDev": "Code sent. Dev code: {code}",
+      "codeVerified": "Code verified. Set your new password.",
+      "passwordMismatch": "Passwords do not match.",
+      "requestFailed": "Request failed",
+      "verifyFailed": "Verification failed",
+      "resetFailed": "Reset failed"
+    },
+    "passwordRequirements": {
+      "ariaLabel": "Password requirements",
+      "length": "At least 8 characters",
+      "upper": "One uppercase letter (A–Z)",
+      "lower": "One lowercase letter (a–z)",
+      "special": "One special character (!@#$…)",
+      "missing": "Password must meet all requirements (missing: {rule}).",
+      "title": "Password requirements"
+    },
+    "accountMenu": {
+      "label": "Account menu",
+      "account": "Account",
+      "adminDashboard": "Admin dashboard",
+      "vendorDashboard": "Vendor dashboard",
+      "myAccount": "My account",
+      "signOut": "Sign out"
+    },
+    "languages": {
+      "select": "Language Select",
+      "en": "English",
+      "ps": "پښتو",
+      "fa-AF": "دری"
+    }
+  },
+  "VendorPages": {
+    "dashboard": {
+      "title": "Vendor Dashboard",
+      "subtitle": "Here's an overview of your store's performance."
+    },
+    "products": {
+      "title": "Product Management"
+    },
+    "coupons": {
+      "title": "Coupons"
+    },
+    "promotions": {
+      "title": "Store promotions"
+    },
+    "orders": {
+      "title": "Orders",
+      "subtitle": "Manage orders containing your products"
+    },
+    "reports": {
+      "title": "Reports",
+      "tabs": {
+        "sales": "Sales summary",
+        "fees": "Fees & subscription",
+        "payouts": "Payout history"
+      }
+    },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Manage your business profile and payout details.",
+      "tabs": {
+        "business": "Business Info",
+        "payout": "Bank Details"
+      }
+    }
+  },
+  "AdminPages": {
+    "orders": "Orders",
+    "users": "Users",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "Cart": {
+    "title": "Your cart",
+    "subtitle": "Review your items and checkout securely when you're ready.",
+    "items": "items",
+    "item": "item",
+    "emptyTitle": "Your cart is empty",
+    "emptyDescription": "Looks like you haven't added anything yet. Explore our marketplace and find something you'll love.",
+    "emptyFooter": "Premium picks from trusted local vendors",
+    "browseProducts": "Browse products",
+    "continueShopping": "Continue shopping",
+    "orderSummary": "Order summary",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "shippingFree": "Free",
+    "shippingCalculated": "Calculated at checkout",
+    "tax": "Estimated tax",
+    "total": "Total",
+    "deliveryEstimate": "Delivery estimate",
+    "deliveryWindow": "2–4 business days",
+    "deliveryNote": "Express same-day options may be available at checkout.",
+    "checkout": "Proceed to checkout",
+    "secureCheckout": "Secure checkout",
+    "remove": "Remove",
+    "each": "each",
+    "lineTotal": "Line total",
+    "recommended": "You may also like",
+    "recommendedSubtitle": "Popular picks to complete your order",
+    "viewAll": "View all",
+    "breadcrumb": {
+      "home": "Home",
+      "cart": "Shopping cart",
+      "itemsInCart": "Items in cart"
+    },
+    "quantity": {
+      "decrease": "Decrease quantity",
+      "increase": "Increase quantity"
+    }
+  },
+  "Checkout": {
+    "title": "Checkout",
+    "loading": "Loading checkout...",
+    "steps": {
+      "contact": "Contact",
+      "address": "Address",
+      "payment": "Payment"
+    },
+    "contact": {
+      "fullName": "Full Name",
+      "email": "Email Address",
+      "phone": "Phone Number",
+      "fullNamePlaceholder": "John Doe",
+      "emailPlaceholder": "you@example.com",
+      "phonePlaceholder": "+93 70 000 0000"
+    },
+    "address": {
+      "street": "Street Address",
+      "city": "City",
+      "postalCode": "Postal Code",
+      "country": "Country",
+      "streetPlaceholder": "123 Main Street, Apt 4",
+      "cityPlaceholder": "Kabul",
+      "postalPlaceholder": "1001",
+      "countryPlaceholder": "Afghanistan"
+    },
+    "payment": {
+      "cod": "Cash on Delivery",
+      "codSub": "Pay in cash when your order arrives",
+      "card": "Credit / Debit Card",
+      "cardSub": "Visa, Mastercard, Amex — secured by Stripe",
+      "cardUnavailable": "Stripe not configured — add keys to .env.local"
+    },
+    "summary": {
+      "title": "Order Summary",
+      "yourCart": "Your Cart",
+      "subtotal": "Subtotal",
+      "delivery": "Delivery",
+      "discount": "Discount",
+      "total": "Total",
+      "qty": "Qty"
+    },
+    "coupon": {
+      "placeholder": "SAVE10",
+      "alreadyApplied": "This coupon is already applied.",
+      "applyFailed": "Could not apply coupon."
+    },
+    "success": {
+      "title": "Order Placed!",
+      "codMessage": "Your order is confirmed. Please have cash ready when your delivery arrives.",
+      "cardMessage": "Your payment was successful and the vendor has been notified."
+    },
+    "errors": {
+      "requiredFields": "Please fill in all required fields.",
+      "invalidEmail": "Please enter a valid email address.",
+      "placeOrderFailed": "Could not place order. Please try again.",
+      "paymentFailed": "Payment failed. Please try again.",
+      "orderNotRecorded": "Order could not be recorded. Please contact support.",
+      "pricingFailed": "Could not load pricing. Please try again."
+    }
+  }
+}

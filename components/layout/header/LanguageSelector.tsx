@@ -104,7 +104,7 @@ export function LanguageSelector({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className={`absolute mt-3 w-56 bg-white rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-gray-100 z-[1001] overflow-hidden p-2 ${isRtl ? "left-0" : "right-0"}`}
+            className={`absolute mt-3 w-56 bg-white rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-gray-100 z-[10000] overflow-hidden p-2 ${isRtl ? "left-0" : "right-0"}`}
           >
             <p className="px-5 py-3 text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] mb-1">
               {label}

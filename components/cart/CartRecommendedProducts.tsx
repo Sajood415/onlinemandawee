@@ -6,7 +6,9 @@ import { ArrowRight } from "lucide-react";
 import { ProductCard } from "@/components/products/ProductCard";
 import type { CatalogRow } from "@/components/products/types";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
-import { getCartCopy } from "@/components/cart/copy";
+import { useTranslations } from "next-intl";
+
+import { useCartCopy } from "@/lib/i18n/use-cart-copy";
 
 type CartRecommendedProductsProps = {
   products: CatalogRow[];
@@ -19,7 +21,8 @@ export function CartRecommendedProducts({
   locale,
   cartProductIds,
 }: CartRecommendedProductsProps) {
-  const copy = getCartCopy();
+  const copy = useCartCopy();
+  const t = useTranslations("Cart");
   const recommendations = products
     .filter((product) => !cartProductIds.includes(product.id))
     .slice(0, 4);
@@ -34,14 +37,14 @@ export function CartRecommendedProducts({
             {copy.recommended}
           </h2>
           <p className="mt-1 text-sm text-neutral-600">
-            Popular picks to complete your order
+            {t("recommendedSubtitle")}
           </p>
         </div>
         <Link
           href="/products"
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary transition hover:underline"
         >
-          View all
+          {t("viewAll")}
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>

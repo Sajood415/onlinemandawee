@@ -350,6 +350,16 @@ export function VendorOnboardingWizard() {
     }
     setBusy(true);
     try {
+      const availabilityRes = await fetch("/api/auth/signup/check-availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          phone,
+        }),
+      });
+      await parseApiResponse(availabilityRes);
+
       const res = await fetch("/api/vendor/onboarding/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

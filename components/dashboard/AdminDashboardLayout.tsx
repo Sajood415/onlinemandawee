@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   Package,
@@ -15,15 +16,17 @@ type AdminDashboardLayoutProps = {
 };
 
 export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
+  const t = useTranslations("Dashboard.admin");
+
   return (
     <RoleDashboardLayout
-      topBarTitle="Admin Dashboard"
+      topBarTitle={t("title")}
       items={[
-        { label: "Dashboard",  href: "/admin/dashboard",  icon: <LayoutDashboard size={16} /> },
-        { label: "Vendors",    href: "/admin/vendors",    icon: <PackageSearch size={16} /> },
-        { label: "Products",   href: "/admin/products",   icon: <Package size={16} /> },
-        { label: "Categories", href: "/admin/categories", icon: <Tag size={16} /> },
-        { label: "Users",      href: "/admin/users",      icon: <Users size={16} /> },
+        { label: t("nav.dashboard"), href: "/admin/dashboard", icon: <LayoutDashboard size={16} /> },
+        { label: t("nav.vendors"), href: "/admin/vendors", icon: <PackageSearch size={16} /> },
+        { label: t("nav.products"), href: "/admin/products", icon: <Package size={16} /> },
+        { label: t("nav.categories"), href: "/admin/categories", icon: <Tag size={16} /> },
+        { label: t("nav.users"), href: "/admin/users", icon: <Users size={16} /> },
       ]}
     >
       {children}

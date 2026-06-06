@@ -1,5 +1,18 @@
 import { z } from "zod";
 
+import { passwordFieldSchema } from "@/lib/auth/password-policy";
+import { phoneFieldSchema } from "@/lib/phone/phone-policy";
+
+export const updateCustomerProfileSchema = z.object({
+  fullName: z.string().trim().min(2).max(100),
+  phone: phoneFieldSchema,
+});
+
+export const changeCustomerPasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(128),
+  newPassword: passwordFieldSchema,
+});
+
 export const createCustomerAddressSchema = z.object({
   label: z.string().trim().max(60).optional(),
   fullName: z.string().trim().min(2).max(120),

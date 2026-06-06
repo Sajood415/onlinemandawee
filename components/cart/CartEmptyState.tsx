@@ -1,10 +1,14 @@
+"use client";
+
 import { ArrowRight, ShoppingBag, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
-import { getCartCopy } from "@/components/cart/copy";
+import { useCartCopy } from "@/lib/i18n/use-cart-copy";
 
 export function CartEmptyState() {
-  const copy = getCartCopy();
+  const copy = useCartCopy();
+  const t = useTranslations("Cart");
 
   return (
     <div className="overflow-hidden rounded-3xl border border-neutral-200/80 bg-white shadow-[0_16px_50px_rgba(15,52,96,0.08)]">
@@ -38,7 +42,7 @@ export function CartEmptyState() {
       <div className="border-t border-neutral-100 px-6 py-4 text-center text-xs text-neutral-500">
         <span className="inline-flex items-center gap-1.5">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
-          Premium picks from trusted local vendors
+          {t("emptyFooter")}
         </span>
       </div>
     </div>

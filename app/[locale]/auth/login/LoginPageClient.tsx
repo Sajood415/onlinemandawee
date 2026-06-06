@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 
 import { PageLoader } from "@/components/ui/PageLoader";
@@ -27,6 +28,8 @@ export function LoginPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { establishSession, isAuthenticated, isLoading, user } = useAuth();
+  const t = useTranslations("Auth.login");
+  const tc = useTranslations("Common");
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -35,6 +38,7 @@ export function LoginPageClient() {
 
   useEffect(() => {
     if (isLoading || !isAuthenticated || !user) return;
+    if (!localStorage.getItem("accessToken")) return;
     router.replace(
       resolvePostAuthRedirect({
         role: user.role,
@@ -44,11 +48,11 @@ export function LoginPageClient() {
   }, [isAuthenticated, isLoading, router, searchParams, user]);
 
   if (isLoading) {
-    return <PageLoader message="Loading login..." fullScreen />;
+    return <PageLoader message={tc("loadingLogin")} fullScreen />;
   }
 
-  if (isAuthenticated && user) {
-    return <PageLoader message="Redirecting..." fullScreen />;
+  if (isAuthenticated && user && localStorage.getItem("accessToken")) {
+    return <PageLoader message={tc("redirecting")} fullScreen />;
   }
 
   const onSubmit = async (e: FormEvent) => {
@@ -72,9 +76,9 @@ export function LoginPageClient() {
         })
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Login failed";
+      const msg = err instanceof Error ? err.message : t("failed");
       setError(msg);
-      toast.error("Login failed", msg);
+      toast.error(t("failed"), msg);
     } finally {
       setBusy(false);
     }
@@ -83,15 +87,13 @@ export function LoginPageClient() {
   return (
     <div className="bg-neutral-50 px-4 py-12 sm:py-16">
       <div className="mx-auto max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
-        <h1 className="text-2xl font-bold text-[#0f3460]">Login</h1>
-        <p className="mt-2 text-sm text-neutral-600">
-          Sign in to access your dashboard.
-        </p>
+        <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+        <p className="mt-2 text-sm text-neutral-600">{t("subtitle")}</p>
 
         <form className="mt-6 space-y-4" onSubmit={onSubmit}>
           <div>
             <label className="mb-1 block text-sm font-semibold text-neutral-700">
-              Email or phone
+              {t("identifier")}
             </label>
             <input
               type="text"
@@ -103,7 +105,7 @@ export function LoginPageClient() {
           </div>
           <div>
             <label className="mb-1 block text-sm font-semibold text-neutral-700">
-              Password
+              {t("password")}
             </label>
             <input
               type="password"
@@ -121,7 +123,7 @@ export function LoginPageClient() {
             disabled={busy}
             className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
           >
-            {busy ? "Signing in..." : "Sign in"}
+            {busy ? t("signingIn") : t("signIn")}
           </button>
         </form>
 
@@ -129,15 +131,15 @@ export function LoginPageClient() {
           href="/auth/forgot-password"
           className="mt-4 inline-block text-sm font-semibold text-[#0f3460] hover:underline"
         >
-          Forgot password?
+          {t("forgotPassword")}
         </Link>
         <p className="mt-3 text-sm text-neutral-600">
-          New customer?{" "}
+          {t("newCustomer")}{" "}
           <Link
             href="/auth/signup"
             className="font-semibold text-[#0f3460] hover:underline"
           >
-            Create an account
+            {t("createAccount")}
           </Link>
         </p>
       </div>

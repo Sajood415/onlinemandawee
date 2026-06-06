@@ -1,0 +1,421 @@
+{
+  "Common": {
+    "brandName": "Mandawee",
+    "loading": "در حال بارگذاری...",
+    "loadingLogin": "ورود در حال بارگذاری...",
+    "loadingSignup": "ثبت‌نام در حال بارگذاری...",
+    "loadingCheckout": "تسویه‌حساب در حال بارگذاری...",
+    "loadingCart": "سبد خرید در حال بارگذاری...",
+    "redirecting": "در حال انتقال...",
+    "checkingAccount": "بررسی حساب...",
+    "saving": "در حال ذخیره...",
+    "save": "ذخیره",
+    "saveChanges": "ذخیره تغییرات",
+    "cancel": "لغو",
+    "edit": "ویرایش",
+    "refresh": "تازه‌سازی",
+    "remove": "حذف",
+    "continue": "ادامه",
+    "back": "بازگشت",
+    "apply": "اعمال",
+    "applying": "در حال اعمال…",
+    "free": "رایگان",
+    "default": "پیش‌فرض",
+    "vendor": "فروشنده",
+    "qty": "تعداد",
+    "new": "جدید",
+    "home": "خانه",
+    "errors": {
+      "generic": "مشکلی پیش آمد. لطفاً دوباره تلاش کنید.",
+      "network": "خطای شبکه. لطفاً دوباره تلاش کنید."
+    }
+  },
+  "Dashboard": {
+    "shell": {
+      "logOut": "خروج",
+      "openSidebar": "باز کردن منوی کناری",
+      "closeSidebar": "بستن منوی کناری",
+      "closeBackdrop": "بستن پس‌زمینه منو"
+    },
+    "admin": {
+      "title": "داشبورد مدیریت",
+      "nav": {
+        "dashboard": "داشبورد",
+        "vendors": "فروشندگان",
+        "products": "محصولات",
+        "categories": "دسته‌بندی‌ها",
+        "users": "کاربران"
+      }
+    },
+    "vendor": {
+      "title": "داشبورد فروشنده",
+      "titleWithStore": "داشبورد {storeName}",
+      "nav": {
+        "dashboard": "داشبورد",
+        "products": "محصولات",
+        "coupons": "کوپن‌ها",
+        "promotions": "پروموشن‌ها",
+        "orders": "سفارش‌ها",
+        "reports": "گزارش‌ها",
+        "settings": "تنظیمات"
+      }
+    },
+    "customer": {
+      "title": "حساب من",
+      "titleWithName": "حساب {firstName}",
+      "nav": {
+        "overview": "نمای کلی",
+        "settings": "تنظیمات"
+      }
+    }
+  },
+  "Account": {
+    "overview": {
+      "title": "نمای کلی",
+      "subtitle": "سفارش‌های خود را پیگیری کنید و آدرس‌های تحویل را مدیریت کنید.",
+      "loadingData": "بارگذاری سفارش‌ها و آدرس‌ها...",
+      "stats": {
+        "orders": "سفارش‌ها",
+        "addresses": "آدرس‌ها",
+        "ordersTotal": "{count} در مجموع",
+        "addressesSaved": "{count} ذخیره شده",
+        "totalSpent": "مجموع خرید: {amount}",
+        "addressesHint": "اطلاعات تحویل را برای تسویه‌حساب آماده نگه دارید."
+      },
+      "orders": {
+        "title": "سفارش‌های شما",
+        "subtitle": "وضعیت تحویل هر فروشنده را پیگیری کنید.",
+        "emptyTitle": "هنوز سفارشی ندارید",
+        "emptyDescription": "وقتی سفارش دهید، اینجا نمایش داده می‌شود.",
+        "startShopping": "شروع خرید",
+        "placed": "ثبت شده {date}",
+        "payment": "پرداخت",
+        "deliveryAddress": "آدرس تحویل"
+      },
+      "addresses": {
+        "title": "آدرس‌های ذخیره‌شده",
+        "subtitle": "برای تسویه‌حساب سریع‌تر از آدرس ذخیره‌شده استفاده کنید.",
+        "add": "افزودن آدرس",
+        "newTitle": "آدرس جدید",
+        "editTitle": "ویرایش آدرس",
+        "latestOrderPrompt": "آدرس تحویل آخرین سفارش ذخیره شود؟",
+        "saveLatest": "ذخیره به‌عنوان آدرس پیش‌فرض",
+        "setDefault": "تنظیم به‌عنوان آدرس پیش‌فرض",
+        "empty": "هنوز آدرسی ذخیره نشده است."
+      },
+      "fields": {
+        "fullName": "نام کامل",
+        "phone": "تلفن",
+        "addressLine1": "آدرس",
+        "city": "شهر",
+        "country": "کشور",
+        "postalCode": "کد پستی"
+      },
+      "orderStatus": {
+        "NEW": "جدید",
+        "PREPARING": "در حال آماده‌سازی",
+        "SHIPPED": "ارسال شده",
+        "DELIVERED": "تحویل شده",
+        "CANCELLED": "لغو شده"
+      },
+      "errors": {
+        "loadFailed": "بارگذاری اطلاعات حساب ناموفق بود."
+      }
+    },
+    "settings": {
+      "title": "تنظیمات",
+      "subtitle": "پروفایل و رمز عبور خود را مدیریت کنید."
+    }
+  },
+  "CustomerProfile": {
+    "loading": "بارگذاری پروفایل...",
+    "sections": {
+      "profileSecurity": "پروفایل و امنیت",
+      "profileSecurityLead": "جزئیات خود را به‌روز کنید یا رمز عبور را از طریق ایمیل بازنشانی کنید.",
+      "profile": "پروفایل",
+      "profileLead": "نام و شماره تلفن خود را به‌روز کنید.",
+      "changePassword": "تغییر رمز عبور",
+      "changePasswordLead": "رمز فعلی را می‌دانید؟ اینجا آن را تغییر دهید.",
+      "changePasswordHint": "رمز فعلی را می‌دانید؟ اینجا آن را تغییر دهید.",
+      "resetViaEmail": "بازنشانی از طریق ایمیل",
+      "resetViaEmailLead": "رمز را فراموش کرده‌اید؟ کد تأیید به ایمیل شما ارسال می‌شود.",
+      "accountDetails": "جزئیات حساب"
+    },
+    "fields": {
+      "fullName": "نام کامل",
+      "email": "ایمیل",
+      "phone": "تلفن",
+      "currentPassword": "رمز عبور فعلی",
+      "newPassword": "رمز عبور جدید",
+      "confirmPassword": "تأیید رمز جدید",
+      "verificationCode": "کد تأیید",
+      "emailReadonlyHint": "ایمیل اینجا قابل تغییر نیست. برای تغییر با پشتیبانی تماس بگیرید."
+    },
+    "actions": {
+      "saveProfile": "ذخیره پروفایل",
+      "savingProfile": "در حال ذخیره...",
+      "updatePassword": "به‌روزرسانی رمز",
+      "updatingPassword": "در حال به‌روزرسانی...",
+      "sendResetCode": "ارسال کد بازنشانی به ایمیل من",
+      "sending": "در حال ارسال...",
+      "verifyCode": "تأیید کد",
+      "verifying": "در حال تأیید...",
+      "resendCode": "ارسال مجدد کد",
+      "setNewPassword": "تنظیم رمز جدید",
+      "savingPassword": "در حال ذخیره..."
+    },
+    "reset": {
+      "codeSent": "کد بازنشانی به {email} ارسال شد.",
+      "codeSentDev": "کد ارسال شد. کد توسعه: {code}",
+      "codeVerified": "کد تأیید شد. رمز جدید را وارد کنید.",
+      "passwordUpdated": "رمز عبور با موفقیت به‌روز شد.",
+      "forgotPrompt": "رمز را فراموش کرده‌اید؟ کد تأیید به {email} ارسال می‌شود."
+    },
+    "validation": {
+      "currentPasswordRequired": "رمز عبور فعلی را وارد کنید.",
+      "passwordMismatch": "رمز جدید و تأیید باید یکسان باشند.",
+      "resetMismatch": "رمز و تأیید باید یکسان باشند.",
+      "invalidCode": "کد ۶ رقمی معتبر وارد کنید.",
+      "resetExpired": "جلسه بازنشانی منقضی شد. کد جدید درخواست کنید."
+    },
+    "toasts": {
+      "profileUpdated": "پروفایل به‌روز شد",
+      "profileUpdatedDesc": "جزئیات حساب شما ذخیره شد.",
+      "profileFailed": "ذخیره پروفایل ناموفق بود",
+      "passwordUpdated": "رمز به‌روز شد",
+      "passwordUpdatedDesc": "رمز عبور شما با موفقیت تغییر کرد.",
+      "passwordFailed": "به‌روزرسانی رمز ناموفق بود",
+      "codeSent": "کد ارسال شد",
+      "codeSentDesc": "ایمیل خود را برای کد بازنشانی بررسی کنید.",
+      "codeFailed": "ارسال کد ناموفق بود",
+      "verified": "کد تأیید شد",
+      "verifiedDesc": "اکنون می‌توانید رمز جدید تنظیم کنید.",
+      "verifyFailed": "تأیید ناموفق بود",
+      "resetSuccess": "بازنشانی رمز",
+      "resetSuccessDesc": "رمز عبور شما به‌روز شد.",
+      "resetFailed": "بازنشانی ناموفق بود"
+    },
+    "errors": {
+      "loadFailed": "بارگذاری پروفایل ناموفق بود."
+    }
+  },
+  "Auth": {
+    "login": {
+      "title": "ورود",
+      "subtitle": "برای دسترسی به داشبورد وارد شوید.",
+      "identifier": "ایمیل یا تلفن",
+      "password": "رمز عبور",
+      "signIn": "ورود",
+      "signingIn": "در حال ورود...",
+      "forgotPassword": "رمز را فراموش کرده‌اید؟",
+      "newCustomer": "مشتری جدید؟",
+      "createAccount": "ایجاد حساب",
+      "failed": "ورود ناموفق بود"
+    },
+    "signup": {
+      "title": "ایجاد حساب",
+      "subtitle": "به Mandawee بپیوندید و از فروشندگان محلی خرید کنید.",
+      "fullName": "نام کامل",
+      "email": "ایمیل",
+      "phone": "تلفن",
+      "password": "رمز عبور",
+      "confirmPassword": "تأیید رمز عبور",
+      "create": "ایجاد حساب",
+      "creating": "در حال ایجاد حساب...",
+      "alreadyHave": "قبلاً حساب دارید؟",
+      "signIn": "ورود",
+      "otpTitle": "ایمیل خود را تأیید کنید",
+      "otpSubtitle": "کد ۶ رقمی ارسال‌شده به {email} را وارد کنید.",
+      "verificationCode": "کد تأیید",
+      "verify": "تأیید",
+      "verifying": "در حال تأیید...",
+      "resendCode": "ارسال مجدد کد",
+      "editDetails": "ویرایش جزئیات حساب"
+    },
+    "forgotPassword": {
+      "title": "فراموشی رمز عبور",
+      "subtitle": "کد بازنشانی رمز به ایمیل شما ارسال می‌شود.",
+      "email": "ایمیل",
+      "sendCode": "ارسال کد",
+      "sending": "در حال ارسال…",
+      "verificationCode": "کد تأیید",
+      "verifyCode": "تأیید کد",
+      "verifying": "در حال تأیید…",
+      "newPassword": "رمز جدید",
+      "confirmPassword": "تأیید رمز",
+      "resetPassword": "بازنشانی رمز",
+      "saving": "در حال ذخیره…",
+      "backToLogin": "بازگشت به ورود",
+      "codeSent": "کد به ایمیل شما ارسال شد.",
+      "codeSentDev": "کد ارسال شد. کد توسعه: {code}",
+      "codeVerified": "کد تأیید شد. رمز جدید تنظیم کنید.",
+      "passwordMismatch": "رمزها مطابقت ندارند.",
+      "requestFailed": "درخواست ناموفق بود",
+      "verifyFailed": "تأیید ناموفق بود",
+      "resetFailed": "بازنشانی ناموفق بود"
+    },
+    "passwordRequirements": {
+      "ariaLabel": "شرایط رمز عبور",
+      "length": "حداقل ۸ حرف",
+      "upper": "یک حرف بزرگ (A–Z)",
+      "lower": "یک حرف کوچک (a–z)",
+      "special": "یک نویسه ویژه (!@#$…)",
+      "missing": "رمز باید همه شرایط را داشته باشد (کمبود: {rule}).",
+      "title": "شرایط رمز عبور"
+    },
+    "accountMenu": {
+      "label": "منوی حساب",
+      "account": "حساب",
+      "adminDashboard": "داشبورد مدیریت",
+      "vendorDashboard": "داشبورد فروشنده",
+      "myAccount": "حساب من",
+      "signOut": "خروج"
+    },
+    "languages": {
+      "select": "انتخاب زبان",
+      "en": "English",
+      "ps": "پښتو",
+      "fa-AF": "دری"
+    }
+  },
+  "VendorPages": {
+    "dashboard": {
+      "title": "داشبورد فروشنده",
+      "subtitle": "نمای کلی عملکرد فروشگاه شما."
+    },
+    "products": {
+      "title": "مدیریت محصولات"
+    },
+    "coupons": {
+      "title": "کوپن‌ها"
+    },
+    "promotions": {
+      "title": "پروموشن‌های فروشگاه"
+    },
+    "orders": {
+      "title": "سفارش‌ها",
+      "subtitle": "سفارش‌هایی که محصولات شما را دارند مدیریت کنید"
+    },
+    "reports": {
+      "title": "گزارش‌ها",
+      "tabs": {
+        "sales": "خلاصه فروش",
+        "fees": "هزینه‌ها و اشتراک",
+        "payouts": "تاریخچه پرداخت"
+      }
+    },
+    "settings": {
+      "title": "تنظیمات",
+      "subtitle": "پروفایل کسب‌وکار و جزئیات پرداخت را مدیریت کنید.",
+      "tabs": {
+        "business": "اطلاعات کسب‌وکار",
+        "payout": "جزئیات بانکی"
+      }
+    }
+  },
+  "AdminPages": {
+    "orders": "سفارش‌ها",
+    "users": "کاربران",
+    "reports": "گزارش‌ها",
+    "settings": "تنظیمات"
+  },
+  "Cart": {
+    "title": "سبد خرید شما",
+    "subtitle": "اقلام را بررسی کنید و وقتی آماده بودید با امنیت تسویه کنید.",
+    "items": "قلم",
+    "item": "قلم",
+    "emptyTitle": "سبد خرید شما خالی است",
+    "emptyDescription": "به نظر می‌رسد هنوز چیزی اضافه نکرده‌اید. بازار ما را ببینید و چیزی انتخاب کنید.",
+    "emptyFooter": "انتخاب‌های برتر از فروشندگان محلی معتبر",
+    "browseProducts": "مشاهده محصولات",
+    "continueShopping": "ادامه خرید",
+    "orderSummary": "خلاصه سفارش",
+    "subtotal": "جمع جزئی",
+    "shipping": "ارسال",
+    "shippingFree": "رایگان",
+    "shippingCalculated": "در تسویه‌حساب محاسبه می‌شود",
+    "tax": "مالیات تخمینی",
+    "total": "مجموع",
+    "deliveryEstimate": "زمان تحویل تخمینی",
+    "deliveryWindow": "۲–۴ روز کاری",
+    "deliveryNote": "گزینه‌های ارسال همان‌روز ممکن است در تسویه موجود باشد.",
+    "checkout": "ادامه به تسویه‌حساب",
+    "secureCheckout": "تسویه امن",
+    "remove": "حذف",
+    "each": "هر",
+    "lineTotal": "جمع ردیف",
+    "recommended": "شاید دوست داشته باشید",
+    "recommendedSubtitle": "انتخاب‌های محبوب برای تکمیل سفارش",
+    "viewAll": "مشاهده همه",
+    "breadcrumb": {
+      "home": "خانه",
+      "cart": "سبد خرید",
+      "itemsInCart": "اقلام در سبد"
+    },
+    "quantity": {
+      "decrease": "کاهش تعداد",
+      "increase": "افزایش تعداد"
+    }
+  },
+  "Checkout": {
+    "title": "تسویه‌حساب",
+    "loading": "بارگذاری تسویه‌حساب...",
+    "steps": {
+      "contact": "تماس",
+      "address": "آدرس",
+      "payment": "پرداخت"
+    },
+    "contact": {
+      "fullName": "نام کامل",
+      "email": "آدرس ایمیل",
+      "phone": "شماره تلفن",
+      "fullNamePlaceholder": "John Doe",
+      "emailPlaceholder": "you@example.com",
+      "phonePlaceholder": "+93 70 000 0000"
+    },
+    "address": {
+      "street": "آدرس خیابان",
+      "city": "شهر",
+      "postalCode": "کد پستی",
+      "country": "کشور",
+      "streetPlaceholder": "123 Main Street, Apt 4",
+      "cityPlaceholder": "Kabul",
+      "postalPlaceholder": "1001",
+      "countryPlaceholder": "Afghanistan"
+    },
+    "payment": {
+      "cod": "پرداخت در محل",
+      "codSub": "هنگام تحویل نقدی پرداخت کنید",
+      "card": "کارت اعتباری / دبیت",
+      "cardSub": "Visa, Mastercard, Amex — امن با Stripe",
+      "cardUnavailable": "Stripe تنظیم نشده — کلیدها را به .env.local اضافه کنید"
+    },
+    "summary": {
+      "title": "خلاصه سفارش",
+      "yourCart": "سبد شما",
+      "subtotal": "جمع جزئی",
+      "delivery": "ارسال",
+      "discount": "تخفیف",
+      "total": "مجموع",
+      "qty": "تعداد"
+    },
+    "coupon": {
+      "placeholder": "SAVE10",
+      "alreadyApplied": "این کوپن قبلاً اعمال شده است.",
+      "applyFailed": "اعمال کوپن ناموفق بود."
+    },
+    "success": {
+      "title": "سفارش ثبت شد!",
+      "codMessage": "سفارش شما تأیید شد. هنگام تحویل پول نقد آماده داشته باشید.",
+      "cardMessage": "پرداخت شما موفق بود و به فروشنده اطلاع داده شد."
+    },
+    "errors": {
+      "requiredFields": "لطفاً همه فیلدهای ضروری را پر کنید.",
+      "invalidEmail": "لطفاً یک ایمیل معتبر وارد کنید.",
+      "placeOrderFailed": "ثبت سفارش ناموفق بود. دوباره تلاش کنید.",
+      "paymentFailed": "پرداخت ناموفق بود. دوباره تلاش کنید.",
+      "orderNotRecorded": "سفارش ثبت نشد. با پشتیبانی تماس بگیرید.",
+      "pricingFailed": "بارگذاری قیمت ناموفق بود. دوباره تلاش کنید."
+    }
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import {
   ShoppingCart,
   TrendingUp,
@@ -181,6 +182,7 @@ function SkeletonCard({ className }: { className?: string }) {
 }
 
 export default function VendorDashboardPage() {
+  const t = useTranslations("VendorPages.dashboard");
   const { isLoading: authLoading, user } = useDashboardGuard("VENDOR");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
@@ -245,12 +247,10 @@ export default function VendorDashboardPage() {
               ) : storeName ? (
                 storeName
               ) : (
-                "Vendor Dashboard"
+                t("title")
               )}
             </h1>
-            <p className="mt-1 text-sm text-neutral-500">
-              Here&apos;s an overview of your store&apos;s performance.
-            </p>
+            <p className="mt-1 text-sm text-neutral-500">{t("subtitle")}</p>
           </div>
           <button
             type="button"

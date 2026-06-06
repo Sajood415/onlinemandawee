@@ -7,12 +7,25 @@ import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { generateOtpCode, sha256 } from "@/lib/utils/crypto";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 import { OtpCodeRepository } from "@/repositories/otp-code.repository";
+import { UserRepository } from "@/repositories/user.repository";
 
 export class VendorEmailOtpService {
-  constructor(private readonly otpCodeRepository = new OtpCodeRepository()) {}
+  constructor(
+    private readonly otpCodeRepository = new OtpCodeRepository(),
+    private readonly userRepository = new UserRepository()
+  ) {}
 
   async sendCode(email: string) {
     const normalized = normalizeEmailForAuth(email);
+
+    const existingEmail = await this.userRepository.findByEmail(normalized);
+    if (existingEmail) {
+      throw new AppError({
+        code: ERROR_CODE.CONFLICT,
+        message: "Email is already in use",
+        statusCode: 409,
+      });
+    }
     const otpCode = generateOtpCode();
     const expiresAt = new Date(Date.now() + env.OTP_TTL_MINUTES * 60 * 1000);
     const purpose = "VENDOR_SIGNUP" as const;

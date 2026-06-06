@@ -213,6 +213,20 @@ export class ProductRepository {
                     mode: "insensitive",
                   },
                 },
+                {
+                  sku: {
+                    contains: filters.search,
+                    mode: "insensitive",
+                  },
+                },
+                {
+                  vendorProfile: {
+                    storeName: {
+                      contains: filters.search,
+                      mode: "insensitive",
+                    },
+                  },
+                },
               ],
             }
           : {}),

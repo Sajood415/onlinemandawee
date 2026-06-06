@@ -6,6 +6,31 @@ type CatalogProduct = {
   vendor: string;
   price: number;
   rating: number;
+  description?: Record<SupportedLocale, string>;
+  categoryName?: string;
+};
+
+const productMatchesSearch = (
+  product: CatalogProduct,
+  search: string,
+  locale: SupportedLocale
+) => {
+  const haystack = [
+    product.name.en,
+    product.name.ps,
+    product.name["fa-AF"],
+    product.vendor,
+    product.category,
+    product.categoryName,
+    product.description?.en,
+    product.description?.ps,
+    product.description?.["fa-AF"],
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return haystack.includes(search);
 };
 
 type FilterInput = {
@@ -25,7 +50,7 @@ export const filterCatalogProducts = <T extends CatalogProduct>(
   const search = input.searchQuery.trim().toLowerCase();
   return products.filter((product) => {
     const matchesSearch = search
-      ? product.name[input.locale].toLowerCase().includes(search)
+      ? productMatchesSearch(product, search, input.locale)
       : true;
     const matchesCategory =
       input.selectedCategory === "all" || product.category === input.selectedCategory;

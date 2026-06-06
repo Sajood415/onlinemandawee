@@ -5,6 +5,8 @@ import {
   type GuestCheckoutCouponEntry,
 } from "@/lib/checkout/coupon-entry";
 import { getCouponEligibleSubtotal } from "@/lib/vendor-coupon/product-scope";
+import { applyQuoteCurrency } from "@/lib/currency/apply-quote-currency";
+import { convertMinorUnits } from "@/lib/currency/convert";
 import { prisma } from "@/lib/db/prisma";
 import { isMongoObjectId } from "@/lib/db/object-id";
 
@@ -132,18 +134,26 @@ export async function buildGuestCheckoutQuote(input: {
     );
   }
 
-  const lineItems: GuestCheckoutLineItem[] = products.map(({ item, product }) => ({
-    productId: product!.id,
-    productName: product!.name,
-    productImage: product!.images[0] ?? null,
-    productSku: product!.sku ?? null,
-    vendorProfileId: product!.vendorProfileId,
-    categoryId: product!.categoryId,
-    quantity: item.quantity,
-    unitPriceAmount: product!.priceAmount,
-    lineTotalAmount: product!.priceAmount * item.quantity,
-    currency: product!.currency,
-  }));
+  const lineItems: GuestCheckoutLineItem[] = products.map(({ item, product }) => {
+    const nativeCurrency = product!.currency || "USD";
+    const unitPriceAmount = convertMinorUnits(
+      product!.priceAmount,
+      nativeCurrency,
+      currency
+    );
+    return {
+      productId: product!.id,
+      productName: product!.name,
+      productImage: product!.images[0] ?? null,
+      productSku: product!.sku ?? null,
+      vendorProfileId: product!.vendorProfileId,
+      categoryId: product!.categoryId,
+      quantity: item.quantity,
+      unitPriceAmount,
+      lineTotalAmount: unitPriceAmount * item.quantity,
+      currency,
+    };
+  });
 
   const subtotalAmount = lineItems.reduce((sum, item) => sum + item.lineTotalAmount, 0);
   const deliveryAmount = 0;
@@ -257,7 +267,7 @@ export async function buildGuestCheckoutQuote(input: {
     }
   );
 
-  return {
+  const quote: GuestCheckoutQuote = {
     subtotalAmount,
     deliveryAmount,
     discountAmount,
@@ -267,6 +277,8 @@ export async function buildGuestCheckoutQuote(input: {
     appliedCoupons,
     vendorSummaries,
   };
+
+  return applyQuoteCurrency(quote, currency);
 }
 
 export async function incrementCouponUsage(couponIds: string[]) {

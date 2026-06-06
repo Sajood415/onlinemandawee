@@ -23,6 +23,19 @@ export function getProductsCopy(locale: SupportedLocale) {
       : ps
         ? "محصولات، برانډونه، کټګورۍ..."
         : "جستجوی محصولات، برندها، دسته‌ها...",
+    searchResults: en ? "Search Results" : ps ? "د لټون پایلې" : "نتایج جستجو",
+    searchResultsFor: (query: string) =>
+      en
+        ? `Showing products matching "${query}" across all vendor listings`
+        : ps
+          ? `د "${query}" سره سم محصولات له ټولو پلورونکو څخه`
+          : `نمایش محصولات مطابق «${query}» از همه فروشندگان`,
+    noSearchResults: en ? "No matching products" : ps ? "هیڅ محصول ونه موندل شو" : "محصولی یافت نشد",
+    noSearchResultsHint: en
+      ? "Try a different keyword or browse all products."
+      : ps
+        ? "بل کلمه وکارېږئ یا ټول محصولات وګورئ."
+        : "کلمه دیگری امتحان کنید یا همه محصولات را ببینید.",
     filter: en ? "Filters" : ps ? "فلټرونه" : "فیلترها",
     filterShort: en ? "Filter" : ps ? "فلټر" : "فیلتر",
     sortFeatured: en ? "Best match" : ps ? "غوره تطابق" : "بهترین تطابق",
@@ -47,6 +60,7 @@ export function getProductsCopy(locale: SupportedLocale) {
       : ps
         ? "ټول فلټرونه پاک کړئ"
         : "پاک کردن همه فیلترها",
+    quantity: en ? "Quantity" : ps ? "مقدار" : "تعداد",
     addToCart: en ? "Add to cart" : ps ? "کارټ ته اضافه کړئ" : "افزودن به سبد",
     addedToCart: en ? "Added to cart!" : ps ? "کارټ ته اضافه شو!" : "به سبد اضافه شد!",
     addToCartFailed: en
@@ -60,5 +74,13 @@ export function getProductsCopy(locale: SupportedLocale) {
       : ps
         ? "محصولات پورته کېږي..."
         : "در حال بارگذاری محصولات...",
+    relatedTitle: en ? "You may also like" : ps ? "تاسو ته به دا هم خوښ شي" : "شاید این‌ها را هم بپسندید",
+    relatedSubtitle: (category: string) =>
+      en
+        ? `More items from ${category}`
+        : ps
+          ? `نور توکي له ${category} څخه`
+          : `موارد بیشتر از ${category}`,
+    viewCategory: en ? "View category" : ps ? "کټګوري وګورئ" : "مشاهده دسته",
   };
 }

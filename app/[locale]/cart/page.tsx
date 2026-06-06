@@ -9,27 +9,30 @@ import { useLocale } from "next-intl";
 import { CartEmptyState } from "@/components/cart/CartEmptyState";
 import { CartLineItem } from "@/components/cart/CartLineItem";
 import {
-  calculateCartTotals,
   CartOrderSummary,
+  ESTIMATED_TAX_RATE,
+  STANDARD_SHIPPING_FEE,
 } from "@/components/cart/CartOrderSummary";
 import { CartPageHeader } from "@/components/cart/CartPageHeader";
 import { CartPageSkeleton } from "@/components/cart/CartPageSkeleton";
 import { CartRecommendedProducts } from "@/components/cart/CartRecommendedProducts";
-import { getCartCopy } from "@/components/cart/copy";
+import { useCartCopy } from "@/lib/i18n/use-cart-copy";
 import type { CatalogRow } from "@/components/products/types";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import productData from "@/data/product.json";
 import { useCart } from "@/store/cart-context";
+import { useCurrency } from "@/store/currency-context";
 
 const staticProducts = productData.featuredProducts as CatalogRow[];
 
 export default function CartPage() {
   const locale = useLocale() as SupportedLocale;
   const isRtl = locale !== "en";
-  const copy = getCartCopy();
+  const copy = useCartCopy();
 
-  const { cart, itemCount, total, removeItem, updateQuantity, isLoading } =
+  const { cart, itemCount, displayTotal, removeItem, updateQuantity, isLoading } =
     useCart();
+  const { convertPrice } = useCurrency();
 
   const [hydrated, setHydrated] = useState(false);
   const [lineBusyId, setLineBusyId] = useState<string | null>(null);
@@ -38,7 +41,15 @@ export default function CartPage() {
     setHydrated(true);
   }, []);
 
-  const totals = useMemo(() => calculateCartTotals(total), [total]);
+  const totals = useMemo(() => {
+    const shippingFee = convertPrice(STANDARD_SHIPPING_FEE, "USD");
+    const taxAmount = displayTotal * ESTIMATED_TAX_RATE;
+    return {
+      shippingFee,
+      taxAmount,
+      total: displayTotal + shippingFee + taxAmount,
+    };
+  }, [displayTotal, convertPrice]);
 
   const handleUpdateQuantity = useCallback(
     async (itemId: string, quantity: number) => {
@@ -109,7 +120,7 @@ export default function CartPage() {
               </div>
 
               <CartOrderSummary
-                subtotal={total}
+                subtotal={displayTotal}
                 itemCount={itemCount}
                 shippingFee={totals.shippingFee}
                 taxAmount={totals.taxAmount}

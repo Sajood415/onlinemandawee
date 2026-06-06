@@ -1,14 +1,18 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 
 import { PasswordRequirements } from "@/components/vendor/onboarding/PasswordRequirements";
-import { getPasswordValidationMessage } from "@/components/vendor/onboarding/validation";
+import { usePasswordRules } from "@/lib/i18n/use-password-rules";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations("Auth.forgotPassword");
+  const tp = useTranslations("Auth.passwordRequirements");
+  const { getValidationMessage } = usePasswordRules();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [resetToken, setResetToken] = useState<string | null>(null);
@@ -34,14 +38,14 @@ export default function ForgotPasswordPage() {
       setPhase("verify");
       setMessage(
         data.debugCode
-          ? `Code sent. Dev code: ${data.debugCode}`
-          : "Code sent to your email."
+          ? t("codeSentDev", { code: data.debugCode })
+          : t("codeSent")
       );
-      toast.success("Code sent", "Check your email for the reset code.");
+      toast.success(t("sendCode"), t("codeSent"));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Request failed";
+      const msg = err instanceof Error ? err.message : t("requestFailed");
       setError(msg);
-      toast.error("Request failed", msg);
+      toast.error(t("requestFailed"), msg);
     } finally {
       setBusy(false);
     }
@@ -61,12 +65,12 @@ export default function ForgotPasswordPage() {
       const data = await parseApiResponse<{ resetToken: string }>(res);
       setResetToken(data.resetToken);
       setPhase("reset");
-      setMessage("Code verified. Set your new password.");
-      toast.success("Code verified", "You can now set a new password.");
+      setMessage(t("codeVerified"));
+      toast.success(t("verifyCode"), t("codeVerified"));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Verification failed";
+      const msg = err instanceof Error ? err.message : t("verifyFailed");
       setError(msg);
-      toast.error("Verification failed", msg);
+      toast.error(t("verifyFailed"), msg);
     } finally {
       setBusy(false);
     }
@@ -74,14 +78,14 @@ export default function ForgotPasswordPage() {
 
   const submitReset = async (e: FormEvent) => {
     e.preventDefault();
-    const passwordError = getPasswordValidationMessage(newPassword);
+    const passwordError = getValidationMessage(newPassword);
     if (passwordError) {
       setError(passwordError);
-      toast.error("Password requirements", passwordError);
+      toast.error(tp("title"), passwordError);
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError("Password and confirm password must match.");
+      setError(t("passwordMismatch"));
       return;
     }
     if (!resetToken) {
@@ -122,16 +126,14 @@ export default function ForgotPasswordPage() {
   return (
     <div className="bg-neutral-50 px-4 py-12 sm:py-16">
       <div className="mx-auto max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
-        <h1 className="text-2xl font-bold text-[#0f3460]">Forgot password</h1>
-        <p className="mt-2 text-sm text-neutral-600">
-          Reset your password using a verification code.
-        </p>
+        <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+        <p className="mt-2 text-sm text-neutral-600">{t("subtitle")}</p>
 
         {phase === "request" ? (
           <form className="mt-6 space-y-4" onSubmit={requestReset}>
             <div>
               <label className="mb-1 block text-sm font-semibold text-neutral-700">
-                Email
+                {t("email")}
               </label>
               <input
                 type="email"
@@ -146,7 +148,7 @@ export default function ForgotPasswordPage() {
               disabled={busy}
               className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
-              {busy ? "Sending..." : "Send code"}
+              {busy ? t("sending") : t("sendCode")}
             </button>
           </form>
         ) : null}
@@ -155,7 +157,7 @@ export default function ForgotPasswordPage() {
           <form className="mt-6 space-y-4" onSubmit={verifyCode}>
             <div>
               <label className="mb-1 block text-sm font-semibold text-neutral-700">
-                Verification code
+                {t("verificationCode")}
               </label>
               <input
                 type="text"
@@ -171,7 +173,7 @@ export default function ForgotPasswordPage() {
               disabled={busy}
               className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
-              {busy ? "Verifying..." : "Verify code"}
+              {busy ? t("verifying") : t("verifyCode")}
             </button>
           </form>
         ) : null}
@@ -180,7 +182,7 @@ export default function ForgotPasswordPage() {
           <form className="mt-6 space-y-4" onSubmit={submitReset}>
             <div>
               <label className="mb-1 block text-sm font-semibold text-neutral-700">
-                New password
+                {t("newPassword")}
               </label>
               <input
                 type="password"
@@ -197,7 +199,7 @@ export default function ForgotPasswordPage() {
             </div>
             <div>
               <label className="mb-1 block text-sm font-semibold text-neutral-700">
-                Confirm password
+                {t("confirmPassword")}
               </label>
               <input
                 type="password"
@@ -212,7 +214,7 @@ export default function ForgotPasswordPage() {
               />
               {confirmPassword.length > 0 && newPassword !== confirmPassword ? (
                 <p className="mt-1 text-xs text-red-600" role="alert">
-                  Passwords do not match.
+                  {t("passwordMismatch")}
                 </p>
               ) : null}
             </div>
@@ -221,7 +223,7 @@ export default function ForgotPasswordPage() {
               disabled={busy}
               className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
-              {busy ? "Saving..." : "Reset password"}
+              {busy ? t("saving") : t("resetPassword")}
             </button>
           </form>
         ) : null}
@@ -233,7 +235,7 @@ export default function ForgotPasswordPage() {
           href="/auth/login"
           className="mt-5 inline-block text-sm font-semibold text-[#0f3460] hover:underline"
         >
-          Back to login
+          {t("backToLogin")}
         </Link>
       </div>
     </div>

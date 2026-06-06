@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-const HAS_UPPERCASE = /[A-Z]/;
-const HAS_LOWERCASE = /[a-z]/;
-const HAS_SPECIAL = /[^A-Za-z0-9]/;
+export const HAS_UPPERCASE = /[A-Z]/;
+export const HAS_LOWERCASE = /[a-z]/;
+export const HAS_SPECIAL = /[^A-Za-z0-9]/;
 
 export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 128;

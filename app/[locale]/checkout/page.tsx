@@ -31,6 +31,7 @@ import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
 import { useAuth } from "@/store/auth-context";
 import { useCart } from "@/store/cart-context";
+import { useCurrency } from "@/store/currency-context";
 
 /* ─── Stripe setup ───────────────────────────────────────────────────── */
 
@@ -766,6 +767,7 @@ export default function CheckoutPage() {
   const { cart, removeItem } = useCart();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { currency, formatPrice } = useCurrency();
 
   const [step, setStep] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
@@ -875,7 +877,7 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: cartItemsPayload,
-          currency: "USD",
+          currency,
           vendorCoupons: coupons,
         }),
       });
@@ -889,7 +891,7 @@ export default function CheckoutPage() {
     } finally {
       setQuoteLoading(false);
     }
-  }, [cartItems.length, cartItemsPayload]);
+  }, [cartItems.length, cartItemsPayload, currency]);
 
   const fetchCodPricing = useCallback(async (coupons: VendorCouponEntry[]) => {
     if (cartItems.length === 0) return;
@@ -901,7 +903,7 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: cartItemsPayload,
-          currency: "USD",
+          currency,
           vendorCoupons: coupons,
         }),
       });
@@ -914,7 +916,7 @@ export default function CheckoutPage() {
     } finally {
       setQuoteLoading(false);
     }
-  }, [cartItems.length, cartItemsPayload]);
+  }, [cartItems.length, cartItemsPayload, currency]);
 
   const refreshPricing = useCallback(
     async (coupons: VendorCouponEntry[]) => {
@@ -955,7 +957,7 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: cartItemsPayload,
-          currency: "USD",
+          currency,
           vendorCoupons: nextCoupons,
         }),
       });
@@ -1073,7 +1075,7 @@ export default function CheckoutPage() {
     if (step !== 2) return;
     void refreshPricing(vendorCoupons);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, paymentMethod]);
+  }, [step, paymentMethod, currency]);
 
   useEffect(() => {
     if (step !== 2 || couponEligibleVendors.length === 0) return;
@@ -1315,7 +1317,10 @@ export default function CheckoutPage() {
                       <p className="text-xs text-gray-400">Qty: {item.quantity}</p>
                     </div>
                     <p className="text-sm font-semibold text-gray-900 flex-shrink-0">
-                      ${(item.productPrice * item.quantity / 100).toFixed(2)}
+                      {formatPrice(
+                        item.productPrice * item.quantity,
+                        item.productCurrency ?? "USD"
+                      )}
                     </p>
                   </div>
                 ))}

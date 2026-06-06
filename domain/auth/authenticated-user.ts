@@ -8,4 +8,5 @@ export type AuthenticatedUser = {
   phone: string;
   fullName: string;
   status: "ACTIVE" | "PENDING" | "BLOCKED";
+  preferredCurrency: string | null;
 };

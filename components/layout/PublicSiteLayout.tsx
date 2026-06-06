@@ -11,14 +11,32 @@ type PublicSiteLayoutProps = {
 export function PublicSiteLayout({ children }: PublicSiteLayoutProps) {
   const pathname = usePathname();
   const isVendorRegisterPage = pathname.includes("/vendor/register");
+  const isAccountPage = pathname.includes("/account");
 
   const isDashboardPage =
     pathname.includes("/admin/") ||
     (pathname.includes("/vendor/") && !isVendorRegisterPage);
   const hidePublicLayout = isDashboardPage;
 
+  if (isAccountPage) {
+    return (
+      <div className="flex h-dvh flex-col overflow-hidden">
+        <Header />
+        <main className="min-h-0 min-w-0 w-full flex-1 overflow-hidden">
+          {children}
+        </main>
+      </div>
+    );
+  }
+
   if (hidePublicLayout) {
-    return <main className="min-w-0 w-full flex-1">{children}</main>;
+    return (
+      <div className="flex h-dvh flex-col overflow-hidden">
+        <main className="min-h-0 min-w-0 w-full flex-1 overflow-hidden">
+          {children}
+        </main>
+      </div>
+    );
   }
 
   return (

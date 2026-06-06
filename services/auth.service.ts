@@ -44,6 +44,7 @@ const buildAuthenticatedUser = (input: {
   phone: string;
   fullName: string;
   status: "ACTIVE" | "PENDING" | "BLOCKED";
+  preferredCurrency?: string | null;
 }): AuthenticatedUser => {
   return {
     id: input.id,
@@ -53,6 +54,7 @@ const buildAuthenticatedUser = (input: {
     phone: input.phone,
     fullName: input.fullName,
     status: input.status,
+    preferredCurrency: input.preferredCurrency ?? null,
   };
 };
 
@@ -64,24 +66,26 @@ export class AuthService {
     private readonly orderRepository = new OrderRepository()
   ) {}
 
-  async registerCustomer(input: RegisterCustomerInput, metadata: RequestMetadata) {
-    const proof = await verifyOtpProofToken(input.verificationToken);
-    const normalizedEmail = normalizeEmailForAuth(input.email);
+  async assertSignupIdentifiersAvailable(input: { email?: string; phone?: string }) {
+    const normalizedEmail = input.email
+      ? normalizeEmailForAuth(input.email)
+      : null;
 
-    if (
-      proof.purpose !== "CUSTOMER_SIGNUP" ||
-      (proof.sub !== input.phone && proof.sub !== normalizedEmail)
-    ) {
+    if (!normalizedEmail && !input.phone?.trim()) {
       throw new AppError({
-        code: ERROR_CODE.UNAUTHORIZED,
-        message: "Verification is invalid for registration",
-        statusCode: 401,
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Email or phone is required",
+        statusCode: 400,
       });
     }
 
     const [existingEmail, existingPhone] = await Promise.all([
-      this.userRepository.findByEmail(normalizedEmail),
-      this.userRepository.findByPhone(input.phone),
+      normalizedEmail
+        ? this.userRepository.findByEmail(normalizedEmail)
+        : Promise.resolve(null),
+      input.phone?.trim()
+        ? this.userRepository.findByPhone(input.phone.trim())
+        : Promise.resolve(null),
     ]);
 
     if (existingEmail) {
@@ -99,6 +103,32 @@ export class AuthService {
         statusCode: 409,
       });
     }
+
+    return {
+      email: normalizedEmail,
+      phone: input.phone?.trim() ?? null,
+    };
+  }
+
+  async registerCustomer(input: RegisterCustomerInput, metadata: RequestMetadata) {
+    const proof = await verifyOtpProofToken(input.verificationToken);
+    const normalizedEmail = normalizeEmailForAuth(input.email);
+
+    if (
+      proof.purpose !== "CUSTOMER_SIGNUP" ||
+      (proof.sub !== input.phone && proof.sub !== normalizedEmail)
+    ) {
+      throw new AppError({
+        code: ERROR_CODE.UNAUTHORIZED,
+        message: "Verification is invalid for registration",
+        statusCode: 401,
+      });
+    }
+
+    await this.assertSignupIdentifiersAvailable({
+      email: normalizedEmail,
+      phone: input.phone,
+    });
 
     const passwordHash = await hashPassword(input.password);
     const user = await this.userRepository.createCustomer({
@@ -244,6 +274,7 @@ export class AuthService {
         phone: user.phone,
         fullName: user.fullName,
         status: user.status,
+        preferredCurrency: user.preferredCurrency,
       }),
       tokens: {
         accessToken,
@@ -288,6 +319,7 @@ export class AuthService {
       phone: string;
       fullName: string;
       status: "ACTIVE" | "PENDING" | "BLOCKED";
+      preferredCurrency?: string | null;
     },
     metadata: RequestMetadata
   ) {
@@ -302,6 +334,7 @@ export class AuthService {
       phone: string;
       fullName: string;
       status: "ACTIVE" | "PENDING" | "BLOCKED";
+      preferredCurrency?: string | null;
     },
     metadata: RequestMetadata
   ) {
@@ -347,6 +380,7 @@ export class AuthService {
         phone: user.phone,
         fullName: user.fullName,
         status: user.status,
+        preferredCurrency: user.preferredCurrency,
       }),
       tokens: {
         accessToken,

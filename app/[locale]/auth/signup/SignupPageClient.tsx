@@ -92,6 +92,16 @@ export function SignupPageClient() {
 
     setBusyAction("send");
     try {
+      const availabilityRes = await fetch("/api/auth/signup/check-availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          phone: phone.trim(),
+        }),
+      });
+      await parseApiResponse(availabilityRes);
+
       const res = await fetch("/api/auth/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -184,6 +194,16 @@ export function SignupPageClient() {
     setBusyAction("send");
 
     try {
+      const availabilityRes = await fetch("/api/auth/signup/check-availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          phone: phone.trim(),
+        }),
+      });
+      await parseApiResponse(availabilityRes);
+
       const res = await fetch("/api/auth/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

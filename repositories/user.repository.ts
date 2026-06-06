@@ -89,6 +89,24 @@ export class UserRepository {
     });
   }
 
+  updateProfile(
+    id: string,
+    input: {
+      fullName?: string;
+      phone?: string;
+      preferredCurrency?: string | null;
+    }
+  ) {
+    return prisma.user.update({
+      where: { id },
+      data: {
+        fullName: input.fullName,
+        phone: input.phone,
+        preferredCurrency: input.preferredCurrency,
+      },
+    });
+  }
+
   listAll() {
     return prisma.user.findMany({
       orderBy: {

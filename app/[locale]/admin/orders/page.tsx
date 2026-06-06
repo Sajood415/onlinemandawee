@@ -1,7 +1,10 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { RoleSectionPlaceholder } from "@/components/dashboard/RoleSectionPlaceholder";
 
 export default function AdminOrdersPage() {
-  return <RoleSectionPlaceholder role="ADMIN" title="Orders" />;
+  const t = useTranslations("AdminPages");
+  return <RoleSectionPlaceholder role="ADMIN" title={t("orders")} />;
 }

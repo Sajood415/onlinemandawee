@@ -15,5 +15,9 @@ export default function VendorLayout({
     return <>{children}</>;
   }
 
-  return <VendorDashboardLayout>{children}</VendorDashboardLayout>;
+  return (
+    <div className="h-full min-h-0">
+      <VendorDashboardLayout>{children}</VendorDashboardLayout>
+    </div>
+  );
 }

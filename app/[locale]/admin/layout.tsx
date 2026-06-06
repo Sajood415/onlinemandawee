@@ -5,5 +5,9 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AdminDashboardLayout>{children}</AdminDashboardLayout>;
+  return (
+    <div className="h-full min-h-0">
+      <AdminDashboardLayout>{children}</AdminDashboardLayout>
+    </div>
+  );
 }

@@ -1,21 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
+import { Trash2, Truck } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { CatalogImage } from "@/components/catalog/CatalogImage";
-import { getCartCopy } from "@/components/cart/copy";
+import { useCartCopy } from "@/lib/i18n/use-cart-copy";
+import { localizeDelivery, type SupportedLocale } from "@/lib/localization/product-vendor";
 import { QuantitySelector } from "@/components/cart/QuantitySelector";
+import { useCurrency } from "@/store/currency-context";
+import { useLocale } from "next-intl";
 
 export type CartLineItemData = {
   id: string;
   productId: string;
   quantity: number;
   productName: string;
+  productDescription?: string;
   productPrice: number;
+  productCurrency?: string;
   productImage: string;
   vendor: string;
+  delivery?: string;
 };
 
 type CartLineItemProps = {
@@ -31,8 +37,13 @@ export function CartLineItem({
   onRemove,
   busy = false,
 }: CartLineItemProps) {
-  const copy = getCartCopy();
-  const lineTotal = item.productPrice * item.quantity;
+  const locale = useLocale() as SupportedLocale;
+  const copy = useCartCopy();
+  const { currency, formatPrice, convertPrice } = useCurrency();
+  const fromCurrency = item.productCurrency ?? "USD";
+  const unitDisplay = formatPrice(item.productPrice, fromCurrency);
+  const lineTotal = convertPrice(item.productPrice, fromCurrency) * item.quantity;
+  const lineTotalDisplay = formatPrice(lineTotal, currency);
 
   return (
     <motion.article
@@ -67,9 +78,20 @@ export function CartLineItem({
                   {item.productName}
                 </h3>
               </Link>
+              {item.productDescription ? (
+                <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-neutral-500">
+                  {item.productDescription}
+                </p>
+              ) : null}
               <p className="mt-2 text-sm text-neutral-500">
-                ${item.productPrice.toFixed(2)} {copy.each}
+                {unitDisplay} {copy.each}
               </p>
+              {item.delivery ? (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                  <Truck className="h-3.5 w-3.5 shrink-0" />
+                  {localizeDelivery(item.delivery, locale)}
+                </p>
+              ) : null}
             </div>
 
             <div className="text-left sm:text-right">
@@ -77,7 +99,7 @@ export function CartLineItem({
                 {copy.lineTotal}
               </p>
               <p className="text-xl font-bold tracking-tight text-[#0f3460]">
-                ${lineTotal.toFixed(2)}
+                {lineTotalDisplay}
               </p>
             </div>
           </div>

@@ -2,16 +2,18 @@
 
 import { Check, X } from "lucide-react";
 
-import { PASSWORD_REQUIREMENTS } from "@/lib/auth/password-policy";
+import { usePasswordRules } from "@/lib/i18n/use-password-rules";
 
 type PasswordRequirementsProps = {
   password: string;
 };
 
 export function PasswordRequirements({ password }: PasswordRequirementsProps) {
+  const { requirements, ariaLabel } = usePasswordRules();
+
   return (
-    <ul className="mt-2 space-y-1.5" aria-label="Password requirements">
-      {PASSWORD_REQUIREMENTS.map((rule) => {
+    <ul className="mt-2 space-y-1.5" aria-label={ariaLabel}>
+      {requirements.map((rule) => {
         const met = rule.test(password);
         return (
           <li

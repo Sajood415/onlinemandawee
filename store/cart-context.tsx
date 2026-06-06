@@ -1,17 +1,30 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  type ReactNode,
+} from "react";
 import productData from "@/data/product.json";
+import { convertMajorUnits } from "@/lib/currency/convert";
 import { fetchPublicCatalogProduct } from "@/lib/products/public-catalog";
+import { useCurrency } from "@/store/currency-context";
 
 type CartItem = {
   id: string;
   productId: string;
   quantity: number;
   productName: string;
+  productDescription: string;
   productPrice: number;
+  productCurrency: string;
   productImage: string;
   vendor: string;
+  delivery: string;
   vendorProfileId?: string | null;
   isVendorProduct?: boolean;
 };
@@ -25,6 +38,7 @@ type CartContextType = {
   isLoading: boolean;
   itemCount: number;
   total: number;
+  displayTotal: number;
   addItem: (productId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
@@ -43,9 +57,12 @@ const resolveProductDetails = async (productId: string) => {
   if (staticProduct) {
     return {
       name: staticProduct.name.en,
+      description: staticProduct.description.en,
       price: staticProduct.price,
+      currency: "USD",
       image: staticProduct.image,
       vendor: staticProduct.vendor,
+      delivery: staticProduct.delivery,
       vendorProfileId: null,
       isVendorProduct: false,
     };
@@ -54,24 +71,40 @@ const resolveProductDetails = async (productId: string) => {
   const catalogProduct = await fetchPublicCatalogProduct(productId);
   return {
     name: catalogProduct.name.en,
+    description: catalogProduct.description.en,
     price: catalogProduct.price,
+    currency: catalogProduct.currency || "USD",
     image: catalogProduct.image,
     vendor: catalogProduct.vendor,
+    delivery: catalogProduct.delivery,
     vendorProfileId: catalogProduct.vendorProfileId,
     isVendorProduct: catalogProduct.isVendorProduct,
   };
 };
 
+function normalizeCartItem(item: CartItem): CartItem {
+  return {
+    ...item,
+    productCurrency: item.productCurrency ?? "USD",
+  };
+}
+
+function normalizeCart(cart: Cart): Cart {
+  return {
+    items: cart.items.map(normalizeCartItem),
+  };
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { currency, convertPrice } = useCurrency();
   const [cart, setCart] = useState<Cart>({ items: [] });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load cart from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(CART_STORAGE_KEY);
     if (stored) {
       try {
-        setCart(JSON.parse(stored));
+        setCart(normalizeCart(JSON.parse(stored)));
       } catch (e) {
         console.error("Failed to parse cart:", e);
       }
@@ -79,13 +112,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-  const total = cart.items.reduce((sum, item) => sum + (item.productPrice * item.quantity), 0);
+
+  const total = useMemo(
+    () =>
+      cart.items.reduce((sum, item) => sum + item.productPrice * item.quantity, 0),
+    [cart.items]
+  );
+
+  const displayTotal = useMemo(
+    () =>
+      cart.items.reduce(
+        (sum, item) =>
+          sum +
+          convertPrice(item.productPrice, item.productCurrency) * item.quantity,
+        0
+      ),
+    [cart.items, convertPrice, currency]
+  );
 
   const refreshCart = useCallback(() => {
     const stored = localStorage.getItem(CART_STORAGE_KEY);
     if (stored) {
       try {
-        setCart(JSON.parse(stored));
+        setCart(normalizeCart(JSON.parse(stored)));
       } catch (e) {
         console.error("Failed to parse cart:", e);
       }
@@ -116,9 +165,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
             productId,
             quantity,
             productName: product.name,
+            productDescription: product.description,
             productPrice: product.price,
+            productCurrency: product.currency,
             productImage: product.image,
             vendor: product.vendor,
+            delivery: product.delivery,
             vendorProfileId: product.vendorProfileId,
             isVendorProduct: product.isVendorProduct,
           };
@@ -168,6 +220,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         isLoading,
         itemCount,
         total,
+        displayTotal,
         addItem,
         removeItem,
         updateQuantity,

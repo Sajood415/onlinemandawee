@@ -98,6 +98,7 @@ export const withAuth = <
         phone: user.phone,
         fullName: user.fullName,
         status: user.status,
+        preferredCurrency: user.preferredCurrency ?? null,
       },
     });
   };

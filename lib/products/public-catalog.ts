@@ -129,6 +129,10 @@ function catalogProductsCacheKey(filters?: {
   return JSON.stringify(filters ?? {});
 }
 
+export function invalidatePublicCatalogCache() {
+  catalogProductsRequests.clear();
+}
+
 export async function fetchPublicCatalogProducts(filters?: {
   category?: string;
   vendor?: string;

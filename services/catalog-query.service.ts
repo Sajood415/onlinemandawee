@@ -5,6 +5,7 @@ import {
 import { isMongoObjectId } from "@/lib/db/object-id";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import type { IndustryType } from "@/domain/vendor/vendor-types";
 import { CategoryRepository } from "@/repositories/category.repository";
 import { ProductRepository } from "@/repositories/product.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
@@ -56,6 +57,23 @@ export class CatalogQueryService {
     );
 
     return { ...product, availableCoupons };
+  }
+
+  async listVendors(filters?: { industry?: IndustryType }) {
+    const vendors = await this.vendorProfileRepository.listPublic(
+      filters?.industry ? { industryType: filters.industry } : undefined
+    );
+
+    return vendors.map((vendor) => ({
+      id: vendor.id,
+      storeName: vendor.storeName!,
+      storeSlug: vendor.storeSlug!,
+      logoUrl: vendor.logoUrl,
+      description: vendor.description,
+      industryType: vendor.industryType,
+      productCount: vendor._count.products,
+      approvedAt: vendor.approvedAt?.toISOString() ?? null,
+    }));
   }
 
   async getVendorStore(storeSlug: string) {

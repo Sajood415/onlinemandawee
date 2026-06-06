@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
-import { invalidateVendorStoreNameCache } from "@/components/dashboard/use-vendor-store-name";
+import { invalidateVendorStoreNameCache } from "@/lib/vendor/store-name-cache";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
 import { industryTypes, industryTypeLabels } from "@/domain/vendor/vendor-types";

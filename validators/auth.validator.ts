@@ -37,6 +37,15 @@ export const verifyOtpSchema = z
     path: ["identifier"],
   });
 
+export const signupAvailabilitySchema = z
+  .object({
+    email: z.email().max(255).optional(),
+    phone: phoneFieldSchema.optional(),
+  })
+  .refine((input) => Boolean(input.email || input.phone), {
+    message: "Email or phone is required",
+  });
+
 export const registerCustomerSchema = z.object({
   fullName: z.string().trim().min(2).max(100),
   email: z.email().max(255),

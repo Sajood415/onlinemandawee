@@ -7,6 +7,7 @@ import {
   useState,
   ReactNode,
 } from "react";
+import { invalidateVendorStoreNameCache } from "@/lib/vendor/store-name-cache";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 
 type User = {
@@ -17,6 +18,7 @@ type User = {
   phone: string;
   fullName: string;
   status: "ACTIVE" | "PENDING" | "BLOCKED";
+  preferredCurrency?: string | null;
 };
 
 type AuthContextType = {
@@ -70,9 +72,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = await parseApiResponse<User>(response);
         setUser(userData);
       } else {
-        // Token invalid, clear storage
+        invalidateVendorStoreNameCache();
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
+        setUser(null);
       }
     } catch (error) {
       console.error("Auth check failed:", error);
@@ -82,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const establishSession = (session: AuthResult) => {
+    invalidateVendorStoreNameCache();
     localStorage.setItem("accessToken", session.tokens.accessToken);
     localStorage.setItem("refreshToken", session.tokens.refreshToken);
     setUser(session.user);
@@ -109,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    invalidateVendorStoreNameCache();
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     setUser(null);

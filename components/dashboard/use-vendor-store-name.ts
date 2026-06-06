@@ -4,75 +4,61 @@ import { useCallback, useEffect, useState } from "react";
 
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { formatVendorStoreName } from "@/lib/utils/slug";
+import {
+  clearVendorStoreNameCacheForUser,
+  invalidateVendorStoreNameCache,
+  loadVendorStoreNameForUser,
+  registerVendorStoreNameFetcher,
+} from "@/lib/vendor/store-name-cache";
+import { useAuth } from "@/store/auth-context";
 
 type VendorProfileSummary = {
   storeName: string;
   storeSlug: string;
 };
 
-let storeNameCache: string | null | undefined;
-let storeNamePromise: Promise<string | null> | null = null;
+registerVendorStoreNameFetcher(async () => {
+  const token = localStorage.getItem("accessToken");
+  if (!token) return null;
 
-async function loadVendorStoreName(): Promise<string | null> {
-  if (storeNameCache !== undefined) return storeNameCache;
+  try {
+    const res = await fetch("/api/vendor/profile", {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
 
-  if (!storeNamePromise) {
-    storeNamePromise = (async () => {
-      const token = localStorage.getItem("accessToken");
-      if (!token) return null;
-
-      try {
-        const res = await fetch("/api/vendor/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return null;
-
-        const data = await parseApiResponse<VendorProfileSummary>(res);
-        return formatVendorStoreName(data.storeName, data.storeSlug);
-      } catch {
-        return null;
-      }
-    })();
+    const data = await parseApiResponse<VendorProfileSummary>(res);
+    return formatVendorStoreName(data.storeName, data.storeSlug);
+  } catch {
+    return null;
   }
+});
 
-  const name = await storeNamePromise;
-  storeNameCache = name;
-  storeNamePromise = null;
-  return name;
-}
-
-function resetStoreNameCache(notify = false) {
-  storeNameCache = undefined;
-  storeNamePromise = null;
-  if (notify && typeof window !== "undefined") {
-    window.dispatchEvent(new Event("vendor-store-name-changed"));
-  }
-}
-
-export function invalidateVendorStoreNameCache() {
-  resetStoreNameCache(true);
-}
+export { invalidateVendorStoreNameCache };
 
 export function useVendorStoreName() {
-  const [storeName, setStoreName] = useState<string | null>(
-    storeNameCache !== undefined ? storeNameCache : null
-  );
-  const [isLoading, setIsLoading] = useState(storeNameCache === undefined);
+  const { user } = useAuth();
+  const userId = user?.role === "VENDOR" ? user.id : null;
+
+  const [storeName, setStoreName] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(Boolean(userId));
 
   const refresh = useCallback(async () => {
-    resetStoreNameCache(false);
-    setIsLoading(true);
-    const name = await loadVendorStoreName();
-    setStoreName(name);
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    if (storeNameCache !== undefined) {
-      setStoreName(storeNameCache);
+    if (!userId) {
+      setStoreName(null);
       setIsLoading(false);
+      return;
     }
 
+    clearVendorStoreNameCacheForUser(userId);
+    setIsLoading(true);
+    const name = await loadVendorStoreNameForUser(userId);
+    setStoreName(name);
+    setIsLoading(false);
+  }, [userId]);
+
+  useEffect(() => {
     const handleStoreNameChanged = () => {
       void refresh();
     };
@@ -84,11 +70,17 @@ export function useVendorStoreName() {
   }, [refresh]);
 
   useEffect(() => {
-    if (storeNameCache !== undefined) return;
+    if (!userId) {
+      setStoreName(null);
+      setIsLoading(false);
+      return;
+    }
 
     let mounted = true;
+    setIsLoading(true);
+
     void (async () => {
-      const name = await loadVendorStoreName();
+      const name = await loadVendorStoreNameForUser(userId);
       if (mounted) {
         setStoreName(name);
         setIsLoading(false);
@@ -98,7 +90,7 @@ export function useVendorStoreName() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [userId]);
 
   return { storeName, isLoading, refresh };
 }

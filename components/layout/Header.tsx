@@ -3,10 +3,12 @@
 import Image from "next/image";
 import { CatalogImage } from "@/components/catalog/CatalogImage";
 import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
 import { usePathname, useRouter, Link as LocaleLink } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { useAuth } from "@/store/auth-context";
 import { useCart } from "@/store/cart-context";
+import { useCurrency } from "@/store/currency-context";
 import Link from "next/link";
 import {
   Search,
@@ -39,9 +41,11 @@ import {
   headerCopy,
 } from "@/components/layout/header/header-copy";
 import { IconButton } from "@/components/layout/header/IconButton";
+import { CurrencySelector } from "@/components/layout/header/CurrencySelector";
 import { LanguageSelector } from "@/components/layout/header/LanguageSelector";
 import { MobileNavMenu } from "@/components/layout/header/MobileNavMenu";
 import {
+  localizeDelivery,
   localizeVendor,
   type SupportedLocale,
 } from "@/lib/localization/product-vendor";
@@ -87,6 +91,7 @@ const localizeProductName = (
 
 export default function Header() {
   const t = useTranslations("Homepage.navbar");
+  const tAuth = useTranslations("Auth");
   const pathname = usePathname();
   const locale = useLocale() as SupportedLocale;
   const safeLocale: SupportedLocale =
@@ -101,7 +106,8 @@ export default function Header() {
     isAuthSignupPage ||
     isVendorRegisterPage;
   const { isAuthenticated, user, logout } = useAuth();
-  const { cart, itemCount, total, removeItem, updateQuantity, refreshCart } = useCart();
+  const { cart, itemCount, displayTotal, removeItem, updateQuantity, refreshCart } = useCart();
+  const { currency, formatPrice } = useCurrency();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -175,12 +181,32 @@ export default function Header() {
   }, [charIndex, isDeleting, suggestionIndex, isSearchFocused, searchQuery, searchSuggestions]);
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (!pathname.includes("/products")) return;
+    setSearchQuery(searchParams.get("search") ?? "");
+  }, [pathname, searchParams]);
+
+  const handleSearchInputChange = (value: string) => {
+    setSearchQuery(value);
+    if (pathname.includes("/products") && !value.trim()) {
+      router.replace("/products");
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+    const term = searchQuery.trim();
+    if (!term) {
+      if (pathname.includes("/products")) {
+        router.replace("/products");
+      }
+      setShowMobileSearch(false);
+      return;
     }
+    router.push(`/products?search=${encodeURIComponent(term)}`);
+    setShowMobileSearch(false);
   };
 
   const handleLogin = () => {
@@ -217,10 +243,11 @@ export default function Header() {
 
   return (
     <>
-      {/* TOP BAR – sticky (logo, search, account, cart) */}
+      {/* TOP BAR + category nav — pinned together while the page scrolls */}
+      <div className="sticky top-0 z-[9998] shrink-0">
       <header
         dir={isRtl ? "rtl" : "ltr"}
-        className={`sticky top-0 z-[9998] overflow-x-visible overflow-y-visible border-b border-white/15 shadow-[0_4px_20px_rgba(15,52,96,0.35)] ${HEADER_BAR_CLASS}`}
+        className={`relative z-[9999] overflow-x-visible overflow-y-visible border-b border-white/15 shadow-[0_4px_20px_rgba(15,52,96,0.35)] ${HEADER_BAR_CLASS}`}
       >
         <div className="mx-auto w-full min-w-0 max-w-7xl py-2 sm:py-3 ps-[max(0.375rem,env(safe-area-inset-left,0px))] pe-[max(0.375rem,env(safe-area-inset-right,0px))] sm:ps-[max(1rem,env(safe-area-inset-left,0px))] sm:pe-[max(1rem,env(safe-area-inset-right,0px))]">
           <div className="flex min-w-0 flex-nowrap items-center justify-between gap-2 sm:gap-3 md:max-lg:gap-2 lg:gap-4">
@@ -247,7 +274,7 @@ export default function Header() {
               />
               <input
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchInputChange(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
                 placeholder={
@@ -276,19 +303,20 @@ export default function Header() {
                 <Search size={19} />
               </button>
 
-              {/* Language Selector - First */}
-              <div className="hidden md:flex items-center">
+              {/* Language + currency selectors */}
+              <div className="flex items-center gap-1.5">
                 <LanguageSelector
                   locale={locale}
-                  label={copy.languageSelect}
+                  label={tAuth("languages.select")}
                   isRtl={isRtl}
                   variant="dark"
                   languages={[
-                    { code: "en", label: "English", flag: "🇺🇸" },
-                    { code: "ps", label: "پښتو", flag: "🇦🇫" },
-                    { code: "fa-AF", label: "دری", flag: "🇦🇫" },
+                    { code: "en", label: tAuth("languages.en"), flag: "🇺🇸" },
+                    { code: "ps", label: tAuth("languages.ps"), flag: "🇦🇫" },
+                    { code: "fa-AF", label: tAuth("languages.fa-AF"), flag: "🇦🇫" },
                   ]}
                 />
+                <CurrencySelector isRtl={isRtl} variant="dark" />
               </div>
 
               {/* Cart Button - Second */}
@@ -309,10 +337,10 @@ export default function Header() {
                     type="button"
                     onClick={() => setShowAccountMenu((v) => !v)}
                     className="flex h-9 shrink-0 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white transition-colors hover:bg-white/20"
-                    aria-label="Account menu"
+                    aria-label={tAuth("accountMenu.label")}
                   >
                     <UserCircle size={18} />
-                    <span className="max-w-[7rem] truncate">{user?.fullName?.split(" ")[0] ?? "Account"}</span>
+                    <span className="max-w-[7rem] truncate">{user?.fullName?.split(" ")[0] ?? tAuth("accountMenu.account")}</span>
                   </button>
                   {showAccountMenu && (
                     <div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-neutral-200 bg-white py-1 shadow-xl z-50">
@@ -322,7 +350,7 @@ export default function Header() {
                           onClick={() => setShowAccountMenu(false)}
                           className="flex w-full items-center px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
                         >
-                          Admin dashboard
+                          {tAuth("accountMenu.adminDashboard")}
                         </LocaleLink>
                       )}
                       {user?.role === "VENDOR" && (
@@ -331,7 +359,7 @@ export default function Header() {
                           onClick={() => setShowAccountMenu(false)}
                           className="flex w-full items-center px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
                         >
-                          Vendor dashboard
+                          {tAuth("accountMenu.vendorDashboard")}
                         </LocaleLink>
                       )}
                       {user?.role === "CUSTOMER" && (
@@ -340,7 +368,7 @@ export default function Header() {
                           onClick={() => setShowAccountMenu(false)}
                           className="flex w-full items-center px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
                         >
-                          My account
+                          {tAuth("accountMenu.myAccount")}
                         </LocaleLink>
                       )}
                       <button
@@ -351,7 +379,7 @@ export default function Header() {
                         }}
                         className="flex w-full items-center px-4 py-2.5 text-sm text-red-600 hover:bg-neutral-50"
                       >
-                        Sign out
+                        {tAuth("accountMenu.signOut")}
                       </button>
                     </div>
                   )}
@@ -392,7 +420,7 @@ export default function Header() {
                   <Search className="ms-2 shrink-0 text-gray-400" size={18} />
                   <input
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => handleSearchInputChange(e.target.value)}
                     onFocus={() => setIsSearchFocused(true)}
                     onBlur={() => setIsSearchFocused(false)}
                     placeholder={
@@ -568,6 +596,12 @@ export default function Header() {
               {copy.products}
             </Link>
             <Link
+              href="/vendors"
+              className="inline-flex h-8 items-center rounded-md px-3 transition-all hover:bg-gray-100 hover:text-primary"
+            >
+              {copy.vendors}
+            </Link>
+            <Link
               href="/gifts"
               className="inline-flex h-8 items-center rounded-md px-3 relative flex items-center gap-2 group transition-all hover:bg-gray-100 hover:text-primary"
             >
@@ -612,6 +646,9 @@ export default function Header() {
               <Link href="/products" className="inline-flex h-8 items-center rounded-md px-2 whitespace-nowrap transition-all hover:bg-gray-100 hover:text-primary">
                 {copy.products}
               </Link>
+              <Link href="/vendors" className="inline-flex h-8 items-center rounded-md px-2 whitespace-nowrap transition-all hover:bg-gray-100 hover:text-primary">
+                {copy.vendors}
+              </Link>
               <Link
                 href="/gifts"
                 className="inline-flex h-8 items-center rounded-md px-2 relative flex items-center gap-1 whitespace-nowrap transition-all hover:bg-gray-100 hover:text-primary"
@@ -637,6 +674,9 @@ export default function Header() {
               <Link href="/products" className="inline-flex h-7 items-center rounded-md px-1 whitespace-nowrap shrink min-w-0 transition-all hover:bg-gray-100 hover:text-primary">
                 {copy.products}
               </Link>
+              <Link href="/vendors" className="inline-flex h-7 items-center rounded-md px-1 whitespace-nowrap shrink min-w-0 transition-all hover:bg-gray-100 hover:text-primary">
+                {copy.vendors}
+              </Link>
               <Link
                 href="/gifts"
                 className="inline-flex h-7 items-center rounded-md px-1 relative flex items-center gap-1 whitespace-nowrap shrink min-w-0 transition-all hover:bg-gray-100 hover:text-primary"
@@ -655,6 +695,7 @@ export default function Header() {
           </div>
         </nav>
       )}
+      </div>
 
       {/* ================= CART SHEET (MODERN SIDEBAR) ================= */}
       <AnimatePresence>
@@ -795,9 +836,22 @@ export default function Header() {
                           <p className="text-xs text-gray-500">
                             <bdi>{localizeVendor(item.vendor, safeLocale)}</bdi>
                           </p>
+                          {item.productDescription ? (
+                            <p className="mt-1 line-clamp-2 text-xs text-gray-400">
+                              {item.productDescription}
+                            </p>
+                          ) : null}
+                          {item.delivery ? (
+                            <p className="mt-1 text-[11px] font-medium text-emerald-600">
+                              {localizeDelivery(item.delivery, safeLocale)}
+                            </p>
+                          ) : null}
                           <div className="flex items-center justify-between mt-2">
                             <span className="font-bold text-gray-900">
-                              ${item.productPrice.toFixed(2)}
+                              {formatPrice(
+                                item.productPrice,
+                                item.productCurrency ?? "USD"
+                              )}
                             </span>
                             <div className="flex items-center gap-2">
                               <button
@@ -843,7 +897,7 @@ export default function Header() {
                       {copy.estimatedTotal}
                     </span>
                     <span className="text-2xl font-black text-gray-900">
-                      ${total.toFixed(2)}
+                      {formatPrice(displayTotal, currency)}
                     </span>
                   </div>
                   <LocaleLink

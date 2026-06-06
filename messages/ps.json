@@ -137,22 +137,469 @@
       "columns": [
         {
           "title": "شرکت",
-          "links": ["د منډاوي په اړه", "څنګه کار کوي", "د پلورونکي برنامه", "مسلکونه"]
+          "links": [
+            "د منډاوي په اړه",
+            "څنګه کار کوي",
+            "د پلورونکي برنامه",
+            "مسلکونه"
+          ]
         },
         {
           "title": "مرسته",
-          "links": ["مرستې مرکز", "اړیکه", "فرمایش تعقیب", "د تحویل سیمې"]
+          "links": [
+            "مرستې مرکز",
+            "اړیکه",
+            "فرمایش تعقیب",
+            "د تحویل سیمې"
+          ]
         },
         {
           "title": "مقررات",
-          "links": ["محرمیت", "شرایطو", "بیرته ورکړه", "د پلورونکي شرایط"]
+          "links": [
+            "محرمیت",
+            "شرایطو",
+            "بیرته ورکړه",
+            "د پلورونکي شرایط"
+          ]
         },
         {
           "title": "ټولنیزې شبکې",
-          "links": ["Instagram", "Facebook", "TikTok", "LinkedIn"]
+          "links": [
+            "Instagram",
+            "Facebook",
+            "TikTok",
+            "LinkedIn"
+          ]
         }
       ],
       "copyright": "© 2026 منډاوي"
+    }
+  },
+  "Common": {
+    "brandName": "Mandawee",
+    "loading": "په بارولو کې...",
+    "loadingLogin": "ننوتل بارېږي...",
+    "loadingSignup": "نوم لیکنه بارېږي...",
+    "loadingCheckout": "چک‌اوټ بارېږي...",
+    "loadingCart": "ستاسو کارټ بارېږي...",
+    "redirecting": "لېږدول کېږي...",
+    "checkingAccount": "حساب ګورل کېږي...",
+    "saving": "خوندي کېږي...",
+    "save": "خوندي کړئ",
+    "saveChanges": "بدلونونه خوندي کړئ",
+    "cancel": "لغوه",
+    "edit": "سمون",
+    "refresh": "تازه کړئ",
+    "remove": "لرې کړئ",
+    "continue": "دوام",
+    "back": "شاته",
+    "apply": "پلي کړئ",
+    "applying": "پلي کېږي…",
+    "free": "وړیا",
+    "default": "اصلي",
+    "vendor": "پلورونکی",
+    "qty": "شمېر",
+    "new": "نوی",
+    "home": "کور",
+    "errors": {
+      "generic": "یو څه ستونزه رامنځته شوه. بیا هڅه وکړئ.",
+      "network": "د شبکې ستونزه. بیا هڅه وکړئ."
+    }
+  },
+  "Dashboard": {
+    "shell": {
+      "logOut": "وتل",
+      "openSidebar": "اړخ پټه خلاصه کړئ",
+      "closeSidebar": "اړخ پټه بنده کړئ",
+      "closeBackdrop": "د اړخ پټې شالید بنده کړئ"
+    },
+    "admin": {
+      "title": "د اډمین ډشبورډ",
+      "nav": {
+        "dashboard": "ډشبورډ",
+        "vendors": "پلورونکي",
+        "products": "محصولات",
+        "categories": "کټګورۍ",
+        "users": "کاروونکي"
+      }
+    },
+    "vendor": {
+      "title": "د پلورونکي ډشبورډ",
+      "titleWithStore": "د {storeName} ډشبورډ",
+      "nav": {
+        "dashboard": "ډشبورډ",
+        "products": "محصولات",
+        "coupons": "کوپنونه",
+        "promotions": "پروموشنونه",
+        "orders": "فرمایشونه",
+        "reports": "راپورونه",
+        "settings": "تنظیمات"
+      }
+    },
+    "customer": {
+      "title": "زما حساب",
+      "titleWithName": "د {firstName} حساب",
+      "nav": {
+        "overview": "لنډیز",
+        "settings": "تنظیمات"
+      }
+    }
+  },
+  "Account": {
+    "overview": {
+      "title": "لنډیز",
+      "subtitle": "خپل فرمایشونه وڅارئ او د تحویلي پتې خوندي کړئ.",
+      "loadingData": "فرمایشونه او پتې بارېږي...",
+      "stats": {
+        "orders": "فرمایشونه",
+        "addresses": "پتې",
+        "ordersTotal": "ټول {count}",
+        "addressesSaved": "{count} خوندي",
+        "totalSpent": "ټول لګښت: {amount}",
+        "addressesHint": "د چک‌اوټ لپاره د تحویلي معلومات چمتو وساتئ."
+      },
+      "orders": {
+        "title": "ستاسو فرمایشونه",
+        "subtitle": "د هر پلورونکي د تحویلي حالت وڅارئ.",
+        "emptyTitle": "تر اوسه هیڅ فرمایش نشته",
+        "emptyDescription": "کله چې فرمایش وکړئ، دلته به ښکاره شي.",
+        "startShopping": "پلورنه پیل کړئ",
+        "placed": "ثبت شوی {date}",
+        "payment": "تادیه",
+        "deliveryAddress": "د تحویلي پته",
+        "emptyDescriptionLong": "تر اوسه هیڅ فرمایش نلرئ. د میلمانه فرمایشونه چې ستاسو بریښنالیک سره ثبت شوي وي، وروسته له نوم لیکنې یا ننوتلو دلته ښکاره کېږي.",
+        "vendor": "پلورونکی",
+        "qty": "شمېر"
+      },
+      "addresses": {
+        "title": "خوندي پتې",
+        "subtitle": "د چټک چک‌اوټ لپاره خوندي پته وکاروئ.",
+        "add": "پته اضافه کړئ",
+        "newTitle": "نوې پته",
+        "editTitle": "پته سمون",
+        "latestOrderPrompt": "وروستۍ د فرمایش تحویلي پته خوندي کړئ؟",
+        "saveLatest": "د اصلي پتې په توګه خوندي کړئ",
+        "setDefault": "د اصلي پتې په توګه وټاکئ",
+        "empty": "تر اوسه هیڅ خوندي پته نشته.",
+        "subtitleLong": "د چک‌اوټ پتې په اوتومات ډول نه خوندي کېږي. دلته یوه اضافه کړئ تر څو راتلونکي چک‌اوټ اسانه وي.",
+        "saving": "خوندي کېږي…"
+      },
+      "fields": {
+        "fullName": "بشپړ نوم",
+        "phone": "تلیفون",
+        "addressLine1": "د پتې کرښه",
+        "city": "ښار",
+        "country": "هیواد",
+        "postalCode": "پوستي کوډ"
+      },
+      "orderStatus": {
+        "NEW": "نوی",
+        "PREPARING": "چمتو کېږي",
+        "SHIPPED": "لېږل شوی",
+        "DELIVERED": "تحویل شوی",
+        "CANCELLED": "لغوه شوی"
+      },
+      "errors": {
+        "loadFailed": "د حساب معلومات بار نشول."
+      }
+    },
+    "settings": {
+      "title": "تنظیمات",
+      "subtitle": "خپل پروفایل او پاسورډ اداره کړئ."
+    }
+  },
+  "CustomerProfile": {
+    "loading": "پروفایل بارېږي...",
+    "sections": {
+      "profileSecurity": "پروفایل او امنیت",
+      "profileSecurityLead": "خپل معلومات تازه کړئ یا د بریښنالیک له لارې پاسورډ بیا تنظیم کړئ.",
+      "profile": "پروفایل",
+      "profileLead": "خپل نوم او تلیفون تازه کړئ.",
+      "changePassword": "پاسورډ بدل کړئ",
+      "changePasswordLead": "اوسنی پاسورډ پېژندئ؟ دلته یې بدل کړئ.",
+      "changePasswordHint": "اوسنی پاسورډ پېژندئ؟ دلته یې بدل کړئ.",
+      "resetViaEmail": "د بریښنالیک له لارې بیا تنظیم",
+      "resetViaEmailLead": "پاسورډ هیر شوی؟ موږ به تایید کوډ ستاسو بریښنالیک ته ولیږو.",
+      "accountDetails": "د حساب جزئیات"
+    },
+    "fields": {
+      "fullName": "بشپړ نوم",
+      "email": "بریښنالیک",
+      "phone": "تلیفون",
+      "currentPassword": "اوسنی پاسورډ",
+      "newPassword": "نوی پاسورډ",
+      "confirmPassword": "نوی پاسورډ تایید کړئ",
+      "verificationCode": "تایید کوډ",
+      "emailReadonlyHint": "بریښنالیک دلته نشي بدلېدلی. د بدلون لپاره ملاتړ سره اړیکه ونیسئ."
+    },
+    "actions": {
+      "saveProfile": "پروفایل خوندي کړئ",
+      "savingProfile": "خوندي کېږي...",
+      "updatePassword": "پاسورډ تازه کړئ",
+      "updatingPassword": "تازه کېږي...",
+      "sendResetCode": "بیا تنظیم کوډ زما بریښنالیک ته ولیږئ",
+      "sending": "لیږل کېږي...",
+      "verifyCode": "کوډ تایید کړئ",
+      "verifying": "تایید کېږي...",
+      "resendCode": "کوډ بیا ولیږئ",
+      "setNewPassword": "نوی پاسورډ وټاکئ",
+      "savingPassword": "خوندي کېږي..."
+    },
+    "reset": {
+      "codeSent": "بیا تنظیم کوډ {email} ته ولیږل شو.",
+      "codeSentDev": "کوډ ولیږل شو. د پراختیا کوډ: {code}",
+      "codeVerified": "کوډ تایید شو. لاندې نوی پاسورډ ولیکئ.",
+      "passwordUpdated": "پاسورډ په بریالیتوب سره تازه شو.",
+      "forgotPrompt": "پاسورډ هیر شوی؟ موږ به تایید کوډ {email} ته ولیږو."
+    },
+    "validation": {
+      "currentPasswordRequired": "خپل اوسنی پاسورډ ولیکئ.",
+      "passwordMismatch": "نوی پاسورډ او تایید باید یو شان وي.",
+      "resetMismatch": "پاسورډ او تایید باید یو شان وي.",
+      "invalidCode": "سم ۶ رقمی کوډ ولیکئ.",
+      "resetExpired": "د بیا تنظیم ناسته پای ته ورسېده. نوی کوډ وغواړئ."
+    },
+    "toasts": {
+      "profileUpdated": "پروفایل تازه شو",
+      "profileUpdatedDesc": "ستاسو د حساب جزئیات خوندي شول.",
+      "profileFailed": "پروفایل خوندي نشو",
+      "passwordUpdated": "پاسورډ تازه شو",
+      "passwordUpdatedDesc": "ستاسو پاسورډ په بریالیتوب سره بدل شو.",
+      "passwordFailed": "پاسورډ تازه نشو",
+      "codeSent": "کوډ ولیږل شو",
+      "codeSentDesc": "د بیا تنظیم کوډ لپاره بریښنالیک وګورئ.",
+      "codeFailed": "کوډ ونه لیږل شو",
+      "verified": "کوډ تایید شو",
+      "verifiedDesc": "اوس کولی شئ نوی پاسورډ وټاکئ.",
+      "verifyFailed": "تایید ناکام شو",
+      "resetSuccess": "پاسورډ بیا تنظیم شو",
+      "resetSuccessDesc": "ستاسو پاسورډ تازه شو.",
+      "resetFailed": "بیا تنظیم ناکام شو"
+    },
+    "errors": {
+      "loadFailed": "پروفایل بار نشو."
+    }
+  },
+  "Auth": {
+    "login": {
+      "title": "ننوتل",
+      "subtitle": "خپل ډشبورډ ته د لاسرسي لپاره ننوځئ.",
+      "identifier": "بریښنالیک یا تلیفون",
+      "password": "پاسورډ",
+      "signIn": "ننوتل",
+      "signingIn": "ننوتل کېږي...",
+      "forgotPassword": "پاسورډ هیر شوی؟",
+      "newCustomer": "نوی پیرودونکی؟",
+      "createAccount": "حساب جوړ کړئ",
+      "failed": "ننوتل ناکام شو"
+    },
+    "signup": {
+      "title": "حساب جوړ کړئ",
+      "subtitle": "د باوري محلي پلورونکو څخه د پیرود لپاره Mandawee سره یوځای شئ.",
+      "fullName": "بشپړ نوم",
+      "email": "بریښنالیک",
+      "phone": "تلیفون",
+      "password": "پاسورډ",
+      "confirmPassword": "پاسورډ تایید کړئ",
+      "create": "حساب جوړ کړئ",
+      "creating": "حساب جوړېږي...",
+      "alreadyHave": "دمخه حساب لرئ؟",
+      "signIn": "ننوتل",
+      "otpTitle": "خپل بریښنالیک تایید کړئ",
+      "otpSubtitle": "۶ رقمی کوډ ولیکئ چې موږ {email} ته لیږلی دی.",
+      "verificationCode": "تایید کوډ",
+      "verify": "تایید",
+      "verifying": "تایید کېږي...",
+      "resendCode": "کوډ بیا ولیږئ",
+      "editDetails": "د حساب جزئیات سمون"
+    },
+    "forgotPassword": {
+      "title": "پاسورډ هیر شوی",
+      "subtitle": "موږ به تاسو ته د پاسورډ بیا تنظیم کوډ بریښنالیک کړو.",
+      "email": "بریښنالیک",
+      "sendCode": "کوډ ولیږئ",
+      "sending": "لیږل کېږي…",
+      "verificationCode": "تایید کوډ",
+      "verifyCode": "کوډ تایید کړئ",
+      "verifying": "تایید کېږي…",
+      "newPassword": "نوی پاسورډ",
+      "confirmPassword": "پاسورډ تایید کړئ",
+      "resetPassword": "پاسورډ بیا تنظیم کړئ",
+      "saving": "خوندي کېږي…",
+      "backToLogin": "ننوتل ته بیرته",
+      "codeSent": "کوډ ستاسو بریښنالیک ته ولیږل شو.",
+      "codeSentDev": "کوډ ولیږل شو. د پراختیا کوډ: {code}",
+      "codeVerified": "کوډ تایید شو. نوی پاسورډ وټاکئ.",
+      "passwordMismatch": "پاسورډونه سره نه برابرېږي.",
+      "requestFailed": "غوښتنه ناکامه شوه",
+      "verifyFailed": "تایید ناکام شو",
+      "resetFailed": "بیا تنظیم ناکام شو"
+    },
+    "passwordRequirements": {
+      "ariaLabel": "د پاسورډ شرطونه",
+      "length": "لږ تر لږه ۸ توري",
+      "upper": "یو لوی توری (A–Z)",
+      "lower": "یو کوچنی توری (a–z)",
+      "special": "یو ځانګړی توری (!@#$…)",
+      "missing": "پاسورډ باید ټول شرطونه پوره کړي (نشتوالی: {rule}).",
+      "title": "د پاسورډ شرطونه"
+    },
+    "accountMenu": {
+      "label": "د حساب مینو",
+      "account": "حساب",
+      "adminDashboard": "د اډمین ډشبورډ",
+      "vendorDashboard": "د پلورونکي ډشبورډ",
+      "myAccount": "زما حساب",
+      "signOut": "وتل"
+    },
+    "languages": {
+      "select": "ژبه وټاکئ",
+      "en": "English",
+      "ps": "پښتو",
+      "fa-AF": "دری"
+    },
+    "currencies": {
+      "select": "اسعار"
+    }
+  },
+  "VendorPages": {
+    "dashboard": {
+      "title": "د پلورونکي ډشبورډ",
+      "subtitle": "د خپل پلورنځي د فعالیت لنډیز."
+    },
+    "products": {
+      "title": "د محصولاتو مدیریت"
+    },
+    "coupons": {
+      "title": "کوپنونه"
+    },
+    "promotions": {
+      "title": "د پلورنځي پروموشنونه"
+    },
+    "orders": {
+      "title": "فرمایشونه",
+      "subtitle": "هغه فرمایشونه اداره کړئ چې ستاسو محصولات پکې دي"
+    },
+    "reports": {
+      "title": "راپورونه",
+      "tabs": {
+        "sales": "د پلور لنډیز",
+        "fees": "فیسونه او غړیتوب",
+        "payouts": "د تادیې تاریخچه"
+      }
+    },
+    "settings": {
+      "title": "تنظیمات",
+      "subtitle": "د سوداګرۍ پروفایل او د تادیې جزئیات اداره کړئ.",
+      "tabs": {
+        "business": "د سوداګرۍ معلومات",
+        "payout": "د بانک جزئیات"
+      }
+    }
+  },
+  "AdminPages": {
+    "orders": "فرمایشونه",
+    "users": "کاروونکي",
+    "reports": "راپورونه",
+    "settings": "تنظیمات"
+  },
+  "Cart": {
+    "title": "ستاسو کارټ",
+    "subtitle": "خپل توکي وڅارئ او کله چمتو یاست خوندي چک‌اوټ وکړئ.",
+    "items": "توکي",
+    "item": "توکی",
+    "emptyTitle": "ستاسو کارټ خالي دی",
+    "emptyDescription": "ښکاري تر اوسه هیڅ نه دی اضافه کړی. زموږ بازار وګورئ او څه واخلئ.",
+    "emptyFooter": "د باوري محلي پلورونکو غوره انتخابونه",
+    "browseProducts": "محصولات وګورئ",
+    "continueShopping": "پلورنه دوام ورکړئ",
+    "orderSummary": "د فرمایش لنډیز",
+    "subtotal": "فرعي مجموعه",
+    "shipping": "لېږد",
+    "shippingFree": "وړیا",
+    "shippingCalculated": "په چک‌اوټ کې محاسبه کېږي",
+    "tax": "اټکل شوی مالیه",
+    "total": "ټول",
+    "deliveryEstimate": "د تحویلي اټکل",
+    "deliveryWindow": "۲–۴ کاري ورځې",
+    "deliveryNote": "په چک‌اوټ کې ممکن د ورځې د لېږد اختیارونه شتون ولري.",
+    "checkout": "چک‌اوټ ته لاړ شئ",
+    "secureCheckout": "خوندي چک‌اوټ",
+    "remove": "لرې کړئ",
+    "each": "هرو",
+    "lineTotal": "د کرښې مجموعه",
+    "recommended": "ښايي خوښ کړئ",
+    "recommendedSubtitle": "د خپل فرمایش بشپړولو لپاره مشهور انتخابونه",
+    "viewAll": "ټول وګورئ",
+    "breadcrumb": {
+      "home": "کور",
+      "cart": "د پیرود کارټ",
+      "itemsInCart": "په کارټ کې توکي"
+    },
+    "quantity": {
+      "decrease": "شمېر کم کړئ",
+      "increase": "شمېر زیات کړئ"
+    }
+  },
+  "Checkout": {
+    "title": "چک‌اوټ",
+    "loading": "چک‌اوټ بارېږي...",
+    "steps": {
+      "contact": "اړیکه",
+      "address": "پته",
+      "payment": "تادیه"
+    },
+    "contact": {
+      "fullName": "بشپړ نوم",
+      "email": "بریښنالیک",
+      "phone": "د تلیفون شمېره",
+      "fullNamePlaceholder": "John Doe",
+      "emailPlaceholder": "you@example.com",
+      "phonePlaceholder": "+93 70 000 0000"
+    },
+    "address": {
+      "street": "د پتې کرښه",
+      "city": "ښار",
+      "postalCode": "پوستي کوډ",
+      "country": "هیواد",
+      "streetPlaceholder": "123 Main Street, Apt 4",
+      "cityPlaceholder": "Kabul",
+      "postalPlaceholder": "1001",
+      "countryPlaceholder": "Afghanistan"
+    },
+    "payment": {
+      "cod": "د تحویلي پر مهال نغدي",
+      "codSub": "کله چې فرمایش راشي نغدي تادیه وکړئ",
+      "card": "کریډیټ / ډیبټ کارت",
+      "cardSub": "Visa, Mastercard, Amex — د Stripe له لارې خوندي",
+      "cardUnavailable": "Stripe تنظیم نشوی — .env.local ته کیلي اضافه کړئ"
+    },
+    "summary": {
+      "title": "د فرمایش لنډیز",
+      "yourCart": "ستاسو کارټ",
+      "subtotal": "فرعي مجموعه",
+      "delivery": "لېږد",
+      "discount": "تخفیف",
+      "total": "ټول",
+      "qty": "شمېر"
+    },
+    "coupon": {
+      "placeholder": "SAVE10",
+      "alreadyApplied": "دا کوپن دمخه پلي شوی دی.",
+      "applyFailed": "کوپن پلي نشو."
+    },
+    "success": {
+      "title": "فرمایش ثبت شو!",
+      "codMessage": "ستاسو فرمایش تایید شو. د تحویلي پر مهال نغدي چمتو وساتئ.",
+      "cardMessage": "ستاسو تادیه بریالۍ شوه او پلورونکی خبر شو."
+    },
+    "errors": {
+      "requiredFields": "ټول اړین ځایونه ډک کړئ.",
+      "invalidEmail": "سم بریښنالیک ولیکئ.",
+      "placeOrderFailed": "فرمایش ثبت نشو. بیا هڅه وکړئ.",
+      "paymentFailed": "تادیه ناکامه شوه. بیا هڅه وکړئ.",
+      "orderNotRecorded": "فرمایش ثبت نشو. له ملاتړ سره اړیکه ونیسئ.",
+      "pricingFailed": "بیه بار نشوه. بیا هڅه وکړئ."
     }
   }
 }

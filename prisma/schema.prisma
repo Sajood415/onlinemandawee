@@ -215,9 +215,10 @@ model User {
   status          UserStatus    @default(PENDING)
   isEmailVerified Boolean       @default(false)
   isPhoneVerified Boolean       @default(false)
-  lastLoginAt     DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  lastLoginAt        DateTime?
+  preferredCurrency  String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
   sessions        Session[]
   auditLogs       AuditLog[]
   vendorProfile   VendorProfile?

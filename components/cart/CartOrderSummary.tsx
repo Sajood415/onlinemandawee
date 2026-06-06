@@ -5,9 +5,12 @@ import { ArrowRight, Lock, Truck } from "lucide-react";
 
 import {
   ESTIMATED_TAX_RATE,
-  getCartCopy,
   STANDARD_SHIPPING_FEE,
 } from "@/components/cart/copy";
+import { useCartCopy } from "@/lib/i18n/use-cart-copy";
+import { useCurrency } from "@/store/currency-context";
+
+export { ESTIMATED_TAX_RATE, STANDARD_SHIPPING_FEE };
 
 type CartOrderSummaryProps = {
   subtotal: number;
@@ -24,7 +27,9 @@ export function CartOrderSummary({
   taxAmount,
   total,
 }: CartOrderSummaryProps) {
-  const copy = getCartCopy();
+  const copy = useCartCopy();
+  const { currency, formatPrice } = useCurrency();
+  const fmt = (amount: number) => formatPrice(amount, currency);
 
   return (
     <aside className="lg:sticky lg:top-24">
@@ -41,17 +46,17 @@ export function CartOrderSummary({
         <div className="space-y-3 px-5 py-4 text-sm">
           <div className="flex items-center justify-between text-neutral-600">
             <span>{copy.subtotal}</span>
-            <span className="font-semibold text-neutral-900">${subtotal.toFixed(2)}</span>
+            <span className="font-semibold text-neutral-900">{fmt(subtotal)}</span>
           </div>
           <div className="flex items-center justify-between text-neutral-600">
             <span>{copy.shipping}</span>
             <span className="font-semibold text-neutral-900">
-              {shippingFee <= 0 ? copy.shippingFree : `$${shippingFee.toFixed(2)}`}
+              {shippingFee <= 0 ? copy.shippingFree : fmt(shippingFee)}
             </span>
           </div>
           <div className="flex items-center justify-between text-neutral-600">
             <span>{copy.tax}</span>
-            <span className="font-semibold text-neutral-900">${taxAmount.toFixed(2)}</span>
+            <span className="font-semibold text-neutral-900">{fmt(taxAmount)}</span>
           </div>
         </div>
 
@@ -59,7 +64,7 @@ export function CartOrderSummary({
           <div className="flex items-end justify-between">
             <span className="text-sm font-semibold text-neutral-700">{copy.total}</span>
             <span className="text-2xl font-bold tracking-tight text-[#0f3460]">
-              ${total.toFixed(2)}
+              {fmt(total)}
             </span>
           </div>
         </div>

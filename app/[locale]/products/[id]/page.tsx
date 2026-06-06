@@ -23,16 +23,18 @@ import {
 } from "lucide-react";
 import productData from "@/data/product.json";
 import { useCart } from "@/store/cart-context";
+import { useCurrency } from "@/store/currency-context";
 import {
   localizeDelivery,
   localizeVendor,
 } from "@/lib/localization/product-vendor";
+import { RelatedProducts } from "@/components/products/RelatedProducts";
+import type { CatalogRow } from "@/components/products/types";
 import {
   fetchPublicCatalogProduct,
-  fetchPublicCatalogProducts,
-  formatCatalogPrice,
   type PublicCatalogProduct,
 } from "@/lib/products/public-catalog";
+import { fetchRelatedProductsByCategory } from "@/lib/products/related-products";
 
 const allProducts = productData.featuredProducts;
 
@@ -175,10 +177,11 @@ export default function ProductDetailPage() {
   const locale = useLocale() as "en" | "ps" | "fa-AF";
   const isRtl = locale !== "en";
   const productId = params.id as string;
+  const { formatPrice } = useCurrency();
 
   const staticProduct = allProducts.find((p) => p.id === productId);
   const [product, setProduct] = useState<DetailProduct | null>(staticProduct ?? null);
-  const [relatedProducts, setRelatedProducts] = useState<DetailProduct[]>([]);
+  const [relatedProducts, setRelatedProducts] = useState<CatalogRow[]>([]);
   const [loading, setLoading] = useState(!staticProduct);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
 
@@ -192,31 +195,26 @@ export default function ProductDetailPage() {
     let mounted = true;
 
     const load = async () => {
-      if (staticProduct) {
-        setRelatedProducts(
-          allProducts
-            .filter((p) => p.category === staticProduct.category && p.id !== staticProduct.id)
-            .slice(0, 4)
-        );
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
+      setLoading(!staticProduct);
       try {
-        const fetched = await fetchPublicCatalogProduct(productId);
-        if (!mounted) return;
-        setProduct(fetched);
+        const resolved =
+          staticProduct ?? (await fetchPublicCatalogProduct(productId));
 
-        const catalog = await fetchPublicCatalogProducts({
-          category: fetched.category,
-        });
         if (!mounted) return;
-        setRelatedProducts(
-          catalog.filter((p) => p.id !== fetched.id).slice(0, 4)
+        setProduct(resolved);
+
+        const related = await fetchRelatedProductsByCategory(
+          resolved.category,
+          resolved.id
         );
+
+        if (!mounted) return;
+        setRelatedProducts(related);
       } catch {
-        if (mounted) setProduct(null);
+        if (mounted) {
+          setProduct(null);
+          setRelatedProducts([]);
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -233,16 +231,21 @@ export default function ProductDetailPage() {
     return product.variants.find((v) => v.id === selectedVariantId) ?? product.variants[0];
   }, [product, selectedVariantId]);
 
+  const productCurrency =
+    product && "currency" in product && product.currency ? product.currency : "USD";
+
   const displayPrice = useMemo(() => {
     if (!product) return "";
     if (activeVariant?.priceAmount != null) {
-      return formatCatalogPrice(
-        activeVariant.priceAmount / 100,
-        "currency" in product ? product.currency : "USD"
-      );
+      return formatPrice(activeVariant.priceAmount / 100, productCurrency);
     }
-    return product.priceDisplay;
-  }, [product, activeVariant]);
+    return formatPrice(product.price, productCurrency);
+  }, [product, activeVariant, formatPrice, productCurrency]);
+
+  const compareAtPrice = useMemo(() => {
+    if (!product || product.price <= 50 || activeVariant) return null;
+    return formatPrice(product.price * 1.15, productCurrency);
+  }, [product, activeVariant, formatPrice, productCurrency]);
 
   const inStock = useMemo(() => {
     if (!product) return false;
@@ -475,21 +478,25 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Price - Walmart Blue */}
-            <div className="mb-6">
+            <div className="mb-4">
               <div className="flex items-baseline gap-3">
                 <span className="text-3xl font-bold text-gray-900">
                   {displayPrice}
                 </span>
-                {product.price > 50 && !activeVariant && (
+                {compareAtPrice ? (
                   <span className="text-sm text-gray-500">
                     {locale === "en" ? "Was" : locale === "ps" ? "و" : "بود"}{" "}
-                    <span className="line-through">
-                      ${(product.price * 1.15).toFixed(2)}
-                    </span>
+                    <span className="line-through">{compareAtPrice}</span>
                   </span>
-                )}
+                ) : null}
               </div>
             </div>
+
+            {product.description[locale] ? (
+              <p className="mb-6 text-sm leading-relaxed text-gray-600">
+                {product.description[locale]}
+              </p>
+            ) : null}
 
             {"availableCoupons" in product &&
             product.availableCoupons &&
@@ -755,53 +762,16 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        {/* Related Products */}
-        {relatedProducts.length > 0 && (
-          <div className="pt-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">
-              {locale === "en"
-                ? "People also viewed"
-                : locale === "ps"
-                  ? "خلک هم وکتل"
-                  : "مردم همچنین مشاهده کردند"}
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {relatedProducts.map((related) => (
-                <Link
-                  key={related.id}
-                  href={`/products/${related.id}`}
-                  className="group block"
-                >
-                  <div className="relative aspect-square bg-gray-50 rounded-lg overflow-hidden mb-3">
-                    <CatalogImage
-                      src={related.image}
-                      alt={related.name[locale]}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mb-1">
-                    <bdi dir="ltr">{localizeVendor(related.vendor, locale)}</bdi>
-                  </p>
-                  <h3 className="text-sm text-gray-900 mb-2 line-clamp-2 group-hover:text-primary hover:underline">
-                    {related.name[locale]}
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-gray-900">
-                      {related.priceDisplay}
-                    </span>
-                    <div className="flex items-center gap-0.5">
-                      <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                      <span className="text-xs font-medium text-gray-700">
-                        {related.rating}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
+        <RelatedProducts
+          products={relatedProducts}
+          locale={locale}
+          categorySlug={product.category}
+          categoryLabel={
+            "categoryName" in product && product.categoryName
+              ? product.categoryName
+              : product.category
+          }
+        />
       </div>
     </div>
   );
