@@ -1284,14 +1284,6 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {/* Test card hint — only show when card is selected */}
-          {step === 2 && paymentMethod === "card" && stripeAvailable && (
-            <div className="rounded-xl bg-blue-50 border border-blue-100 px-5 py-4 text-sm text-blue-700 space-y-1">
-              <p className="font-semibold">Test mode — use test cards only</p>
-              <p>Card number: <span className="font-mono font-bold">4242 4242 4242 4242</span></p>
-              <p>Expiry: any future date · CVC: any 3 digits · ZIP: any 5 digits</p>
-            </div>
-          )}
         </div>
 
         {/* Right: order summary */}
