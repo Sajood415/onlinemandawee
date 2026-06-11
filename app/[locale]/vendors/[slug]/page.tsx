@@ -9,15 +9,12 @@ import { useParams } from "next/navigation";
 import {
   CalendarDays,
   ChevronRight,
-  MapPin,
   ShoppingCart,
-  Star,
   Store,
   Truck,
 } from "lucide-react";
 
 import { PageLoader } from "@/components/ui/PageLoader";
-import productData from "@/data/product.json";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import {
@@ -26,9 +23,6 @@ import {
 } from "@/lib/products/public-catalog";
 import { toast } from "@/lib/utils/toast";
 import { useCart } from "@/store/cart-context";
-
-const allProducts = productData.featuredProducts;
-const vendorProfiles = productData.vendorProfiles ?? [];
 
 type PublicPromoBanner = {
   id: string;
@@ -67,11 +61,6 @@ export default function VendorStorePage() {
   const [loading, setLoading] = useState(true);
   const [apiStore, setApiStore] = useState<ApiVendorStore | null>(null);
 
-  const staticVendor = useMemo(
-    () => vendorProfiles.find((item) => item.slug === slug) ?? null,
-    [slug]
-  );
-
   useEffect(() => {
     let mounted = true;
     setLoading(true);
@@ -86,7 +75,7 @@ export default function VendorStorePage() {
           return;
         }
       } catch {
-        // fall through to static catalog data
+        // API unavailable
       }
 
       if (mounted) setApiStore(null);
@@ -102,31 +91,28 @@ export default function VendorStorePage() {
   }, [slug]);
 
   const vendorProducts = useMemo(() => {
-    if (apiStore) return apiStore.products.map(mapApiProductToCatalog);
-    return allProducts.filter((product) => product.vendorSlug === slug);
-  }, [apiStore, slug]);
+    return apiStore?.products.map(mapApiProductToCatalog) ?? [];
+  }, [apiStore]);
 
   const vendorName =
-    apiStore?.vendor.storeName ?? staticVendor?.name ?? slug.replaceAll("-", " ");
+    apiStore?.vendor.storeName ?? slug.replaceAll("-", " ");
   const vendorDescription =
     apiStore?.vendor.description ??
-    staticVendor?.description[locale] ??
     (locale === "en"
       ? "Browse products from this vendor."
       : locale === "ps"
         ? "د دې پلورونکي محصولات وګورئ."
         : "محصولات این فروشنده را ببینید.");
-  const vendorLogo = apiStore?.vendor.logoUrl ?? staticVendor?.logo ?? null;
+  const vendorLogo = apiStore?.vendor.logoUrl ?? null;
   const promoBanners = apiStore?.promoBanners ?? [];
   const publicCoupons = apiStore?.publicCoupons ?? [];
   const vendorCover =
     promoBanners[0]?.imageUrl ??
-    staticVendor?.coverImage ??
     vendorLogo ??
     "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=80";
   const joinedYear = apiStore?.vendor.approvedAt
     ? new Date(apiStore.vendor.approvedAt).getFullYear()
-    : staticVendor?.joinedYear ?? new Date().getFullYear();
+    : new Date().getFullYear();
 
   if (loading) {
     return (
@@ -144,7 +130,7 @@ export default function VendorStorePage() {
     );
   }
 
-  if (!apiStore && !staticVendor && vendorProducts.length === 0) {
+  if (!apiStore) {
     return (
       <div className="min-h-screen bg-white">
         <div className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6 lg:px-8">
@@ -276,9 +262,13 @@ export default function VendorStorePage() {
                 ) : null}
                 <div className="pb-1">
                   <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">{vendorName}</h1>
-                  {staticVendor?.tagline?.[locale] ? (
-                    <p className="text-sm text-gray-600">{staticVendor.tagline[locale]}</p>
-                  ) : null}
+                  <p className="text-sm text-gray-600">
+                    {locale === "en"
+                      ? "Verified marketplace vendor"
+                      : locale === "ps"
+                        ? "تصدیق شوی مارکیټ پلیس پلورونکی"
+                        : "فروشنده تاییدشده بازار"}
+                  </p>
                 </div>
               </div>
 
@@ -291,27 +281,10 @@ export default function VendorStorePage() {
             <p className="mt-5 text-sm leading-6 text-gray-700 sm:text-base">{vendorDescription}</p>
 
             <div className="mt-5 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-              {staticVendor ? (
-                <>
-                  <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-gray-700">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium">{staticVendor.rating}</span>
-                  </div>
-                  <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-gray-700">
-                    <Truck className="h-4 w-4 text-primary" />
-                    <span>{staticVendor.fulfillmentRate} fulfillment</span>
-                  </div>
-                  <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-gray-700">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    <span>{staticVendor.location[locale]}</span>
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-gray-700">
-                  <Truck className="h-4 w-4 text-primary" />
-                  <span>{locale === "en" ? "Verified vendor" : locale === "ps" ? "تایید شوی پلورونکی" : "فروشنده تأیید شده"}</span>
-                </div>
-              )}
+              <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-gray-700">
+                <Truck className="h-4 w-4 text-primary" />
+                <span>{locale === "en" ? "Verified vendor" : locale === "ps" ? "تایید شوی پلورونکی" : "فروشنده تأیید شده"}</span>
+              </div>
             </div>
 
             <div className="mt-3 inline-flex items-center gap-2 text-xs text-gray-500">

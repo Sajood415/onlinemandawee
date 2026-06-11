@@ -1,8 +1,33 @@
 import type { PublicCatalogProduct } from "@/lib/products/public-catalog";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
-import productData from "@/data/product.json";
 
-export type CatalogRow = (typeof productData.featuredProducts)[number] | PublicCatalogProduct;
+export type CatalogRow =
+  | {
+      id: string;
+      price: number;
+      priceDisplay: string;
+      vendor: string;
+      image: string;
+      images: string[];
+      name: Record<SupportedLocale, string>;
+      badge: Record<SupportedLocale, string>;
+      category: string;
+      categoryName: string;
+      rating: number;
+      reviews: number;
+      delivery: string;
+      description: Record<SupportedLocale, string>;
+      features: string[];
+      inStock: boolean;
+      vendorSlug: string;
+      vendorProfileId: string;
+      stockQty: number;
+      currency: string;
+      isVendorProduct: true;
+      variants?: PublicCatalogProduct["variants"];
+      availableCoupons?: PublicCatalogProduct["availableCoupons"];
+    }
+  | PublicCatalogProduct;
 
 export type CategoryOption = {
   id: string;

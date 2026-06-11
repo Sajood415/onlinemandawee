@@ -11,9 +11,6 @@ import type { CatalogRow } from "@/components/products/types";
 import { filterGiftProducts } from "@/lib/gifts/filter-gift-products";
 import { fetchPublicCatalogProducts } from "@/lib/products/public-catalog";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
-import productData from "@/data/product.json";
-
-const staticProducts = productData.featuredProducts;
 
 function GiftsPageContent() {
   const locale = useLocale() as SupportedLocale;
@@ -44,7 +41,7 @@ function GiftsPageContent() {
   }, []);
 
   const giftProducts = useMemo(
-    () => filterGiftProducts([...vendorProducts, ...staticProducts], locale),
+    () => filterGiftProducts(vendorProducts, locale),
     [locale, vendorProducts]
   );
 

@@ -4,7 +4,6 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import productCatalog from "@/data/product.json";
 import { CatalogImage } from "@/components/catalog/CatalogImage";
 import { useCart } from "@/store/cart-context";
 import { toast } from "@/lib/utils/toast";
@@ -18,6 +17,7 @@ type LocaleKey = "en" | "ps" | "fa-AF";
 
 type Row = {
   id: string;
+  slug: string;
   price: number;
   priceDisplay: string;
   image: string;
@@ -26,9 +26,10 @@ type Row = {
   vendorSlug: string;
 };
 
-function toRow(product: PublicCatalogProduct | (typeof productCatalog.featuredProducts)[number]): Row {
+function toRow(product: PublicCatalogProduct): Row {
   return {
     id: product.id,
+    slug: product.slug,
     price: product.price,
     priceDisplay: product.priceDisplay,
     image: product.image,
@@ -101,7 +102,7 @@ function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
 }
 
 type Props = {
-  productIds?: string[];
+  productIds?: readonly string[];
   showTitle?: boolean;
   /** When set (including `[]`), skips fetching the full catalog — use on homepage sections. */
   sharedVendorProducts?: PublicCatalogProduct[];
@@ -114,7 +115,6 @@ export function HomeProductRail({
 }: Props) {
   const locale = useLocale() as LocaleKey;
   const t = useTranslations("Homepage.store");
-  const staticAll = productCatalog.featuredProducts;
   const [vendorRows, setVendorRows] = useState<Row[]>(() =>
     sharedVendorProducts ? sharedVendorProducts.map(toRow) : []
   );
@@ -130,14 +130,15 @@ export function HomeProductRail({
       .catch(() => setVendorRows([]));
   }, [sharedVendorProducts]);
 
-  const staticRows = productIds?.length
-    ? (productIds
-        .map((id) => staticAll.find((p) => p.id === id))
-        .filter((p): p is (typeof staticAll)[number] => Boolean(p))
-        .map(toRow))
-    : staticAll.map(toRow);
-
-  const rows = [...vendorRows, ...staticRows.filter((p) => !vendorRows.some((v) => v.id === p.id))];
+  const rows = productIds?.length
+    ? vendorRows.filter(
+        (product) =>
+          productIds.includes(product.id) ||
+          productIds.includes(product.slug)
+      )
+    : vendorRows;
+  const isLoading = sharedVendorProducts === undefined && vendorRows.length === 0;
+  const skeletonCount = 4;
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -157,39 +158,65 @@ export function HomeProductRail({
       ) : null}
 
       <div className="relative w-full min-w-0">
-        <button
-          type="button"
-          onClick={() => scrollByPage(-1)}
-          className="pointer-events-auto absolute left-1 top-[92px] z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white/95 text-neutral-700 shadow-sm backdrop-blur-sm transition hover:bg-neutral-50 active:scale-95 sm:left-2 sm:top-[100px] md:left-3 md:h-10 md:w-10 md:top-[108px]"
-          aria-label="prev"
-        >
-          <ChevronLeft className="h-4 w-4 stroke-[1.6] md:h-[18px] md:w-[18px]" />
-        </button>
-        <button
-          type="button"
-          onClick={() => scrollByPage(1)}
-          className="pointer-events-auto absolute right-1 top-[92px] z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white/95 text-neutral-700 shadow-sm backdrop-blur-sm transition hover:bg-neutral-50 active:scale-95 sm:right-2 sm:top-[100px] md:right-3 md:h-10 md:w-10 md:top-[108px]"
-          aria-label="next"
-        >
-          <ChevronRight className="h-4 w-4 stroke-[1.6] md:h-[18px] md:w-[18px]" />
-        </button>
-
-        <div
-          ref={scrollRef}
-          dir="ltr"
-          className="flex w-full min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth touch-pan-x [&::-webkit-scrollbar]:hidden"
-        >
-          {rows.map((p) => (
-            <div
-              key={p.id}
-              className="box-border min-w-0 shrink-0 snap-start basis-[calc((100%-0.75rem)/2)] md:basis-[calc((100%-2.25rem)/4)]"
+        {!isLoading ? (
+          <>
+            <button
+              type="button"
+              onClick={() => scrollByPage(-1)}
+              className="pointer-events-auto absolute left-1 top-[92px] z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white/95 text-neutral-700 shadow-sm backdrop-blur-sm transition hover:bg-neutral-50 active:scale-95 sm:left-2 sm:top-[100px] md:left-3 md:h-10 md:w-10 md:top-[108px]"
+              aria-label="prev"
             >
-              <div className="h-full px-1 sm:px-2 md:px-[15px]">
-                <ProductCard p={p} locale={locale} />
+              <ChevronLeft className="h-4 w-4 stroke-[1.6] md:h-[18px] md:w-[18px]" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollByPage(1)}
+              className="pointer-events-auto absolute right-1 top-[92px] z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white/95 text-neutral-700 shadow-sm backdrop-blur-sm transition hover:bg-neutral-50 active:scale-95 sm:right-2 sm:top-[100px] md:right-3 md:h-10 md:w-10 md:top-[108px]"
+              aria-label="next"
+            >
+              <ChevronRight className="h-4 w-4 stroke-[1.6] md:h-[18px] md:w-[18px]" />
+            </button>
+          </>
+        ) : null}
+
+        {isLoading ? (
+          <div
+            dir="ltr"
+            className="flex w-full min-w-0 gap-3 overflow-x-hidden overflow-y-hidden py-0.5"
+          >
+            {Array.from({ length: skeletonCount }).map((_, index) => (
+              <div
+                key={`home-rail-skeleton-${index}`}
+                className="box-border min-w-0 shrink-0 basis-[calc((100%-2.25rem)/4)] px-1 sm:px-2 md:px-[15px]"
+              >
+                <div className="animate-pulse">
+                  <div className="aspect-square w-full rounded-md bg-neutral-200" />
+                  <div className="mt-3 h-3 w-20 rounded bg-neutral-200" />
+                  <div className="mt-2 h-4 w-full rounded bg-neutral-200" />
+                  <div className="mt-2 h-4 w-2/3 rounded bg-neutral-200" />
+                  <div className="mt-3 h-9 w-full rounded-sm bg-neutral-200" />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div
+            ref={scrollRef}
+            dir="ltr"
+            className="flex w-full min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth touch-pan-x [&::-webkit-scrollbar]:hidden"
+          >
+            {rows.map((p) => (
+              <div
+                key={p.id}
+                className="box-border min-w-0 shrink-0 snap-start basis-[calc((100%-0.75rem)/2)] md:basis-[calc((100%-2.25rem)/4)]"
+              >
+                <div className="h-full px-1 sm:px-2 md:px-[15px]">
+                  <ProductCard p={p} locale={locale} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

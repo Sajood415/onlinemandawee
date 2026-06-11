@@ -21,7 +21,6 @@ import {
   Loader2,
   Tag,
 } from "lucide-react";
-import productData from "@/data/product.json";
 import { useCart } from "@/store/cart-context";
 import { useCurrency } from "@/store/currency-context";
 import {
@@ -35,10 +34,6 @@ import {
   type PublicCatalogProduct,
 } from "@/lib/products/public-catalog";
 import { fetchRelatedProductsByCategory } from "@/lib/products/related-products";
-
-const allProducts = productData.featuredProducts;
-
-type DetailProduct = (typeof allProducts)[number] | PublicCatalogProduct;
 
 const featureTranslations = {
   "Premium quality products": {
@@ -179,10 +174,9 @@ export default function ProductDetailPage() {
   const productId = params.id as string;
   const { formatPrice } = useCurrency();
 
-  const staticProduct = allProducts.find((p) => p.id === productId);
-  const [product, setProduct] = useState<DetailProduct | null>(staticProduct ?? null);
+  const [product, setProduct] = useState<PublicCatalogProduct | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<CatalogRow[]>([]);
-  const [loading, setLoading] = useState(!staticProduct);
+  const [loading, setLoading] = useState(true);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
 
   const [selectedImage, setSelectedImage] = useState(0);
@@ -195,10 +189,9 @@ export default function ProductDetailPage() {
     let mounted = true;
 
     const load = async () => {
-      setLoading(!staticProduct);
+      setLoading(true);
       try {
-        const resolved =
-          staticProduct ?? (await fetchPublicCatalogProduct(productId));
+        const resolved = await fetchPublicCatalogProduct(productId);
 
         if (!mounted) return;
         setProduct(resolved);
@@ -224,7 +217,7 @@ export default function ProductDetailPage() {
     return () => {
       mounted = false;
     };
-  }, [productId, staticProduct]);
+  }, [productId]);
 
   const activeVariant = useMemo(() => {
     if (!product || !("variants" in product) || !product.variants?.length) return null;

@@ -11,8 +11,7 @@
     "prisma:generate": "prisma generate",
     "prisma:push": "dotenv -e .env.local -- prisma db push",
     "prisma:studio": "dotenv -e .env.local -- prisma studio",
-    "seed:admin": "node --import tsx scripts/seed-admin.ts",
-    "seed:categories": "dotenv -e .env.local -- node --import tsx scripts/seed-categories.ts"
+    "seed:admin": "node --import tsx scripts/seed-admin.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

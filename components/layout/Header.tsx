@@ -33,7 +33,6 @@ import {
   UserCircle,
 } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import productData from "@/data/product.json";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import {
   HEADER_BAR_CLASS,
@@ -76,16 +75,11 @@ const sheetVariants: Variants = {
 };
 
 const localizeProductName = (
-  productId: string,
+  _productId: string,
   fallbackName: string,
-  locale: SupportedLocale,
+  _locale: SupportedLocale,
 ) => {
-  const product = productData.featuredProducts.find((p) => p.id === productId);
-  if (!product) return fallbackName;
-  if (locale === "en" || locale === "ps" || locale === "fa-AF") {
-    return product.name[locale];
-  }
-  return product.name.en;
+  return fallbackName;
 };
 
 type NavLinkSize = "mobile" | "tablet" | "desktop";
@@ -100,9 +94,8 @@ function isNavLinkActive(pathname: string, href: string) {
 
 function getNavLinkClassName(pathname: string, href: string, size: NavLinkSize) {
   const active = isNavLinkActive(pathname, href);
-  const height = size === "mobile" ? "h-7" : "h-8";
   const padding =
-    size === "mobile" ? "px-2 min-[360px]:px-2.5" : size === "tablet" ? "px-2.5" : "px-3";
+    size === "mobile" ? "px-2 min-[360px]:px-2.5" : size === "tablet" ? "px-3" : "px-4";
   const text =
     size === "mobile"
       ? "text-[10px] min-[360px]:text-[11px]"
@@ -110,11 +103,13 @@ function getNavLinkClassName(pathname: string, href: string, size: NavLinkSize) 
         ? "text-[13px]"
         : "text-[13px] lg:text-[14px]";
 
+  const base = `inline-flex h-full min-h-12 sm:min-h-14 items-center ${padding} ${text} whitespace-nowrap shrink-0 transition-colors`;
+
   if (active) {
-    return `inline-flex ${height} items-center rounded-full ${padding} ${text} font-extrabold whitespace-nowrap shrink-0 bg-primary/10 text-primary ring-1 ring-primary/20 transition-all`;
+    return `${base} font-extrabold text-primary`;
   }
 
-  return `inline-flex ${height} items-center rounded-full ${padding} ${text} font-bold whitespace-nowrap shrink-0 text-gray-900 transition-all hover:bg-gray-100 hover:text-primary`;
+  return `${base} font-bold text-gray-900 hover:text-primary`;
 }
 
 function HeaderNavLink({
@@ -502,7 +497,7 @@ export default function Header() {
         dir={isRtl ? "rtl" : "ltr"}
         className="relative z-[9997] overflow-x-clip border-b border-gray-200 bg-white text-gray-900 shadow-[0_2px_8px_rgba(15,23,42,0.06)]"
       >
-        <div className="mx-auto flex h-12 w-full min-w-0 max-w-7xl items-center sm:h-14 ps-[max(0.375rem,env(safe-area-inset-left,0px))] pe-[max(0.375rem,env(safe-area-inset-right,0px))] sm:ps-[max(0.75rem,env(safe-area-inset-left,0px))] sm:pe-[max(0.75rem,env(safe-area-inset-right,0px))] md:ps-[max(1rem,env(safe-area-inset-left,0px))] md:pe-[max(1rem,env(safe-area-inset-right,0px))]">
+        <div className="mx-auto flex h-12 w-full min-w-0 max-w-7xl items-stretch sm:h-14 ps-[max(0.375rem,env(safe-area-inset-left,0px))] pe-[max(0.375rem,env(safe-area-inset-right,0px))] sm:ps-[max(0.75rem,env(safe-area-inset-left,0px))] sm:pe-[max(0.75rem,env(safe-area-inset-right,0px))] md:ps-[max(1rem,env(safe-area-inset-left,0px))] md:pe-[max(1rem,env(safe-area-inset-right,0px))]">
           <div className="relative flex-shrink-0" ref={categoriesRef}>
             <button
               onClick={() => setShowCategoriesDropdown(!showCategoriesDropdown)}
@@ -635,7 +630,7 @@ export default function Header() {
 
           {/* NAV LINKS */}
           {/* Desktop - All Links */}
-          <div className="hidden lg:flex flex-1 items-center gap-1.5 px-5 py-1.5 text-gray-900 lg:px-7">
+          <div className="hidden lg:flex flex-1 items-stretch gap-0 px-2 text-gray-900 lg:px-4">
             <HeaderNavLink href="/" pathname={pathname} size="desktop">
               {copy.home}
             </HeaderNavLink>
@@ -675,8 +670,8 @@ export default function Header() {
           </div>
 
           {/* Tablet - Limited Links */}
-          <div className="hidden md:flex lg:hidden flex-1 min-w-0 px-2 py-1.5 overflow-visible">
-            <div className="flex w-full min-w-max items-center gap-1.5 whitespace-nowrap text-gray-900">
+          <div className="hidden md:flex lg:hidden flex-1 min-w-0 items-stretch overflow-visible px-1">
+            <div className="flex w-full min-w-max items-stretch gap-0 whitespace-nowrap text-gray-900">
               <HeaderNavLink href="/" pathname={pathname} size="tablet">
                 {copy.home}
               </HeaderNavLink>
@@ -705,8 +700,8 @@ export default function Header() {
           </div>
 
           {/* Mobile - Limited Links + More Button */}
-          <div className="flex md:hidden flex-1 min-w-0 px-1 py-1.5 overflow-visible">
-            <div className="flex w-full min-w-0 items-center justify-between gap-0.5 pr-1 whitespace-nowrap text-gray-900">
+          <div className="flex md:hidden flex-1 min-w-0 items-stretch overflow-visible px-0.5">
+            <div className="flex w-full min-w-0 items-stretch justify-between gap-0 pr-1 whitespace-nowrap text-gray-900">
               <HeaderNavLink href="/" pathname={pathname} size="mobile">
                 {copy.home}
               </HeaderNavLink>

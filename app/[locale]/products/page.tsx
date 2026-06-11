@@ -30,11 +30,6 @@ import {
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { usePathname, useRouter } from "@/i18n/navigation";
-import productData from "@/data/product.json";
-
-const staticProducts = productData.featuredProducts;
-const staticCategories = productData.categories;
-const staticVendors = productData.vendors;
 
 function ProductsPageContent() {
   const locale = useLocale() as SupportedLocale;
@@ -140,7 +135,7 @@ function ProductsPageContent() {
           }))
         );
 
-        const prices = [...staticProducts, ...products].map((product) => product.price);
+        const prices = products.map((product) => product.price);
         const computedMax = Math.max(100, ...prices, 0);
         setMaxPrice(computedMax);
         setPriceRange((current) => [current[0], Math.max(current[1], computedMax)]);
@@ -157,21 +152,12 @@ function ProductsPageContent() {
     };
   }, [debouncedSearch]);
 
-  const allProducts = useMemo<CatalogRow[]>(
-    () => [...vendorProducts, ...staticProducts],
-    [vendorProducts]
-  );
+  const allProducts = useMemo<CatalogRow[]>(() => vendorProducts, [vendorProducts]);
 
-  const categories = useMemo(() => {
-    const merged = [...staticCategories];
-    for (const category of apiCategories) {
-      if (!merged.some((item) => item.id === category.id)) merged.push(category);
-    }
-    return merged;
-  }, [apiCategories]);
+  const categories = useMemo(() => apiCategories, [apiCategories]);
 
   const vendors = useMemo(() => {
-    const names = new Set<string>(staticVendors);
+    const names = new Set<string>();
     for (const product of vendorProducts) names.add(product.vendor);
     return Array.from(names);
   }, [vendorProducts]);

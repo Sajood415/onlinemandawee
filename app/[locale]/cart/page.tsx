@@ -19,11 +19,9 @@ import { CartRecommendedProducts } from "@/components/cart/CartRecommendedProduc
 import { useCartCopy } from "@/lib/i18n/use-cart-copy";
 import type { CatalogRow } from "@/components/products/types";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
-import productData from "@/data/product.json";
+import { fetchPublicCatalogProducts } from "@/lib/products/public-catalog";
 import { useCart } from "@/store/cart-context";
 import { useCurrency } from "@/store/currency-context";
-
-const staticProducts = productData.featuredProducts as CatalogRow[];
 
 export default function CartPage() {
   const locale = useLocale() as SupportedLocale;
@@ -36,9 +34,24 @@ export default function CartPage() {
 
   const [hydrated, setHydrated] = useState(false);
   const [lineBusyId, setLineBusyId] = useState<string | null>(null);
+  const [recommendedProducts, setRecommendedProducts] = useState<CatalogRow[]>([]);
 
   useEffect(() => {
     setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    void fetchPublicCatalogProducts()
+      .then((products) => {
+        if (mounted) setRecommendedProducts(products);
+      })
+      .catch(() => {
+        if (mounted) setRecommendedProducts([]);
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const totals = useMemo(() => {
@@ -85,7 +98,7 @@ export default function CartPage() {
           <>
             <CartEmptyState />
             <CartRecommendedProducts
-              products={staticProducts}
+              products={recommendedProducts}
               locale={locale}
               cartProductIds={[]}
             />
@@ -129,7 +142,7 @@ export default function CartPage() {
             </div>
 
             <CartRecommendedProducts
-              products={staticProducts}
+              products={recommendedProducts}
               locale={locale}
               cartProductIds={cart.items.map((item) => item.productId)}
             />
