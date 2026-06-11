@@ -11,6 +11,7 @@ import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { withRbac } from "@/middlewares/with-rbac";
 import { prisma } from "@/lib/db/prisma";
 import {
+  checkoutShippingContactSchema,
   guestCheckoutCartItemSchema,
   guestCheckoutCouponsSchema,
 } from "@/validators/checkout.validator";
@@ -18,16 +19,10 @@ import {
 const confirmBodySchema = z
   .object({
     paymentIntentId: z.string().min(1),
-    guestName: z.string().min(1),
-    guestEmail: z.string().email(),
-    guestPhone: z.string().min(1),
-    addressLine1: z.string().min(1),
-    city: z.string().min(1),
-    country: z.string().min(1),
-    postalCode: z.string().default(""),
     currency: z.string().length(3),
     items: z.array(guestCheckoutCartItemSchema).min(1),
   })
+  .merge(checkoutShippingContactSchema)
   .merge(guestCheckoutCouponsSchema);
 
 export const POST = withErrorHandling(

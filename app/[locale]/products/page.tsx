@@ -314,6 +314,7 @@ function ProductsPageContent() {
                 {sortedProducts.map((product, index) => (
                   <motion.div
                     key={product.id}
+                    className="min-w-0"
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.35, delay: Math.min(index * 0.03, 0.24) }}

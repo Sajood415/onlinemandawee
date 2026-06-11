@@ -51,7 +51,7 @@ export function CurrencySelector({ isRtl, variant = "default" }: CurrencySelecto
         aria-expanded={open}
         aria-haspopup="listbox"
         onClick={() => setOpen(!open)}
-        className={`group inline-flex h-9 min-h-9 items-center gap-2 rounded-full border px-2.5 text-xs font-bold text-gray-900 shadow-sm transition-all cursor-pointer sm:ps-2 sm:pe-3 ${
+        className={`group inline-flex h-9 min-h-9 items-center gap-1 rounded-full border px-2 text-xs font-bold text-gray-900 shadow-sm transition-all cursor-pointer sm:gap-2 sm:px-2.5 sm:ps-2 sm:pe-3 ${
           variant === "dark"
             ? open
               ? "border-white bg-white shadow-md ring-2 ring-white/70"

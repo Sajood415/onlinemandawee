@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { loadStripe } from "@stripe/stripe-js";
 import {
@@ -29,6 +29,20 @@ import { PageLoader } from "@/components/ui/PageLoader";
 import { convertMajorUnits } from "@/lib/currency/convert";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
+import {
+  sanitizeCityCountryInput,
+  sanitizeNameInput,
+  sanitizePhoneInput,
+  sanitizePostalCodeInput,
+  validateCheckoutShippingForm,
+  validateGuestEmail,
+  validateGuestName,
+  validateGuestPhone,
+  validateAddressLine,
+  validateCity,
+  validateCountry,
+  validatePostalCode,
+} from "@/lib/checkout/checkout-field-validation";
 import { toast } from "@/lib/utils/toast";
 import { useAuth } from "@/store/auth-context";
 import { useCart } from "@/store/cart-context";
@@ -218,8 +232,15 @@ function formatAmount(amount: number, currency: string) {
 function InputField({
   label,
   required,
+  error,
+  hint,
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { label: string; required?: boolean }) {
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+  label: string;
+  required?: boolean;
+  error?: string;
+  hint?: ReactNode;
+}) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -228,8 +249,14 @@ function InputField({
       </label>
       <input
         {...props}
-        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10 transition placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400"
+        className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400 ${
+          error
+            ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100"
+            : "border-gray-200 focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10"
+        }`}
       />
+      {error ? <p className="mt-1.5 text-xs text-red-600">{error}</p> : null}
+      {!error && hint ? <p className="mt-1.5 text-xs text-gray-500">{hint}</p> : null}
     </div>
   );
 }
@@ -332,6 +359,10 @@ function CouponSection({
 
 /* ─── Step 1: Shipping address ─────────────────────────────────────── */
 
+type ShippingFieldErrors = Partial<
+  Record<keyof ContactForm | keyof AddressForm, string>
+>;
+
 function ShippingAddressStep({
   contact,
   address,
@@ -349,20 +380,26 @@ function ShippingAddressStep({
   onSelectSavedAddress: (saved: CustomerAddress) => void;
   onNext: () => void;
 }) {
+  const [fieldErrors, setFieldErrors] = useState<ShippingFieldErrors>({});
+
+  const clearFieldError = (field: keyof ShippingFieldErrors) => {
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contact.guestName.trim() || !contact.guestEmail.trim() || !contact.guestPhone.trim()) {
-      toast.error("Please fill in all contact fields.");
+    const errors = validateCheckoutShippingForm(contact, address);
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      toast.error("Please fix the highlighted fields.");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.guestEmail)) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
-    if (!isDeliveryAddressComplete(address)) {
-      toast.error("Please fill in your shipping address.");
-      return;
-    }
+    setFieldErrors({});
     onNext();
   };
 
@@ -376,7 +413,10 @@ function ShippingAddressStep({
               <button
                 key={saved.id}
                 type="button"
-                onClick={() => onSelectSavedAddress(saved)}
+                onClick={() => {
+                  onSelectSavedAddress(saved);
+                  setFieldErrors({});
+                }}
                 className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-left text-sm transition hover:border-[#0f3460]/40 hover:bg-[#0f3460]/5"
               >
                 <p className="font-semibold text-gray-800">{saved.fullName}</p>
@@ -397,39 +437,129 @@ function ShippingAddressStep({
       <div className="space-y-4">
         <p className="text-sm font-semibold text-gray-700">Contact details</p>
         <InputField
-          label="Full Name" required type="text" placeholder="John Doe"
-          value={contact.guestName} onChange={(e) => onContactChange({ guestName: e.target.value })}
+          label="Full Name"
+          required
+          type="text"
+          placeholder="John Doe"
+          value={contact.guestName}
+          error={fieldErrors.guestName}
+          hint="Letters only"
+          onChange={(e) => {
+            onContactChange({ guestName: sanitizeNameInput(e.target.value) });
+            clearFieldError("guestName");
+          }}
+          onBlur={() => {
+            const error = validateGuestName(contact.guestName);
+            if (error) setFieldErrors((current) => ({ ...current, guestName: error }));
+          }}
           autoFocus
         />
         <InputField
-          label="Email Address" required type="email" placeholder="you@example.com"
-          value={contact.guestEmail} onChange={(e) => onContactChange({ guestEmail: e.target.value })}
+          label="Email Address"
+          required
+          type="email"
+          placeholder="you@example.com"
+          value={contact.guestEmail}
+          error={fieldErrors.guestEmail}
+          onChange={(e) => {
+            onContactChange({ guestEmail: e.target.value });
+            clearFieldError("guestEmail");
+          }}
+          onBlur={() => {
+            const error = validateGuestEmail(contact.guestEmail);
+            if (error) setFieldErrors((current) => ({ ...current, guestEmail: error }));
+          }}
         />
         <InputField
-          label="Phone Number" required type="tel" placeholder="+93 70 000 0000"
-          value={contact.guestPhone} onChange={(e) => onContactChange({ guestPhone: e.target.value })}
+          label="Phone Number"
+          required
+          type="tel"
+          inputMode="numeric"
+          placeholder="0701234567"
+          value={contact.guestPhone}
+          error={fieldErrors.guestPhone}
+          hint="Numbers only"
+          onChange={(e) => {
+            onContactChange({ guestPhone: sanitizePhoneInput(e.target.value) });
+            clearFieldError("guestPhone");
+          }}
+          onBlur={() => {
+            const error = validateGuestPhone(contact.guestPhone);
+            if (error) setFieldErrors((current) => ({ ...current, guestPhone: error }));
+          }}
         />
       </div>
 
       <div className="space-y-4 border-t border-gray-100 pt-6">
         <p className="text-sm font-semibold text-gray-700">Shipping address</p>
         <InputField
-          label="Street Address" required type="text" placeholder="123 Main Street, Apt 4"
-          value={address.addressLine1} onChange={(e) => onAddressChange({ addressLine1: e.target.value })}
+          label="Street Address"
+          required
+          type="text"
+          placeholder="123 Main Street, Apt 4"
+          value={address.addressLine1}
+          error={fieldErrors.addressLine1}
+          onChange={(e) => {
+            onAddressChange({ addressLine1: e.target.value });
+            clearFieldError("addressLine1");
+          }}
+          onBlur={() => {
+            const error = validateAddressLine(address.addressLine1);
+            if (error) setFieldErrors((current) => ({ ...current, addressLine1: error }));
+          }}
         />
         <div className="grid grid-cols-2 gap-4">
           <InputField
-            label="City" required type="text" placeholder="Kabul"
-            value={address.city} onChange={(e) => onAddressChange({ city: e.target.value })}
+            label="City"
+            required
+            type="text"
+            placeholder="Kabul"
+            value={address.city}
+            error={fieldErrors.city}
+            hint="Letters only"
+            onChange={(e) => {
+              onAddressChange({ city: sanitizeCityCountryInput(e.target.value) });
+              clearFieldError("city");
+            }}
+            onBlur={() => {
+              const error = validateCity(address.city);
+              if (error) setFieldErrors((current) => ({ ...current, city: error }));
+            }}
           />
           <InputField
-            label="Postal Code" type="text" placeholder="1001"
-            value={address.postalCode} onChange={(e) => onAddressChange({ postalCode: e.target.value })}
+            label="Postal Code"
+            type="text"
+            inputMode="numeric"
+            placeholder="1001"
+            value={address.postalCode}
+            error={fieldErrors.postalCode}
+            hint="Numbers only"
+            onChange={(e) => {
+              onAddressChange({ postalCode: sanitizePostalCodeInput(e.target.value) });
+              clearFieldError("postalCode");
+            }}
+            onBlur={() => {
+              const error = validatePostalCode(address.postalCode);
+              if (error) setFieldErrors((current) => ({ ...current, postalCode: error }));
+            }}
           />
         </div>
         <InputField
-          label="Country" required type="text" placeholder="Afghanistan"
-          value={address.country} onChange={(e) => onAddressChange({ country: e.target.value })}
+          label="Country"
+          required
+          type="text"
+          placeholder="Afghanistan"
+          value={address.country}
+          error={fieldErrors.country}
+          hint="Letters only"
+          onChange={(e) => {
+            onAddressChange({ country: sanitizeCityCountryInput(e.target.value) });
+            clearFieldError("country");
+          }}
+          onBlur={() => {
+            const error = validateCountry(address.country);
+            if (error) setFieldErrors((current) => ({ ...current, country: error }));
+          }}
         />
       </div>
 
@@ -437,7 +567,8 @@ function ShippingAddressStep({
         type="submit"
         className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors"
       >
-        Continue to Delivery <ArrowRight size={17} />
+        <ArrowRight size={17} className="shrink-0" strokeWidth={2} />
+        Continue to Delivery
       </button>
     </form>
   );
@@ -532,7 +663,8 @@ function DeliveryCostStep({
           onClick={onBack}
           className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-200 text-gray-600 font-semibold py-3.5 hover:bg-gray-50 transition-colors"
         >
-          <ArrowLeft size={17} /> Back
+          <ArrowLeft size={17} className="shrink-0" strokeWidth={2} />
+          Back
         </button>
         <button
           type="button"
@@ -540,7 +672,8 @@ function DeliveryCostStep({
           onClick={onNext}
           className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors disabled:opacity-50"
         >
-          Continue to Payment <ArrowRight size={17} />
+          <ArrowRight size={17} className="shrink-0" strokeWidth={2} />
+          Continue to Payment
         </button>
       </div>
     </div>
@@ -717,7 +850,8 @@ function PaymentMethodStep({
             onClick={onBack}
             className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-200 text-gray-600 font-semibold py-3.5 hover:bg-gray-50 transition-colors"
           >
-            <ArrowLeft size={17} /> Back
+            <ArrowLeft size={17} className="shrink-0" strokeWidth={2} />
+            Back
           </button>
           <button
             type="button"
@@ -725,7 +859,8 @@ function PaymentMethodStep({
             disabled={!canPlaceOrder || quoteLoading}
             className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors disabled:opacity-50"
           >
-            Review Order <ArrowRight size={17} />
+            <ArrowRight size={17} className="shrink-0" strokeWidth={2} />
+            Review Order
           </button>
         </div>
       ) : null}
@@ -879,7 +1014,8 @@ function CodForm({
       <div className="flex gap-3 pt-1">
         <button type="button" onClick={onBack} disabled={placing}
           className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-200 text-gray-600 font-semibold py-3.5 hover:bg-gray-50 transition-colors disabled:opacity-50">
-          <ArrowLeft size={17} /> Back
+          <ArrowLeft size={17} className="shrink-0" strokeWidth={2} />
+          Back
         </button>
         <button type="button" onClick={handlePlace} disabled={placing}
           className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-green-600 text-white font-semibold py-3.5 hover:bg-green-700 transition-colors disabled:opacity-60">
@@ -988,7 +1124,8 @@ function StripePayForm({
       <div className="flex gap-3 pt-1">
         <button type="button" onClick={onBack} disabled={paying}
           className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-200 text-gray-600 font-semibold py-3.5 hover:bg-gray-50 transition-colors disabled:opacity-50">
-          <ArrowLeft size={17} /> Back
+          <ArrowLeft size={17} className="shrink-0" strokeWidth={2} />
+          Back
         </button>
         <button type="submit" disabled={!stripe || !elements || paying}
           className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-green-600 text-white font-semibold py-3.5 hover:bg-green-700 transition-colors disabled:opacity-60">
@@ -1216,6 +1353,7 @@ export default function CheckoutPage() {
   const { currency } = useCurrency();
 
   const [step, setStep] = useState(0);
+  const checkoutTopRef = useRef<HTMLDivElement>(null);
   const stripeAvailable = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
     stripeAvailable ? "card" : "cod"
@@ -1268,6 +1406,10 @@ export default function CheckoutPage() {
       router.replace("/");
     }
   }, [cartItems.length, router, successOrderNumber]);
+
+  useEffect(() => {
+    checkoutTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [step]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -1631,7 +1773,7 @@ export default function CheckoutPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div ref={checkoutTopRef} className="min-h-screen scroll-mt-28 bg-gray-50 sm:scroll-mt-32">
       {/* Top bar */}
       <div className="bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">

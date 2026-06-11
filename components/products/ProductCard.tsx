@@ -57,8 +57,8 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
     product.price > 50 ? formatPrice(product.price * 1.15, productCurrency) : null;
 
   return (
-    <article className="group flex h-full flex-col">
-      <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_8px_30px_rgba(15,52,96,0.06)] transition-all duration-300 hover:-translate-y-1 hover:border-neutral-300 hover:shadow-[0_20px_50px_rgba(15,52,96,0.12)]">
+    <article className="group flex h-full min-w-0 flex-col">
+      <div className="relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_8px_30px_rgba(15,52,96,0.06)] transition-all duration-300 hover:-translate-y-1 hover:border-neutral-300 hover:shadow-[0_20px_50px_rgba(15,52,96,0.12)]">
         <Link
           href={`/products/${product.id}`}
           className="relative block aspect-[4/5] shrink-0 overflow-hidden bg-gradient-to-b from-neutral-50 to-white"
@@ -104,7 +104,7 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
           </button>
         </Link>
 
-        <div className="flex flex-1 flex-col p-4">
+        <div className="flex min-w-0 flex-1 flex-col p-3 sm:p-4">
           <Link
             href={`/vendors/${product.vendorSlug}`}
             className="mb-1.5 inline-flex w-fit text-[11px] font-semibold uppercase tracking-[0.14em] text-[#0f3460]/70 transition hover:text-primary"
@@ -124,13 +124,15 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
             </p>
           ) : null}
 
-          <div className="mt-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-lg font-bold tracking-tight text-[#0f3460]">
+          <div className="mt-3 min-w-0">
+            <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-2 sm:gap-y-0.5">
+              <span className="text-base font-bold tracking-tight text-[#0f3460] sm:text-lg">
                 {priceLabel}
               </span>
               {compareAt ? (
-                <span className="text-xs text-neutral-400 line-through">{compareAt}</span>
+                <span className="max-w-full truncate text-[10px] text-neutral-400 line-through sm:text-xs">
+                  {compareAt}
+                </span>
               ) : null}
             </div>
             <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-emerald-600">
@@ -144,14 +146,19 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
           </div>
 
           <div className="mt-auto flex flex-col gap-3 pt-4">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-semibold text-neutral-600">{copy.quantity}</span>
-              <QuantitySelector
-                quantity={quantity}
-                onDecrease={() => setQuantity((value) => Math.max(1, value - 1))}
-                onIncrease={() => setQuantity((value) => value + 1)}
-                disabled={isAdding}
-              />
+            <div className="flex min-w-0 flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+              <span className="shrink-0 text-xs font-semibold text-neutral-600">
+                {copy.quantity}
+              </span>
+              <div className="flex min-w-0 w-full justify-center xl:w-auto xl:justify-end">
+                <QuantitySelector
+                  compact
+                  quantity={quantity}
+                  onDecrease={() => setQuantity((value) => Math.max(1, value - 1))}
+                  onIncrease={() => setQuantity((value) => value + 1)}
+                  disabled={isAdding}
+                />
+              </div>
             </div>
             <button
               type="button"

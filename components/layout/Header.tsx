@@ -88,6 +88,58 @@ const localizeProductName = (
   return product.name.en;
 };
 
+type NavLinkSize = "mobile" | "tablet" | "desktop";
+
+function isNavLinkActive(pathname: string, href: string) {
+  if (href === "/") return pathname === "/";
+  if (href === "/products") {
+    return pathname.startsWith("/products") || pathname.startsWith("/category/");
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function getNavLinkClassName(pathname: string, href: string, size: NavLinkSize) {
+  const active = isNavLinkActive(pathname, href);
+  const height = size === "mobile" ? "h-7" : "h-8";
+  const padding =
+    size === "mobile" ? "px-2 min-[360px]:px-2.5" : size === "tablet" ? "px-2.5" : "px-3";
+  const text =
+    size === "mobile"
+      ? "text-[10px] min-[360px]:text-[11px]"
+      : size === "tablet"
+        ? "text-[13px]"
+        : "text-[13px] lg:text-[14px]";
+
+  if (active) {
+    return `inline-flex ${height} items-center rounded-full ${padding} ${text} font-extrabold whitespace-nowrap shrink-0 bg-primary/10 text-primary ring-1 ring-primary/20 transition-all`;
+  }
+
+  return `inline-flex ${height} items-center rounded-full ${padding} ${text} font-bold whitespace-nowrap shrink-0 text-gray-900 transition-all hover:bg-gray-100 hover:text-primary`;
+}
+
+function HeaderNavLink({
+  href,
+  pathname,
+  size,
+  className = "",
+  children,
+}: {
+  href: string;
+  pathname: string;
+  size: NavLinkSize;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={isNavLinkActive(pathname, href) ? "page" : undefined}
+      className={`${getNavLinkClassName(pathname, href, size)} ${className}`}
+    >
+      {children}
+    </Link>
+  );
+}
 
 export default function Header() {
   const t = useTranslations("Homepage.navbar");
@@ -294,17 +346,29 @@ export default function Header() {
             </form>
 
             {/* RIGHT ICONS - Integrated Professional Row */}
-            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5 md:max-lg:gap-1.5 lg:gap-3 order-3">
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2 md:max-lg:gap-1.5 lg:gap-3 order-3">
               {/* Mobile Search Toggle */}
               <button
                 onClick={() => setShowMobileSearch(!showMobileSearch)}
-                className="md:hidden h-9 w-9 flex items-center justify-center rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer"
+                className="md:hidden h-9 w-9 shrink-0 flex items-center justify-center rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer"
               >
                 <Search size={19} />
               </button>
 
+              {/* Cart - prioritized before locale selectors on mobile */}
+              <IconButton
+                onClick={() => setIsCartOpen(true)}
+                badge={itemCount > 0 ? itemCount.toString() : undefined}
+                aria-label={t("cartLabel")}
+                accent="primary"
+                surface="dark"
+                size="sm"
+              >
+                <ShoppingBasket size={18} />
+              </IconButton>
+
               {/* Language + currency selectors */}
-              <div className="flex items-center gap-1.5">
+              <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
                 <LanguageSelector
                   locale={locale}
                   label={tAuth("languages.select")}
@@ -318,17 +382,6 @@ export default function Header() {
                 />
                 <CurrencySelector isRtl={isRtl} variant="dark" />
               </div>
-
-              {/* Cart Button - Second */}
-              <IconButton
-                onClick={() => setIsCartOpen(true)}
-                badge={itemCount?.toString()}
-                aria-label={t("cartLabel")}
-                accent="primary"
-                surface="dark"
-              >
-                <ShoppingBasket size={20} />
-              </IconButton>
 
               {/* Login / Account - Third */}
               {isAuthenticated ? (
@@ -582,76 +635,62 @@ export default function Header() {
 
           {/* NAV LINKS */}
           {/* Desktop - All Links */}
-          <div className="hidden lg:flex flex-1 items-center gap-2 px-5 py-1.5 text-[13px] lg:text-[14px] font-bold text-gray-900 lg:px-7">
-            <Link
-              href="/"
-              className="inline-flex h-8 items-center rounded-md px-3 transition-all hover:bg-gray-100 hover:text-primary"
-            >
+          <div className="hidden lg:flex flex-1 items-center gap-1.5 px-5 py-1.5 text-gray-900 lg:px-7">
+            <HeaderNavLink href="/" pathname={pathname} size="desktop">
               {copy.home}
-            </Link>
-            <Link
-              href="/products"
-              className="inline-flex h-8 items-center rounded-md px-3 transition-all hover:bg-gray-100 hover:text-primary"
-            >
+            </HeaderNavLink>
+            <HeaderNavLink href="/products" pathname={pathname} size="desktop">
               {copy.products}
-            </Link>
-            <Link
-              href="/vendors"
-              className="inline-flex h-8 items-center rounded-md px-3 transition-all hover:bg-gray-100 hover:text-primary"
-            >
+            </HeaderNavLink>
+            <HeaderNavLink href="/vendors" pathname={pathname} size="desktop">
               {copy.vendors}
-            </Link>
-            <Link
+            </HeaderNavLink>
+            <HeaderNavLink
               href="/gifts"
-              className="inline-flex h-8 items-center rounded-md px-3 relative flex items-center gap-2 group transition-all hover:bg-gray-100 hover:text-primary"
+              pathname={pathname}
+              size="desktop"
+              className="relative gap-2"
             >
               {copy.giftSets}
               <span
-                className="text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter shadow-sm group-hover:scale-110 transition-transform text-gray-900"
+                className="text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter shadow-sm text-gray-900"
                 style={{ backgroundColor: "var(--yellow)" }}
               >
                 {copy.new}
               </span>
-            </Link>
-            <Link
-              href="/baby-packages"
-              className="inline-flex h-8 items-center rounded-md px-3 transition-all hover:bg-gray-100 hover:text-primary"
-            >
+            </HeaderNavLink>
+            <HeaderNavLink href="/baby-packages" pathname={pathname} size="desktop">
               {copy.babyCare}
-            </Link>
-            <Link
-              href="/deals"
-              className="inline-flex h-8 items-center rounded-md px-3 flex items-center gap-1.5 transition-all hover:bg-gray-100 hover:text-primary"
-            >
+            </HeaderNavLink>
+            <HeaderNavLink href="/deals" pathname={pathname} size="desktop" className="gap-1.5">
               <Zap
                 size={15}
                 style={{ color: "var(--yellow)", fill: "var(--yellow)" }}
-              />{" "}
+              />
               {copy.dailyDeals}
-            </Link>
-            <Link
-              href="/contact"
-              className="inline-flex h-8 items-center rounded-md px-3 transition-all hover:bg-gray-100 hover:text-primary"
-            >
+            </HeaderNavLink>
+            <HeaderNavLink href="/contact" pathname={pathname} size="desktop">
               {copy.support}
-            </Link>
+            </HeaderNavLink>
           </div>
 
           {/* Tablet - Limited Links */}
           <div className="hidden md:flex lg:hidden flex-1 min-w-0 px-2 py-1.5 overflow-visible">
-            <div className="flex w-full min-w-max items-center gap-2 text-[13px] font-bold whitespace-nowrap text-gray-900">
-              <Link href="/" className="inline-flex h-8 items-center rounded-md px-2 whitespace-nowrap transition-all hover:bg-gray-100 hover:text-primary">
+            <div className="flex w-full min-w-max items-center gap-1.5 whitespace-nowrap text-gray-900">
+              <HeaderNavLink href="/" pathname={pathname} size="tablet">
                 {copy.home}
-              </Link>
-              <Link href="/products" className="inline-flex h-8 items-center rounded-md px-2 whitespace-nowrap transition-all hover:bg-gray-100 hover:text-primary">
+              </HeaderNavLink>
+              <HeaderNavLink href="/products" pathname={pathname} size="tablet">
                 {copy.products}
-              </Link>
-              <Link href="/vendors" className="inline-flex h-8 items-center rounded-md px-2 whitespace-nowrap transition-all hover:bg-gray-100 hover:text-primary">
+              </HeaderNavLink>
+              <HeaderNavLink href="/vendors" pathname={pathname} size="tablet">
                 {copy.vendors}
-              </Link>
-              <Link
+              </HeaderNavLink>
+              <HeaderNavLink
                 href="/gifts"
-                className="inline-flex h-8 items-center rounded-md px-2 relative flex items-center gap-1 whitespace-nowrap transition-all hover:bg-gray-100 hover:text-primary"
+                pathname={pathname}
+                size="tablet"
+                className="relative gap-1"
               >
                 {copy.gifts}
                 <span
@@ -660,26 +699,28 @@ export default function Header() {
                 >
                   {copy.new}
                 </span>
-              </Link>
+              </HeaderNavLink>
               <MobileNavMenu closeAll={closeAll} isRtl={isRtl} surface="light" />
             </div>
           </div>
 
           {/* Mobile - Limited Links + More Button */}
           <div className="flex md:hidden flex-1 min-w-0 px-1 py-1.5 overflow-visible">
-            <div className="flex w-full min-w-0 items-center justify-between gap-1 pr-1 text-[10px] min-[360px]:text-[11px] font-bold whitespace-nowrap text-gray-900">
-              <Link href="/" className="inline-flex h-7 items-center rounded-md px-1 whitespace-nowrap shrink min-w-0 transition-all hover:bg-gray-100 hover:text-primary">
+            <div className="flex w-full min-w-0 items-center justify-between gap-0.5 pr-1 whitespace-nowrap text-gray-900">
+              <HeaderNavLink href="/" pathname={pathname} size="mobile">
                 {copy.home}
-              </Link>
-              <Link href="/products" className="inline-flex h-7 items-center rounded-md px-1 whitespace-nowrap shrink min-w-0 transition-all hover:bg-gray-100 hover:text-primary">
+              </HeaderNavLink>
+              <HeaderNavLink href="/products" pathname={pathname} size="mobile">
                 {copy.products}
-              </Link>
-              <Link href="/vendors" className="inline-flex h-7 items-center rounded-md px-1 whitespace-nowrap shrink min-w-0 transition-all hover:bg-gray-100 hover:text-primary">
+              </HeaderNavLink>
+              <HeaderNavLink href="/vendors" pathname={pathname} size="mobile">
                 {copy.vendors}
-              </Link>
-              <Link
+              </HeaderNavLink>
+              <HeaderNavLink
                 href="/gifts"
-                className="inline-flex h-7 items-center rounded-md px-1 relative flex items-center gap-1 whitespace-nowrap shrink min-w-0 transition-all hover:bg-gray-100 hover:text-primary"
+                pathname={pathname}
+                size="mobile"
+                className="relative gap-1"
               >
                 {copy.gifts}
                 <span
@@ -688,10 +729,11 @@ export default function Header() {
                 >
                   {copy.new}
                 </span>
-              </Link>
+              </HeaderNavLink>
               <MobileNavMenu closeAll={closeAll} isRtl={isRtl} surface="light" />
             </div>
           </div>
+
           </div>
         </nav>
       )}
