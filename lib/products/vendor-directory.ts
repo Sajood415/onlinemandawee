@@ -1,9 +1,11 @@
-import productData from "@/data/product.json";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 
 type LocalizedText = Record<SupportedLocale, string>;
 
-export type CatalogProduct = (typeof productData.featuredProducts)[number];
+export type CatalogProduct = {
+  id: string;
+  vendorSlug: string;
+};
 export type VendorProfile = {
   id: string;
   slug: string;
@@ -19,7 +21,7 @@ export type VendorProfile = {
   fulfillmentRate: string;
 };
 
-const vendorProfiles = (productData.vendorProfiles ?? []) as VendorProfile[];
+const vendorProfiles: VendorProfile[] = [];
 
 export function getVendorProfiles() {
   return vendorProfiles;
@@ -34,7 +36,6 @@ export function getVendorByName(name: string) {
 }
 
 export function getVendorProducts(vendorSlug: string) {
-  return productData.featuredProducts.filter(
-    (product) => product.vendorSlug === vendorSlug
-  );
+  void vendorSlug;
+  return [] as CatalogProduct[];
 }

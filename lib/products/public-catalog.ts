@@ -45,6 +45,7 @@ export type PublicProductCoupon = {
 
 export type PublicCatalogProduct = {
   id: string;
+  slug: string;
   price: number;
   priceDisplay: string;
   vendor: string;
@@ -90,6 +91,7 @@ export function mapApiProductToCatalog(product: ApiCatalogProduct): PublicCatalo
 
   return {
     id: product.id,
+    slug: product.slug,
     price,
     priceDisplay: formatCatalogPrice(price, currency),
     vendor: product.vendorProfile.storeName ?? "Vendor",

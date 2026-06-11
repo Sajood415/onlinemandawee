@@ -9,7 +9,6 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
-import productData from "@/data/product.json";
 import { convertMajorUnits } from "@/lib/currency/convert";
 import { fetchPublicCatalogProduct } from "@/lib/products/public-catalog";
 import { useCurrency } from "@/store/currency-context";
@@ -49,25 +48,7 @@ const CART_STORAGE_KEY = "onlinemandawee-cart";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const getStaticProductDetails = (productId: string) =>
-  productData.featuredProducts.find((p) => p.id === productId);
-
 const resolveProductDetails = async (productId: string) => {
-  const staticProduct = getStaticProductDetails(productId);
-  if (staticProduct) {
-    return {
-      name: staticProduct.name.en,
-      description: staticProduct.description.en,
-      price: staticProduct.price,
-      currency: "USD",
-      image: staticProduct.image,
-      vendor: staticProduct.vendor,
-      delivery: staticProduct.delivery,
-      vendorProfileId: null,
-      isVendorProduct: false,
-    };
-  }
-
   const catalogProduct = await fetchPublicCatalogProduct(productId);
   return {
     name: catalogProduct.name.en,
