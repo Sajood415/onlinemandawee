@@ -31,6 +31,7 @@ export async function createGuestOrderFromQuote(input: {
   postalCode: string;
   paymentStatus: "PAID" | "UNPAID";
   stripePaymentIntentId?: string;
+  userId?: string;
 }) {
   const orderNumber = await generateUniqueOrderNumber();
   const guestEmail = normalizeEmailForAuth(input.guestEmail);
@@ -45,6 +46,7 @@ export async function createGuestOrderFromQuote(input: {
 
   const order = await prisma.order.create({
     data: {
+      userId: input.userId,
       guestEmail,
       stripePaymentIntentId: input.stripePaymentIntentId,
       orderNumber,

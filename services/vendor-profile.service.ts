@@ -4,6 +4,7 @@ import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { slugify } from "@/lib/utils/slug";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
+import { VendorAddressRepository } from "@/repositories/vendor-address.repository";
 import { VendorPayoutMethodRepository } from "@/repositories/vendor-payout-method.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
 
@@ -23,6 +24,13 @@ type UpdatePayoutInput = {
   stripeEmail?: string;
 };
 
+type UpdateAddressInput = {
+  addressLine1: string;
+  city: string;
+  country: string;
+  postalCode: string;
+};
+
 /** PATCH body omits unchanged sections; keep DB values instead of writing null. */
 function mergeTrimmedPayoutField(
   incoming: string | undefined,
@@ -38,6 +46,7 @@ function mergeTrimmedPayoutField(
 export class VendorProfileService {
   constructor(
     private readonly vendorProfileRepository = new VendorProfileRepository(),
+    private readonly vendorAddressRepository = new VendorAddressRepository(),
     private readonly vendorPayoutMethodRepository = new VendorPayoutMethodRepository(),
     private readonly auditLogRepository = new AuditLogRepository()
   ) {}
@@ -110,6 +119,33 @@ export class VendorProfileService {
       industryType: updated.industryType ?? null,
       logoUrl: updated.logoUrl ?? "",
       description: updated.description ?? "",
+    };
+  }
+
+  async updateAddress(auth: AuthenticatedUser, input: UpdateAddressInput) {
+    const vendor = await this.requireActiveVendor(auth.id);
+
+    const address = await this.vendorAddressRepository.upsert({
+      vendorProfileId: vendor.id,
+      addressLine1: input.addressLine1,
+      city: input.city,
+      country: input.country,
+      postalCode: input.postalCode,
+    });
+
+    await this.auditLogRepository.create({
+      actorUserId: auth.id,
+      actorRole: auth.role,
+      action: "vendor.address_updated",
+      entityType: "VendorProfile",
+      entityId: vendor.id,
+    });
+
+    return {
+      addressLine1: address.addressLine1,
+      city: address.city,
+      country: address.country,
+      postalCode: address.postalCode,
     };
   }
 

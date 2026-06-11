@@ -9,12 +9,14 @@ import { withErrorHandling } from "@/middlewares/with-error-handling";
 import {
   guestCheckoutCartItemSchema,
   guestCheckoutCouponsSchema,
+  guestCheckoutDeliveryAddressSchema,
 } from "@/validators/checkout.validator";
 
 const pricingBodySchema = z
   .object({
     items: z.array(guestCheckoutCartItemSchema).min(1),
     currency: z.string().length(3).default("USD"),
+    deliveryAddress: guestCheckoutDeliveryAddressSchema.optional(),
   })
   .merge(guestCheckoutCouponsSchema);
 
@@ -35,6 +37,7 @@ export const POST = withErrorHandling(async (request) => {
       currency: parsed.data.currency,
       couponCodes: parsed.data.couponCodes,
       vendorCoupons: parsed.data.vendorCoupons,
+      deliveryAddress: parsed.data.deliveryAddress,
     });
     return NextResponse.json({ data: quote }, { status: 200 });
   } catch (error) {

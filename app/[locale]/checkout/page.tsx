@@ -19,13 +19,14 @@ import {
   MapPin,
   Package,
   ShoppingBag,
+  ClipboardList,
   Tag,
   Truck,
-  User,
   X,
 } from "lucide-react";
 
 import { PageLoader } from "@/components/ui/PageLoader";
+import { convertMajorUnits } from "@/lib/currency/convert";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
@@ -97,6 +98,15 @@ type CheckoutVendorOffer = {
   }>;
 };
 
+type DeliveryBreakdownEntry = {
+  vendorProfileId: string;
+  vendorStoreName: string | null;
+  distanceKm: number;
+  baseFeeAmount: number;
+  perKmRateAmount: number;
+  deliveryAmount: number;
+};
+
 type PriceSummary = {
   subtotalAmount: number;
   deliveryAmount: number;
@@ -105,6 +115,7 @@ type PriceSummary = {
   currency: string;
   lineItems: LineItem[];
   appliedCoupons: AppliedCouponSummary[];
+  deliveryBreakdown?: DeliveryBreakdownEntry[];
 };
 
 type ContactForm = {
@@ -120,6 +131,62 @@ type AddressForm = {
   postalCode: string;
 };
 
+function isDeliveryAddressComplete(address: AddressForm) {
+  return (
+    address.addressLine1.trim().length > 0 &&
+    address.city.trim().length > 0 &&
+    address.country.trim().length > 0
+  );
+}
+
+function getCheckoutApiBase(isCustomerCheckout: boolean) {
+  return isCustomerCheckout ? "/api/checkout/customer" : "/api/checkout/guest";
+}
+
+async function postCheckout(
+  path: string,
+  body: unknown,
+  useAuth: boolean
+) {
+  if (useAuth) {
+    return fetchWithAuth(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
+  return fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+function buildGuestCheckoutRequestBody(
+  items: Array<{ productId: string; quantity: number }>,
+  currency: string,
+  vendorCoupons: VendorCouponEntry[],
+  address: AddressForm
+) {
+  const body: Record<string, unknown> = {
+    items,
+    currency,
+    vendorCoupons,
+  };
+
+  if (isDeliveryAddressComplete(address)) {
+    body.deliveryAddress = {
+      addressLine1: address.addressLine1.trim(),
+      city: address.city.trim(),
+      country: address.country.trim(),
+      postalCode: address.postalCode.trim(),
+    };
+  }
+
+  return body;
+}
+
 type CustomerAddress = {
   id: string;
   fullName: string;
@@ -133,7 +200,7 @@ type CustomerAddress = {
 
 /* ─── Helpers ────────────────────────────────────────────────────────── */
 
-const STEP_LABELS = ["Contact", "Address", "Payment"];
+const STEP_LABELS = ["Shipping", "Delivery", "Payment", "Review"];
 
 function formatAmount(amount: number, currency: string) {
   try {
@@ -263,103 +330,406 @@ function CouponSection({
   );
 }
 
-/* ─── Step 1: Contact Info ───────────────────────────────────────────── */
+/* ─── Step 1: Shipping address ─────────────────────────────────────── */
 
-function ContactStep({
-  form,
-  onChange,
+function ShippingAddressStep({
+  contact,
+  address,
+  savedAddresses,
+  onContactChange,
+  onAddressChange,
+  onSelectSavedAddress,
   onNext,
 }: {
-  form: ContactForm;
-  onChange: (f: Partial<ContactForm>) => void;
+  contact: ContactForm;
+  address: AddressForm;
+  savedAddresses: CustomerAddress[];
+  onContactChange: (f: Partial<ContactForm>) => void;
+  onAddressChange: (f: Partial<AddressForm>) => void;
+  onSelectSavedAddress: (saved: CustomerAddress) => void;
   onNext: () => void;
 }) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.guestName.trim() || !form.guestEmail.trim() || !form.guestPhone.trim()) {
-      toast.error("Please fill in all required fields.");
+    if (!contact.guestName.trim() || !contact.guestEmail.trim() || !contact.guestPhone.trim()) {
+      toast.error("Please fill in all contact fields.");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.guestEmail)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.guestEmail)) {
       toast.error("Please enter a valid email address.");
+      return;
+    }
+    if (!isDeliveryAddressComplete(address)) {
+      toast.error("Please fill in your shipping address.");
       return;
     }
     onNext();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <InputField
-        label="Full Name" required type="text" placeholder="John Doe"
-        value={form.guestName} onChange={(e) => onChange({ guestName: e.target.value })}
-        autoFocus
-      />
-      <InputField
-        label="Email Address" required type="email" placeholder="you@example.com"
-        value={form.guestEmail} onChange={(e) => onChange({ guestEmail: e.target.value })}
-      />
-      <InputField
-        label="Phone Number" required type="tel" placeholder="+93 70 000 0000"
-        value={form.guestPhone} onChange={(e) => onChange({ guestPhone: e.target.value })}
-      />
-      <button type="submit" className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors">
-        Continue to Address <ArrowRight size={17} />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {savedAddresses.length > 0 ? (
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-gray-700">Saved addresses</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {savedAddresses.map((saved) => (
+              <button
+                key={saved.id}
+                type="button"
+                onClick={() => onSelectSavedAddress(saved)}
+                className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-left text-sm transition hover:border-[#0f3460]/40 hover:bg-[#0f3460]/5"
+              >
+                <p className="font-semibold text-gray-800">{saved.fullName}</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {saved.addressLine1}, {saved.city}, {saved.country}
+                </p>
+                {saved.isDefault ? (
+                  <span className="mt-2 inline-block text-[10px] font-semibold uppercase tracking-wide text-[#0f3460]">
+                    Default
+                  </span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="space-y-4">
+        <p className="text-sm font-semibold text-gray-700">Contact details</p>
+        <InputField
+          label="Full Name" required type="text" placeholder="John Doe"
+          value={contact.guestName} onChange={(e) => onContactChange({ guestName: e.target.value })}
+          autoFocus
+        />
+        <InputField
+          label="Email Address" required type="email" placeholder="you@example.com"
+          value={contact.guestEmail} onChange={(e) => onContactChange({ guestEmail: e.target.value })}
+        />
+        <InputField
+          label="Phone Number" required type="tel" placeholder="+93 70 000 0000"
+          value={contact.guestPhone} onChange={(e) => onContactChange({ guestPhone: e.target.value })}
+        />
+      </div>
+
+      <div className="space-y-4 border-t border-gray-100 pt-6">
+        <p className="text-sm font-semibold text-gray-700">Shipping address</p>
+        <InputField
+          label="Street Address" required type="text" placeholder="123 Main Street, Apt 4"
+          value={address.addressLine1} onChange={(e) => onAddressChange({ addressLine1: e.target.value })}
+        />
+        <div className="grid grid-cols-2 gap-4">
+          <InputField
+            label="City" required type="text" placeholder="Kabul"
+            value={address.city} onChange={(e) => onAddressChange({ city: e.target.value })}
+          />
+          <InputField
+            label="Postal Code" type="text" placeholder="1001"
+            value={address.postalCode} onChange={(e) => onAddressChange({ postalCode: e.target.value })}
+          />
+        </div>
+        <InputField
+          label="Country" required type="text" placeholder="Afghanistan"
+          value={address.country} onChange={(e) => onAddressChange({ country: e.target.value })}
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors"
+      >
+        Continue to Delivery <ArrowRight size={17} />
       </button>
     </form>
   );
 }
 
-/* ─── Step 2: Delivery Address ───────────────────────────────────────── */
+/* ─── Step 2: Delivery cost ──────────────────────────────────────────── */
 
-function AddressStep({
-  form, onChange, onNext, onBack,
+function DeliveryCostStep({
+  summary,
+  loading,
+  error,
+  onRetry,
+  onNext,
+  onBack,
 }: {
-  form: AddressForm;
-  onChange: (f: Partial<AddressForm>) => void;
+  summary: PriceSummary | null;
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
   onNext: () => void;
   onBack: () => void;
 }) {
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.addressLine1.trim() || !form.city.trim() || !form.country.trim()) {
-      toast.error("Please fill in all required fields.");
-      return;
-    }
-    onNext();
-  };
+  const breakdown = summary?.deliveryBreakdown ?? [];
+  const canContinue = Boolean(summary?.deliveryBreakdown?.length) && !loading && !error;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <InputField
-        label="Street Address" required type="text" placeholder="123 Main Street, Apt 4"
-        value={form.addressLine1} onChange={(e) => onChange({ addressLine1: e.target.value })}
-        autoFocus
-      />
-      <div className="grid grid-cols-2 gap-4">
-        <InputField
-          label="City" required type="text" placeholder="Kabul"
-          value={form.city} onChange={(e) => onChange({ city: e.target.value })}
-        />
-        <InputField
-          label="Postal Code" type="text" placeholder="1001"
-          value={form.postalCode} onChange={(e) => onChange({ postalCode: e.target.value })}
-        />
+    <div className="space-y-6">
+      <div className="rounded-xl bg-blue-50 border border-blue-100 p-4 flex gap-3">
+        <Truck size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
+        <div className="text-sm text-blue-900 space-y-1">
+          <p className="font-semibold">How delivery is calculated</p>
+          <p className="text-blue-800">
+            Driving distance from each vendor to your address, plus a base fee and per-km rate.
+          </p>
+          {breakdown[0] ? (
+            <p className="text-blue-700">
+              Platform rate: {formatAmount(breakdown[0].baseFeeAmount, summary!.currency)} base +{" "}
+              {formatAmount(breakdown[0].perKmRateAmount, summary!.currency)} per km
+            </p>
+          ) : null}
+        </div>
       </div>
-      <InputField
-        label="Country" required type="text" placeholder="Afghanistan"
-        value={form.country} onChange={(e) => onChange({ country: e.target.value })}
-      />
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="animate-spin text-gray-400" size={32} />
+        </div>
+      ) : error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-center space-y-3">
+          <p className="text-sm text-red-600">{error}</p>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="text-sm font-semibold text-[#0f3460] underline"
+          >
+            Try again
+          </button>
+        </div>
+      ) : breakdown.length > 0 ? (
+        <div className="space-y-3">
+          {breakdown.map((entry) => (
+            <div
+              key={entry.vendorProfileId}
+              className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4 space-y-2"
+            >
+              <div className="flex justify-between gap-3">
+                <p className="font-semibold text-gray-800">{entry.vendorStoreName ?? "Vendor"}</p>
+                <p className="font-bold text-[#0f3460]">
+                  {formatAmount(entry.deliveryAmount, summary!.currency)}
+                </p>
+              </div>
+              <p className="text-sm text-gray-600">
+                <span className="font-semibold text-gray-800">{entry.distanceKm.toFixed(1)} km</span>{" "}
+                driving distance
+              </p>
+              <p className="text-xs text-gray-500">
+                {formatAmount(entry.baseFeeAmount, summary!.currency)} base +{" "}
+                {formatAmount(entry.perKmRateAmount, summary!.currency)}/km
+              </p>
+            </div>
+          ))}
+          <div className="flex justify-between rounded-xl border border-[#0f3460]/15 bg-[#0f3460]/5 px-4 py-3 text-sm font-semibold text-[#0f3460]">
+            <span>Total delivery</span>
+            <span>{formatAmount(summary!.deliveryAmount, summary!.currency)}</span>
+          </div>
+        </div>
+      ) : null}
+
       <div className="flex gap-3 pt-1">
-        <button type="button" onClick={onBack}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-200 text-gray-600 font-semibold py-3.5 hover:bg-gray-50 transition-colors">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-200 text-gray-600 font-semibold py-3.5 hover:bg-gray-50 transition-colors"
+        >
           <ArrowLeft size={17} /> Back
         </button>
-        <button type="submit"
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors">
+        <button
+          type="button"
+          disabled={!canContinue}
+          onClick={onNext}
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors disabled:opacity-50"
+        >
           Continue to Payment <ArrowRight size={17} />
         </button>
       </div>
-    </form>
+    </div>
+  );
+}
+
+/* ─── Step 3: Payment method ─────────────────────────────────────────── */
+
+function PaymentMethodStep({
+  selected,
+  onSelect,
+  stripeAvailable,
+  quoteLoading,
+  quoteError,
+  canPlaceOrder,
+  paymentMethod,
+  priceSummary,
+  quote,
+  stripeOptions,
+  stripePromise,
+  contact,
+  address,
+  cartItems,
+  vendorCoupons,
+  checkoutApiBase,
+  useAuthCheckout,
+  couponEligibleVendors,
+  checkoutOffers,
+  couponInputs,
+  couponFieldErrors,
+  applyingCouponVendorId,
+  hasUnappliedCouponInput,
+  onCouponInputChange,
+  onApplyCoupon,
+  onRemoveCoupon,
+  onRetryQuote,
+  onBack,
+  onNext,
+  onSuccess,
+}: {
+  selected: PaymentMethod;
+  onSelect: (m: PaymentMethod) => void;
+  stripeAvailable: boolean;
+  quoteLoading: boolean;
+  quoteError: string | null;
+  canPlaceOrder: boolean;
+  paymentMethod: PaymentMethod;
+  priceSummary: PriceSummary | null;
+  quote: QuoteSummary | null;
+  stripeOptions: {
+    clientSecret: string;
+    appearance: {
+      theme: "stripe";
+      variables: { colorPrimary: string; borderRadius: string; fontFamily: string };
+    };
+  } | null;
+  stripePromise: ReturnType<typeof loadStripe> | null;
+  contact: ContactForm;
+  address: AddressForm;
+  cartItems: Array<{ productId: string; quantity: number }>;
+  vendorCoupons: VendorCouponEntry[];
+  checkoutApiBase: string;
+  useAuthCheckout: boolean;
+  couponEligibleVendors: CouponEligibleVendor[];
+  checkoutOffers: CheckoutVendorOffer[];
+  couponInputs: Record<string, string>;
+  couponFieldErrors: Record<string, string>;
+  applyingCouponVendorId: string | null;
+  hasUnappliedCouponInput: boolean;
+  onCouponInputChange: (vendorProfileId: string, value: string) => void;
+  onApplyCoupon: (vendorProfileId: string) => void;
+  onRemoveCoupon: (code: string, vendorProfileId: string) => void;
+  onRetryQuote: () => void;
+  onBack: () => void;
+  onNext: () => void;
+  onSuccess: (orderNumber: string) => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-gray-600">Choose how you would like to pay for this order.</p>
+      <PaymentMethodSelector
+        selected={selected}
+        onSelect={onSelect}
+        stripeAvailable={stripeAvailable}
+      />
+
+      {couponEligibleVendors.length > 0 ? (
+        <div className="space-y-4">
+          {couponEligibleVendors.map((vendor) => {
+            const vendorOffers = checkoutOffers.find(
+              (offer) => offer.vendorProfileId === vendor.vendorProfileId
+            );
+            return (
+              <CouponSection
+                key={vendor.vendorProfileId}
+                storeName={vendor.storeName}
+                couponInput={couponInputs[vendor.vendorProfileId] ?? ""}
+                onCouponInputChange={(value) => onCouponInputChange(vendor.vendorProfileId, value)}
+                availableOffers={vendorOffers?.coupons ?? []}
+                fieldError={couponFieldErrors[vendor.vendorProfileId]}
+                appliedCoupons={(priceSummary?.appliedCoupons ?? quote?.appliedCoupons ?? []).filter(
+                  (coupon) => coupon.vendorProfileId === vendor.vendorProfileId
+                )}
+                onApply={() => onApplyCoupon(vendor.vendorProfileId)}
+                onRemove={(code) => onRemoveCoupon(code, vendor.vendorProfileId)}
+                applying={applyingCouponVendorId === vendor.vendorProfileId}
+              />
+            );
+          })}
+        </div>
+      ) : null}
+
+      {quoteLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="animate-spin text-gray-400" size={28} />
+        </div>
+      ) : null}
+
+      {quoteError && !quoteLoading ? (
+        <div className="text-center py-6 space-y-3">
+          <p className="text-sm text-red-500">{quoteError}</p>
+          <button
+            type="button"
+            onClick={onRetryQuote}
+            className="text-sm text-[#0f3460] underline"
+          >
+            Try again
+          </button>
+        </div>
+      ) : null}
+
+      {hasUnappliedCouponInput && !quoteLoading ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Apply your discount code or clear the field before continuing.
+        </div>
+      ) : null}
+
+      {paymentMethod === "cod" && canPlaceOrder && priceSummary ? (
+        <div className="rounded-xl bg-green-50 border border-green-100 p-4 flex gap-3">
+          <Truck size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-green-800 space-y-1">
+            <p className="font-semibold">Cash on Delivery</p>
+            <p className="text-green-700">
+              You will pay{" "}
+              <span className="font-bold">
+                {formatAmount(priceSummary.grandTotalAmount, priceSummary.currency)}
+              </span>{" "}
+              in cash when your order arrives.
+            </p>
+          </div>
+        </div>
+      ) : null}
+
+      {canPlaceOrder && paymentMethod === "card" && quote && stripeOptions && stripePromise ? (
+        <Elements stripe={stripePromise} options={stripeOptions}>
+          <StripePayForm
+            quote={quote}
+            contact={contact}
+            address={address}
+            cartItems={cartItems}
+            vendorCoupons={vendorCoupons}
+            checkoutApiBase={checkoutApiBase}
+            useAuthCheckout={useAuthCheckout}
+            onBack={onBack}
+            onSuccess={onSuccess}
+          />
+        </Elements>
+      ) : null}
+
+      {paymentMethod === "cod" ? (
+        <div className="flex gap-3 pt-1">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-200 text-gray-600 font-semibold py-3.5 hover:bg-gray-50 transition-colors"
+          >
+            <ArrowLeft size={17} /> Back
+          </button>
+          <button
+            type="button"
+            onClick={onNext}
+            disabled={!canPlaceOrder || quoteLoading}
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors disabled:opacity-50"
+          >
+            Review Order <ArrowRight size={17} />
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -374,27 +744,23 @@ function PaymentMethodSelector({
   onSelect: (m: PaymentMethod) => void;
   stripeAvailable: boolean;
 }) {
-  const options: Array<{
-    id: PaymentMethod;
-    label: string;
-    sub: string;
-    icon: React.ReactNode;
-    disabled?: boolean;
-  }> = [
-    {
-      id: "cod",
-      label: "Cash on Delivery",
-      sub: "Pay in cash when your order arrives",
-      icon: <Banknote size={22} className="text-green-600" />,
-    },
-    {
-      id: "card",
-      label: "Credit / Debit Card",
-      sub: stripeAvailable ? "Visa, Mastercard, Amex — secured by Stripe" : "Stripe not configured — add keys to .env.local",
-      icon: <CreditCard size={22} className="text-blue-600" />,
-      disabled: !stripeAvailable,
-    },
-  ];
+  const cardOption = {
+    id: "card" as const,
+    label: "Credit / Debit Card",
+    sub: stripeAvailable
+      ? "Visa, Mastercard, Amex — secured by Stripe"
+      : "Stripe not configured — add keys to .env.local",
+    icon: <CreditCard size={22} className="text-blue-600" />,
+    disabled: !stripeAvailable,
+  };
+  const codOption = {
+    id: "cod" as const,
+    label: "Cash on Delivery",
+    sub: "Pay in cash when your order arrives",
+    icon: <Banknote size={22} className="text-green-600" />,
+    disabled: false,
+  };
+  const options = stripeAvailable ? [cardOption, codOption] : [codOption, cardOption];
 
   return (
     <div className="space-y-3">
@@ -440,6 +806,8 @@ function CodForm({
   address,
   cartItems,
   vendorCoupons,
+  checkoutApiBase,
+  useAuthCheckout,
   onBack,
   onSuccess,
 }: {
@@ -448,6 +816,8 @@ function CodForm({
   address: AddressForm;
   cartItems: Array<{ productId: string; quantity: number }>;
   vendorCoupons: VendorCouponEntry[];
+  checkoutApiBase: string;
+  useAuthCheckout: boolean;
   onBack: () => void;
   onSuccess: (orderNumber: string) => void;
 }) {
@@ -456,10 +826,9 @@ function CodForm({
   const handlePlace = async () => {
     setPlacing(true);
     try {
-      const res = await fetch("/api/checkout/guest/confirm-cod", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const res = await postCheckout(
+        `${checkoutApiBase}/confirm-cod`,
+        {
           guestName: contact.guestName,
           guestEmail: contact.guestEmail,
           guestPhone: contact.guestPhone,
@@ -470,8 +839,9 @@ function CodForm({
           currency: summary.currency,
           items: cartItems,
           vendorCoupons,
-        }),
-      });
+        },
+        useAuthCheckout
+      );
       const data = await res.json();
       if (!res.ok) {
         toast.error(data?.error?.message ?? "Could not place order. Please try again.");
@@ -489,9 +859,18 @@ function CodForm({
     <div className="space-y-5">
       <div className="rounded-xl bg-green-50 border border-green-100 p-4 flex gap-3">
         <Truck size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-green-800">
+        <div className="text-sm text-green-800 space-y-1">
           <p className="font-semibold">Cash on Delivery</p>
-          <p className="mt-0.5 text-green-700">
+          <p className="text-green-700">
+            Delivery: {formatAmount(summary.deliveryAmount, summary.currency)}
+            {summary.deliveryBreakdown?.length ? (
+              <span className="text-green-600">
+                {" "}
+                ({summary.deliveryBreakdown.map((entry) => `${entry.distanceKm.toFixed(1)} km`).join(", ")})
+              </span>
+            ) : null}
+          </p>
+          <p className="text-green-700">
             Your order will be placed and you pay <span className="font-bold">{formatAmount(summary.grandTotalAmount, summary.currency)}</span> in cash when it arrives.
           </p>
         </div>
@@ -519,6 +898,8 @@ function StripePayForm({
   address,
   cartItems,
   vendorCoupons,
+  checkoutApiBase,
+  useAuthCheckout,
   onBack,
   onSuccess,
 }: {
@@ -527,6 +908,8 @@ function StripePayForm({
   address: AddressForm;
   cartItems: Array<{ productId: string; quantity: number }>;
   vendorCoupons: VendorCouponEntry[];
+  checkoutApiBase: string;
+  useAuthCheckout: boolean;
   onBack: () => void;
   onSuccess: (orderNumber: string) => void;
 }) {
@@ -566,10 +949,9 @@ function StripePayForm({
       }
 
       if (paymentIntent?.status === "succeeded") {
-        const res = await fetch("/api/checkout/guest/confirm", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const res = await postCheckout(
+          `${checkoutApiBase}/confirm`,
+          {
             paymentIntentId: paymentIntent.id,
             guestName: contact.guestName,
             guestEmail: contact.guestEmail,
@@ -581,8 +963,9 @@ function StripePayForm({
             currency: quote.currency,
             items: cartItems,
             vendorCoupons,
-          }),
-        });
+          },
+          useAuthCheckout
+        );
         const data = await res.json();
         if (!res.ok) {
           toast.error(data?.error?.message ?? "Order could not be recorded. Please contact support.");
@@ -623,17 +1006,36 @@ function StripePayForm({
 
 /* ─── Order Summary sidebar ──────────────────────────────────────────── */
 
-function OrderSummary({ summary, loading }: { summary: PriceSummary | null; loading: boolean }) {
-  if (loading || !summary) {
+function OrderSummary({
+  summary,
+  loading,
+  deliveryError,
+  isPaymentStep,
+  hasPricedDelivery,
+}: {
+  summary: PriceSummary | null;
+  loading: boolean;
+  deliveryError?: string | null;
+  isPaymentStep?: boolean;
+  hasPricedDelivery?: boolean;
+}) {
+  if (!summary) {
     return (
       <div className="flex items-center justify-center min-h-[120px]">
-        <Loader2 className="animate-spin text-gray-300" size={24} />
+        <p className="text-sm text-gray-400">Your cart is empty.</p>
       </div>
     );
   }
 
+  const hasDeliveryBreakdown = (summary.deliveryBreakdown?.length ?? 0) > 0;
+
   return (
-    <div className="space-y-4">
+    <div className="relative space-y-4">
+      {loading ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/70">
+          <Loader2 className="animate-spin text-gray-400" size={24} />
+        </div>
+      ) : null}
       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Order Summary</p>
       <div className="space-y-3">
         {summary.lineItems.map((item, idx) => (
@@ -662,10 +1064,53 @@ function OrderSummary({ summary, loading }: { summary: PriceSummary | null; load
           <span>Subtotal</span>
           <span>{formatAmount(summary.subtotalAmount, summary.currency)}</span>
         </div>
-        <div className="flex justify-between text-gray-500">
-          <span>Delivery</span>
-          <span>{summary.deliveryAmount === 0 ? "Free" : formatAmount(summary.deliveryAmount, summary.currency)}</span>
-        </div>
+        {hasDeliveryBreakdown ? (
+          <div className="space-y-2">
+            <div className="flex justify-between text-gray-500">
+              <span>Delivery</span>
+              <span>{formatAmount(summary.deliveryAmount, summary.currency)}</span>
+            </div>
+            <div className="rounded-xl bg-gray-50 px-3 py-2.5 space-y-2 text-xs text-gray-600">
+              {summary.deliveryBreakdown!.map((entry) => (
+                <div key={entry.vendorProfileId} className="space-y-0.5">
+                  <div className="flex justify-between gap-3">
+                    <span className="font-medium text-gray-700 truncate">
+                      {entry.vendorStoreName ?? "Vendor"}
+                    </span>
+                    <span className="font-semibold text-gray-800 flex-shrink-0">
+                      {formatAmount(entry.deliveryAmount, summary.currency)}
+                    </span>
+                  </div>
+                  <p>
+                    {entry.distanceKm.toFixed(1)} km driving distance ·{" "}
+                    {formatAmount(entry.baseFeeAmount, summary.currency)} base +{" "}
+                    {formatAmount(entry.perKmRateAmount, summary.currency)}/km
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : deliveryError ? (
+          <div className="space-y-2">
+            <div className="flex justify-between text-gray-500">
+              <span>Delivery</span>
+              <span className="text-red-500">Unavailable</span>
+            </div>
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+              {deliveryError}
+            </p>
+          </div>
+        ) : isPaymentStep && (loading || !hasPricedDelivery) ? (
+          <div className="flex justify-between text-gray-500">
+            <span>Delivery</span>
+            <span className="text-gray-400">{loading ? "Calculating distance…" : "Waiting for address"}</span>
+          </div>
+        ) : (
+          <div className="flex justify-between text-gray-500">
+            <span>Delivery</span>
+            <span>{summary.deliveryAmount === 0 ? "Calculated at payment" : formatAmount(summary.deliveryAmount, summary.currency)}</span>
+          </div>
+        )}
         {summary.discountAmount > 0 ? (
           <div className="flex justify-between text-green-600">
             <span>Discount</span>
@@ -704,7 +1149,8 @@ function SuccessScreen({
           <CheckCircle size={40} className="text-green-500" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Order Placed!</h1>
+          <p className="text-xs font-semibold uppercase tracking-wider text-green-600">Confirmation</p>
+          <h1 className="text-2xl font-bold text-gray-900 mt-1">Order Placed!</h1>
           <p className="text-gray-500 mt-2 text-sm">
             {paymentMethod === "cod"
               ? "Your order is confirmed. Please have cash ready when your delivery arrives."
@@ -767,13 +1213,17 @@ export default function CheckoutPage() {
   const { cart, removeItem } = useCart();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { currency, formatPrice } = useCurrency();
+  const { currency } = useCurrency();
 
   const [step, setStep] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
+  const stripeAvailable = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
+    stripeAvailable ? "card" : "cod"
+  );
   const [contact, setContact] = useState<ContactForm>({ guestName: "", guestEmail: "", guestPhone: "" });
   const [address, setAddress] = useState<AddressForm>({ addressLine1: "", city: "", country: "", postalCode: "" });
   const [customerPrefillReady, setCustomerPrefillReady] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState<CustomerAddress[]>([]);
 
   // Stripe quote (only needed when card payment is selected)
   const [quote, setQuote] = useState<QuoteSummary | null>(null);
@@ -790,7 +1240,11 @@ export default function CheckoutPage() {
   const [couponFieldErrors, setCouponFieldErrors] = useState<Record<string, string>>({});
   const [checkoutOffers, setCheckoutOffers] = useState<CheckoutVendorOffer[]>([]);
   const [applyingCouponVendorId, setApplyingCouponVendorId] = useState<string | null>(null);
-  const stripeAvailable = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  const isCustomerCheckout = isAuthenticated && user?.role === "CUSTOMER";
+  const checkoutApiBase = useMemo(
+    () => getCheckoutApiBase(isCustomerCheckout),
+    [isCustomerCheckout]
+  );
 
   const cartItems = cart.items;
   const cartItemsPayload = useMemo(
@@ -806,6 +1260,7 @@ export default function CheckoutPage() {
     currency: data.currency,
     lineItems: data.lineItems,
     appliedCoupons: data.appliedCoupons ?? [],
+    deliveryBreakdown: data.deliveryBreakdown,
   });
 
   useEffect(() => {
@@ -836,6 +1291,7 @@ export default function CheckoutPage() {
         const addresses = await parseApiResponse<CustomerAddress[]>(response);
         if (cancelled) return;
 
+        setSavedAddresses(addresses);
         const preferred = addresses.find((item) => item.isDefault) ?? addresses[0];
         if (preferred) {
           setContact((prev) => ({
@@ -868,19 +1324,15 @@ export default function CheckoutPage() {
     !customerPrefillReady;
 
   const fetchStripeQuote = useCallback(async (coupons: VendorCouponEntry[]) => {
-    if (cartItems.length === 0) return;
+    if (cartItems.length === 0 || !isDeliveryAddressComplete(address)) return;
     setQuoteLoading(true);
     setQuoteError(null);
     try {
-      const res = await fetch("/api/checkout/guest/intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: cartItemsPayload,
-          currency,
-          vendorCoupons: coupons,
-        }),
-      });
+      const res = await postCheckout(
+        `${checkoutApiBase}/intent`,
+        buildGuestCheckoutRequestBody(cartItemsPayload, currency, coupons, address),
+        isCustomerCheckout
+      );
       const data = await parseApiResponse<QuoteSummary>(res);
       setQuote(data);
       setPriceSummary(mapQuoteToSummary(data));
@@ -891,22 +1343,18 @@ export default function CheckoutPage() {
     } finally {
       setQuoteLoading(false);
     }
-  }, [cartItems.length, cartItemsPayload, currency]);
+  }, [address, cartItems.length, cartItemsPayload, checkoutApiBase, currency, isCustomerCheckout]);
 
   const fetchCodPricing = useCallback(async (coupons: VendorCouponEntry[]) => {
-    if (cartItems.length === 0) return;
+    if (cartItems.length === 0 || !isDeliveryAddressComplete(address)) return;
     setQuoteLoading(true);
     setQuoteError(null);
     try {
-      const res = await fetch("/api/checkout/guest/pricing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: cartItemsPayload,
-          currency,
-          vendorCoupons: coupons,
-        }),
-      });
+      const res = await postCheckout(
+        `${checkoutApiBase}/pricing`,
+        buildGuestCheckoutRequestBody(cartItemsPayload, currency, coupons, address),
+        isCustomerCheckout
+      );
       const data = await parseApiResponse<PriceSummary>(res);
       setPriceSummary(mapQuoteToSummary(data));
     } catch (error) {
@@ -916,7 +1364,7 @@ export default function CheckoutPage() {
     } finally {
       setQuoteLoading(false);
     }
-  }, [cartItems.length, cartItemsPayload, currency]);
+  }, [address, cartItems.length, cartItemsPayload, checkoutApiBase, currency, isCustomerCheckout]);
 
   const refreshPricing = useCallback(
     async (coupons: VendorCouponEntry[]) => {
@@ -950,17 +1398,13 @@ export default function CheckoutPage() {
     try {
       const endpoint =
         paymentMethod === "card" && stripeAvailable
-          ? "/api/checkout/guest/intent"
-          : "/api/checkout/guest/pricing";
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: cartItemsPayload,
-          currency,
-          vendorCoupons: nextCoupons,
-        }),
-      });
+          ? `${checkoutApiBase}/intent`
+          : `${checkoutApiBase}/pricing`;
+      const res = await postCheckout(
+        endpoint,
+        buildGuestCheckoutRequestBody(cartItemsPayload, currency, nextCoupons, address),
+        isCustomerCheckout
+      );
       const data = await parseApiResponse<PriceSummary & Partial<QuoteSummary>>(res);
       const summary = mapQuoteToSummary(data);
       const applied = summary.appliedCoupons.some(
@@ -1024,15 +1468,69 @@ export default function CheckoutPage() {
     [cart.items, removeItem, contact.guestEmail]
   );
 
-  // Clear any stale error and re-fetch when switching payment methods
-  const handleMethodChange = (m: PaymentMethod) => {
-    setPaymentMethod(m);
-    setQuoteError(null);
-    setQuote(null);
+  const handleSelectSavedAddress = (saved: CustomerAddress) => {
+    setContact((prev) => ({
+      guestName: saved.fullName || prev.guestName,
+      guestPhone: saved.phone || prev.guestPhone,
+      guestEmail: prev.guestEmail,
+    }));
+    setAddress({
+      addressLine1: saved.addressLine1,
+      city: saved.city,
+      country: saved.country,
+      postalCode: saved.postalCode ?? "",
+    });
     setPriceSummary(null);
+    setQuote(null);
+    setQuoteError(null);
   };
 
-  const displaySummary = priceSummary ?? (quote ? mapQuoteToSummary(quote) : null);
+  const handleMethodChange = (m: PaymentMethod) => {
+    setPaymentMethod(m);
+    setQuote(null);
+    setQuoteError(null);
+  };
+
+  const cartPreviewSummary = useMemo((): PriceSummary | null => {
+    if (cartItems.length === 0) return null;
+
+    const lineItems: LineItem[] = cartItems.map((item) => {
+      const nativeCurrency = item.productCurrency ?? "USD";
+      const unitPriceAmount = Math.round(
+        convertMajorUnits(item.productPrice, nativeCurrency, currency) * 100
+      );
+
+      return {
+        productId: item.productId,
+        productName: item.productName,
+        productImage: item.productImage || null,
+        productSku: null,
+        vendorProfileId: item.vendorProfileId ?? "",
+        categoryId: "",
+        quantity: item.quantity,
+        unitPriceAmount,
+        lineTotalAmount: unitPriceAmount * item.quantity,
+        currency,
+      };
+    });
+
+    const subtotalAmount = lineItems.reduce((sum, item) => sum + item.lineTotalAmount, 0);
+
+    return {
+      subtotalAmount,
+      deliveryAmount: 0,
+      discountAmount: 0,
+      grandTotalAmount: subtotalAmount,
+      currency,
+      lineItems,
+      appliedCoupons: [],
+    };
+  }, [cartItems, currency]);
+
+  const displaySummary =
+    priceSummary ??
+    (quote ? mapQuoteToSummary(quote) : null) ??
+    cartPreviewSummary;
 
   const couponEligibleVendors = useMemo<CouponEligibleVendor[]>(() => {
     const vendors = new Map<string, string>();
@@ -1072,10 +1570,16 @@ export default function CheckoutPage() {
   }, [cartItems, displaySummary]);
 
   useEffect(() => {
+    if (step !== 1 || !isDeliveryAddressComplete(address)) return;
+    void fetchCodPricing(vendorCoupons);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, currency, address.addressLine1, address.city, address.country, address.postalCode]);
+
+  useEffect(() => {
     if (step !== 2) return;
     void refreshPricing(vendorCoupons);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, paymentMethod, currency]);
+  }, [step, paymentMethod, stripeAvailable, currency]);
 
   useEffect(() => {
     if (step !== 2 || couponEligibleVendors.length === 0) return;
@@ -1119,7 +1623,12 @@ export default function CheckoutPage() {
     return <PageLoader message="Loading checkout..." fullScreen />;
   }
 
-  const stepIcons = [<User key="u" size={18} />, <MapPin key="m" size={18} />, <CreditCard key="c" size={18} />];
+  const stepIcons = [
+    <MapPin key="s" size={18} />,
+    <Truck key="d" size={18} />,
+    <CreditCard key="p" size={18} />,
+    <ClipboardList key="r" size={18} />,
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1161,125 +1670,109 @@ export default function CheckoutPage() {
 
           {/* Step card */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="text-lg font-bold text-[#0f3460] mb-6">{STEP_LABELS[step]}</h2>
+            <h2 className="text-lg font-bold text-[#0f3460] mb-6">
+              {STEP_LABELS[step]}
+              <span className="ml-2 text-sm font-normal text-gray-400">
+                Step {step + 1} of {STEP_LABELS.length}
+              </span>
+            </h2>
 
             {step === 0 && (
-              <ContactStep
-                form={contact}
-                onChange={(f) => setContact((prev) => ({ ...prev, ...f }))}
+              <ShippingAddressStep
+                contact={contact}
+                address={address}
+                savedAddresses={savedAddresses}
+                onContactChange={(f) => setContact((prev) => ({ ...prev, ...f }))}
+                onAddressChange={(f) => setAddress((prev) => ({ ...prev, ...f }))}
+                onSelectSavedAddress={handleSelectSavedAddress}
                 onNext={() => setStep(1)}
               />
             )}
 
             {step === 1 && (
-              <AddressStep
-                form={address}
-                onChange={(f) => setAddress((prev) => ({ ...prev, ...f }))}
+              <DeliveryCostStep
+                summary={priceSummary}
+                loading={quoteLoading}
+                error={quoteError}
+                onRetry={() => void fetchCodPricing(vendorCoupons)}
                 onNext={() => setStep(2)}
                 onBack={() => setStep(0)}
               />
             )}
 
             {step === 2 && (
+              <PaymentMethodStep
+                selected={paymentMethod}
+                onSelect={handleMethodChange}
+                stripeAvailable={stripeAvailable}
+                quoteLoading={quoteLoading}
+                quoteError={quoteError}
+                canPlaceOrder={canPlaceOrder}
+                paymentMethod={paymentMethod}
+                priceSummary={priceSummary}
+                quote={quote}
+                stripeOptions={stripeOptions}
+                stripePromise={stripePromise}
+                contact={contact}
+                address={address}
+                cartItems={cartItemsPayload}
+                vendorCoupons={vendorCoupons}
+                checkoutApiBase={checkoutApiBase}
+                useAuthCheckout={isCustomerCheckout}
+                couponEligibleVendors={couponEligibleVendors}
+                checkoutOffers={checkoutOffers}
+                couponInputs={couponInputs}
+                couponFieldErrors={couponFieldErrors}
+                applyingCouponVendorId={applyingCouponVendorId}
+                hasUnappliedCouponInput={hasUnappliedCouponInput}
+                onCouponInputChange={(vendorProfileId, value) => {
+                  setCouponInputs((current) => ({
+                    ...current,
+                    [vendorProfileId]: value,
+                  }));
+                  setCouponFieldErrors((current) => ({
+                    ...current,
+                    [vendorProfileId]: "",
+                  }));
+                }}
+                onApplyCoupon={(vendorProfileId) => void handleApplyCoupon(vendorProfileId)}
+                onRemoveCoupon={(code, vendorProfileId) =>
+                  void handleRemoveCoupon(code, vendorProfileId)
+                }
+                onRetryQuote={() => void refreshPricing(vendorCoupons)}
+                onNext={() => setStep(3)}
+                onBack={() => setStep(1)}
+                onSuccess={handleSuccess}
+              />
+            )}
+
+            {step === 3 && paymentMethod === "cod" && (
               <div className="space-y-6">
-                {couponEligibleVendors.length > 0 ? (
-                  <div className="space-y-4">
-                    {couponEligibleVendors.map((vendor) => {
-                      const vendorOffers = checkoutOffers.find(
-                        (offer) => offer.vendorProfileId === vendor.vendorProfileId
-                      );
-                      return (
-                        <CouponSection
-                          key={vendor.vendorProfileId}
-                          storeName={vendor.storeName}
-                          couponInput={couponInputs[vendor.vendorProfileId] ?? ""}
-                          onCouponInputChange={(value) => {
-                            setCouponInputs((current) => ({
-                              ...current,
-                              [vendor.vendorProfileId]: value,
-                            }));
-                            setCouponFieldErrors((current) => ({
-                              ...current,
-                              [vendor.vendorProfileId]: "",
-                            }));
-                          }}
-                          availableOffers={vendorOffers?.coupons ?? []}
-                          fieldError={couponFieldErrors[vendor.vendorProfileId]}
-                          appliedCoupons={(displaySummary?.appliedCoupons ?? []).filter(
-                            (coupon) => coupon.vendorProfileId === vendor.vendorProfileId
-                          )}
-                          onApply={() => void handleApplyCoupon(vendor.vendorProfileId)}
-                          onRemove={(code) =>
-                            void handleRemoveCoupon(code, vendor.vendorProfileId)
-                          }
-                          applying={applyingCouponVendorId === vendor.vendorProfileId}
-                        />
-                      );
-                    })}
-                  </div>
-                ) : null}
+                <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4 space-y-3 text-sm">
+                  <p className="font-semibold text-gray-800">Shipping to</p>
+                  <p className="text-gray-600">
+                    {contact.guestName} · {contact.guestPhone}
+                    <br />
+                    {address.addressLine1}, {address.city}, {address.country}
+                    {address.postalCode ? ` ${address.postalCode}` : ""}
+                  </p>
+                  <p className="font-semibold text-gray-800 pt-1">Payment</p>
+                  <p className="text-gray-600">Cash on Delivery</p>
+                </div>
 
-                {couponEligibleVendors.length > 0 ? <div className="h-px bg-gray-100" /> : null}
-
-                {/* Payment method picker */}
-                <PaymentMethodSelector
-                  selected={paymentMethod}
-                  onSelect={handleMethodChange}
-                  stripeAvailable={stripeAvailable}
-                />
-
-                <div className="h-px bg-gray-100" />
-
-                {/* Payment action area */}
-                {quoteLoading && (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="animate-spin text-gray-400" size={28} />
-                  </div>
-                )}
-
-                {quoteError && !quoteLoading && (
-                  <div className="text-center py-6 space-y-3">
-                    <p className="text-sm text-red-500">{quoteError}</p>
-                    <button
-                      onClick={() => void refreshPricing(vendorCoupons)}
-                      className="text-sm text-[#0f3460] underline"
-                    >
-                      Try again
-                    </button>
-                  </div>
-                )}
-
-                {hasUnappliedCouponInput && !quoteLoading ? (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                    Apply your discount code or clear the field before placing your order.
-                  </div>
-                ) : null}
-
-                {canPlaceOrder && paymentMethod === "cod" && priceSummary && (
+                {canPlaceOrder && priceSummary ? (
                   <CodForm
                     summary={priceSummary}
                     contact={contact}
                     address={address}
                     cartItems={cartItemsPayload}
                     vendorCoupons={vendorCoupons}
-                    onBack={() => setStep(1)}
+                    checkoutApiBase={checkoutApiBase}
+                    useAuthCheckout={isCustomerCheckout}
+                    onBack={() => setStep(2)}
                     onSuccess={handleSuccess}
                   />
-                )}
-
-                {canPlaceOrder && paymentMethod === "card" && quote && stripeOptions && stripePromise && (
-                  <Elements stripe={stripePromise} options={stripeOptions}>
-                    <StripePayForm
-                      quote={quote}
-                      contact={contact}
-                      address={address}
-                      cartItems={cartItemsPayload}
-                      vendorCoupons={vendorCoupons}
-                      onBack={() => setStep(1)}
-                      onSuccess={handleSuccess}
-                    />
-                  </Elements>
-                )}
+                ) : null}
               </div>
             )}
           </div>
@@ -1289,35 +1782,13 @@ export default function CheckoutPage() {
         {/* Right: order summary */}
         <div className="lg:sticky lg:top-8 self-start">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <OrderSummary summary={displaySummary} loading={step === 2 && quoteLoading} />
-            {step < 2 && cartItems.length > 0 && (
-              <div className="space-y-4 mt-2">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Your Cart</p>
-                {cartItems.map((item) => (
-                  <div key={item.id} className="flex items-start gap-3">
-                    {item.productImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.productImage} alt={item.productName}
-                        className="w-12 h-12 rounded-xl object-cover border border-gray-100 flex-shrink-0" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                        <Package size={16} className="text-gray-400" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">{item.productName}</p>
-                      <p className="text-xs text-gray-400">Qty: {item.quantity}</p>
-                    </div>
-                    <p className="text-sm font-semibold text-gray-900 flex-shrink-0">
-                      {formatPrice(
-                        item.productPrice * item.quantity,
-                        item.productCurrency ?? "USD"
-                      )}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+            <OrderSummary
+              summary={displaySummary}
+              loading={(step === 1 || step === 2) && quoteLoading}
+              deliveryError={step >= 1 ? quoteError : null}
+              isPaymentStep={step >= 1}
+              hasPricedDelivery={Boolean(priceSummary?.deliveryBreakdown?.length)}
+            />
           </div>
         </div>
       </div>

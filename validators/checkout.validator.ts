@@ -14,3 +14,10 @@ export const guestCheckoutCouponsSchema = z.object({
   vendorCoupons: z.array(vendorCouponEntrySchema).optional(),
   couponCodes: z.array(z.string().trim().min(1)).optional(),
 });
+
+export const guestCheckoutDeliveryAddressSchema = z.object({
+  addressLine1: z.string().trim().min(1),
+  city: z.string().trim().min(1),
+  country: z.string().trim().min(1),
+  postalCode: z.string().trim().optional(),
+});

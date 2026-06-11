@@ -45,6 +45,13 @@ export function applyQuoteCurrency(
     grandTotalAmount: convertMinorUnits(summary.grandTotalAmount, quote.currency, currency),
   }));
 
+  const deliveryBreakdown = quote.deliveryBreakdown?.map((entry) => ({
+    ...entry,
+    baseFeeAmount: convertMinorUnits(entry.baseFeeAmount, quote.currency, currency),
+    perKmRateAmount: convertMinorUnits(entry.perKmRateAmount, quote.currency, currency),
+    deliveryAmount: convertMinorUnits(entry.deliveryAmount, quote.currency, currency),
+  }));
+
   return {
     subtotalAmount: convertMinorUnits(quote.subtotalAmount, quote.currency, currency),
     deliveryAmount: convertMinorUnits(quote.deliveryAmount, quote.currency, currency),
@@ -54,5 +61,6 @@ export function applyQuoteCurrency(
     lineItems,
     appliedCoupons,
     vendorSummaries,
+    deliveryBreakdown,
   };
 }

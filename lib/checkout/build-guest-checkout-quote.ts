@@ -7,8 +7,14 @@ import {
 import { getCouponEligibleSubtotal } from "@/lib/vendor-coupon/product-scope";
 import { applyQuoteCurrency } from "@/lib/currency/apply-quote-currency";
 import { convertMinorUnits } from "@/lib/currency/convert";
+import { GuestCheckoutQuoteError } from "@/lib/checkout/guest-checkout-quote-error";
+import {
+  calculateGuestDelivery,
+  type GuestCheckoutDeliveryBreakdown,
+} from "@/lib/delivery/calculate-guest-delivery";
 import { prisma } from "@/lib/db/prisma";
 import { isMongoObjectId } from "@/lib/db/object-id";
+import type { PostalAddress } from "@/lib/maps/google-maps";
 
 export type GuestCheckoutCartItem = {
   productId: string;
@@ -47,6 +53,8 @@ export type GuestCheckoutVendorSummary = {
   couponCode: string | null;
 };
 
+export type { GuestCheckoutDeliveryBreakdown };
+
 export type GuestCheckoutQuote = {
   subtotalAmount: number;
   deliveryAmount: number;
@@ -56,18 +64,10 @@ export type GuestCheckoutQuote = {
   lineItems: GuestCheckoutLineItem[];
   appliedCoupons: AppliedGuestCoupon[];
   vendorSummaries: GuestCheckoutVendorSummary[];
+  deliveryBreakdown?: GuestCheckoutDeliveryBreakdown[];
 };
 
-export class GuestCheckoutQuoteError extends Error {
-  code: string;
-  status: number;
-
-  constructor(code: string, message: string, status = 400) {
-    super(message);
-    this.code = code;
-    this.status = status;
-  }
-}
+export { GuestCheckoutQuoteError };
 
 const productInclude = {
   vendorProfile: true,
@@ -105,6 +105,7 @@ export async function buildGuestCheckoutQuote(input: {
   /** @deprecated Prefer vendorCoupons so codes are validated per vendor. */
   couponCodes?: string[];
   vendorCoupons?: GuestCheckoutCouponEntry[];
+  deliveryAddress?: PostalAddress;
 }): Promise<GuestCheckoutQuote> {
   const currency = input.currency ?? "USD";
   const couponEntries = normalizeGuestCheckoutCoupons({
@@ -156,7 +157,19 @@ export async function buildGuestCheckoutQuote(input: {
   });
 
   const subtotalAmount = lineItems.reduce((sum, item) => sum + item.lineTotalAmount, 0);
-  const deliveryAmount = 0;
+
+  const vendorProfileIds = [...new Set(lineItems.map((item) => item.vendorProfileId))];
+  let deliveryAmount = 0;
+  let deliveryBreakdown: GuestCheckoutDeliveryBreakdown[] | undefined;
+
+  if (input.deliveryAddress) {
+    const deliveryQuote = await calculateGuestDelivery({
+      vendorProfileIds,
+      deliveryAddress: input.deliveryAddress,
+    });
+    deliveryAmount = deliveryQuote.totalAmount;
+    deliveryBreakdown = deliveryQuote.breakdown;
+  }
 
   const vendorSubtotals = lineItems.reduce<Record<string, number>>((acc, item) => {
     acc[item.vendorProfileId] = (acc[item.vendorProfileId] ?? 0) + item.lineTotalAmount;
@@ -251,11 +264,15 @@ export async function buildGuestCheckoutQuote(input: {
   const discountAmount = appliedCoupons.reduce((sum, coupon) => sum + coupon.discountAmount, 0);
   const grandTotalAmount = Math.max(0, subtotalAmount + deliveryAmount - discountAmount);
 
+  const deliveryByVendor = new Map(
+    (deliveryBreakdown ?? []).map((entry) => [entry.vendorProfileId, entry.deliveryAmount])
+  );
+
   const vendorSummaries: GuestCheckoutVendorSummary[] = Object.entries(vendorSubtotals).map(
     ([vendorProfileId, vendorSubtotal]) => {
       const discount = vendorDiscounts[vendorProfileId]?.amount ?? 0;
       const couponCode = vendorDiscounts[vendorProfileId]?.code ?? null;
-      const vendorDelivery = 0;
+      const vendorDelivery = deliveryByVendor.get(vendorProfileId) ?? 0;
       return {
         vendorProfileId,
         subtotalAmount: vendorSubtotal,
@@ -276,6 +293,7 @@ export async function buildGuestCheckoutQuote(input: {
     lineItems,
     appliedCoupons,
     vendorSummaries,
+    deliveryBreakdown,
   };
 
   return applyQuoteCurrency(quote, currency);

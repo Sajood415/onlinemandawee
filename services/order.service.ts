@@ -17,7 +17,7 @@ import { CartRepository } from "@/repositories/cart.repository";
 import { CustomerAddressRepository } from "@/repositories/customer-address.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
-import { DeliveryPricingService } from "@/services/delivery-pricing.service";
+import { resolveDistanceDeliveryQuote } from "@/lib/delivery/resolve-distance-delivery";
 import { OrderSettlementService } from "@/services/order-settlement.service";
 
 type QuoteLine = {
@@ -60,6 +60,14 @@ type QuoteResult = {
   grandTotalSnapshot: number;
   grandTotalCurrent: number;
   hasSnapshotChanges: boolean;
+  deliveryBreakdown?: Array<{
+    vendorProfileId: string;
+    vendorStoreName: string | null;
+    distanceKm: number;
+    baseFeeAmount: number;
+    perKmRateAmount: number;
+    deliveryAmount: number;
+  }>;
   vendorGroups: Array<{
     vendorProfileId: string;
     vendorStoreSlug: string | null;
@@ -79,7 +87,6 @@ export class OrderService {
     private readonly orderRepository = new OrderRepository(),
     private readonly vendorProfileRepository = new VendorProfileRepository(),
     private readonly auditLogRepository = new AuditLogRepository(),
-    private readonly deliveryPricingService = new DeliveryPricingService(),
     private readonly orderSettlementService = new OrderSettlementService()
   ) {}
 
@@ -401,22 +408,19 @@ export class OrderService {
       (sum, item) => sum + item.currentLineTotal,
       0
     );
-    const deliveryQuote = await this.deliveryPricingService.quote({
-      method: input.method,
-      countryCode: address.country,
-      currency,
-      distanceKm: input.distanceKm,
-      items: items.map((item) => ({
-        vendorProfileId: item.vendorProfileId,
-        quantity: item.quantity,
-        currentLineTotal: item.currentLineTotal,
-      })),
-      vendorGroups: vendorGroups.map((vendorGroup) => ({
-        vendorProfileId: vendorGroup.vendorProfileId,
-        subtotalCurrent: vendorGroup.subtotalCurrent,
-      })),
-    });
-    const deliveryTotal = deliveryQuote.totalAmount;
+    const deliveryQuote =
+      input.method === "PICKUP"
+        ? null
+        : await resolveDistanceDeliveryQuote({
+            vendorProfileIds: [...new Set(items.map((item) => item.vendorProfileId))],
+            deliveryAddress: {
+              addressLine1: address.addressLine1,
+              city: address.city,
+              country: address.country,
+              postalCode: address.postalCode,
+            },
+          });
+    const deliveryTotal = deliveryQuote?.totalAmount ?? 0;
 
     return {
       currency,
@@ -437,12 +441,13 @@ export class OrderService {
       grandTotalSnapshot: subtotalSnapshot + deliveryTotal,
       grandTotalCurrent: subtotalCurrent + deliveryTotal,
       hasSnapshotChanges: items.some((item) => item.snapshotChanged),
+      deliveryBreakdown: deliveryQuote?.breakdown,
       vendorGroups: vendorGroups.map((vendorGroup) => ({
         ...vendorGroup,
         deliveryAmount:
-          deliveryQuote.breakdown.find(
+          deliveryQuote?.breakdown.find(
             (entry) => entry.vendorProfileId === vendorGroup.vendorProfileId
-          )?.amount ?? 0,
+          )?.deliveryAmount ?? 0,
       })),
     };
   }

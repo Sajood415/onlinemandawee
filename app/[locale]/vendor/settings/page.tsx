@@ -11,6 +11,7 @@ import {
   ImageIcon,
   User,
   Landmark,
+  MapPin,
   Wallet,
 } from "lucide-react";
 
@@ -25,6 +26,13 @@ import type { IndustryType } from "@/domain/vendor/vendor-types";
 
 type PayoutMethod = "BANK" | "STRIPE";
 
+type VendorAddress = {
+  addressLine1: string;
+  city: string;
+  country: string;
+  postalCode: string;
+};
+
 type VendorProfile = {
   storeName: string;
   storeSlug: string;
@@ -32,6 +40,7 @@ type VendorProfile = {
   industryType: IndustryType | null;
   logoUrl: string;
   description: string;
+  address: VendorAddress | null;
   user: { fullName: string; email: string; phone: string };
   payoutMethod: {
     method: PayoutMethod;
@@ -106,6 +115,10 @@ function BusinessInfoTab({
   const [logoPreview, setLogoPreview] = useState<string | null>(profile.logoUrl || null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [addressLine1, setAddressLine1] = useState(profile.address?.addressLine1 ?? "");
+  const [city, setCity] = useState(profile.address?.city ?? "");
+  const [country, setCountry] = useState(profile.address?.country ?? "");
+  const [postalCode, setPostalCode] = useState(profile.address?.postalCode ?? "");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const descLen = description.trim().length;
@@ -126,6 +139,15 @@ function BusinessInfoTab({
     }
     if (descOver) {
       toast.error("Description too long", "Keep description under 500 characters.");
+      return;
+    }
+    if (
+      !addressLine1.trim() ||
+      !city.trim() ||
+      !country.trim() ||
+      !postalCode.trim()
+    ) {
+      toast.error("Store address", "Fill in your full pickup address so delivery can be calculated.");
       return;
     }
 
@@ -157,18 +179,35 @@ function BusinessInfoTab({
         ...(description.trim() ? { description: description.trim() } : {}),
       };
 
-      const res = await fetch("/api/vendor/profile", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-      });
-      const data = await parseApiResponse<Partial<VendorProfile>>(res);
+      const [businessRes, addressRes] = await Promise.all([
+        fetch("/api/vendor/profile", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        }),
+        fetch("/api/vendor/profile/address", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            addressLine1: addressLine1.trim(),
+            city: city.trim(),
+            country: country.trim(),
+            postalCode: postalCode.trim(),
+          }),
+        }),
+      ]);
+
+      const data = await parseApiResponse<Partial<VendorProfile>>(businessRes);
+      const addressData = await parseApiResponse<VendorAddress>(addressRes);
       invalidateVendorStoreNameCache();
-      onSaved(data);
-      toast.success("Saved", "Business info updated successfully.");
+      onSaved({ ...data, address: addressData });
+      toast.success("Saved", "Business info and store address updated.");
     } catch (e) {
       toast.error("Could not save", e instanceof Error ? e.message : "Unknown error");
     } finally {
@@ -328,6 +367,84 @@ function BusinessInfoTab({
               </p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Store pickup address */}
+      <div className={SECTION}>
+        <h2 className={SECTION_TITLE}>
+          <MapPin className="mr-2 inline h-4 w-4 text-neutral-400" />
+          Store pickup address
+        </h2>
+        <p className={SECTION_LEAD}>
+          Where orders are prepared and shipped from. Customers see delivery cost based on driving
+          distance from this address to their delivery location.
+        </p>
+
+        <div className="mt-6 flex flex-col gap-5">
+          <div className={FIELD}>
+            <label htmlFor="store-address-line1" className={LABEL}>
+              Street address <RequiredMark />
+            </label>
+            <input
+              id="store-address-line1"
+              className={CONTROL}
+              value={addressLine1}
+              onChange={(e) => setAddressLine1(e.target.value)}
+              placeholder="123 Main Street, Shop 4"
+              maxLength={255}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div className={FIELD}>
+              <label htmlFor="store-city" className={LABEL}>
+                City <RequiredMark />
+              </label>
+              <input
+                id="store-city"
+                className={CONTROL}
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Kabul"
+                maxLength={120}
+              />
+            </div>
+            <div className={FIELD}>
+              <label htmlFor="store-postal-code" className={LABEL}>
+                Postal code <RequiredMark />
+              </label>
+              <input
+                id="store-postal-code"
+                className={CONTROL}
+                value={postalCode}
+                onChange={(e) => setPostalCode(e.target.value)}
+                placeholder="1001"
+                maxLength={40}
+              />
+            </div>
+          </div>
+
+          <div className={FIELD}>
+            <label htmlFor="store-country" className={LABEL}>
+              Country <RequiredMark />
+            </label>
+            <input
+              id="store-country"
+              className={CONTROL}
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              placeholder="Afghanistan"
+              maxLength={120}
+            />
+          </div>
+
+          {!profile.address ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">
+              <strong>Required for checkout:</strong> Add your pickup address so customers can see
+              delivery pricing when they buy from your store.
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -614,7 +731,7 @@ export default function VendorSettingsPage() {
           Settings
         </h1>
         <p className="mt-1 text-sm text-neutral-500">
-          Manage your business profile and payout details.
+          Manage your business profile, store address, and payout details.
         </p>
       </div>
 

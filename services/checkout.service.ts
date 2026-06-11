@@ -1,15 +1,14 @@
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import { resolveDistanceDeliveryQuote } from "@/lib/delivery/resolve-distance-delivery";
 import { CartRepository } from "@/repositories/cart.repository";
 import { CustomerAddressRepository } from "@/repositories/customer-address.repository";
-import { DeliveryPricingService } from "@/services/delivery-pricing.service";
 
 export class CheckoutService {
   constructor(
     private readonly cartRepository = new CartRepository(),
-    private readonly customerAddressRepository = new CustomerAddressRepository(),
-    private readonly deliveryPricingService = new DeliveryPricingService()
+    private readonly customerAddressRepository = new CustomerAddressRepository()
   ) {}
 
   async quote(
@@ -141,21 +140,15 @@ export class CheckoutService {
       0
     );
     const deliveryQuote =
-      address && input.method
-        ? await this.deliveryPricingService.quote({
-            method: input.method,
-            countryCode: address.country,
-            currency: quoteCurrency,
-            distanceKm: input.distanceKm,
-            items: items.map((item) => ({
-              vendorProfileId: item.vendorProfileId,
-              quantity: item.quantity,
-              currentLineTotal: item.currentLineTotal,
-            })),
-            vendorGroups: Object.values(groupedByVendor).map((vendorGroup) => ({
-              vendorProfileId: vendorGroup.vendorProfileId,
-              subtotalCurrent: vendorGroup.subtotalCurrent,
-            })),
+      address && input.method && input.method !== "PICKUP"
+        ? await resolveDistanceDeliveryQuote({
+            vendorProfileIds: [...new Set(items.map((item) => item.vendorProfileId))],
+            deliveryAddress: {
+              addressLine1: address.addressLine1,
+              city: address.city,
+              country: address.country,
+              postalCode: address.postalCode,
+            },
           })
         : null;
     const deliveryTotal = deliveryQuote?.totalAmount ?? 0;
@@ -182,18 +175,13 @@ export class CheckoutService {
       grandTotalCurrent: subtotalCurrent + deliveryTotal,
       hasSnapshotChanges: items.some((item) => item.snapshotChanged),
       deliveryBreakdown: deliveryQuote?.breakdown ?? [],
-      deliveryEta: deliveryQuote
-        ? {
-            minDays: deliveryQuote.etaMinDays,
-            maxDays: deliveryQuote.etaMaxDays,
-          }
-        : null,
+      deliveryEta: null,
       vendorGroups: Object.values(groupedByVendor).map((vendorGroup) => ({
         ...vendorGroup,
         deliveryAmount:
           deliveryQuote?.breakdown.find(
             (entry) => entry.vendorProfileId === vendorGroup.vendorProfileId
-          )?.amount ?? 0,
+          )?.deliveryAmount ?? 0,
       })),
     };
   }

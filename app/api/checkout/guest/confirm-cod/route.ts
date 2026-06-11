@@ -51,6 +51,12 @@ export const POST = withErrorHandling(async (request) => {
       currency: input.currency,
       couponCodes: input.couponCodes,
       vendorCoupons: input.vendorCoupons,
+      deliveryAddress: {
+        addressLine1: input.addressLine1,
+        city: input.city,
+        country: input.country,
+        postalCode: input.postalCode,
+      },
     });
 
     const order = await createGuestOrderFromQuote({

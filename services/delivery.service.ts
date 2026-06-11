@@ -1,9 +1,9 @@
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import { resolveDistanceDeliveryQuote } from "@/lib/delivery/resolve-distance-delivery";
 import { CartRepository } from "@/repositories/cart.repository";
 import { CustomerAddressRepository } from "@/repositories/customer-address.repository";
-
 import { DeliveryPricingService } from "@/services/delivery-pricing.service";
 
 export class DeliveryService {
@@ -100,14 +100,53 @@ export class DeliveryService {
       )
     );
 
-    return this.deliveryPricingService.quote({
-      method: input.method,
-      countryCode: address.country,
-      currency,
-      distanceKm: input.distanceKm,
-      items,
-      vendorGroups,
+    if (input.method === "PICKUP") {
+      return {
+        method: input.method,
+        currency,
+        totalAmount: 0,
+        etaMinDays: 0,
+        etaMaxDays: 0,
+        breakdown: vendorGroups.map((vendorGroup) => ({
+          vendorProfileId: vendorGroup.vendorProfileId,
+          amount: 0,
+          etaMinDays: 0,
+          etaMaxDays: 0,
+          ruleId: "pickup",
+          scope: "GLOBAL",
+        })),
+      };
+    }
+
+    const deliveryQuote = await resolveDistanceDeliveryQuote({
+      vendorProfileIds: [...new Set(items.map((item) => item.vendorProfileId))],
+      deliveryAddress: {
+        addressLine1: address.addressLine1,
+        city: address.city,
+        country: address.country,
+        postalCode: address.postalCode,
+      },
     });
+
+    return {
+      method: input.method,
+      currency,
+      totalAmount: deliveryQuote.totalAmount,
+      etaMinDays: 0,
+      etaMaxDays: 0,
+      breakdown: deliveryQuote.breakdown.map((entry) => ({
+        vendorProfileId: entry.vendorProfileId,
+        amount: entry.deliveryAmount,
+        distanceKm: entry.distanceKm,
+        baseFeeAmount: entry.baseFeeAmount,
+        perKmRateAmount: entry.perKmRateAmount,
+        vendorStoreName: entry.vendorStoreName,
+        etaMinDays: 0,
+        etaMaxDays: 0,
+        ruleId: "distance",
+        scope: "GLOBAL",
+      })),
+    };
   }
 
   private assertActiveCustomer(auth: AuthenticatedUser) {

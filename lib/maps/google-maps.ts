@@ -1,0 +1,245 @@
+import "server-only";
+
+import { env } from "@/config/env";
+
+export type GeoCoordinates = {
+  lat: number;
+  lng: number;
+};
+
+export type PostalAddress = {
+  addressLine1: string;
+  city: string;
+  country: string;
+  postalCode?: string;
+};
+
+export class MapsApiError extends Error {
+  code: string;
+
+  constructor(code: string, message: string) {
+    super(message);
+    this.code = code;
+  }
+}
+
+export function formatPostalAddress(address: PostalAddress) {
+  return [address.addressLine1, address.city, address.postalCode, address.country]
+    .filter((part) => part && part.trim().length > 0)
+    .join(", ");
+}
+
+function buildGeocodeQueries(address: PostalAddress) {
+  const queries = [
+    formatPostalAddress(address),
+    [address.addressLine1, address.city, address.country].filter(Boolean).join(", "),
+    [address.city, address.postalCode, address.country].filter(Boolean).join(", "),
+    [address.city, address.country].filter(Boolean).join(", "),
+  ];
+
+  return [...new Set(queries.map((query) => query.trim()).filter((query) => query.length > 0))];
+}
+
+function shouldUseDevFallback() {
+  return env.NODE_ENV === "development" && !env.GOOGLE_MAPS_API_KEY;
+}
+
+function getApiKey() {
+  const key = env.GOOGLE_MAPS_API_KEY;
+  if (!key) {
+    if (shouldUseDevFallback()) {
+      return null;
+    }
+    throw new MapsApiError(
+      "MAPS_NOT_CONFIGURED",
+      "Delivery distance calculation is not configured. Set GOOGLE_MAPS_API_KEY in .env.local and enable Geocoding API + Distance Matrix API."
+    );
+  }
+  return key;
+}
+
+function haversineKm(origin: GeoCoordinates, destination: GeoCoordinates) {
+  const toRadians = (value: number) => (value * Math.PI) / 180;
+  const earthRadiusKm = 6371;
+  const latDelta = toRadians(destination.lat - origin.lat);
+  const lngDelta = toRadians(destination.lng - origin.lng);
+  const originLat = toRadians(origin.lat);
+  const destinationLat = toRadians(destination.lat);
+
+  const a =
+    Math.sin(latDelta / 2) ** 2 +
+    Math.cos(originLat) * Math.cos(destinationLat) * Math.sin(lngDelta / 2) ** 2;
+  const straightLineKm = 2 * earthRadiusKm * Math.asin(Math.sqrt(a));
+
+  return straightLineKm * 1.3;
+}
+
+async function geocodeQueryWithNominatim(query: string): Promise<GeoCoordinates | null> {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("q", query);
+  url.searchParams.set("format", "json");
+  url.searchParams.set("limit", "1");
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      "User-Agent": `${env.APP_NAME}/1.0 (delivery-dev-fallback)`,
+      Accept: "application/json",
+    },
+    signal: AbortSignal.timeout(10_000),
+    next: { revalidate: 0 },
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = (await response.json()) as Array<{ lat: string; lon: string }>;
+  const match = data[0];
+  if (!match) {
+    return null;
+  }
+
+  return {
+    lat: Number(match.lat),
+    lng: Number(match.lon),
+  };
+}
+
+async function geocodeAddressWithNominatim(address: PostalAddress): Promise<GeoCoordinates> {
+  for (const query of buildGeocodeQueries(address)) {
+    const result = await geocodeQueryWithNominatim(query);
+    if (result) {
+      return result;
+    }
+  }
+
+  throw new MapsApiError(
+    "ADDRESS_NOT_FOUND",
+    "We could not find that address. Please verify the street, city, and country."
+  );
+}
+
+async function geocodeQueryWithGoogle(
+  query: string,
+  key: string
+): Promise<GeoCoordinates | null> {
+  const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
+  url.searchParams.set("address", query);
+  url.searchParams.set("key", key);
+
+  const response = await fetch(url.toString(), {
+    signal: AbortSignal.timeout(10_000),
+    next: { revalidate: 0 },
+  });
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = (await response.json()) as {
+    status: string;
+    results?: Array<{ geometry: { location: { lat: number; lng: number } } }>;
+  };
+
+  const location = data.results?.[0]?.geometry?.location;
+  if (data.status !== "OK" || !location) {
+    return null;
+  }
+
+  return { lat: location.lat, lng: location.lng };
+}
+
+async function geocodeAddressWithGoogle(
+  address: PostalAddress,
+  key: string
+): Promise<GeoCoordinates> {
+  for (const query of buildGeocodeQueries(address)) {
+    const result = await geocodeQueryWithGoogle(query, key);
+    if (result) {
+      return result;
+    }
+  }
+
+  throw new MapsApiError(
+    "ADDRESS_NOT_FOUND",
+    "We could not find that delivery address. Please verify the street, city, and country."
+  );
+}
+
+export async function geocodeAddress(address: PostalAddress): Promise<GeoCoordinates> {
+  const key = getApiKey();
+
+  if (!key) {
+    console.warn(
+      "[maps] GOOGLE_MAPS_API_KEY is missing — using OpenStreetMap geocoding for local development."
+    );
+    return geocodeAddressWithNominatim(address);
+  }
+
+  return geocodeAddressWithGoogle(address, key);
+}
+
+async function getDrivingDistanceKmWithGoogle(
+  origin: GeoCoordinates,
+  destination: GeoCoordinates,
+  key: string
+): Promise<number> {
+  const url = new URL("https://maps.googleapis.com/maps/api/distancematrix/json");
+  url.searchParams.set("origins", `${origin.lat},${origin.lng}`);
+  url.searchParams.set("destinations", `${destination.lat},${destination.lng}`);
+  url.searchParams.set("mode", "driving");
+  url.searchParams.set("units", "metric");
+  url.searchParams.set("key", key);
+
+  const response = await fetch(url.toString(), {
+    signal: AbortSignal.timeout(10_000),
+    next: { revalidate: 0 },
+  });
+  if (!response.ok) {
+    throw new MapsApiError(
+      "DISTANCE_UNAVAILABLE",
+      "Could not calculate delivery distance. Please try again."
+    );
+  }
+
+  const data = (await response.json()) as {
+    status: string;
+    error_message?: string;
+    rows?: Array<{
+      elements?: Array<{
+        status: string;
+        distance?: { value: number };
+      }>;
+    }>;
+  };
+
+  if (data.status !== "OK") {
+    const detail = data.error_message ? ` ${data.error_message}` : "";
+    throw new MapsApiError(
+      "DISTANCE_UNAVAILABLE",
+      `Could not calculate delivery distance.${detail}`
+    );
+  }
+
+  const element = data.rows?.[0]?.elements?.[0];
+  if (!element || element.status !== "OK" || element.distance == null) {
+    throw new MapsApiError(
+      "DISTANCE_UNAVAILABLE",
+      "Could not calculate driving distance to your address. Please check the address and try again."
+    );
+  }
+
+  return element.distance.value / 1000;
+}
+
+export async function getDrivingDistanceKm(
+  origin: GeoCoordinates,
+  destination: GeoCoordinates
+): Promise<number> {
+  const key = getApiKey();
+
+  if (!key) {
+    return haversineKm(origin, destination);
+  }
+
+  return getDrivingDistanceKmWithGoogle(origin, destination, key);
+}

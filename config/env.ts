@@ -32,6 +32,9 @@ const envSchema = z.object({
   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: z.string().trim().min(1).optional(),
   CLOUDINARY_API_KEY: z.string().trim().min(1).optional(),
   CLOUDINARY_API_SECRET: z.string().trim().min(1).optional(),
+  GOOGLE_MAPS_API_KEY: z.string().trim().min(1).optional(),
+  PLATFORM_DELIVERY_BASE_FEE_CENTS: z.coerce.number().int().min(0).default(200),
+  PLATFORM_DELIVERY_PER_KM_CENTS: z.coerce.number().int().min(0).default(50),
 });
 
 const parsedEnv = envSchema.safeParse({
@@ -62,6 +65,9 @@ const parsedEnv = envSchema.safeParse({
   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+  GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY,
+  PLATFORM_DELIVERY_BASE_FEE_CENTS: process.env.PLATFORM_DELIVERY_BASE_FEE_CENTS,
+  PLATFORM_DELIVERY_PER_KM_CENTS: process.env.PLATFORM_DELIVERY_PER_KM_CENTS,
 });
 
 if (!parsedEnv.success) {
