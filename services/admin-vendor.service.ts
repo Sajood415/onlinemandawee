@@ -9,6 +9,13 @@ import { OrderRepository } from "@/repositories/order.repository";
 import { ProductRepository } from "@/repositories/product.repository";
 import { UserRepository } from "@/repositories/user.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
+import {
+  restoreVendorBillingAccessAfterManualResolution,
+  syncVendorBillingAccess,
+} from "@/lib/membership/billing-access";
+import { isMembershipBillingSuspension } from "@/lib/membership/subscription-policy";
+import { MembershipBillingService } from "@/services/membership-billing.service";
+import { VendorSubscriptionService } from "@/services/vendor-subscription.service";
 import { env } from "@/config/env";
 
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
@@ -22,7 +29,9 @@ export class AdminVendorService {
     private readonly orderRepository = new OrderRepository(),
     private readonly productRepository = new ProductRepository(),
     private readonly membershipInvoiceRepository = new MembershipInvoiceRepository(),
-    private readonly commissionLedgerRepository = new CommissionLedgerRepository()
+    private readonly commissionLedgerRepository = new CommissionLedgerRepository(),
+    private readonly vendorSubscriptionService = new VendorSubscriptionService(),
+    private readonly membershipBillingService = new MembershipBillingService()
   ) {}
 
   async list(status?: VendorStatus) {
@@ -116,6 +125,21 @@ export class AdminVendorService {
         pendingMembershipCount: pendingInvoices.length,
         totalPlatformCommissionCollected,
       },
+      subscription: {
+        status: vendor.subscriptionStatus,
+        trialEndsAt: vendor.subscriptionTrialEndsAt?.toISOString() ?? null,
+        currentPeriodStart:
+          vendor.subscriptionCurrentPeriodStart?.toISOString() ?? null,
+        currentPeriodEnd: vendor.subscriptionCurrentPeriodEnd?.toISOString() ?? null,
+        gracePeriodEndsAt:
+          vendor.subscriptionGracePeriodEndsAt?.toISOString() ?? null,
+        failedPaymentCount: vendor.subscriptionFailedPaymentCount,
+        stripeCustomerId: vendor.stripeCustomerId ?? null,
+        stripeSubscriptionId: vendor.stripeSubscriptionId ?? null,
+        stripeDefaultPaymentMethodId: vendor.stripeDefaultPaymentMethodId ?? null,
+        lastPaymentAt: vendor.subscriptionLastPaymentAt?.toISOString() ?? null,
+        nextBillingAt: vendor.subscriptionNextBillingAt?.toISOString() ?? null,
+      },
       products: products.map((product) => ({
         id: product.id,
         name: product.name,
@@ -143,10 +167,19 @@ export class AdminVendorService {
         status: invoice.status,
         amount: invoice.amount,
         currency: invoice.currency,
+        stripeCustomerId: invoice.stripeCustomerId,
+        stripeSubscriptionId: invoice.stripeSubscriptionId,
+        stripeInvoiceId: invoice.stripeInvoiceId,
+        stripePaymentId: invoice.stripePaymentId,
+        stripeEventId: invoice.stripeEventId,
+        failureCode: invoice.failureCode,
+        failureReason: invoice.failureReason,
         periodStart: invoice.periodStart.toISOString(),
         periodEnd: invoice.periodEnd.toISOString(),
         dueAt: invoice.dueAt.toISOString(),
         paidAt: invoice.paidAt?.toISOString() ?? null,
+        attemptedAt: invoice.attemptedAt?.toISOString() ?? null,
+        invoiceHostedUrl: invoice.invoiceHostedUrl,
         waivedReason: invoice.waivedReason,
       })),
     };
@@ -176,6 +209,7 @@ export class AdminVendorService {
     });
 
     await this.userRepository.updateStatus(vendor.userId, "ACTIVE");
+    await this.vendorSubscriptionService.ensureSubscriptionForVendor(vendorProfileId);
     await this.auditLogRepository.create({
       actorUserId: admin.id,
       actorRole: admin.role,
@@ -323,15 +357,44 @@ export class AdminVendorService {
       });
     }
 
-    const updated = await this.vendorProfileRepository.updateStep({
-      vendorProfileId,
-      onboardingStep: vendor.onboardingStep,
-      status: "ACTIVE",
-      suspendedAt: null,
-      suspensionReason: null,
-    });
+    if (isMembershipBillingSuspension(vendor.suspensionReason)) {
+      const canReactivate =
+        await this.membershipBillingService.canReactivateFromBilling(vendorProfileId);
+      if (!canReactivate) {
+        throw new AppError({
+          code: ERROR_CODE.BAD_REQUEST,
+          message:
+            "Resolve unpaid membership billing before reactivating this vendor. Mark pending invoices paid, waive the month, or wait for Stripe payment success.",
+          statusCode: 400,
+        });
+      }
+    }
 
-    await this.userRepository.updateStatus(vendor.userId, "ACTIVE");
+    let updated;
+    if (isMembershipBillingSuspension(vendor.suspensionReason)) {
+      await restoreVendorBillingAccessAfterManualResolution(vendorProfileId);
+      await syncVendorBillingAccess(vendorProfileId);
+      updated = await this.vendorProfileRepository.findById(vendorProfileId);
+    } else {
+      updated = await this.vendorProfileRepository.updateStep({
+        vendorProfileId,
+        onboardingStep: vendor.onboardingStep,
+        status: "ACTIVE",
+        suspendedAt: null,
+        suspensionReason: null,
+      });
+      await this.userRepository.updateStatus(vendor.userId, "ACTIVE");
+    }
+
+    if (!updated) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Vendor profile not found",
+        statusCode: 404,
+      });
+    }
+
+    await this.vendorSubscriptionService.ensureSubscriptionForVendor(vendorProfileId);
     await this.auditLogRepository.create({
       actorUserId: admin.id,
       actorRole: admin.role,

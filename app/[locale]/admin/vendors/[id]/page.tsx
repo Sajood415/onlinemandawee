@@ -69,6 +69,19 @@ type VendorDetail = {
     pendingMembershipCount: number;
     totalPlatformCommissionCollected: number;
   };
+  subscription: {
+    status: "TRIAL" | "ACTIVE" | "FAILED" | "SUSPENDED";
+    trialEndsAt: string | null;
+    currentPeriodStart: string | null;
+    currentPeriodEnd: string | null;
+    gracePeriodEndsAt: string | null;
+    failedPaymentCount: number;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripeDefaultPaymentMethodId: string | null;
+    lastPaymentAt: string | null;
+    nextBillingAt: string | null;
+  };
   products: Array<{
     id: string;
     name: string;
@@ -96,10 +109,19 @@ type VendorDetail = {
     status: string;
     amount: number;
     currency: string;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripeInvoiceId: string | null;
+    stripePaymentId: string | null;
+    stripeEventId: string | null;
+    failureCode: string | null;
+    failureReason: string | null;
     periodStart: string;
     periodEnd: string;
     dueAt: string;
     paidAt: string | null;
+    attemptedAt: string | null;
+    invoiceHostedUrl: string | null;
     waivedReason: string | null;
   }>;
 };
@@ -153,6 +175,13 @@ const invoiceStatusClass = (status: string) => {
   return "bg-neutral-100 text-neutral-600";
 };
 
+const subscriptionStatusClass = (status: VendorDetail["subscription"]["status"]) => {
+  if (status === "ACTIVE") return "bg-emerald-50 text-emerald-700";
+  if (status === "TRIAL") return "bg-blue-50 text-blue-700";
+  if (status === "FAILED") return "bg-amber-50 text-amber-700";
+  return "bg-rose-50 text-rose-700";
+};
+
 const orderStatusClass = (status: string) => {
   if (status === "DELIVERED") return "bg-emerald-50 text-emerald-700";
   if (status === "SHIPPED") return "bg-cyan-50 text-cyan-700";
@@ -177,6 +206,8 @@ export default function AdminVendorDetailPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [actionReason, setActionReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [markingInvoiceId, setMarkingInvoiceId] = useState<string | null>(null);
+  const [waivingInvoiceId, setWaivingInvoiceId] = useState<string | null>(null);
 
   const loadVendor = useCallback(async (opts?: { silent?: boolean }) => {
     if (!vendorId) return;
@@ -293,6 +324,51 @@ export default function AdminVendorDetailPage() {
       );
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const markInvoicePaid = async (invoiceId: string) => {
+    setMarkingInvoiceId(invoiceId);
+    try {
+      const response = await fetchWithAuth(
+        `/api/admin/membership/invoices/${invoiceId}/mark-paid`,
+        {
+          method: "POST",
+        }
+      );
+      await parseApiResponse(response);
+      toast.success("Invoice marked paid");
+      await loadVendor({ silent: true });
+    } catch (error) {
+      toast.error("Could not mark invoice paid", toErrorMessage(error));
+    } finally {
+      setMarkingInvoiceId(null);
+    }
+  };
+
+  const waiveInvoice = async (invoiceId: string) => {
+    const reason = window.prompt("Reason for waiving this month?", "Waived by admin");
+    if (reason == null) {
+      return;
+    }
+
+    setWaivingInvoiceId(invoiceId);
+    try {
+      const response = await fetchWithAuth(
+        `/api/admin/membership/invoices/${invoiceId}/waive`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason }),
+        }
+      );
+      await parseApiResponse(response);
+      toast.success("Invoice waived");
+      await loadVendor({ silent: true });
+    } catch (error) {
+      toast.error("Could not waive invoice", toErrorMessage(error));
+    } finally {
+      setWaivingInvoiceId(null);
     }
   };
 
@@ -595,6 +671,67 @@ export default function AdminVendorDetailPage() {
 
       <section className="rounded-2xl border border-neutral-200 bg-white p-5">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
+          Stripe Subscription
+        </h3>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              Status
+            </p>
+            <span
+              className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${subscriptionStatusClass(vendor.subscription.status)}`}
+            >
+              {vendor.subscription.status}
+            </span>
+            <div className="mt-3 space-y-1 text-sm text-neutral-700">
+              <p>Trial ends: {displayDate(vendor.subscription.trialEndsAt)}</p>
+              <p>Current period start: {displayDate(vendor.subscription.currentPeriodStart)}</p>
+              <p>Current period end: {displayDate(vendor.subscription.currentPeriodEnd)}</p>
+              <p>Last payment: {displayDate(vendor.subscription.lastPaymentAt)}</p>
+              <p>Next billing: {displayDate(vendor.subscription.nextBillingAt)}</p>
+              <p>Grace period ends: {displayDate(vendor.subscription.gracePeriodEndsAt)}</p>
+              <p>Failed payment count: {vendor.subscription.failedPaymentCount}</p>
+            </div>
+            {vendor.subscription.status === "SUSPENDED" ? (
+              <button
+                type="button"
+                onClick={() => setPendingAction({ type: "reactivate" })}
+                className="mt-3 rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white"
+              >
+                Reactivate from billing panel
+              </button>
+            ) : null}
+          </div>
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              Stripe IDs
+            </p>
+            <div className="mt-3 space-y-2 text-xs text-neutral-700">
+              <p>
+                Customer ID:{" "}
+                <span className="font-mono">
+                  {vendor.subscription.stripeCustomerId ?? "—"}
+                </span>
+              </p>
+              <p>
+                Subscription ID:{" "}
+                <span className="font-mono">
+                  {vendor.subscription.stripeSubscriptionId ?? "—"}
+                </span>
+              </p>
+              <p>
+                Default Payment Method:{" "}
+                <span className="font-mono">
+                  {vendor.subscription.stripeDefaultPaymentMethodId ?? "—"}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
           Products ({vendor.products.length})
         </h3>
         {vendor.products.length ? (
@@ -690,14 +827,18 @@ export default function AdminVendorDetailPage() {
         </h3>
         {vendor.subscriptionHistory.length ? (
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[760px] border-collapse text-sm">
+            <table className="w-full min-w-[1080px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wider text-neutral-500">
                   <th className="px-3 py-2">Period</th>
                   <th className="px-3 py-2">Amount</th>
                   <th className="px-3 py-2">Due</th>
+                  <th className="px-3 py-2">Attempted</th>
                   <th className="px-3 py-2">Paid</th>
                   <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Stripe refs</th>
+                  <th className="px-3 py-2">Failure</th>
+                  <th className="px-3 py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -711,6 +852,9 @@ export default function AdminVendorDetailPage() {
                       {formatMoney(invoice.amount, invoice.currency)}
                     </td>
                     <td className="px-3 py-3 text-neutral-700">{displayDate(invoice.dueAt)}</td>
+                    <td className="px-3 py-3 text-neutral-700">
+                      {displayDate(invoice.attemptedAt)}
+                    </td>
                     <td className="px-3 py-3 text-neutral-700">{displayDate(invoice.paidAt)}</td>
                     <td className="px-3 py-3">
                       <span
@@ -718,6 +862,52 @@ export default function AdminVendorDetailPage() {
                       >
                         {invoice.status}
                       </span>
+                    </td>
+                    <td className="px-3 py-3 text-xs text-neutral-600">
+                      <p>
+                        Invoice:{" "}
+                        <span className="font-mono">{invoice.stripeInvoiceId ?? "—"}</span>
+                      </p>
+                      <p className="mt-1">
+                        Payment:{" "}
+                        <span className="font-mono">{invoice.stripePaymentId ?? "—"}</span>
+                      </p>
+                    </td>
+                    <td className="px-3 py-3 text-xs text-neutral-600">
+                      {invoice.failureReason ? (
+                        <>
+                          <p>{invoice.failureReason}</p>
+                          {invoice.failureCode ? (
+                            <p className="mt-1 font-mono">{invoice.failureCode}</p>
+                          ) : null}
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="px-3 py-3">
+                      {invoice.status === "PENDING" ? (
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void markInvoicePaid(invoice.id)}
+                            disabled={markingInvoiceId === invoice.id}
+                            className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                          >
+                            {markingInvoiceId === invoice.id ? "Saving..." : "Mark paid"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void waiveInvoice(invoice.id)}
+                            disabled={waivingInvoiceId === invoice.id}
+                            className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 disabled:opacity-60"
+                          >
+                            {waivingInvoiceId === invoice.id ? "Waiving..." : "Waive month"}
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-neutral-400">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}

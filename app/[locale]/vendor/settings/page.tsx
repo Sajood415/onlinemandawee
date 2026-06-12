@@ -1,5 +1,7 @@
 "use client";
 
+import { CardElement, Elements, useElements, useStripe } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Building2,
@@ -51,6 +53,36 @@ type VendorProfile = {
   } | null;
 };
 
+type VendorSubscriptionStatus = {
+  status: "TRIAL" | "ACTIVE" | "FAILED" | "SUSPENDED";
+  monthlyAmount: number;
+  currency: string;
+  trialEndsAt: string | null;
+  isInTrial: boolean;
+  overdueMonths: number;
+  overdueDays: number;
+  alertLevel: "none" | "warning" | "critical" | "suspended";
+  shopSuspendedForBilling: boolean;
+  gracePeriodEndsAt: string | null;
+  failedPaymentCount: number;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  defaultPaymentMethodAttached: boolean;
+  nextBillingAt: string | null;
+  lastPaymentAt: string | null;
+};
+
+type SetupIntentResponse = {
+  customerId: string;
+  clientSecret: string | null;
+  setupIntentId: string;
+  publishableKey: string | null;
+};
+
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  : null;
+
 /* ─── style constants ────────────────────────────────────────────────── */
 
 const CONTROL =
@@ -79,6 +111,134 @@ function SaveButton({ saving, label }: { saving: boolean; label: string }) {
       {saving && <Loader2 className="h-4 w-4 animate-spin" />}
       {saving ? "Saving…" : label}
     </button>
+  );
+}
+
+function formatCurrency(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency || "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount / 100);
+  } catch {
+    return `${currency} ${(amount / 100).toFixed(2)}`;
+  }
+}
+
+function formatDate(iso: string | null) {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString();
+}
+
+function CardSetupForm({
+  clientSecret,
+  setupIntentId,
+  token,
+  onSuccess,
+  onCancel,
+}: {
+  clientSecret: string;
+  setupIntentId: string;
+  token: string;
+  onSuccess: () => void;
+  onCancel: () => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [saving, setSaving] = useState(false);
+
+  const saveCard = async () => {
+    if (!stripe || !elements) {
+      toast.error("Stripe not ready", "Please wait a second and try again.");
+      return;
+    }
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      toast.error("Card form unavailable", "Please refresh and try again.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { error, setupIntent } = await stripe.confirmCardSetup(clientSecret, {
+        payment_method: {
+          card: cardElement,
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message || "Failed to save card");
+      }
+      if (!setupIntent || setupIntent.status !== "succeeded") {
+        throw new Error("Card setup did not complete");
+      }
+
+      const response = await fetch("/api/vendor/subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: "finalize_setup_intent",
+          setupIntentId: setupIntent.id || setupIntentId,
+        }),
+      });
+      await parseApiResponse(response);
+      toast.success("Card saved", "Your subscription billing card is updated.");
+      onSuccess();
+    } catch (error) {
+      toast.error(
+        "Could not save card",
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/45 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-5 shadow-xl">
+        <h3 className="text-lg font-semibold text-neutral-900">Save billing card</h3>
+        <p className="mt-1 text-sm text-neutral-600">
+          This card will be used for automatic membership charges.
+        </p>
+        <div className="mt-4 rounded-lg border border-neutral-300 bg-white p-3">
+          <CardElement
+            options={{
+              hidePostalCode: true,
+              style: {
+                base: {
+                  fontSize: "14px",
+                },
+              },
+            }}
+          />
+        </div>
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => void saveCard()}
+            disabled={saving || !stripe}
+            className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Save card"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -685,6 +845,15 @@ export default function VendorSettingsPage() {
   const [profile, setProfile] = useState<VendorProfile | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [attachingCard, setAttachingCard] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] =
+    useState<VendorSubscriptionStatus | null>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [cardSetup, setCardSetup] = useState<{
+    clientSecret: string;
+    setupIntentId: string;
+  } | null>(null);
 
   const fetchProfile = useCallback(async (opts?: { silent?: boolean }) => {
     const token = localStorage.getItem("accessToken");
@@ -708,12 +877,108 @@ export default function VendorSettingsPage() {
     }
   }, []);
 
+  const token =
+    typeof window !== "undefined" ? (localStorage.getItem("accessToken") ?? "") : "";
+
+  const loadSubscriptionStatus = useCallback(async () => {
+    if (!token) return;
+    setSubscriptionLoading(true);
+    try {
+      const response = await fetch("/api/vendor/subscription", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await parseApiResponse<VendorSubscriptionStatus>(response);
+      setSubscriptionStatus(data);
+    } catch (e) {
+      toast.error(
+        "Could not load subscription status",
+        e instanceof Error ? e.message : "Unknown error"
+      );
+      setSubscriptionStatus(null);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  }, [token]);
+
+  const startCardAttach = useCallback(async () => {
+    if (!token) {
+      toast.error("Please sign in again", "Your session is missing.");
+      return;
+    }
+    if (!stripePromise) {
+      toast.error(
+        "Stripe publishable key missing",
+        "Add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY and refresh."
+      );
+      return;
+    }
+
+    setAttachingCard(true);
+    try {
+      const response = await fetch("/api/vendor/subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: "create_setup_intent",
+        }),
+      });
+      const data = await parseApiResponse<SetupIntentResponse>(response);
+      if (!data.clientSecret) {
+        throw new Error("Stripe did not return a setup client secret");
+      }
+      setCardSetup({
+        clientSecret: data.clientSecret,
+        setupIntentId: data.setupIntentId,
+      });
+    } catch (e) {
+      toast.error(
+        "Could not start card setup",
+        e instanceof Error ? e.message : "Unknown error"
+      );
+    } finally {
+      setAttachingCard(false);
+    }
+  }, [token]);
+
+  const openBillingPortal = useCallback(async () => {
+    if (!token) {
+      toast.error("Please sign in again", "Your session is missing.");
+      return;
+    }
+    setBillingLoading(true);
+    try {
+      const response = await fetch("/api/vendor/subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: "create_portal_session",
+          returnUrl: window.location.href,
+        }),
+      });
+      const data = await parseApiResponse<{ url: string }>(response);
+      window.location.href = data.url;
+    } catch (e) {
+      toast.error("Billing portal unavailable", e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setBillingLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     if (!authLoading && user) void fetchProfile();
   }, [authLoading, user, fetchProfile]);
 
-  const token =
-    typeof window !== "undefined" ? (localStorage.getItem("accessToken") ?? "") : "";
+  useEffect(() => {
+    if (!authLoading && user) void loadSubscriptionStatus();
+  }, [authLoading, user, loadSubscriptionStatus]);
 
   if (authLoading || !user) {
     return (
@@ -727,12 +992,25 @@ export default function VendorSettingsPage() {
     <div className="min-h-screen w-full bg-neutral-50 pb-16">
       {/* Header */}
       <div className="border-b border-neutral-200 bg-white px-6 py-6 sm:px-8">
-        <h1 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">
-          Settings
-        </h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          Manage your business profile, store address, and payout details.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">
+              Settings
+            </h1>
+            <p className="mt-1 text-sm text-neutral-500">
+              Manage your business profile, store address, and payout details.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void openBillingPortal()}
+            disabled={billingLoading}
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 disabled:opacity-60"
+          >
+            <CreditCard className="h-4 w-4" />
+            {billingLoading ? "Opening billing..." : "Manage subscription & card"}
+          </button>
+        </div>
       </div>
 
       {/* Tab bar */}
@@ -767,6 +1045,74 @@ export default function VendorSettingsPage() {
           </div>
         )}
 
+        <section className="mb-6 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-neutral-900">
+                Membership Billing
+              </h2>
+              <p className="mt-1 text-sm text-neutral-500">
+                Attach or update your billing card for automatic monthly membership charges.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void startCardAttach()}
+                disabled={attachingCard}
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                <CreditCard className="h-4 w-4" />
+                {attachingCard
+                  ? "Starting..."
+                  : subscriptionStatus?.defaultPaymentMethodAttached
+                    ? "Update card"
+                    : "Attach card"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void loadSubscriptionStatus()}
+                disabled={subscriptionLoading}
+                className="inline-flex min-h-10 items-center rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 disabled:opacity-60"
+              >
+                {subscriptionLoading ? "Refreshing..." : "Refresh status"}
+              </button>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700">
+              <p>
+                Status:{" "}
+                <span className="font-semibold">{subscriptionStatus?.status ?? "—"}</span>
+              </p>
+              <p className="mt-1">Trial ends: {formatDate(subscriptionStatus?.trialEndsAt ?? null)}</p>
+              <p className="mt-1">
+                Next billing: {formatDate(subscriptionStatus?.nextBillingAt ?? null)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700">
+              <p>
+                Card attached:{" "}
+                <span className="font-semibold">
+                  {subscriptionStatus?.defaultPaymentMethodAttached ? "Yes" : "No"}
+                </span>
+              </p>
+              <p className="mt-1">
+                Monthly fee:{" "}
+                {subscriptionStatus
+                  ? formatCurrency(
+                      subscriptionStatus.monthlyAmount,
+                      subscriptionStatus.currency
+                    )
+                  : "—"}
+              </p>
+              <p className="mt-1">
+                Failed payment count: {subscriptionStatus?.failedPaymentCount ?? 0}
+              </p>
+            </div>
+          </div>
+        </section>
+
         {dataLoading || !profile ? (
           /* skeleton */
           <div className="flex flex-col gap-6">
@@ -796,6 +1142,21 @@ export default function VendorSettingsPage() {
           </div>
         )}
       </div>
+
+      {cardSetup ? (
+        <Elements stripe={stripePromise} options={{ clientSecret: cardSetup.clientSecret }}>
+          <CardSetupForm
+            clientSecret={cardSetup.clientSecret}
+            setupIntentId={cardSetup.setupIntentId}
+            token={token}
+            onCancel={() => setCardSetup(null)}
+            onSuccess={() => {
+              setCardSetup(null);
+              void loadSubscriptionStatus();
+            }}
+          />
+        </Elements>
+      ) : null}
     </div>
   );
 }

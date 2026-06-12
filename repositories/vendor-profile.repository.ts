@@ -92,6 +92,18 @@ export class VendorProfileRepository {
     rejectionReason?: string | null;
     suspendedAt?: Date | null;
     suspensionReason?: string | null;
+    subscriptionStatus?: "TRIAL" | "ACTIVE" | "FAILED" | "SUSPENDED";
+    stripeCustomerId?: string | null;
+    stripeSubscriptionId?: string | null;
+    stripeDefaultPaymentMethodId?: string | null;
+    subscriptionTrialEndsAt?: Date | null;
+    subscriptionCurrentPeriodStart?: Date | null;
+    subscriptionCurrentPeriodEnd?: Date | null;
+    subscriptionLastPaymentAt?: Date | null;
+    subscriptionNextBillingAt?: Date | null;
+    subscriptionGracePeriodEndsAt?: Date | null;
+    subscriptionFailedPaymentCount?: number;
+    subscriptionFailedAt?: Date | null;
   }) {
     return prisma.vendorProfile.update({
       where: { id: input.vendorProfileId },
@@ -105,6 +117,44 @@ export class VendorProfileRepository {
         rejectionReason: input.rejectionReason,
         suspendedAt: input.suspendedAt,
         suspensionReason: input.suspensionReason,
+        subscriptionStatus: input.subscriptionStatus,
+        stripeCustomerId: input.stripeCustomerId,
+        stripeSubscriptionId: input.stripeSubscriptionId,
+        stripeDefaultPaymentMethodId: input.stripeDefaultPaymentMethodId,
+        subscriptionTrialEndsAt: input.subscriptionTrialEndsAt,
+        subscriptionCurrentPeriodStart: input.subscriptionCurrentPeriodStart,
+        subscriptionCurrentPeriodEnd: input.subscriptionCurrentPeriodEnd,
+        subscriptionLastPaymentAt: input.subscriptionLastPaymentAt,
+        subscriptionNextBillingAt: input.subscriptionNextBillingAt,
+        subscriptionGracePeriodEndsAt: input.subscriptionGracePeriodEndsAt,
+        subscriptionFailedPaymentCount: input.subscriptionFailedPaymentCount,
+        subscriptionFailedAt: input.subscriptionFailedAt,
+      },
+    });
+  }
+
+  findByStripeCustomerId(stripeCustomerId: string) {
+    return prisma.vendorProfile.findFirst({
+      where: { stripeCustomerId },
+      include: {
+        user: true,
+        kycDocuments: true,
+        address: true,
+        payoutMethod: true,
+        agreementAcceptance: true,
+      },
+    });
+  }
+
+  findByStripeSubscriptionId(stripeSubscriptionId: string) {
+    return prisma.vendorProfile.findFirst({
+      where: { stripeSubscriptionId },
+      include: {
+        user: true,
+        kycDocuments: true,
+        address: true,
+        payoutMethod: true,
+        agreementAcceptance: true,
       },
     });
   }

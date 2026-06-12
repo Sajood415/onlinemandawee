@@ -2,11 +2,6 @@ import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { env } from "@/config/env";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
-import {
-  countOverdueMembershipMonths,
-  isMembershipBillingSuspension,
-  resolveMembershipOverdueLevel,
-} from "@/lib/membership/subscription-policy";
 import { MembershipInvoiceRepository } from "@/repositories/membership-invoice.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { ProductRepository } from "@/repositories/product.repository";
@@ -80,14 +75,13 @@ export class VendorDashboardService {
     const earningsCurrency = ledgerEntries[0]?.currency ?? "USD";
 
     const latestInvoice = membershipInvoices[0] ?? null;
-    const overdueMonths = countOverdueMembershipMonths(membershipInvoices);
-    const billingAlertLevel = resolveMembershipOverdueLevel(overdueMonths);
-    const subscriptionStatus = latestInvoice
-      ? (latestInvoice as { status: string }).status
-      : "NO_INVOICE";
-    const billingAnchor = vendor.approvedAt ?? vendor.createdAt;
-    const trialEndsAt = new Date(billingAnchor);
-    trialEndsAt.setUTCDate(trialEndsAt.getUTCDate() + env.MEMBERSHIP_TRIAL_DAYS);
+    const overdueMonths = vendor.subscriptionStatus === "FAILED" ? 1 : 0;
+    const billingAlertLevel =
+      vendor.subscriptionStatus === "FAILED"
+        ? "critical"
+        : vendor.subscriptionStatus === "SUSPENDED"
+          ? "suspended"
+          : "none";
 
     const pendingApprovals = products.filter(
       (p) => p.approvalStatus === "PENDING_APPROVAL"
@@ -116,21 +110,19 @@ export class VendorDashboardService {
         availableBalance,
       },
       subscription: {
-        status: subscriptionStatus,
+        status: vendor.subscriptionStatus,
         monthlyAmount: env.MEMBERSHIP_FEE_AMOUNT,
         currency: env.MEMBERSHIP_INVOICE_CURRENCY,
-        trialEndsAt: trialEndsAt.toISOString(),
-        isInTrial: new Date() < trialEndsAt,
+        trialEndsAt: vendor.subscriptionTrialEndsAt?.toISOString() ?? null,
+        isInTrial: vendor.subscriptionStatus === "TRIAL",
         overdueMonths,
         alertLevel: billingAlertLevel,
-        shopSuspendedForBilling:
-          vendor.status === "SUSPENDED" &&
-          isMembershipBillingSuspension(vendor.suspensionReason),
-        latestInvoiceDueAt: latestInvoice
-          ? (latestInvoice as { dueAt: Date }).dueAt?.toISOString() ?? null
-          : null,
+        gracePeriodEndsAt: vendor.subscriptionGracePeriodEndsAt?.toISOString() ?? null,
+        failedPaymentCount: vendor.subscriptionFailedPaymentCount,
+        shopSuspendedForBilling: vendor.subscriptionStatus === "SUSPENDED",
+        latestInvoiceDueAt: latestInvoice ? latestInvoice.dueAt?.toISOString() ?? null : null,
         latestInvoicePeriodStart: latestInvoice
-          ? (latestInvoice as { periodStart: Date }).periodStart?.toISOString() ?? null
+          ? latestInvoice.periodStart?.toISOString() ?? null
           : null,
       },
       products: {

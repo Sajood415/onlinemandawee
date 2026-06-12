@@ -35,8 +35,12 @@ type SubscriptionEntry = {
   currency: string;
   status: "PENDING" | "PAID" | "WAIVED" | "VOID";
   paidAt: string | null;
+  attemptedAt: string | null;
   waivedReason: string | null;
   chargedAmount: number | null;
+  stripeInvoiceId: string | null;
+  stripePaymentId: string | null;
+  failureReason: string | null;
 };
 
 type FeeSubscriptionReport = {
@@ -274,6 +278,7 @@ export function FeeSubscriptionHistorySection() {
                       <th className="px-5 py-3">Billing period</th>
                       <th className="px-5 py-3">Due date</th>
                       <th className="px-5 py-3">Status</th>
+                      <th className="px-5 py-3">Stripe refs</th>
                       <th className="px-5 py-3 text-right">Invoice amount</th>
                       <th className="px-5 py-3 text-right">Charged</th>
                     </tr>
@@ -298,6 +303,30 @@ export function FeeSubscriptionHistorySection() {
                               {invoice.waivedReason}
                             </p>
                           ) : null}
+                          {invoice.failureReason ? (
+                            <p className="mt-1 max-w-xs text-xs text-rose-600">
+                              Failure: {invoice.failureReason}
+                            </p>
+                          ) : null}
+                          {invoice.attemptedAt ? (
+                            <p className="mt-1 max-w-xs text-xs text-neutral-500">
+                              Last attempt: {formatDate(invoice.attemptedAt)}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-5 py-3 text-xs text-neutral-600">
+                          <p>
+                            Invoice:{" "}
+                            <span className="font-mono">
+                              {invoice.stripeInvoiceId ?? "—"}
+                            </span>
+                          </p>
+                          <p className="mt-1">
+                            Payment:{" "}
+                            <span className="font-mono">
+                              {invoice.stripePaymentId ?? "—"}
+                            </span>
+                          </p>
                         </td>
                         <td className="px-5 py-3 text-right text-neutral-600">
                           {formatCurrency(invoice.amount, invoice.currency)}

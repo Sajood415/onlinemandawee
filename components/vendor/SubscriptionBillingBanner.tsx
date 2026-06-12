@@ -4,7 +4,10 @@ import { AlertTriangle, CreditCard } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { parseApiResponse } from "@/lib/http/parse-api-response";
-import { formatMembershipFee } from "@/lib/membership/subscription-policy";
+import {
+  formatMembershipFee,
+  formatMembershipGracePeriodLabel,
+} from "@/lib/membership/subscription-policy";
 import { Link } from "@/i18n/navigation";
 
 type SubscriptionStatus = {
@@ -12,9 +15,10 @@ type SubscriptionStatus = {
   currency: string;
   trialEndsAt: string;
   isInTrial: boolean;
-  overdueMonths: number;
   alertLevel: "none" | "warning" | "critical" | "suspended";
   shopSuspendedForBilling: boolean;
+  gracePeriodEndsAt: string | null;
+  failedPaymentCount: number;
 };
 
 export function SubscriptionBillingBanner() {
@@ -43,6 +47,10 @@ export function SubscriptionBillingBanner() {
   }
 
   const feeLabel = formatMembershipFee(status.monthlyAmount, status.currency);
+  const graceLabel = formatMembershipGracePeriodLabel();
+  const graceDeadline = status.gracePeriodEndsAt
+    ? new Date(status.gracePeriodEndsAt).toLocaleDateString()
+    : null;
 
   if (status.alertLevel === "suspended" || status.shopSuspendedForBilling) {
     return (
@@ -52,15 +60,16 @@ export function SubscriptionBillingBanner() {
           <div>
             <p className="font-semibold">Shop suspended — unpaid membership</p>
             <p className="mt-1 text-red-800">
-              Your store is hidden from customers because membership is{" "}
-              {status.overdueMonths}+ months overdue ({feeLabel}/month after the
-              3-month free trial). Pay all outstanding invoices to restore your shop.
+              Your store is hidden from customers because membership payment was not
+              completed within the {graceLabel} grace period ({feeLabel}/month after the
+              3-month free trial). Update your billing card and complete payment to restore
+              your shop.
             </p>
             <Link
-              href="/vendor/reports?tab=fees"
+              href="/vendor/settings"
               className="mt-2 inline-block font-medium text-red-900 underline"
             >
-              View fees &amp; subscription history
+              Update billing card in settings
             </Link>
           </div>
         </div>
@@ -87,19 +96,21 @@ export function SubscriptionBillingBanner() {
         <div>
           <p className="font-semibold">
             {isCritical
-              ? "Final notice — membership payment"
-              : "Membership payment overdue"}
+              ? "Membership payment failed"
+              : "Membership payment reminder"}
           </p>
           <p className="mt-1">
             {isCritical
-              ? `You have ${status.overdueMonths} unpaid membership month(s). Your shop will be suspended on the 4th unpaid month. Monthly fee: ${feeLabel}.`
-              : `You have ${status.overdueMonths} unpaid month(s) (${feeLabel}/month after your free trial). Please pay soon to keep your shop active.`}
+              ? `We could not charge your membership (${feeLabel}/month). You have ${graceLabel} to update your card and complete payment${
+                  graceDeadline ? ` (until ${graceDeadline})` : ""
+                }. Failed attempts: ${status.failedPaymentCount}.`
+              : `Please keep your billing card up to date for membership charges (${feeLabel}/month after your free trial).`}
           </p>
           <Link
-            href="/vendor/reports?tab=fees"
+            href="/vendor/settings"
             className="mt-2 inline-block font-medium underline"
           >
-            View fees &amp; subscription
+            Manage billing card
           </Link>
         </div>
       </div>

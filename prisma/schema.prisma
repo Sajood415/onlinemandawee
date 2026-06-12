@@ -182,6 +182,13 @@ enum MembershipInvoiceStatus {
   VOID
 }
 
+enum VendorSubscriptionStatus {
+  TRIAL
+  ACTIVE
+  FAILED
+  SUSPENDED
+}
+
 enum DeliveryMethod {
   PICKUP
   EXPRESS
@@ -206,40 +213,40 @@ enum CouponDiscountType {
 }
 
 model User {
-  id              String        @id @default(auto()) @map("_id") @db.ObjectId
-  fullName        String
-  email           String        @unique
-  phone           String        @unique
-  passwordHash    String
-  role            Role
-  status          UserStatus    @default(PENDING)
-  isEmailVerified Boolean       @default(false)
-  isPhoneVerified Boolean       @default(false)
-  lastLoginAt        DateTime?
-  preferredCurrency  String?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  sessions        Session[]
-  auditLogs       AuditLog[]
-  vendorProfile   VendorProfile?
+  id                String            @id @default(auto()) @map("_id") @db.ObjectId
+  fullName          String
+  email             String            @unique
+  phone             String            @unique
+  passwordHash      String
+  role              Role
+  status            UserStatus        @default(PENDING)
+  isEmailVerified   Boolean           @default(false)
+  isPhoneVerified   Boolean           @default(false)
+  lastLoginAt       DateTime?
+  preferredCurrency String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  sessions          Session[]
+  auditLogs         AuditLog[]
+  vendorProfile     VendorProfile?
   customerAddresses CustomerAddress[]
-  cart            Cart?
-  orders          Order[]
-  refundCases     RefundCase[]
-  caseMessages    CaseMessage[]
+  cart              Cart?
+  orders            Order[]
+  refundCases       RefundCase[]
+  caseMessages      CaseMessage[]
 }
 
 model Session {
-  id           String        @id @default(auto()) @map("_id") @db.ObjectId
-  userId       String        @db.ObjectId
-  refreshHash  String
-  status       SessionStatus @default(ACTIVE)
-  userAgent    String?
-  ipAddress    String?
-  expiresAt    DateTime
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String        @db.ObjectId
+  refreshHash String
+  status      SessionStatus @default(ACTIVE)
+  userAgent   String?
+  ipAddress   String?
+  expiresAt   DateTime
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
   @@index([expiresAt])
@@ -263,18 +270,18 @@ model OtpCode {
 }
 
 model IdempotencyKey {
-  id           String             @id @default(auto()) @map("_id") @db.ObjectId
-  key          String             @unique
+  id           String            @id @default(auto()) @map("_id") @db.ObjectId
+  key          String            @unique
   scope        String
   requestHash  String
-  status       IdempotencyStatus  @default(IN_PROGRESS)
+  status       IdempotencyStatus @default(IN_PROGRESS)
   responseCode Int?
   responseBody Json?
   resourceType String?
   resourceId   String?
   expiresAt    DateTime
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 
   @@index([scope, status])
   @@index([expiresAt])
@@ -299,57 +306,70 @@ model AuditLog {
 }
 
 model VendorProfile {
-  id                       String               @id @default(auto()) @map("_id") @db.ObjectId
-  userId                   String               @unique @db.ObjectId
-  storeName                String?
-  storeSlug                String?              @unique
-  businessType             BusinessType?
-  industryType             IndustryType?
-  logoUrl                  String?
-  description              String?
-  onboardingStep           VendorOnboardingStep @default(ACCOUNT_SETUP)
-  status                   VendorStatus         @default(ONBOARDING)
-  submittedAt              DateTime?
-  approvedAt               DateTime?
-  approvedByUserId         String?              @db.ObjectId
-  rejectedAt               DateTime?
-  rejectionReason          String?
-  suspendedAt              DateTime?
-  suspensionReason         String?
-  createdAt                DateTime             @default(now())
-  updatedAt                DateTime             @updatedAt
-  user                     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kycDocuments             VendorKycDocument[]
-  address                  VendorAddress?
-  payoutMethod             VendorPayoutMethod?
-  agreementAcceptance      VendorAgreementAcceptance?
-  products                 Product[]
-  orderSplits              OrderVendor[]
-  deliveryRules            DeliveryRule[]
-  membershipInvoices       MembershipInvoice[]
-  coupons                  VendorCoupon[]
-  promoBanners             VendorPromoBanner[]
+  id                             String                     @id @default(auto()) @map("_id") @db.ObjectId
+  userId                         String                     @unique @db.ObjectId
+  storeName                      String?
+  storeSlug                      String?                    @unique
+  businessType                   BusinessType?
+  industryType                   IndustryType?
+  logoUrl                        String?
+  description                    String?
+  onboardingStep                 VendorOnboardingStep       @default(ACCOUNT_SETUP)
+  status                         VendorStatus               @default(ONBOARDING)
+  submittedAt                    DateTime?
+  approvedAt                     DateTime?
+  approvedByUserId               String?                    @db.ObjectId
+  rejectedAt                     DateTime?
+  rejectionReason                String?
+  suspendedAt                    DateTime?
+  suspensionReason               String?
+  stripeCustomerId               String?                    @unique
+  stripeSubscriptionId           String?                    @unique
+  stripeDefaultPaymentMethodId   String?
+  subscriptionStatus             VendorSubscriptionStatus   @default(TRIAL)
+  subscriptionTrialEndsAt        DateTime?
+  subscriptionCurrentPeriodStart DateTime?
+  subscriptionCurrentPeriodEnd   DateTime?
+  subscriptionLastPaymentAt      DateTime?
+  subscriptionNextBillingAt      DateTime?
+  subscriptionGracePeriodEndsAt  DateTime?
+  subscriptionFailedPaymentCount Int                        @default(0)
+  subscriptionFailedAt           DateTime?
+  createdAt                      DateTime                   @default(now())
+  updatedAt                      DateTime                   @updatedAt
+  user                           User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kycDocuments                   VendorKycDocument[]
+  address                        VendorAddress?
+  payoutMethod                   VendorPayoutMethod?
+  agreementAcceptance            VendorAgreementAcceptance?
+  products                       Product[]
+  orderSplits                    OrderVendor[]
+  deliveryRules                  DeliveryRule[]
+  membershipInvoices             MembershipInvoice[]
+  coupons                        VendorCoupon[]
+  promoBanners                   VendorPromoBanner[]
 
   @@index([status, onboardingStep])
+  @@index([subscriptionStatus, subscriptionGracePeriodEndsAt])
 }
 
 model VendorCoupon {
-  id                   String             @id @default(auto()) @map("_id") @db.ObjectId
-  vendorProfileId      String             @db.ObjectId
+  id                   String              @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId      String              @db.ObjectId
   code                 String
   discountType         CouponDiscountType
   discountValue        Int
-  isActive             Boolean            @default(true)
-  appliesToAllProducts Boolean            @default(true)
-  productIds           String[]           @default([]) @db.ObjectId
+  isActive             Boolean             @default(true)
+  appliesToAllProducts Boolean             @default(true)
+  productIds           String[]            @default([]) @db.ObjectId
   startsAt             DateTime?
   expiresAt            DateTime?
   maxUses              Int?
-  usedCount            Int                @default(0)
+  usedCount            Int                 @default(0)
   minOrderAmount       Int?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-  vendorProfile        VendorProfile      @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  vendorProfile        VendorProfile       @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
   promoBanners         VendorPromoBanner[]
 
   @@unique([vendorProfileId, code])
@@ -376,101 +396,101 @@ model VendorPromoBanner {
 }
 
 model VendorKycDocument {
-  id                 String          @id @default(auto()) @map("_id") @db.ObjectId
-  vendorProfileId    String          @db.ObjectId
-  documentType       KycDocumentType
-  documentUrl        String
-  selfieWithIdUrl    String?
-  reviewStatus       ReviewStatus    @default(PENDING)
-  reviewedByUserId   String?         @db.ObjectId
-  reviewedAt         DateTime?
-  rejectionReason    String?
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-  vendorProfile      VendorProfile   @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  id               String          @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId  String          @db.ObjectId
+  documentType     KycDocumentType
+  documentUrl      String
+  selfieWithIdUrl  String?
+  reviewStatus     ReviewStatus    @default(PENDING)
+  reviewedByUserId String?         @db.ObjectId
+  reviewedAt       DateTime?
+  rejectionReason  String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  vendorProfile    VendorProfile   @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
 
-  @@index([vendorProfileId, reviewStatus])
   @@unique([vendorProfileId, documentType])
+  @@index([vendorProfileId, reviewStatus])
 }
 
 model VendorAddress {
-  id                 String         @id @default(auto()) @map("_id") @db.ObjectId
-  vendorProfileId    String         @unique @db.ObjectId
-  addressLine1       String
-  city               String
-  country            String
-  postalCode         String
-  proofOfAddressUrl  String?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-  vendorProfile      VendorProfile  @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  id                String        @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId   String        @unique @db.ObjectId
+  addressLine1      String
+  city              String
+  country           String
+  postalCode        String
+  proofOfAddressUrl String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  vendorProfile     VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
 }
 
 model VendorPayoutMethod {
-  id                    String            @id @default(auto()) @map("_id") @db.ObjectId
-  vendorProfileId       String            @unique @db.ObjectId
-  method                PayoutMethodType
-  accountName           String?
-  accountNumberOrIban   String?
-  bankName              String?
-  stripeEmail           String?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-  vendorProfile         VendorProfile     @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  id                  String           @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId     String           @unique @db.ObjectId
+  method              PayoutMethodType
+  accountName         String?
+  accountNumberOrIban String?
+  bankName            String?
+  stripeEmail         String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  vendorProfile       VendorProfile    @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
 }
 
 model VendorAgreementAcceptance {
-  id                              String         @id @default(auto()) @map("_id") @db.ObjectId
-  vendorProfileId                 String         @unique @db.ObjectId
-  agreedToVendorTerms             Boolean
-  agreedToMembershipPolicy        Boolean
-  agreedToCommissionPolicy        Boolean
-  agreedToDisputePolicy           Boolean
-  agreedToDeliveryRules           Boolean
-  acceptedAt                      DateTime
-  createdAt                       DateTime       @default(now())
-  updatedAt                       DateTime       @updatedAt
-  vendorProfile                   VendorProfile  @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  id                       String        @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId          String        @unique @db.ObjectId
+  agreedToVendorTerms      Boolean
+  agreedToMembershipPolicy Boolean
+  agreedToCommissionPolicy Boolean
+  agreedToDisputePolicy    Boolean
+  agreedToDeliveryRules    Boolean
+  acceptedAt               DateTime
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+  vendorProfile            VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
 }
 
 model Category {
-  id           String      @id @default(auto()) @map("_id") @db.ObjectId
-  name         String
-  slug         String      @unique
-  parentId     String?     @db.ObjectId
-  isActive     Boolean     @default(true)
-  sortOrder    Int         @default(0)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  parent       Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  children     Category[]  @relation("CategoryHierarchy")
-  products     Product[]
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  slug      String     @unique
+  parentId  String?    @db.ObjectId
+  isActive  Boolean    @default(true)
+  sortOrder Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children  Category[] @relation("CategoryHierarchy")
+  products  Product[]
 
   @@index([parentId, isActive])
 }
 
 model Product {
-  id                 String                @id @default(auto()) @map("_id") @db.ObjectId
-  vendorProfileId    String                @db.ObjectId
-  categoryId         String                @db.ObjectId
-  name               String
-  slug               String
-  description        String
-  images             String[]
-  sku                String?
-  currency           String
-  priceAmount        Int
-  stockQty           Int
-  approvalStatus     ProductApprovalStatus @default(DRAFT)
-  rejectionReason    String?
-  isActive           Boolean               @default(true)
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
-  vendorProfile      VendorProfile         @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
-  category           Category              @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  cartItems          CartItem[]
-  orderItems         OrderItem[]
-  variants           ProductVariant[]
+  id              String                @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId String                @db.ObjectId
+  categoryId      String                @db.ObjectId
+  name            String
+  slug            String
+  description     String
+  images          String[]
+  sku             String?
+  currency        String
+  priceAmount     Int
+  stockQty        Int
+  approvalStatus  ProductApprovalStatus @default(DRAFT)
+  rejectionReason String?
+  isActive        Boolean               @default(true)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  vendorProfile   VendorProfile         @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  category        Category              @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+  variants        ProductVariant[]
 
   @@unique([vendorProfileId, slug])
   @@index([vendorProfileId, approvalStatus])
@@ -511,41 +531,41 @@ model CustomerAddress {
 }
 
 model Cart {
-  id           String     @id @default(auto()) @map("_id") @db.ObjectId
-  userId       String     @unique @db.ObjectId
-  currency     String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items        CartItem[]
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String     @unique @db.ObjectId
+  currency  String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
 }
 
 model CartItem {
-  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
-  cartId                String   @db.ObjectId
-  productId             String   @db.ObjectId
-  vendorProfileId       String   @db.ObjectId
-  quantity              Int
-  currencySnapshot      String
-  unitPriceSnapshot     Int
-  productNameSnapshot   String
-  productImageSnapshot  String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  cart                  Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product               Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
+  cartId               String   @db.ObjectId
+  productId            String   @db.ObjectId
+  vendorProfileId      String   @db.ObjectId
+  quantity             Int
+  currencySnapshot     String
+  unitPriceSnapshot    Int
+  productNameSnapshot  String
+  productImageSnapshot String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  cart                 Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product              Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, productId])
   @@index([cartId, vendorProfileId])
 }
 
 model Order {
-  id                    String         @id @default(auto()) @map("_id") @db.ObjectId
-  userId                String?        @db.ObjectId
+  id                    String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId                String?       @db.ObjectId
   guestEmail            String?
-  orderNumber           String         @unique
-  status                OrderStatus    @default(CREATED)
-  paymentStatus         PaymentStatus  @default(UNPAID)
+  orderNumber           String        @unique
+  status                OrderStatus   @default(CREATED)
+  paymentStatus         PaymentStatus @default(UNPAID)
   currency              String
   subtotalAmount        Int
   deliveryAmount        Int
@@ -558,9 +578,9 @@ model Order {
   shippingCountry       String
   shippingPostalCode    String
   stripePaymentIntentId String?
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
-  user                  User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  user                  User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   vendorOrders          OrderVendor[]
   refundCases           RefundCase[]
 
@@ -570,79 +590,79 @@ model Order {
 }
 
 model OrderVendor {
-  id                 String            @id @default(auto()) @map("_id") @db.ObjectId
-  orderId            String            @db.ObjectId
-  vendorProfileId    String            @db.ObjectId
-  status             VendorOrderStatus @default(NEW)
-  currency           String
-  subtotalAmount     Int
-  deliveryAmount     Int
-  discountAmount     Int
-  grandTotalAmount   Int
-  couponCode         String?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  order              Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  vendorProfile      VendorProfile     @relation(fields: [vendorProfileId], references: [id], onDelete: Restrict)
-  items              OrderItem[]
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  orderId          String            @db.ObjectId
+  vendorProfileId  String            @db.ObjectId
+  status           VendorOrderStatus @default(NEW)
+  currency         String
+  subtotalAmount   Int
+  deliveryAmount   Int
+  discountAmount   Int
+  grandTotalAmount Int
+  couponCode       String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  order            Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  vendorProfile    VendorProfile     @relation(fields: [vendorProfileId], references: [id], onDelete: Restrict)
+  items            OrderItem[]
 
   @@unique([orderId, vendorProfileId])
   @@index([vendorProfileId, status, createdAt])
 }
 
 model OrderItem {
-  id                   String      @id @default(auto()) @map("_id") @db.ObjectId
-  orderVendorId        String      @db.ObjectId
-  productId            String      @db.ObjectId
-  quantity             Int
-  currency             String
-  unitPriceAmount      Int
-  lineTotalAmount      Int
-  productName          String
-  productImage         String?
-  productSku           String?
-  vendorProfileId      String      @db.ObjectId
-  categoryId           String      @db.ObjectId
-  createdAt            DateTime    @default(now())
-  updatedAt            DateTime    @updatedAt
-  orderVendor          OrderVendor @relation(fields: [orderVendorId], references: [id], onDelete: Cascade)
-  product              Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
-  refundCases          RefundCase[]
+  id              String       @id @default(auto()) @map("_id") @db.ObjectId
+  orderVendorId   String       @db.ObjectId
+  productId       String       @db.ObjectId
+  quantity        Int
+  currency        String
+  unitPriceAmount Int
+  lineTotalAmount Int
+  productName     String
+  productImage    String?
+  productSku      String?
+  vendorProfileId String       @db.ObjectId
+  categoryId      String       @db.ObjectId
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  orderVendor     OrderVendor  @relation(fields: [orderVendorId], references: [id], onDelete: Cascade)
+  product         Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  refundCases     RefundCase[]
 
   @@index([orderVendorId, productId])
   @@index([vendorProfileId, createdAt])
 }
 
 model PaymentTransaction {
-  id                 String                   @id @default(auto()) @map("_id") @db.ObjectId
-  orderId            String                   @db.ObjectId
-  provider           PaymentProvider
-  providerEventId    String
-  providerPaymentId  String
-  eventType          String
-  amount             Int
-  currency           String
-  status             PaymentTransactionStatus
-  rawPayload         Json
-  processedAt        DateTime?
-  createdAt          DateTime                 @default(now())
-  updatedAt          DateTime                 @updatedAt
+  id                String                   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId           String                   @db.ObjectId
+  provider          PaymentProvider
+  providerEventId   String
+  providerPaymentId String
+  eventType         String
+  amount            Int
+  currency          String
+  status            PaymentTransactionStatus
+  rawPayload        Json
+  processedAt       DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
 
   @@unique([provider, providerEventId])
   @@index([orderId, provider, createdAt])
 }
 
 model CommissionLedger {
-  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
-  orderId            String   @db.ObjectId
-  orderVendorId      String   @unique @db.ObjectId
-  vendorProfileId    String   @db.ObjectId
-  rateBps            Int
-  baseAmount         Int
-  commissionAmount   Int
-  currency           String
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId          String   @db.ObjectId
+  orderVendorId    String   @unique @db.ObjectId
+  vendorProfileId  String   @db.ObjectId
+  rateBps          Int
+  baseAmount       Int
+  commissionAmount Int
+  currency         String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([vendorProfileId, createdAt])
 }
@@ -666,61 +686,72 @@ model VendorLedgerEntry {
 }
 
 model Payout {
-  id                 String       @id @default(auto()) @map("_id") @db.ObjectId
-  vendorProfileId    String       @db.ObjectId
-  orderVendorId      String       @unique @db.ObjectId
-  amount             Int
-  currency           String
-  status             PayoutStatus @default(ON_HOLD)
-  holdUntil          DateTime
-  releasedAt         DateTime?
-  sentAt             DateTime?
-  failureReason      String?
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  id              String       @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId String       @db.ObjectId
+  orderVendorId   String       @unique @db.ObjectId
+  amount          Int
+  currency        String
+  status          PayoutStatus @default(ON_HOLD)
+  holdUntil       DateTime
+  releasedAt      DateTime?
+  sentAt          DateTime?
+  failureReason   String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   @@index([vendorProfileId, status, holdUntil])
 }
 
 model DeliveryRule {
-  id                String             @id @default(auto()) @map("_id") @db.ObjectId
-  method            DeliveryMethod
-  scope             DeliveryRuleScope
-  vendorProfileId   String?            @db.ObjectId
-  countryCode       String?
-  priceModel        DeliveryPriceModel
-  baseFeeAmount     Int
-  perKmRateAmount   Int?
-  freeAboveAmount   Int?
-  etaMinDays        Int
-  etaMaxDays        Int
-  isActive          Boolean            @default(true)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  vendorProfile     VendorProfile?     @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  id              String             @id @default(auto()) @map("_id") @db.ObjectId
+  method          DeliveryMethod
+  scope           DeliveryRuleScope
+  vendorProfileId String?            @db.ObjectId
+  countryCode     String?
+  priceModel      DeliveryPriceModel
+  baseFeeAmount   Int
+  perKmRateAmount Int?
+  freeAboveAmount Int?
+  etaMinDays      Int
+  etaMaxDays      Int
+  isActive        Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  vendorProfile   VendorProfile?     @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
 
   @@index([method, scope, countryCode, isActive])
   @@index([vendorProfileId, method, isActive])
 }
 
 model MembershipInvoice {
-  id               String                  @id @default(auto()) @map("_id") @db.ObjectId
-  vendorProfileId  String                  @db.ObjectId
-  periodStart      DateTime
-  periodEnd        DateTime
-  dueAt            DateTime
-  amount           Int
-  currency         String
-  status           MembershipInvoiceStatus @default(PENDING)
-  paidAt           DateTime?
-  waivedReason     String?
-  createdAt        DateTime                @default(now())
-  updatedAt        DateTime                @updatedAt
-  vendorProfile    VendorProfile           @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  id                   String                  @id @default(auto()) @map("_id") @db.ObjectId
+  vendorProfileId      String                  @db.ObjectId
+  periodStart          DateTime
+  periodEnd            DateTime
+  dueAt                DateTime
+  amount               Int
+  currency             String
+  status               MembershipInvoiceStatus @default(PENDING)
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  stripeInvoiceId      String?
+  stripePaymentId      String?
+  stripeEventId        String?
+  failureCode          String?
+  failureReason        String?
+  attemptedAt          DateTime?
+  invoiceHostedUrl     String?
+  paidAt               DateTime?
+  waivedReason         String?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  vendorProfile        VendorProfile           @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
 
   @@unique([vendorProfileId, periodStart, periodEnd])
+  @@unique([stripeInvoiceId])
   @@index([status, dueAt])
   @@index([vendorProfileId, createdAt])
+  @@index([stripeSubscriptionId, periodStart])
 }
 
 model RefundCase {
@@ -751,14 +782,14 @@ model RefundCase {
 }
 
 model RefundEvidence {
-  id            String     @id @default(auto()) @map("_id") @db.ObjectId
-  refundCaseId  String     @db.ObjectId
-  actorUserId   String?    @db.ObjectId
-  actorRole     Role
-  fileUrl       String?
-  note          String?
-  createdAt     DateTime   @default(now())
-  refundCase    RefundCase @relation(fields: [refundCaseId], references: [id], onDelete: Cascade)
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  refundCaseId String     @db.ObjectId
+  actorUserId  String?    @db.ObjectId
+  actorRole    Role
+  fileUrl      String?
+  note         String?
+  createdAt    DateTime   @default(now())
+  refundCase   RefundCase @relation(fields: [refundCaseId], references: [id], onDelete: Cascade)
 
   @@index([refundCaseId, createdAt])
 }

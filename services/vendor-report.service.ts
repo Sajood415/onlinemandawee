@@ -231,6 +231,10 @@ export class VendorReportService {
         currency: invoice.currency,
         status: invoice.status,
         paidAt: invoice.paidAt?.toISOString() ?? null,
+        attemptedAt: invoice.attemptedAt?.toISOString() ?? null,
+        stripeInvoiceId: invoice.stripeInvoiceId ?? null,
+        stripePaymentId: invoice.stripePaymentId ?? null,
+        failureReason: invoice.failureReason ?? null,
         waivedReason: invoice.waivedReason,
         chargedAmount:
           invoice.status === "PAID"

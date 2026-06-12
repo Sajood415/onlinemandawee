@@ -1,21 +1,17 @@
 import { NextResponse } from "next/server";
 
+import { AppError } from "@/lib/errors/app-error";
+import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { withRbac } from "@/middlewares/with-rbac";
-import { MembershipBillingService } from "@/services/membership-billing.service";
-import { membershipInvoiceGenerationSchema } from "@/validators/report.validator";
-import { parseOptionalBody } from "@/validators/request";
-
-const membershipBillingService = new MembershipBillingService();
 
 export const POST = withErrorHandling(
-  withRbac(["ADMIN"], async (request) => {
-    const input = await parseOptionalBody(
-      request,
-      membershipInvoiceGenerationSchema,
-      {}
-    );
-    const result = await membershipBillingService.generateMonthlyInvoices(input);
-    return NextResponse.json({ data: result }, { status: 200 });
+  withRbac(["ADMIN"], async () => {
+    throw new AppError({
+      code: ERROR_CODE.BAD_REQUEST,
+      message:
+        "Manual membership invoice generation is disabled. Stripe subscription billing manages membership charges.",
+      statusCode: 400,
+    });
   })
 );

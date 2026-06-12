@@ -1,39 +1,33 @@
-export const MEMBERSHIP_UNPAID_SUSPENSION_REASON =
-  "Shop suspended: unpaid marketplace subscription (4+ months overdue)";
+import {
+  DEFAULT_MEMBERSHIP_GRACE_DAYS,
+  isMembershipBillingSuspension,
+  MEMBERSHIP_BILLING_SUSPENSION_REASON,
+} from "@/lib/membership/billing-shared";
 
-export const MEMBERSHIP_SUSPEND_AFTER_OVERDUE_MONTHS = 4;
-export const MEMBERSHIP_WARN_OVERDUE_MONTHS_MIN = 1;
-export const MEMBERSHIP_WARN_OVERDUE_MONTHS_MAX = 2;
+export const MEMBERSHIP_UNPAID_SUSPENSION_REASON = MEMBERSHIP_BILLING_SUSPENSION_REASON;
+
+export { isMembershipBillingSuspension };
 
 export type MembershipOverdueLevel = "none" | "warning" | "critical" | "suspended";
 
-export function countOverdueMembershipMonths(
-  invoices: Array<{ status: string; amount: number; dueAt: Date }>,
-  now = new Date()
-) {
-  return invoices.filter(
-    (invoice) =>
-      invoice.status === "PENDING" &&
-      invoice.amount > 0 &&
-      invoice.dueAt < now
-  ).length;
-}
+export function resolveMembershipBillingAlertLevel(input: {
+  subscriptionStatus: "TRIAL" | "ACTIVE" | "FAILED" | "SUSPENDED";
+  gracePeriodEndsAt?: Date | null;
+  now?: Date;
+}): MembershipOverdueLevel {
+  const now = input.now ?? new Date();
 
-export function resolveMembershipOverdueLevel(
-  overdueMonths: number
-): MembershipOverdueLevel {
-  if (overdueMonths >= MEMBERSHIP_SUSPEND_AFTER_OVERDUE_MONTHS) {
+  if (input.subscriptionStatus === "SUSPENDED") {
     return "suspended";
   }
-  if (overdueMonths === 3) {
+
+  if (input.subscriptionStatus === "FAILED") {
+    if (input.gracePeriodEndsAt != null && now >= input.gracePeriodEndsAt) {
+      return "suspended";
+    }
     return "critical";
   }
-  if (
-    overdueMonths >= MEMBERSHIP_WARN_OVERDUE_MONTHS_MIN &&
-    overdueMonths <= MEMBERSHIP_WARN_OVERDUE_MONTHS_MAX
-  ) {
-    return "warning";
-  }
+
   return "none";
 }
 
@@ -42,9 +36,8 @@ export function formatMembershipFee(amountCents: number, currency: string) {
   return currency === "USD" ? `$${value}` : `${value} ${currency}`;
 }
 
-export function isMembershipBillingSuspension(reason: string | null | undefined) {
-  return (
-    typeof reason === "string" &&
-    reason.startsWith("Shop suspended: unpaid marketplace subscription")
-  );
+export function formatMembershipGracePeriodLabel(
+  graceDays = DEFAULT_MEMBERSHIP_GRACE_DAYS
+) {
+  return graceDays === 1 ? "1 day" : `${graceDays} days`;
 }

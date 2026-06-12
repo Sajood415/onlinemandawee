@@ -41,6 +41,13 @@ type DashboardSummary = {
   };
   subscription: {
     status: string;
+    trialEndsAt: string | null;
+    isInTrial: boolean;
+    overdueMonths: number;
+    alertLevel: "none" | "warning" | "critical" | "suspended";
+    shopSuspendedForBilling: boolean;
+    gracePeriodEndsAt: string | null;
+    failedPaymentCount: number;
     latestInvoiceDueAt: string | null;
     latestInvoicePeriodStart: string | null;
   };
@@ -91,7 +98,7 @@ function formatCurrency(amount: number, currency: string) {
 }
 
 function SubscriptionBadge({ status }: { status: string }) {
-  if (status === "PAID" || status === "WAIVED") {
+  if (status === "ACTIVE") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
         <CheckCircle2 className="h-3.5 w-3.5" />
@@ -99,19 +106,27 @@ function SubscriptionBadge({ status }: { status: string }) {
       </span>
     );
   }
-  if (status === "PENDING") {
+  if (status === "TRIAL") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
-        <AlertCircle className="h-3.5 w-3.5" />
-        Payment due
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-200">
+        <Clock className="h-3.5 w-3.5" />
+        Trial
       </span>
     );
   }
-  if (status === "VOID") {
+  if (status === "FAILED") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
+        <AlertCircle className="h-3.5 w-3.5" />
+        Payment failed
+      </span>
+    );
+  }
+  if (status === "SUSPENDED") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">
         <XCircle className="h-3.5 w-3.5" />
-        Voided
+        Suspended
       </span>
     );
   }
@@ -331,22 +346,33 @@ export default function VendorDashboardPage() {
                 icon={<CreditCard className="h-5 w-5" />}
                 label="Subscription"
                 value={
-                  summary.subscription.status === "PAID" ||
-                  summary.subscription.status === "WAIVED"
+                  summary.subscription.status === "ACTIVE"
                     ? "Active"
-                    : summary.subscription.status === "PENDING"
-                      ? "Payment Due"
-                      : summary.subscription.status === "VOID"
-                        ? "Voided"
+                    : summary.subscription.status === "TRIAL"
+                      ? "Trial"
+                      : summary.subscription.status === "FAILED"
+                        ? "Payment Failed"
+                        : summary.subscription.status === "SUSPENDED"
+                          ? "Suspended"
                         : "No Invoice"
                 }
                 badge={<SubscriptionBadge status={summary.subscription.status} />}
                 sub={
-                  summary.subscription.latestInvoicePeriodStart
-                    ? `Period from ${new Date(
-                        summary.subscription.latestInvoicePeriodStart
-                      ).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`
-                    : "No active membership invoice"
+                  summary.subscription.status === "TRIAL"
+                    ? summary.subscription.trialEndsAt
+                      ? `Trial ends ${new Date(summary.subscription.trialEndsAt).toLocaleDateString()}`
+                      : "Trial active"
+                    : summary.subscription.status === "FAILED"
+                      ? summary.subscription.gracePeriodEndsAt
+                        ? `Grace period ends ${new Date(summary.subscription.gracePeriodEndsAt).toLocaleDateString()} · Failed attempts: ${summary.subscription.failedPaymentCount}`
+                        : `Payment failed · Failed attempts: ${summary.subscription.failedPaymentCount}`
+                      : summary.subscription.status === "SUSPENDED"
+                        ? "Store hidden from customers until payment succeeds"
+                        : summary.subscription.latestInvoicePeriodStart
+                          ? `Period from ${new Date(
+                              summary.subscription.latestInvoicePeriodStart
+                            ).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`
+                          : "No active membership invoice"
                 }
               />
 
