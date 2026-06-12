@@ -164,7 +164,7 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
               type="button"
               onClick={handleAddToCart}
               disabled={isAdding}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-primary/90 disabled:opacity-60"
+              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isAdding ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

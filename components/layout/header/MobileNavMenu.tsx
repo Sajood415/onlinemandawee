@@ -49,10 +49,11 @@ export function MobileNavMenu({
   ];
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative flex h-full min-h-12 shrink-0 items-center sm:min-h-14" ref={menuRef}>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`shrink-0 flex items-center gap-1 px-1.5 min-[360px]:px-2 py-1 rounded-full border transition-all ${
+        className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 min-[360px]:px-2 py-1.5 transition-all ${
           surface === "light"
             ? isOpen
               ? "bg-primary border-primary text-white shadow-md"

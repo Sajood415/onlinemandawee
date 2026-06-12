@@ -3,7 +3,7 @@
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { CatalogImage } from "@/components/catalog/CatalogImage";
 import { useCart } from "@/store/cart-context";
 import { toast } from "@/lib/utils/toast";
@@ -79,7 +79,7 @@ function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
               e.stopPropagation();
               router.push(`/vendors/${p.vendorSlug}`);
             }}
-            className="w-fit text-left text-[11px] font-medium text-gray-500 hover:text-primary hover:underline"
+            className="w-fit cursor-pointer text-left text-[11px] font-medium text-gray-500 hover:text-primary hover:underline"
           >
             <bdi dir="ltr">{localizeVendor(p.vendor, locale)}</bdi>
           </button>
@@ -93,9 +93,12 @@ function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
         type="button"
         onClick={onAdd}
         disabled={busy}
-        className="mt-3 w-full rounded-sm border border-neutral-900 bg-white py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-900 transition-colors duration-200 hover:bg-neutral-100 active:bg-neutral-200/70 disabled:opacity-45 sm:text-[11px]"
+        className="mt-3 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-sm border border-neutral-900 bg-white py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-900 transition-colors duration-200 hover:bg-neutral-100 active:bg-neutral-200/70 disabled:cursor-not-allowed disabled:opacity-60 sm:text-[11px]"
       >
-        {busy ? "…" : t("addToCart")}
+        {busy ? (
+          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+        ) : null}
+        {t("addToCart")}
       </button>
     </div>
   );

@@ -222,6 +222,15 @@ async function getDrivingDistanceKmWithGoogle(
 
   const element = data.rows?.[0]?.elements?.[0];
   if (!element || element.status !== "OK" || element.distance == null) {
+    // Driving routes are often missing in Afghanistan (ZERO_RESULTS). Estimate from coordinates.
+    const routeStatus = element?.status ?? "missing";
+    if (routeStatus === "ZERO_RESULTS" || routeStatus === "NOT_FOUND" || routeStatus === "missing") {
+      console.warn(
+        `[maps] Distance Matrix returned ${routeStatus} — using straight-line estimate.`
+      );
+      return haversineKm(origin, destination);
+    }
+
     throw new MapsApiError(
       "DISTANCE_UNAVAILABLE",
       "Could not calculate driving distance to your address. Please check the address and try again."
@@ -241,5 +250,13 @@ export async function getDrivingDistanceKm(
     return haversineKm(origin, destination);
   }
 
-  return getDrivingDistanceKmWithGoogle(origin, destination, key);
+  try {
+    return await getDrivingDistanceKmWithGoogle(origin, destination, key);
+  } catch (error) {
+    if (error instanceof MapsApiError && error.code === "DISTANCE_UNAVAILABLE") {
+      console.warn("[maps] Distance Matrix failed — using straight-line estimate.", error.message);
+      return haversineKm(origin, destination);
+    }
+    throw error;
+  }
 }

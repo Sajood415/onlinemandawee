@@ -443,7 +443,6 @@ function ShippingAddressStep({
           placeholder="John Doe"
           value={contact.guestName}
           error={fieldErrors.guestName}
-          hint="Letters only"
           onChange={(e) => {
             onContactChange({ guestName: sanitizeNameInput(e.target.value) });
             clearFieldError("guestName");
@@ -478,7 +477,6 @@ function ShippingAddressStep({
           placeholder="0701234567"
           value={contact.guestPhone}
           error={fieldErrors.guestPhone}
-          hint="Numbers only"
           onChange={(e) => {
             onContactChange({ guestPhone: sanitizePhoneInput(e.target.value) });
             clearFieldError("guestPhone");
@@ -516,7 +514,6 @@ function ShippingAddressStep({
             placeholder="Kabul"
             value={address.city}
             error={fieldErrors.city}
-            hint="Letters only"
             onChange={(e) => {
               onAddressChange({ city: sanitizeCityCountryInput(e.target.value) });
               clearFieldError("city");
@@ -533,7 +530,6 @@ function ShippingAddressStep({
             placeholder="1001"
             value={address.postalCode}
             error={fieldErrors.postalCode}
-            hint="Numbers only"
             onChange={(e) => {
               onAddressChange({ postalCode: sanitizePostalCodeInput(e.target.value) });
               clearFieldError("postalCode");
@@ -551,7 +547,6 @@ function ShippingAddressStep({
           placeholder="Afghanistan"
           value={address.country}
           error={fieldErrors.country}
-          hint="Letters only"
           onChange={(e) => {
             onAddressChange({ country: sanitizeCityCountryInput(e.target.value) });
             clearFieldError("country");
