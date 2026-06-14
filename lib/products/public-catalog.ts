@@ -22,15 +22,17 @@ export type ApiCatalogProduct = {
     logoUrl: string | null;
     description: string | null;
   };
-  variants?: {
-    id: string;
-    name: string;
-    priceAmount: number | null;
-    stockQty: number;
-    sku: string | null;
-    isActive: boolean;
-  }[];
+  variants?: CatalogVariant[];
   availableCoupons?: PublicProductCoupon[];
+};
+
+export type CatalogVariant = {
+  id: string;
+  name: string;
+  priceAmount: number | null;
+  stockQty: number;
+  sku: string | null;
+  isActive: boolean;
 };
 
 export type PublicProductCoupon = {
@@ -47,6 +49,7 @@ export type PublicCatalogProduct = {
   id: string;
   slug: string;
   price: number;
+  basePriceAmount: number;
   priceDisplay: string;
   vendor: string;
   image: string;
@@ -83,16 +86,68 @@ export function formatCatalogPrice(amountMajor: number, currency: string) {
   }
 }
 
+export function getActiveCatalogVariants(variants?: CatalogVariant[]) {
+  return variants?.filter((variant) => variant.isActive) ?? [];
+}
+
+export function resolveVariantUnitPriceMinor(
+  basePriceAmount: number,
+  variant?: CatalogVariant | null
+) {
+  return variant?.priceAmount ?? basePriceAmount;
+}
+
+export function resolveDefaultCatalogVariant(variants?: CatalogVariant[]) {
+  return getActiveCatalogVariants(variants)[0] ?? null;
+}
+
+/** Price shown on cards and as the default on the product detail page. */
+export function resolveProductListingUnitPriceMinor(product: {
+  priceAmount: number;
+  variants?: CatalogVariant[];
+}) {
+  return resolveVariantUnitPriceMinor(
+    product.priceAmount,
+    resolveDefaultCatalogVariant(product.variants)
+  );
+}
+
+export function resolveProductUnitPriceMinor(
+  basePriceAmount: number,
+  variants?: CatalogVariant[],
+  variantId?: string | null
+) {
+  const activeVariants = getActiveCatalogVariants(variants);
+  if (activeVariants.length === 0) return basePriceAmount;
+
+  const selected = variantId
+    ? activeVariants.find((variant) => variant.id === variantId)
+    : activeVariants[0];
+
+  return resolveVariantUnitPriceMinor(basePriceAmount, selected);
+}
+
+export function resolveProductInStock(product: {
+  stockQty: number;
+  variants?: CatalogVariant[];
+}) {
+  const activeVariants = getActiveCatalogVariants(product.variants);
+  if (activeVariants.length === 0) return product.stockQty > 0;
+  return activeVariants.some((variant) => variant.stockQty > 0);
+}
+
 export function mapApiProductToCatalog(product: ApiCatalogProduct): PublicCatalogProduct {
-  const price = product.priceAmount / 100;
+  const priceAmountMinor = resolveProductListingUnitPriceMinor(product);
+  const price = priceAmountMinor / 100;
   const currency = product.currency || "USD";
-  const inStock = product.stockQty > 0;
+  const inStock = resolveProductInStock(product);
   const stockLabel = inStock ? "In Stock" : "Out of Stock";
 
   return {
     id: product.id,
     slug: product.slug,
     price,
+    basePriceAmount: product.priceAmount,
     priceDisplay: formatCatalogPrice(price, currency),
     vendor: product.vendorProfile.storeName ?? "Vendor",
     image: product.images[0] ?? PLACEHOLDER_IMAGE,

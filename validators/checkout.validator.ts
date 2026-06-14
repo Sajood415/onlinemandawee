@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { SUPPORTED_CURRENCIES } from "@/lib/currency/constants";
+
 const lettersOnlyField = (label: string) =>
   z
     .string()
@@ -43,6 +45,8 @@ export const checkoutPostalCodeSchema = z
   .refine((value) => value === "" || /^\d+$/.test(value), {
     message: "Postal code must contain numbers only",
   });
+
+export const checkoutCurrencySchema = z.enum(SUPPORTED_CURRENCIES).default("USD");
 
 export const checkoutShippingContactSchema = z.object({
   guestName: checkoutGuestNameSchema,

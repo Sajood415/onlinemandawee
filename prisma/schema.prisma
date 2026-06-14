@@ -234,6 +234,7 @@ model User {
   orders            Order[]
   refundCases       RefundCase[]
   caseMessages      CaseMessage[]
+  giftRequests      GiftRequest[]
 }
 
 model Session {
@@ -821,4 +822,57 @@ model CaseMessage {
   senderUser    User       @relation(fields: [senderUserId], references: [id], onDelete: Cascade)
 
   @@index([refundCaseId, createdAt])
+}
+
+enum GiftRequestStatus {
+  SUBMITTED
+  REVIEWING
+  AWAITING_PAYMENT
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum GiftRequestPaymentMethod {
+  STRIPE
+  OFFLINE
+}
+
+model GiftRequest {
+  id                    String            @id @default(auto()) @map("_id") @db.ObjectId
+  requestNumber         String            @unique
+  userId                String?           @db.ObjectId
+  senderName            String
+  senderEmail           String
+  senderPhone           String
+  recipientName         String
+  recipientPhone        String
+  recipientCity         String
+  recipientProvince     String?
+  recipientAddress      String
+  occasion              String?
+  preferredDeliveryDate String?
+  preparationNotes      String
+  deliveryInstructions  String
+  budgetNote            String?
+  imageUrls             String[]          @default([])
+  videoUrls             String[]          @default([])
+  quoteAmountMinor      Int?
+  quoteCurrency         String?
+  quoteNote             String?
+  quoteImageUrl         String?
+  quoteSentAt           DateTime?
+  paidAt                DateTime?
+  paidAmountMinor       Int?
+  paymentMethod         GiftRequestPaymentMethod?
+  offlinePaymentNote    String?
+  stripePaymentIntentId String?
+  status                GiftRequestStatus @default(SUBMITTED)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  user                  User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([senderEmail, createdAt])
 }

@@ -3,11 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Baby, ChevronDown, HelpCircle, Zap } from "lucide-react";
-import { useLocale } from "next-intl";
+import { Baby, ChevronDown, HelpCircle, LogOut, UserCircle, Zap } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { headerCopy } from "@/components/layout/header/header-copy";
+import { Link as LocaleLink } from "@/i18n/navigation";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
+import { useAuth } from "@/store/auth-context";
 
 type MobileNavMenuProps = {
   closeAll: () => void;
@@ -24,6 +26,8 @@ export function MobileNavMenu({
   const safeLocale: SupportedLocale =
     locale === "ps" || locale === "fa-AF" ? locale : "en";
   const copy = headerCopy[safeLocale];
+  const tAuth = useTranslations("Auth");
+  const { isAuthenticated, user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -47,6 +51,20 @@ export function MobileNavMenu({
     },
     { href: "/contact", label: copy.support, icon: <HelpCircle size={18} /> },
   ];
+
+  const accountHref =
+    user?.role === "ADMIN"
+      ? "/admin/dashboard"
+      : user?.role === "VENDOR"
+        ? "/vendor/dashboard"
+        : "/account";
+
+  const accountLabel =
+    user?.role === "ADMIN"
+      ? tAuth("accountMenu.adminDashboard")
+      : user?.role === "VENDOR"
+        ? tAuth("accountMenu.vendorDashboard")
+        : tAuth("accountMenu.myAccount");
 
   return (
     <div className="relative flex h-full min-h-12 shrink-0 items-center sm:min-h-14" ref={menuRef}>
@@ -81,6 +99,50 @@ export function MobileNavMenu({
             style={{ transformOrigin: isRtl ? "top left" : "top right" }}
           >
             <div className="p-2">
+              {isAuthenticated ? (
+                <div className="mb-2 border-b border-gray-100 pb-2">
+                  <p className="px-3 py-2 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                    {tAuth("accountMenu.label")}
+                  </p>
+                  <LocaleLink
+                    href={accountHref}
+                    onClick={() => {
+                      setIsOpen(false);
+                      closeAll();
+                    }}
+                    className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-all group"
+                  >
+                    <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary/15 transition-colors">
+                      <UserCircle size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="block font-semibold text-gray-700 text-[14px]">
+                        {accountLabel}
+                      </span>
+                      {user?.fullName ? (
+                        <span className="block truncate text-xs text-gray-500">{user.fullName}</span>
+                      ) : null}
+                    </div>
+                  </LocaleLink>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logout();
+                      setIsOpen(false);
+                      closeAll();
+                    }}
+                    className="flex w-full items-center gap-3 px-3 py-3 rounded-lg text-left hover:bg-gray-50 active:bg-gray-100 transition-all"
+                  >
+                    <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-50 text-red-600">
+                      <LogOut size={18} />
+                    </div>
+                    <span className="font-semibold text-red-600 text-[14px]">
+                      {tAuth("accountMenu.signOut")}
+                    </span>
+                  </button>
+                </div>
+              ) : null}
+
               <p className="px-3 py-2 text-[10px] font-black text-gray-400 uppercase tracking-wider">
                 {copy.quickLinks}
               </p>

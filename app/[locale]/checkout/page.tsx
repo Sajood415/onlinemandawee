@@ -1,8 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import { loadStripe } from "@stripe/stripe-js";
+import {
+  getStripeCheckoutLocale,
+  getStripePromise,
+  isStripeCheckoutConfigured,
+  STRIPE_CHECKOUT_CURRENCY_LABEL,
+} from "@/lib/stripe/client";
 import {
   Elements,
   PaymentElement,
@@ -50,9 +56,7 @@ import { useCurrency } from "@/store/currency-context";
 
 /* ─── Stripe setup ───────────────────────────────────────────────────── */
 
-const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-  : null;
+const stripePromise = getStripePromise();
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 
@@ -720,12 +724,13 @@ function PaymentMethodStep({
   quote: QuoteSummary | null;
   stripeOptions: {
     clientSecret: string;
+    locale: "auto" | "en";
     appearance: {
       theme: "stripe";
       variables: { colorPrimary: string; borderRadius: string; fontFamily: string };
     };
   } | null;
-  stripePromise: ReturnType<typeof loadStripe> | null;
+  stripePromise: ReturnType<typeof getStripePromise>;
   contact: ContactForm;
   address: AddressForm;
   cartItems: Array<{ productId: string; quantity: number }>;
@@ -878,7 +883,7 @@ function PaymentMethodSelector({
     id: "card" as const,
     label: "Credit / Debit Card",
     sub: stripeAvailable
-      ? "Visa, Mastercard, Amex — secured by Stripe"
+      ? `Visa, Mastercard, Amex — ${STRIPE_CHECKOUT_CURRENCY_LABEL}`
       : "Stripe not configured — add keys to .env.local",
     icon: <CreditCard size={22} className="text-blue-600" />,
     disabled: !stripeAvailable,
@@ -1114,7 +1119,12 @@ function StripePayForm({
   return (
     <form onSubmit={handlePay} className="space-y-5">
       <div className="rounded-xl border border-gray-200 p-4">
-        <PaymentElement options={{ layout: "tabs" }} />
+        <PaymentElement
+          options={{
+            layout: "tabs",
+            wallets: { applePay: "never", googlePay: "never" },
+          }}
+        />
       </div>
       <div className="flex gap-3 pt-1">
         <button type="button" onClick={onBack} disabled={paying}
@@ -1342,6 +1352,7 @@ function SuccessScreen({
 /* ─── Main Checkout Page ─────────────────────────────────────────────── */
 
 export default function CheckoutPage() {
+  const locale = useLocale();
   const { cart, removeItem } = useCart();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -1349,7 +1360,7 @@ export default function CheckoutPage() {
 
   const [step, setStep] = useState(0);
   const checkoutTopRef = useRef<HTMLDivElement>(null);
-  const stripeAvailable = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  const stripeAvailable = isStripeCheckoutConfigured();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
     stripeAvailable ? "card" : "cod"
   );
@@ -1586,13 +1597,14 @@ export default function CheckoutPage() {
       quote?.clientSecret
         ? {
             clientSecret: quote.clientSecret,
+            locale: getStripeCheckoutLocale(locale),
             appearance: {
               theme: "stripe" as const,
               variables: { colorPrimary: "#0f3460", borderRadius: "12px", fontFamily: "inherit" },
             },
           }
         : null,
-    [quote?.clientSecret]
+    [quote?.clientSecret, locale]
   );
 
   const handleSuccess = useCallback(

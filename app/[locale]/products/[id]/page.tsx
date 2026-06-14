@@ -31,6 +31,9 @@ import { RelatedProducts } from "@/components/products/RelatedProducts";
 import type { CatalogRow } from "@/components/products/types";
 import {
   fetchPublicCatalogProduct,
+  getActiveCatalogVariants,
+  resolveDefaultCatalogVariant,
+  resolveProductUnitPriceMinor,
   type PublicCatalogProduct,
 } from "@/lib/products/public-catalog";
 import { fetchRelatedProductsByCategory } from "@/lib/products/related-products";
@@ -195,6 +198,7 @@ export default function ProductDetailPage() {
 
         if (!mounted) return;
         setProduct(resolved);
+        setSelectedVariantId(resolveDefaultCatalogVariant(resolved.variants)?.id ?? null);
 
         const related = await fetchRelatedProductsByCategory(
           resolved.category,
@@ -219,21 +223,28 @@ export default function ProductDetailPage() {
     };
   }, [productId]);
 
+  const activeVariants = useMemo(
+    () => (product ? getActiveCatalogVariants(product.variants) : []),
+    [product]
+  );
+
   const activeVariant = useMemo(() => {
-    if (!product || !("variants" in product) || !product.variants?.length) return null;
-    return product.variants.find((v) => v.id === selectedVariantId) ?? product.variants[0];
-  }, [product, selectedVariantId]);
+    if (!product || activeVariants.length === 0) return null;
+    return activeVariants.find((variant) => variant.id === selectedVariantId) ?? activeVariants[0];
+  }, [product, activeVariants, selectedVariantId]);
 
   const productCurrency =
     product && "currency" in product && product.currency ? product.currency : "USD";
 
   const displayPrice = useMemo(() => {
     if (!product) return "";
-    if (activeVariant?.priceAmount != null) {
-      return formatPrice(activeVariant.priceAmount / 100, productCurrency);
-    }
-    return formatPrice(product.price, productCurrency);
-  }, [product, activeVariant, formatPrice, productCurrency]);
+    const unitPriceMinor = resolveProductUnitPriceMinor(
+      product.basePriceAmount,
+      product.variants,
+      activeVariant?.id
+    );
+    return formatPrice(unitPriceMinor / 100, productCurrency);
+  }, [product, activeVariant?.id, formatPrice, productCurrency]);
 
   const compareAtPrice = useMemo(() => {
     if (!product || product.price <= 50 || activeVariant) return null;
@@ -524,19 +535,19 @@ export default function ProductDetailPage() {
               </div>
             ) : null}
 
-            {"variants" in product && product.variants && product.variants.length > 0 && (
+            {activeVariants.length > 0 && (
               <div className="mb-6">
                 <span className="text-sm font-medium text-gray-700 mb-2 block">
                   {locale === "en" ? "Options" : locale === "ps" ? "انتخابونه" : "گزینه‌ها"}
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  {product.variants.map((variant) => (
+                  {activeVariants.map((variant) => (
                     <button
                       key={variant.id}
                       type="button"
                       onClick={() => setSelectedVariantId(variant.id)}
                       className={`rounded-full border px-3 py-1.5 text-sm transition ${
-                        (selectedVariantId ?? product.variants?.[0]?.id) === variant.id
+                        (selectedVariantId ?? activeVariants[0]?.id) === variant.id
                           ? "border-primary bg-primary/10 text-primary"
                           : "border-gray-300 text-gray-700 hover:border-gray-400"
                       }`}

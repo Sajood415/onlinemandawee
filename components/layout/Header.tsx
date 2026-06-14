@@ -267,6 +267,7 @@ export default function Header() {
   const closeAll = useCallback(() => {
     setShowCategoriesDropdown(false);
     setIsCartOpen(false);
+    setShowAccountMenu(false);
   }, []);
 
   useEffect(() => {
@@ -378,20 +379,25 @@ export default function Header() {
                 <CurrencySelector isRtl={isRtl} variant="dark" />
               </div>
 
-              {/* Login / Account - Third */}
+              {/* Login / Account */}
               {isAuthenticated ? (
-                <div className="relative hidden md:block" ref={accountMenuRef}>
+                <div className="relative" ref={accountMenuRef}>
                   <button
                     type="button"
                     onClick={() => setShowAccountMenu((v) => !v)}
-                    className="flex h-9 shrink-0 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white transition-colors hover:bg-white/20"
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 text-white transition-colors hover:bg-white/20 md:w-auto md:px-3 ${
+                      showAccountMenu ? "bg-white/20" : ""
+                    }`}
                     aria-label={tAuth("accountMenu.label")}
+                    aria-expanded={showAccountMenu}
                   >
-                    <UserCircle size={18} />
-                    <span className="max-w-[7rem] truncate">{user?.fullName?.split(" ")[0] ?? tAuth("accountMenu.account")}</span>
+                    <UserCircle size={18} className="shrink-0" />
+                    <span className="hidden max-w-[7rem] truncate text-xs font-semibold md:inline">
+                      {user?.fullName?.split(" ")[0] ?? tAuth("accountMenu.account")}
+                    </span>
                   </button>
                   {showAccountMenu && (
-                    <div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-neutral-200 bg-white py-1 shadow-xl z-50">
+                    <div className="absolute end-0 top-full z-[10001] mt-2 w-48 rounded-xl border border-neutral-200 bg-white py-1 shadow-xl">
                       {user?.role === "ADMIN" && (
                         <LocaleLink
                           href="/admin/dashboard"
@@ -436,9 +442,11 @@ export default function Header() {
                 <button
                   type="button"
                   onClick={handleLogin}
-                  className="hidden md:flex h-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 px-3 whitespace-nowrap text-xs font-semibold text-white transition-colors hover:bg-white/20 lg:px-4 lg:text-sm"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition-colors hover:bg-white/20 md:w-auto md:px-3 md:text-xs md:font-semibold lg:px-4 lg:text-sm"
+                  aria-label={copy.login}
                 >
-                  {copy.login}
+                  <UserCircle size={18} className="md:hidden" />
+                  <span className="hidden whitespace-nowrap md:inline">{copy.login}</span>
                 </button>
               )}
 

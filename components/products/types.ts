@@ -5,6 +5,7 @@ export type CatalogRow =
   | {
       id: string;
       price: number;
+      basePriceAmount?: number;
       priceDisplay: string;
       vendor: string;
       image: string;

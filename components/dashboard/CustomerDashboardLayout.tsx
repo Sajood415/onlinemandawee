@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Settings } from "lucide-react";
+import { Gift, LayoutDashboard, Settings } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { RoleDashboardLayout } from "@/components/dashboard/RoleDashboardLayout";
@@ -26,6 +26,11 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
           label: t("nav.overview"),
           href: "/account",
           icon: <LayoutDashboard size={16} />,
+        },
+        {
+          label: t("nav.giftRequests"),
+          href: "/account/gift-requests",
+          icon: <Gift size={16} />,
         },
         {
           label: t("nav.settings"),

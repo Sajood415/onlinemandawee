@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
 import { z } from "zod";
 
 import {
@@ -7,10 +6,16 @@ import {
   GuestCheckoutQuoteError,
 } from "@/lib/checkout/build-guest-checkout-quote";
 import { createGuestOrderFromQuote } from "@/lib/checkout/create-guest-order-from-quote";
+import {
+  assertPaymentIntentMatchesQuote,
+  StripeCheckoutPaymentError,
+} from "@/lib/stripe/checkout-payment";
+import { getStripeServerClient } from "@/lib/stripe/server";
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { withRbac } from "@/middlewares/with-rbac";
 import { prisma } from "@/lib/db/prisma";
 import {
+  checkoutCurrencySchema,
   checkoutShippingContactSchema,
   guestCheckoutCartItemSchema,
   guestCheckoutCouponsSchema,
@@ -19,7 +24,7 @@ import {
 const confirmBodySchema = z
   .object({
     paymentIntentId: z.string().min(1),
-    currency: z.string().length(3),
+    currency: checkoutCurrencySchema,
     items: z.array(guestCheckoutCartItemSchema).min(1),
   })
   .merge(checkoutShippingContactSchema)
@@ -27,15 +32,14 @@ const confirmBodySchema = z
 
 export const POST = withErrorHandling(
   withRbac(["CUSTOMER"], async (request, context) => {
-    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-    if (!stripeSecretKey) {
+    if (!process.env.STRIPE_SECRET_KEY) {
       return NextResponse.json(
         { error: { code: "CONFIG_ERROR", message: "Stripe is not configured." } },
         { status: 503 }
       );
     }
-    const stripe = new Stripe(stripeSecretKey);
 
+    const stripe = getStripeServerClient();
     const body = await request.json();
     const parsed = confirmBodySchema.safeParse(body);
 
@@ -53,7 +57,6 @@ export const POST = withErrorHandling(
     }
 
     const input = parsed.data;
-
     const paymentIntent = await stripe.paymentIntents.retrieve(input.paymentIntentId);
 
     if (paymentIntent.status !== "succeeded") {
@@ -93,17 +96,7 @@ export const POST = withErrorHandling(
         },
       });
 
-      if (quote.grandTotalAmount !== paymentIntent.amount) {
-        return NextResponse.json(
-          {
-            error: {
-              code: "PAYMENT_AMOUNT_MISMATCH",
-              message: "Payment amount does not match the order total. Please try again.",
-            },
-          },
-          { status: 400 }
-        );
-      }
+      assertPaymentIntentMatchesQuote(paymentIntent, quote);
 
       const order = await createGuestOrderFromQuote({
         quote,
@@ -125,6 +118,12 @@ export const POST = withErrorHandling(
       );
     } catch (error) {
       if (error instanceof GuestCheckoutQuoteError) {
+        return NextResponse.json(
+          { error: { code: error.code, message: error.message } },
+          { status: error.status }
+        );
+      }
+      if (error instanceof StripeCheckoutPaymentError) {
         return NextResponse.json(
           { error: { code: error.code, message: error.message } },
           { status: error.status }

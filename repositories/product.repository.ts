@@ -252,6 +252,10 @@ export class ProductRepository {
       },
       include: {
         category: true,
+        variants: {
+          where: { isActive: true },
+          orderBy: { createdAt: "asc" as const },
+        },
         vendorProfile: true,
       },
       orderBy: {

@@ -8,6 +8,7 @@ import {
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { withRbac } from "@/middlewares/with-rbac";
 import {
+  checkoutCurrencySchema,
   guestCheckoutCartItemSchema,
   guestCheckoutCouponsSchema,
   guestCheckoutDeliveryAddressSchema,
@@ -16,7 +17,7 @@ import {
 const pricingBodySchema = z
   .object({
     items: z.array(guestCheckoutCartItemSchema).min(1),
-    currency: z.string().length(3).default("USD"),
+    currency: checkoutCurrencySchema,
     deliveryAddress: guestCheckoutDeliveryAddressSchema.optional(),
   })
   .merge(guestCheckoutCouponsSchema);

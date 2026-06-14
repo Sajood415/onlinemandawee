@@ -220,6 +220,7 @@
         "vendors": "فروشندگان",
         "products": "محصولات",
         "categories": "دسته‌بندی‌ها",
+        "giftRequests": "درخواست‌های هدیه",
         "users": "کاربران"
       }
     },
@@ -241,6 +242,7 @@
       "titleWithName": "حساب {firstName}",
       "nav": {
         "overview": "نمای کلی",
+        "giftRequests": "درخواست‌های هدیه",
         "settings": "تنظیمات"
       }
     }
@@ -248,7 +250,7 @@
   "Account": {
     "overview": {
       "title": "نمای کلی",
-      "subtitle": "سفارش‌های خود را پیگیری کنید و آدرس‌های تحویل را مدیریت کنید.",
+      "subtitle": "سفارش‌ها، درخواست‌های هدیه و آدرس‌های تحویل خود را پیگیری کنید.",
       "loadingData": "بارگذاری سفارش‌ها و آدرس‌ها...",
       "stats": {
         "orders": "سفارش‌ها",
@@ -306,6 +308,40 @@
     "settings": {
       "title": "تنظیمات",
       "subtitle": "پروفایل و رمز عبور خود را مدیریت کنید."
+    },
+    "giftRequests": {
+      "badge": "درخواست‌های هدیه",
+      "title": "درخواست‌های هدیه شما",
+      "subtitle": "درخواست‌های هدیه شخصی برای عزیزان در افغانستان را پیگیری کنید.",
+      "loading": "در حال بارگذاری درخواست‌ها...",
+      "count": "{count} درخواست",
+      "recipient": "گیرنده",
+      "submitted": "ثبت شده {date}",
+      "lastUpdated": "آخرین به‌روزرسانی {date}",
+      "occasion": "مناسبت",
+      "preferredDate": "تاریخ تحویل ترجیحی",
+      "deliveryAddress": "آدرس تحویل",
+      "preparation": "نحوه آماده‌سازی",
+      "deliveryInstructions": "دستورالعمل تحویل",
+      "budgetNote": "یادداشت بودجه",
+      "referenceMedia": "رسانه مرجع",
+      "images": "تصاویر",
+      "videos": "ویدیوها",
+      "emptyTitle": "هنوز درخواست هدیه‌ای نیست",
+      "emptyDescription": "از صفحه هدایا یک درخواست شخصی ثبت کنید. درخواست‌های مرتبط با ایمیل حساب شما اینجا نمایش داده می‌شوند.",
+      "createRequest": "ثبت درخواست هدیه",
+      "status": {
+        "SUBMITTED": "ثبت شده",
+        "REVIEWING": "در حال بررسی",
+        "AWAITING_PAYMENT": "در انتظار پرداخت",
+        "IN_PROGRESS": "در حال انجام",
+        "COMPLETED": "تکمیل شده",
+        "CANCELLED": "لغو شده"
+      },
+      "paymentReceived": "پرداخت دریافت شد: {amount}",
+      "errors": {
+        "loadFailed": "بارگذاری درخواست‌های هدیه ناموفق بود."
+      }
     }
   },
   "CustomerProfile": {

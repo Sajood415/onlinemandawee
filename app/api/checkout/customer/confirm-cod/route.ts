@@ -9,6 +9,7 @@ import { createGuestOrderFromQuote } from "@/lib/checkout/create-guest-order-fro
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { withRbac } from "@/middlewares/with-rbac";
 import {
+  checkoutCurrencySchema,
   checkoutShippingContactSchema,
   guestCheckoutCartItemSchema,
   guestCheckoutCouponsSchema,
@@ -16,7 +17,7 @@ import {
 
 const confirmCodBodySchema = z
   .object({
-    currency: z.string().length(3),
+    currency: checkoutCurrencySchema,
     items: z.array(guestCheckoutCartItemSchema).min(1),
   })
   .merge(checkoutShippingContactSchema)

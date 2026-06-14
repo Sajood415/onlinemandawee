@@ -220,6 +220,7 @@
         "vendors": "Vendors",
         "products": "Products",
         "categories": "Categories",
+        "giftRequests": "Gift requests",
         "users": "Users"
       }
     },
@@ -241,6 +242,7 @@
       "titleWithName": "{firstName}'s Account",
       "nav": {
         "overview": "Overview",
+        "giftRequests": "Gift requests",
         "settings": "Settings"
       }
     }
@@ -248,7 +250,7 @@
   "Account": {
     "overview": {
       "title": "Overview",
-      "subtitle": "Track your orders and manage saved delivery addresses.",
+      "subtitle": "Track your orders, gift requests, and saved delivery addresses.",
       "loadingData": "Loading orders and addresses...",
       "stats": {
         "orders": "Orders",
@@ -306,6 +308,40 @@
     "settings": {
       "title": "Settings",
       "subtitle": "Manage your profile and password."
+    },
+    "giftRequests": {
+      "badge": "Gift requests",
+      "title": "Your gift requests",
+      "subtitle": "Track personalized gift requests for relatives in Afghanistan.",
+      "loading": "Loading gift requests...",
+      "count": "{count, plural, one {# request} other {# requests}}",
+      "recipient": "Recipient",
+      "submitted": "Submitted {date}",
+      "lastUpdated": "Last updated {date}",
+      "occasion": "Occasion",
+      "preferredDate": "Preferred delivery date",
+      "deliveryAddress": "Delivery address",
+      "preparation": "Preparation notes",
+      "deliveryInstructions": "Delivery instructions",
+      "budgetNote": "Budget note",
+      "referenceMedia": "Reference media",
+      "images": "Images",
+      "videos": "Videos",
+      "emptyTitle": "No gift requests yet",
+      "emptyDescription": "Submit a personalized gift request from the Gifts page. Requests linked to your account email will appear here.",
+      "createRequest": "Create a gift request",
+      "status": {
+        "SUBMITTED": "Submitted",
+        "REVIEWING": "Under review",
+        "AWAITING_PAYMENT": "Awaiting payment",
+        "IN_PROGRESS": "In progress",
+        "COMPLETED": "Completed",
+        "CANCELLED": "Cancelled"
+      },
+      "paymentReceived": "Payment received: {amount}",
+      "errors": {
+        "loadFailed": "Failed to load gift requests."
+      }
     }
   },
   "CustomerProfile": {

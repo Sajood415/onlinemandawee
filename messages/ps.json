@@ -220,6 +220,7 @@
         "vendors": "پلورونکي",
         "products": "محصولات",
         "categories": "کټګورۍ",
+        "giftRequests": "د ډالۍ غوښتنې",
         "users": "کاروونکي"
       }
     },
@@ -241,6 +242,7 @@
       "titleWithName": "د {firstName} حساب",
       "nav": {
         "overview": "لنډیز",
+        "giftRequests": "د ډالۍ غوښتنې",
         "settings": "تنظیمات"
       }
     }
@@ -248,7 +250,7 @@
   "Account": {
     "overview": {
       "title": "لنډیز",
-      "subtitle": "خپل فرمایشونه وڅارئ او د تحویلي پتې خوندي کړئ.",
+      "subtitle": "خپل فرمایشونه، د ډالۍ غوښتنې او د تحویلي پتې وڅارئ.",
       "loadingData": "فرمایشونه او پتې بارېږي...",
       "stats": {
         "orders": "فرمایشونه",
@@ -306,6 +308,40 @@
     "settings": {
       "title": "تنظیمات",
       "subtitle": "خپل پروفایل او پاسورډ اداره کړئ."
+    },
+    "giftRequests": {
+      "badge": "د ډالۍ غوښتنې",
+      "title": "ستاسو د ډالۍ غوښتنې",
+      "subtitle": "په افغانستان کې د خپلوانو لپاره د ځانګړو ډالۍ غوښتنې وڅارئ.",
+      "loading": "د ډالۍ غوښتنې بارېږي...",
+      "count": "{count} غوښتنې",
+      "recipient": "ترلاسه کوونکی",
+      "submitted": "سپارل شوی {date}",
+      "lastUpdated": "وروستی تازه {date}",
+      "occasion": "مناسبت",
+      "preferredDate": "غوره د تحویلي نېټه",
+      "deliveryAddress": "د تحویلي پته",
+      "preparation": "د چمتو کولو یادښتونه",
+      "deliveryInstructions": "د تحویلي لارښوونې",
+      "budgetNote": "د بودیجې یادښت",
+      "referenceMedia": "مرجعي رسنۍ",
+      "images": "عکسونه",
+      "videos": "ویډیوګانې",
+      "emptyTitle": "تر اوسه د ډالۍ غوښتنې نشته",
+      "emptyDescription": "د ډالۍ پاڼې څخه یوه ځانګړې غوښتنه وسپارئ. ستاسو د حساب برېښنالیک سره تړل شوې غوښتنې به دلته ښکاره شي.",
+      "createRequest": "د ډالۍ غوښتنه جوړه کړئ",
+      "status": {
+        "SUBMITTED": "سپارل شوی",
+        "REVIEWING": "تر بیاکتنې لاندې",
+        "AWAITING_PAYMENT": "د تادیې په تمه",
+        "IN_PROGRESS": "پرمختګ کې",
+        "COMPLETED": "بشپړ شوی",
+        "CANCELLED": "لغوه شوی"
+      },
+      "paymentReceived": "تادیه ترلاسه شوه: {amount}",
+      "errors": {
+        "loadFailed": "د ډالۍ غوښتنې پورته کول ناکام شول."
+      }
     }
   },
   "CustomerProfile": {
