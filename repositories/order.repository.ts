@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client";
+
 import type {
   OrderStatus,
   PaymentStatus,
@@ -5,6 +7,109 @@ import type {
 } from "@/domain/order/order-status";
 import { prisma } from "@/lib/db/prisma";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
+
+const orderAdminInclude = {
+  user: true,
+  vendorOrders: {
+    include: {
+      vendorProfile: {
+        include: {
+          user: true,
+        },
+      },
+      items: true,
+    },
+  },
+} satisfies Prisma.OrderInclude;
+
+export type OrderWithAdminRelations = Prisma.OrderGetPayload<{
+  include: typeof orderAdminInclude;
+}>;
+
+export type AdminOrderListFilters = {
+  page: number;
+  pageSize: number;
+  vendorProfileId?: string;
+  orderStatus?: OrderStatus;
+  vendorOrderStatus?: VendorOrderStatus;
+  from?: Date;
+  to?: Date;
+  search?: string;
+};
+
+function endOfUtcDay(date: Date) {
+  const value = new Date(date);
+  value.setUTCHours(23, 59, 59, 999);
+  return value;
+}
+
+function buildAdminOrderWhere(filters: AdminOrderListFilters): Prisma.OrderWhereInput {
+  const and: Prisma.OrderWhereInput[] = [];
+
+  if (filters.from || filters.to) {
+    and.push({
+      createdAt: {
+        ...(filters.from ? { gte: filters.from } : {}),
+        ...(filters.to ? { lte: endOfUtcDay(filters.to) } : {}),
+      },
+    });
+  }
+
+  if (filters.orderStatus) {
+    and.push({ status: filters.orderStatus });
+  }
+
+  if (filters.vendorProfileId) {
+    and.push({
+      vendorOrders: {
+        some: { vendorProfileId: filters.vendorProfileId },
+      },
+    });
+  }
+
+  if (filters.vendorOrderStatus) {
+    and.push({
+      vendorOrders: {
+        some: { status: filters.vendorOrderStatus },
+      },
+    });
+  }
+
+  const search = filters.search?.trim();
+  if (search) {
+    and.push({
+      OR: [
+        { orderNumber: { contains: search, mode: "insensitive" } },
+        { guestEmail: { contains: search, mode: "insensitive" } },
+        { shippingFullName: { contains: search, mode: "insensitive" } },
+        { shippingPhone: { contains: search, mode: "insensitive" } },
+        {
+          user: {
+            is: {
+              email: { contains: search, mode: "insensitive" },
+            },
+          },
+        },
+        {
+          user: {
+            is: {
+              fullName: { contains: search, mode: "insensitive" },
+            },
+          },
+        },
+        {
+          user: {
+            is: {
+              phone: { contains: search, mode: "insensitive" },
+            },
+          },
+        },
+      ],
+    });
+  }
+
+  return and.length > 0 ? { AND: and } : {};
+}
 
 export class OrderRepository {
   create(input: {
@@ -220,22 +325,37 @@ export class OrderRepository {
 
   listAll() {
     return prisma.order.findMany({
-      include: {
-        user: true,
-        vendorOrders: {
-          include: {
-            vendorProfile: {
-              include: {
-                user: true,
-              },
-            },
-            items: true,
-          },
-        },
-      },
+      include: orderAdminInclude,
       orderBy: {
         createdAt: "desc",
       },
+    });
+  }
+
+  countForAdmin(filters: AdminOrderListFilters) {
+    return prisma.order.count({
+      where: buildAdminOrderWhere(filters),
+    });
+  }
+
+  listForAdmin(filters: AdminOrderListFilters) {
+    const skip = (filters.page - 1) * filters.pageSize;
+
+    return prisma.order.findMany({
+      where: buildAdminOrderWhere(filters),
+      include: orderAdminInclude,
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take: filters.pageSize,
+    });
+  }
+
+  findByIdForAdmin(id: string) {
+    return prisma.order.findUnique({
+      where: { id },
+      include: orderAdminInclude,
     });
   }
 

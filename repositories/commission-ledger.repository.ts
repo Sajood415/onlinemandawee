@@ -21,6 +21,18 @@ export class CommissionLedgerRepository {
     });
   }
 
+  findByOrderVendorIds(orderVendorIds: string[]) {
+    if (orderVendorIds.length === 0) {
+      return Promise.resolve([]);
+    }
+
+    return prisma.commissionLedger.findMany({
+      where: {
+        orderVendorId: { in: orderVendorIds },
+      },
+    });
+  }
+
   listByVendorProfileId(vendorProfileId: string) {
     return prisma.commissionLedger.findMany({
       where: { vendorProfileId },

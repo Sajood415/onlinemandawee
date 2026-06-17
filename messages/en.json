@@ -220,6 +220,7 @@
         "vendors": "Vendors",
         "products": "Products",
         "categories": "Categories",
+        "orders": "Orders",
         "giftRequests": "Gift requests",
         "users": "Users"
       }
