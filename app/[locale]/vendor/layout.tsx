@@ -2,6 +2,7 @@
 
 import { VendorDashboardLayout } from "@/components/dashboard/VendorDashboardLayout";
 import { usePathname } from "@/i18n/navigation";
+import { isVendorPublicRoute } from "@/lib/routing/vendor-public-routes";
 
 export default function VendorLayout({
   children,
@@ -9,9 +10,8 @@ export default function VendorLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isVendorRegisterPage = pathname.includes("/vendor/register");
 
-  if (isVendorRegisterPage) {
+  if (isVendorPublicRoute(pathname)) {
     return <>{children}</>;
   }
 

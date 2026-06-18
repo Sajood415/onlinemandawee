@@ -5,6 +5,7 @@ import { usePathname } from "@/i18n/navigation";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { HEADER_BAR_CLASS } from "@/components/layout/header/header-copy";
+import { isVendorPublicRoute } from "@/lib/routing/vendor-public-routes";
 
 type PublicSiteLayoutProps = {
   children: React.ReactNode;
@@ -21,12 +22,12 @@ function HeaderFallback() {
 
 export function PublicSiteLayout({ children }: PublicSiteLayoutProps) {
   const pathname = usePathname();
-  const isVendorRegisterPage = pathname.includes("/vendor/register");
+  const isVendorPublicPage = isVendorPublicRoute(pathname);
   const isAccountPage = pathname.includes("/account");
 
   const isDashboardPage =
     pathname.includes("/admin/") ||
-    (pathname.includes("/vendor/") && !isVendorRegisterPage);
+    (pathname.includes("/vendor/") && !isVendorPublicPage);
   const hidePublicLayout = isDashboardPage;
 
   if (isAccountPage) {
