@@ -1,7 +1,41 @@
 import { z } from "zod";
 
+const refundCaseStatuses = [
+  "REQUESTED",
+  "WAITING_VENDOR",
+  "ESCALATED_ADMIN",
+  "RESOLVED",
+] as const;
+
 export const refundCaseIdParamsSchema = z.object({
   id: z.string().min(1),
+});
+
+export const refundListQuerySchema = z
+  .object({
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20),
+    status: z.enum(refundCaseStatuses).optional(),
+    search: z.string().trim().optional(),
+    from: z.coerce.date().optional(),
+    to: z.coerce.date().optional(),
+    overdueOnly: z
+      .enum(["true", "false"])
+      .optional()
+      .transform((value) => value === "true"),
+  })
+  .superRefine((value, ctx) => {
+    if (value.from && value.to && value.from > value.to) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["to"],
+        message: "to must be on or after from",
+      });
+    }
+  });
+
+export const adminRefundListQuerySchema = refundListQuerySchema.extend({
+  vendorProfileId: z.string().trim().min(1).optional(),
 });
 
 export const refundRequestSchema = z.object({

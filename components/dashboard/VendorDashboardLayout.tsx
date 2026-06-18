@@ -5,6 +5,7 @@ import {
   BarChart3,
   LayoutDashboard,
   Package,
+  Scale,
   Settings,
   ShoppingCart,
   Tag,
@@ -35,6 +36,7 @@ export function VendorDashboardLayout({ children }: VendorDashboardLayoutProps) 
         { label: t("nav.coupons"), href: "/vendor/coupons", icon: <Tag size={16} /> },
         { label: t("nav.promotions"), href: "/vendor/promotions", icon: <Megaphone size={16} /> },
         { label: t("nav.orders"), href: "/vendor/orders", icon: <ShoppingCart size={16} /> },
+        { label: t("nav.disputes"), href: "/vendor/disputes", icon: <Scale size={16} /> },
         { label: t("nav.reports"), href: "/vendor/reports", icon: <BarChart3 size={16} /> },
         { label: t("nav.settings"), href: "/vendor/settings", icon: <Settings size={16} /> },
       ]}

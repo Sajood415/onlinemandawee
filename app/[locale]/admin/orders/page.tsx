@@ -85,6 +85,7 @@ type AdminOrderDetail = {
     vendorStoreSlug: string | null;
     vendorStoreName: string | null;
     status: VendorOrderStatus;
+    deliveredAt: string | null;
     currency: string;
     subtotalAmount: number;
     deliveryAmount: number;
@@ -742,6 +743,14 @@ export default function AdminOrdersPage() {
                               {vendorOrder.status}
                             </span>
                           </div>
+                          {vendorOrder.status === "DELIVERED" || vendorOrder.deliveredAt ? (
+                            <p className="mt-2 text-xs text-neutral-600">
+                              Delivered{" "}
+                              {vendorOrder.deliveredAt
+                                ? displayDate(vendorOrder.deliveredAt)
+                                : "— not recorded"}
+                            </p>
+                          ) : null}
                         </div>
                         <div className="text-sm text-neutral-700">
                           <p>

@@ -1,5 +1,6 @@
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import type { VendorOrderStatus } from "@/domain/order/order-status";
+import { env } from "@/config/env";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import {
@@ -18,6 +19,7 @@ import { CustomerAddressRepository } from "@/repositories/customer-address.repos
 import { OrderRepository } from "@/repositories/order.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
 import { resolveDistanceDeliveryQuote } from "@/lib/delivery/resolve-distance-delivery";
+import { getRefundEligibility } from "@/lib/refunds/refund-eligibility";
 import { OrderSettlementService } from "@/services/order-settlement.service";
 
 type QuoteLine = {
@@ -269,7 +271,13 @@ export class OrderService {
       action: "vendor.order_status_updated",
       entityType: "OrderVendor",
       entityId: updatedVendorOrder.id,
-      metadata: { status, orderStatus: overallStatus },
+      metadata: {
+        status,
+        orderStatus: overallStatus,
+        ...(status === "DELIVERED" && updatedVendorOrder.deliveredAt
+          ? { deliveredAt: updatedVendorOrder.deliveredAt.toISOString() }
+          : {}),
+      },
     });
 
     // Send email notification to customer on key status changes
@@ -659,6 +667,12 @@ export class OrderService {
             }
           : null,
         status: vendorOrder.status,
+        deliveredAt: vendorOrder.deliveredAt?.toISOString() ?? null,
+        refundEligibility: getRefundEligibility({
+          vendorOrderStatus: vendorOrder.status,
+          deliveredAt: vendorOrder.deliveredAt,
+          windowDays: env.REFUND_WINDOW_DAYS,
+        }),
         currency: vendorOrder.currency,
         subtotalAmount: vendorOrder.subtotalAmount,
         deliveryAmount: vendorOrder.deliveryAmount,

@@ -11,7 +11,9 @@
     "prisma:generate": "prisma generate",
     "prisma:push": "dotenv -e .env.local -- prisma db push",
     "prisma:studio": "dotenv -e .env.local -- prisma studio",
-    "seed:admin": "node --import tsx scripts/seed-admin.ts"
+    "seed:admin": "node --import tsx scripts/seed-admin.ts",
+    "realtime:dev": "npm run dev --prefix realtime",
+    "realtime:build": "npm run build --prefix realtime"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
@@ -30,6 +32,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "stripe": "^22.1.1",
+    "socket.io-client": "^4.8.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {

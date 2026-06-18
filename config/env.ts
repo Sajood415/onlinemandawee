@@ -33,12 +33,17 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().trim().min(1).optional(),
   GIFT_REQUEST_NOTIFY_EMAIL: z.string().trim().email().optional(),
+  REFUND_NOTIFY_EMAIL: z.string().trim().email().optional(),
   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: z.string().trim().min(1).optional(),
   CLOUDINARY_API_KEY: z.string().trim().min(1).optional(),
   CLOUDINARY_API_SECRET: z.string().trim().min(1).optional(),
   GOOGLE_MAPS_API_KEY: z.string().trim().min(1).optional(),
   PLATFORM_DELIVERY_BASE_FEE_CENTS: z.coerce.number().int().min(0).default(200),
   PLATFORM_DELIVERY_PER_KM_CENTS: z.coerce.number().int().min(0).default(50),
+  REALTIME_PUBLISH_URL: z.string().url().optional(),
+  REALTIME_INTERNAL_SECRET: z.string().min(16).optional(),
+  NEXT_PUBLIC_REALTIME_URL: z.string().url().optional(),
+  REFUND_WINDOW_DAYS: z.coerce.number().int().min(1).max(30).default(3),
 });
 
 const parsedEnv = envSchema.safeParse({
@@ -70,12 +75,17 @@ const parsedEnv = envSchema.safeParse({
   SMTP_PASS: process.env.SMTP_PASS,
   SMTP_FROM: process.env.SMTP_FROM,
   GIFT_REQUEST_NOTIFY_EMAIL: process.env.GIFT_REQUEST_NOTIFY_EMAIL,
+  REFUND_NOTIFY_EMAIL: process.env.REFUND_NOTIFY_EMAIL,
   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
   GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY,
   PLATFORM_DELIVERY_BASE_FEE_CENTS: process.env.PLATFORM_DELIVERY_BASE_FEE_CENTS,
   PLATFORM_DELIVERY_PER_KM_CENTS: process.env.PLATFORM_DELIVERY_PER_KM_CENTS,
+  REALTIME_PUBLISH_URL: process.env.REALTIME_PUBLISH_URL,
+  REALTIME_INTERNAL_SECRET: process.env.REALTIME_INTERNAL_SECRET,
+  NEXT_PUBLIC_REALTIME_URL: process.env.NEXT_PUBLIC_REALTIME_URL,
+  REFUND_WINDOW_DAYS: process.env.REFUND_WINDOW_DAYS,
 });
 
 if (!parsedEnv.success) {

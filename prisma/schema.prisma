@@ -595,6 +595,7 @@ model OrderVendor {
   orderId          String            @db.ObjectId
   vendorProfileId  String            @db.ObjectId
   status           VendorOrderStatus @default(NEW)
+  deliveredAt      DateTime?
   currency         String
   subtotalAmount   Int
   deliveryAmount   Int
@@ -673,6 +674,7 @@ model VendorLedgerEntry {
   vendorProfileId      String                @db.ObjectId
   orderId              String?               @db.ObjectId
   orderVendorId        String?               @db.ObjectId
+  refundCaseId         String?               @unique @db.ObjectId
   paymentTransactionId String?               @db.ObjectId
   payoutId             String?               @db.ObjectId
   bucket               LedgerBucket

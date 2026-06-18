@@ -29,7 +29,7 @@ export function ensureCloudinaryConfigured() {
 export function uploadBufferToCloudinary(input: {
   buffer: Buffer;
   folder: string;
-  resourceType: "image" | "video";
+  resourceType: "image" | "video" | "raw";
 }) {
   return new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(

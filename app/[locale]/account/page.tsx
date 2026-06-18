@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import {
   ChevronDown,
   ChevronUp,
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { PageLoader } from "@/components/ui/PageLoader";
+import { RequestRefundModal } from "@/components/refunds/RequestRefundModal";
 import { useCustomerRouteGuard } from "@/components/customer/use-customer-route-guard";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -38,6 +39,8 @@ type CustomerVendorOrder = {
   id: string;
   vendorStoreName: string | null;
   status: VendorOrderStatus;
+  deliveredAt: string | null;
+  refundEligibility: "not_yet_delivered" | "open" | "expired";
   currency: string;
   grandTotalAmount: number;
   items: CustomerOrderItem[];
@@ -93,11 +96,24 @@ function overallOrderStatus(order: CustomerOrder) {
   return "NEW";
 }
 
-function OrderCard({ order }: { order: CustomerOrder }) {
+function OrderCard({
+  order,
+  activeRefundItemIds,
+}: {
+  order: CustomerOrder;
+  activeRefundItemIds: Set<string>;
+}) {
   const [expanded, setExpanded] = useState(false);
+  const [refundItem, setRefundItem] = useState<CustomerOrderItem | null>(null);
+  const router = useRouter();
   const t = useTranslations("Account.overview");
   const locale = useLocale();
   const summaryStatus = overallOrderStatus(order);
+  const canRequestRefund =
+    order.paymentStatus === "PAID" || order.paymentStatus === "PARTIALLY_REFUNDED";
+
+  const isItemRefundEligible = (vendorOrder: CustomerVendorOrder) =>
+    canRequestRefund && vendorOrder.refundEligibility === "open";
 
   return (
     <article className="rounded-xl border border-neutral-200 bg-neutral-50 overflow-hidden">
@@ -171,7 +187,16 @@ function OrderCard({ order }: { order: CustomerOrder }) {
               </div>
 
               <div className="mt-3 space-y-2">
-                {vendorOrder.items.map((item) => (
+                {vendorOrder.items.map((item) => {
+                  const hasActiveCase = activeRefundItemIds.has(item.id);
+                  const showRefundButton =
+                    isItemRefundEligible(vendorOrder) && !hasActiveCase;
+                  const showRefundExpired =
+                    canRequestRefund &&
+                    !hasActiveCase &&
+                    vendorOrder.refundEligibility === "expired";
+
+                  return (
                   <div
                     key={item.id}
                     className="flex items-center justify-between gap-3 text-sm"
@@ -183,16 +208,54 @@ function OrderCard({ order }: { order: CustomerOrder }) {
                       <p className="text-xs text-neutral-500">
                         {t("orders.qty")}: {item.quantity}
                       </p>
+                      {hasActiveCase ? (
+                        <Link
+                          href="/account/disputes"
+                          className="mt-1 inline-block text-xs font-semibold text-primary hover:underline"
+                        >
+                          View dispute
+                        </Link>
+                      ) : null}
                     </div>
-                    <p className="font-semibold text-neutral-900">
-                      {formatMoney(item.lineTotalAmount, item.currency, locale)}
-                    </p>
+                    <div className="flex flex-col items-end gap-2">
+                      <p className="font-semibold text-neutral-900">
+                        {formatMoney(item.lineTotalAmount, item.currency, locale)}
+                      </p>
+                      {showRefundButton ? (
+                        <button
+                          type="button"
+                          onClick={() => setRefundItem(item)}
+                          className="rounded-lg border border-neutral-300 px-2.5 py-1 text-[11px] font-semibold text-neutral-700 hover:bg-neutral-50"
+                        >
+                          Request refund
+                        </button>
+                      ) : null}
+                      {showRefundExpired ? (
+                        <p className="max-w-[9rem] text-right text-[11px] font-medium text-neutral-500">
+                          {t("orders.refundPeriodExpired")}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
         </div>
+      ) : null}
+
+      {refundItem ? (
+        <RequestRefundModal
+          open
+          orderItem={refundItem}
+          locale={locale}
+          onClose={() => setRefundItem(null)}
+          onSuccess={(refundCaseId) => {
+            setRefundItem(null);
+            router.push(`/account/disputes/${refundCaseId}`);
+          }}
+        />
       ) : null}
     </article>
   );
@@ -347,6 +410,7 @@ export default function CustomerAccountPage() {
   );
   const [savingAddress, setSavingAddress] = useState(false);
   const [addressFormError, setAddressFormError] = useState<string | null>(null);
+  const [activeRefundItemIds, setActiveRefundItemIds] = useState<Set<string>>(new Set());
 
   const customerId = user?.id;
   const hasLoadedOrdersRef = useRef(false);
@@ -355,9 +419,10 @@ export default function CustomerAccountPage() {
     setLoadingOrders(true);
     setError(null);
     try {
-      const [ordersResponse, addressesResponse] = await Promise.all([
+      const [ordersResponse, addressesResponse, disputesResponse] = await Promise.all([
         fetchWithAuth("/api/orders/my"),
         fetchWithAuth("/api/customer/addresses"),
+        fetchWithAuth("/api/refunds/my?page=1&pageSize=100"),
       ]);
 
       const [ordersData, addressesData] = await Promise.all([
@@ -366,6 +431,19 @@ export default function CustomerAccountPage() {
       ]);
       setOrders(ordersData);
       setAddresses(addressesData);
+
+      if (disputesResponse.ok) {
+        const disputesData = await parseApiResponse<{
+          items: Array<{ orderItemId: string; status: string }>;
+        }>(disputesResponse);
+        setActiveRefundItemIds(
+          new Set(
+            disputesData.items
+              .filter((item) => item.status !== "RESOLVED")
+              .map((item) => item.orderItemId)
+          )
+        );
+      }
       hasLoadedOrdersRef.current = true;
     } catch (err) {
       setError(
@@ -593,7 +671,7 @@ export default function CustomerAccountPage() {
               ) : (
                 <div className="mt-4 space-y-3">
                   {orders.map((order) => (
-                    <OrderCard key={order.id} order={order} />
+                    <OrderCard key={order.id} order={order} activeRefundItemIds={activeRefundItemIds} />
                   ))}
                 </div>
               )}

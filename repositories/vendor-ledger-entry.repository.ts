@@ -5,10 +5,17 @@ import type {
 import { prisma } from "@/lib/db/prisma";
 
 export class VendorLedgerEntryRepository {
+  findByRefundCaseId(refundCaseId: string) {
+    return prisma.vendorLedgerEntry.findUnique({
+      where: { refundCaseId },
+    });
+  }
+
   create(input: {
     vendorProfileId: string;
     orderId?: string;
     orderVendorId?: string;
+    refundCaseId?: string;
     paymentTransactionId?: string;
     payoutId?: string;
     bucket: LedgerBucket;
@@ -22,6 +29,7 @@ export class VendorLedgerEntryRepository {
         vendorProfileId: input.vendorProfileId,
         orderId: input.orderId ?? null,
         orderVendorId: input.orderVendorId ?? null,
+        refundCaseId: input.refundCaseId ?? null,
         paymentTransactionId: input.paymentTransactionId ?? null,
         payoutId: input.payoutId ?? null,
         bucket: input.bucket,

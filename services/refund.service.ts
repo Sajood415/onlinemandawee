@@ -1,12 +1,30 @@
+import { Prisma } from "@prisma/client";
+
+import { env } from "@/config/env";
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
+import { disputeRoomName } from "@/domain/realtime/dispute-events";
 import type { PaymentStatus } from "@/domain/order/order-status";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import { prisma } from "@/lib/db/prisma";
+import { getRefundEligibility } from "@/lib/refunds/refund-eligibility";
+import {
+  sendRefundDecisionEmails,
+  sendRefundEscalatedAdminEmail,
+  sendRefundOpenedCustomerEmail,
+  sendRefundOpenedVendorEmail,
+  sendRefundOverdueEscalationSummaryEmail,
+} from "@/lib/mail/send-refund-emails";
+import { emitDisputeUpdated } from "@/lib/realtime/emit-dispute-updated";
+import { publishDisputeEvent } from "@/lib/realtime/publish-dispute-event";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { CaseMessageRepository } from "@/repositories/case-message.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { PayoutRepository } from "@/repositories/payout.repository";
-import { RefundCaseRepository } from "@/repositories/refund-case.repository";
+import {
+  RefundCaseRepository,
+  type RefundCaseListFilters,
+} from "@/repositories/refund-case.repository";
 import { RefundDecisionRepository } from "@/repositories/refund-decision.repository";
 import { RefundEvidenceRepository } from "@/repositories/refund-evidence.repository";
 import { VendorLedgerEntryRepository } from "@/repositories/vendor-ledger-entry.repository";
@@ -63,6 +81,28 @@ export class RefundService {
       throw new AppError({
         code: ERROR_CODE.BAD_REQUEST,
         message: "Requested amount exceeds order item total",
+        statusCode: 400,
+      });
+    }
+
+    const refundEligibility = getRefundEligibility({
+      vendorOrderStatus: orderItem.orderVendor.status,
+      deliveredAt: orderItem.orderVendor.deliveredAt,
+      windowDays: env.REFUND_WINDOW_DAYS,
+    });
+
+    if (refundEligibility === "not_yet_delivered") {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: `Refunds are only allowed within ${env.REFUND_WINDOW_DAYS} days after an order is marked delivered`,
+        statusCode: 400,
+      });
+    }
+
+    if (refundEligibility === "expired") {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Refund period has expired.",
         statusCode: 400,
       });
     }
@@ -124,7 +164,82 @@ export class RefundService {
       entityId: refundCase.id,
     });
 
-    return this.getRefundCase(auth, refundCase.id);
+    void emitDisputeUpdated({
+      refundCaseId: refundCase.id,
+      status: refundCase.status,
+      updatedAt: refundCase.updatedAt,
+    });
+
+    const serialized = await this.getRefundCase(auth, refundCase.id);
+    void this.notifyRefundOpened(serialized);
+    return serialized;
+  }
+
+  async listMyCases(
+    auth: AuthenticatedUser,
+    filters: Omit<RefundCaseListFilters, "customerUserId" | "vendorProfileId">
+  ) {
+    this.assertActiveCustomer(auth);
+    return this.listCases({
+      ...filters,
+      customerUserId: auth.id,
+    });
+  }
+
+  async listVendorCases(
+    auth: AuthenticatedUser,
+    filters: Omit<RefundCaseListFilters, "customerUserId" | "vendorProfileId">
+  ) {
+    if (auth.role !== "VENDOR") {
+      throw new AppError({
+        code: ERROR_CODE.FORBIDDEN,
+        message: "Only vendors can list vendor refund cases",
+        statusCode: 403,
+      });
+    }
+
+    const vendor = await this.vendorProfileRepository.findByUserId(auth.id);
+    if (!vendor) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Vendor profile not found",
+        statusCode: 404,
+      });
+    }
+
+    return this.listCases({
+      ...filters,
+      vendorProfileId: vendor.id,
+    });
+  }
+
+  async listAdminCases(auth: AuthenticatedUser, filters: RefundCaseListFilters) {
+    if (auth.role !== "ADMIN") {
+      throw new AppError({
+        code: ERROR_CODE.FORBIDDEN,
+        message: "Only admins can list all refund cases",
+        statusCode: 403,
+      });
+    }
+
+    return this.listCases(filters);
+  }
+
+  private async listCases(filters: RefundCaseListFilters) {
+    const [total, cases] = await Promise.all([
+      this.refundCaseRepository.countWithFilters(filters),
+      this.refundCaseRepository.listWithFilters(filters),
+    ]);
+
+    return {
+      items: cases.map((refundCase) => this.serializeRefundCaseListItem(refundCase)),
+      pagination: {
+        page: filters.page,
+        pageSize: filters.pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / filters.pageSize)),
+      },
+    };
   }
 
   async getRefundCase(auth: AuthenticatedUser, refundCaseId: string) {
@@ -196,6 +311,7 @@ export class RefundService {
       });
 
       await this.applyRefundFinancials(
+        refundCaseId,
         updated.orderId,
         updated.orderItem.orderVendorId,
         updated.vendorProfileId,
@@ -215,7 +331,15 @@ export class RefundService {
         },
       });
 
-      return this.serializeRefundCase(updated);
+      void emitDisputeUpdated({
+        refundCaseId: updated.id,
+        status: updated.status,
+        updatedAt: updated.updatedAt,
+      });
+
+      const serialized = this.serializeRefundCase(updated);
+      void sendRefundDecisionEmails(this.toRefundEmailCase(serialized));
+      return serialized;
     }
 
     const updated = await this.refundCaseRepository.update({
@@ -237,7 +361,15 @@ export class RefundService {
       },
     });
 
-    return this.serializeRefundCase(updated);
+    void emitDisputeUpdated({
+      refundCaseId: updated.id,
+      status: updated.status,
+      updatedAt: updated.updatedAt,
+    });
+
+    const serialized = this.serializeRefundCase(updated);
+    void sendRefundEscalatedAdminEmail(this.toRefundEmailCase(serialized));
+    return serialized;
   }
 
   async escalate(auth: AuthenticatedUser, refundCaseId: string) {
@@ -266,7 +398,15 @@ export class RefundService {
       entityId: refundCaseId,
     });
 
-    return this.serializeRefundCase(updated);
+    void emitDisputeUpdated({
+      refundCaseId: updated.id,
+      status: updated.status,
+      updatedAt: updated.updatedAt,
+    });
+
+    const serialized = this.serializeRefundCase(updated);
+    void sendRefundEscalatedAdminEmail(this.toRefundEmailCase(serialized));
+    return serialized;
   }
 
   async adminDecision(
@@ -321,6 +461,7 @@ export class RefundService {
 
     if (input.decisionType === "APPROVE" || input.decisionType === "PARTIAL") {
       await this.applyRefundFinancials(
+        refundCaseId,
         updated.orderId,
         updated.orderItem.orderVendorId,
         updated.vendorProfileId,
@@ -343,7 +484,15 @@ export class RefundService {
       },
     });
 
-    return this.getRefundCase(auth, refundCaseId);
+    void emitDisputeUpdated({
+      refundCaseId: updated.id,
+      status: updated.status,
+      updatedAt: updated.updatedAt,
+    });
+
+    const result = await this.getRefundCase(auth, refundCaseId);
+    void sendRefundDecisionEmails(this.toRefundEmailCase(result));
+    return result;
   }
 
   async addMessage(
@@ -372,8 +521,9 @@ export class RefundService {
       entityId: refundCaseId,
     });
 
-    return {
+    const serializedMessage = {
       id: message.id,
+      refundCaseId,
       senderRole: message.senderRole,
       message: message.message,
       attachmentUrl: message.attachmentUrl,
@@ -384,6 +534,14 @@ export class RefundService {
         email: message.senderUser.email,
       },
     };
+
+    void publishDisputeEvent({
+      room: disputeRoomName(refundCaseId),
+      event: "dispute:message",
+      payload: serializedMessage,
+    });
+
+    return serializedMessage;
   }
 
   async listMessages(auth: AuthenticatedUser, refundCaseId: string) {
@@ -413,6 +571,13 @@ export class RefundService {
       });
     }
 
+    return this.runOverdueEscalation({
+      actorUserId: auth.id,
+      actorRole: auth.role,
+    });
+  }
+
+  async runOverdueEscalation(input?: { actorUserId?: string; actorRole?: AuthenticatedUser["role"] }) {
     const overdueCases = await this.refundCaseRepository.listOverdue(new Date());
     const escalated = [];
 
@@ -424,15 +589,37 @@ export class RefundService {
         vendorResponseDueAt: null,
       });
 
+      await this.auditLogRepository.create({
+        actorUserId: input?.actorUserId,
+        actorRole: input?.actorRole ?? "ADMIN",
+        action: "refund.auto_escalated",
+        entityType: "RefundCase",
+        entityId: updated.id,
+      });
+
+      void emitDisputeUpdated({
+        refundCaseId: updated.id,
+        status: updated.status,
+        updatedAt: updated.updatedAt,
+      });
+
       escalated.push({
         id: updated.id,
         status: updated.status,
+        orderNumber: updated.order.orderNumber,
+      });
+    }
+
+    if (escalated.length > 0) {
+      void sendRefundOverdueEscalationSummaryEmail({
+        count: escalated.length,
+        orderNumbers: escalated.map((item) => item.orderNumber),
       });
     }
 
     return {
       count: escalated.length,
-      cases: escalated,
+      cases: escalated.map(({ id, status }) => ({ id, status })),
     };
   }
 
@@ -464,35 +651,66 @@ export class RefundService {
   }
 
   private async applyRefundFinancials(
+    refundCaseId: string,
     orderId: string,
     orderVendorId: string,
     vendorProfileId: string,
     approvedAmount: number,
     currency: string
   ) {
+    const existingEntry =
+      await this.vendorLedgerEntryRepository.findByRefundCaseId(refundCaseId);
+    if (existingEntry) {
+      return;
+    }
+
     const payout = await this.payoutRepository.findByOrderVendorId(orderVendorId);
     const bucket =
       payout && payout.status === "ON_HOLD" ? "HOLD" : "AVAILABLE";
     const entryType =
       bucket === "HOLD" ? "REFUND_DEBIT_HOLD" : "REFUND_DEBIT_AVAILABLE";
 
-    await this.vendorLedgerEntryRepository.create({
-      vendorProfileId,
-      orderId,
-      orderVendorId,
-      payoutId: payout?.id,
-      bucket,
-      entryType,
-      amount: -approvedAmount,
-      currency,
-      description: `Refund approved for order vendor ${orderVendorId}`,
-    });
+    try {
+      await prisma.$transaction(async (tx) => {
+        const existingInTx = await tx.vendorLedgerEntry.findUnique({
+          where: { refundCaseId },
+        });
+        if (existingInTx) {
+          return;
+        }
 
-    if (payout && (payout.status === "ON_HOLD" || payout.status === "READY")) {
-      await this.payoutRepository.updateAmount(
-        payout.id,
-        Math.max(0, payout.amount - approvedAmount)
-      );
+        await tx.vendorLedgerEntry.create({
+          data: {
+            vendorProfileId,
+            orderId,
+            orderVendorId,
+            refundCaseId,
+            payoutId: payout?.id ?? null,
+            bucket,
+            entryType,
+            amount: -approvedAmount,
+            currency,
+            description: `Refund approved for order vendor ${orderVendorId}`,
+          },
+        });
+
+        if (payout && (payout.status === "ON_HOLD" || payout.status === "READY")) {
+          await tx.payout.update({
+            where: { id: payout.id },
+            data: {
+              amount: Math.max(0, payout.amount - approvedAmount),
+            },
+          });
+        }
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        return;
+      }
+      throw error;
     }
   }
 
@@ -556,6 +774,7 @@ export class RefundService {
         id: refundCase.order.id,
         orderNumber: refundCase.order.orderNumber,
         paymentStatus: refundCase.order.paymentStatus,
+        currency: refundCase.order.currency,
       },
       orderItem: {
         id: refundCase.orderItem.id,
@@ -598,5 +817,85 @@ export class RefundService {
         createdAt: evidence.createdAt.toISOString(),
       })),
     };
+  }
+
+  private serializeRefundCaseListItem(
+    refundCase: Awaited<ReturnType<RefundCaseRepository["listWithFilters"]>>[number]
+  ) {
+    return {
+      id: refundCase.id,
+      orderId: refundCase.orderId,
+      orderItemId: refundCase.orderItemId,
+      reason: refundCase.reason,
+      requestedAmount: refundCase.requestedAmount,
+      status: refundCase.status,
+      vendorResponseDueAt: refundCase.vendorResponseDueAt?.toISOString() ?? null,
+      escalatedAt: refundCase.escalatedAt?.toISOString() ?? null,
+      finalDecisionAt: refundCase.finalDecisionAt?.toISOString() ?? null,
+      createdAt: refundCase.createdAt.toISOString(),
+      updatedAt: refundCase.updatedAt.toISOString(),
+      order: {
+        id: refundCase.order.id,
+        orderNumber: refundCase.order.orderNumber,
+        paymentStatus: refundCase.order.paymentStatus,
+        currency: refundCase.order.currency,
+      },
+      orderItem: {
+        id: refundCase.orderItem.id,
+        productName: refundCase.orderItem.productName,
+        productImage: refundCase.orderItem.productImage,
+        quantity: refundCase.orderItem.quantity,
+        lineTotalAmount: refundCase.orderItem.lineTotalAmount,
+      },
+      customer: {
+        id: refundCase.customerUser.id,
+        fullName: refundCase.customerUser.fullName,
+        email: refundCase.customerUser.email,
+      },
+      vendor: {
+        vendorProfileId: refundCase.orderItem.orderVendor.vendorProfile.id,
+        storeName: refundCase.orderItem.orderVendor.vendorProfile.storeName,
+        storeSlug: refundCase.orderItem.orderVendor.vendorProfile.storeSlug,
+      },
+      decision: refundCase.decision
+        ? {
+            decisionType: refundCase.decision.decisionType,
+            approvedAmount: refundCase.decision.approvedAmount,
+            createdAt: refundCase.decision.createdAt.toISOString(),
+          }
+        : null,
+    };
+  }
+
+  private toRefundEmailCase(refundCase: ReturnType<RefundService["serializeRefundCase"]>) {
+    return {
+      id: refundCase.id,
+      reason: refundCase.reason,
+      requestedAmount: refundCase.requestedAmount,
+      status: refundCase.status,
+      order: {
+        orderNumber: refundCase.order.orderNumber,
+        currency: refundCase.order.currency,
+      },
+      orderItem: {
+        productName: refundCase.orderItem.productName,
+      },
+      customer: refundCase.customer,
+      vendor: {
+        storeName: refundCase.vendor.storeName,
+        user: refundCase.vendor.user,
+      },
+      decision: refundCase.decision,
+    };
+  }
+
+  private async notifyRefundOpened(
+    refundCase: ReturnType<RefundService["serializeRefundCase"]>
+  ) {
+    const emailCase = this.toRefundEmailCase(refundCase);
+    await Promise.allSettled([
+      sendRefundOpenedCustomerEmail(emailCase),
+      sendRefundOpenedVendorEmail(emailCase),
+    ]);
   }
 }

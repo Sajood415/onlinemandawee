@@ -222,6 +222,7 @@
         "categories": "Categories",
         "orders": "Orders",
         "giftRequests": "Gift requests",
+        "disputes": "Disputes",
         "users": "Users"
       }
     },
@@ -235,6 +236,7 @@
         "promotions": "Promotions",
         "orders": "Orders",
         "reports": "Reports",
+        "disputes": "Disputes",
         "settings": "Settings"
       }
     },
@@ -244,6 +246,7 @@
       "nav": {
         "overview": "Overview",
         "giftRequests": "Gift requests",
+        "disputes": "Disputes",
         "settings": "Settings"
       }
     }
@@ -272,7 +275,8 @@
         "deliveryAddress": "Delivery address",
         "emptyDescriptionLong": "You have no orders yet. Guest orders placed with your email will appear here after you sign up or sign in.",
         "vendor": "Vendor",
-        "qty": "Qty"
+        "qty": "Qty",
+        "refundPeriodExpired": "Refund period has expired."
       },
       "addresses": {
         "title": "Saved addresses",

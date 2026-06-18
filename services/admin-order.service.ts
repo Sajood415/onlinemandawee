@@ -151,6 +151,7 @@ export class AdminOrderService {
         vendorStoreSlug: vendorOrder.vendorProfile.storeSlug,
         vendorStoreName: vendorOrder.vendorProfile.storeName,
         status: vendorOrder.status,
+        deliveredAt: vendorOrder.deliveredAt?.toISOString() ?? null,
         currency: vendorOrder.currency,
         subtotalAmount: vendorOrder.subtotalAmount,
         deliveryAmount: vendorOrder.deliveryAmount,

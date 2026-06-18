@@ -362,7 +362,10 @@ export class OrderRepository {
   updateVendorOrderStatus(id: string, status: VendorOrderStatus) {
     return prisma.orderVendor.update({
       where: { id },
-      data: { status },
+      data: {
+        status,
+        ...(status === "DELIVERED" ? { deliveredAt: new Date() } : {}),
+      },
       include: {
         order: true,
         vendorProfile: true,
