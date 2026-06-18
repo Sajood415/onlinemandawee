@@ -1,6 +1,7 @@
 export type OrderEmailContext = {
   customerName: string;
   orderNumber: string;
+  trackingUrl?: string;
   items: Array<{
     productName: string;
     quantity: number;
@@ -112,6 +113,23 @@ function addressBlock(ctx: OrderEmailContext) {
   </div>`;
 }
 
+function trackingCta(trackingUrl?: string) {
+  if (!trackingUrl) return "";
+  return `
+    <p style="margin-top:24px;text-align:center">
+      <a href="${trackingUrl}" style="display:inline-block;background:#0f3460;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:14px 28px;border-radius:12px">
+        Track Your Order
+      </a>
+    </p>
+    <p style="margin-top:12px;font-size:12px;color:#94a3b8;text-align:center">
+      You can use this secure link anytime to check your latest order status.
+    </p>`;
+}
+
+function trackingTextLine(trackingUrl?: string) {
+  return trackingUrl ? `\nTrack your order: ${trackingUrl}\n` : "";
+}
+
 export function buildOrderPlacedEmail(
   ctx: OrderEmailContext,
   options: { paymentMethod: "cod" | "card" }
@@ -137,7 +155,7 @@ export function buildOrderPlacedEmail(
     ${addressBlock(ctx)}
 
     <p style="margin-top:20px">${paymentNote}</p>
-    <p style="margin-top:12px">If you need to cancel, do so before the vendor accepts your order from the checkout confirmation page.</p>
+    ${trackingCta(ctx.trackingUrl)}
   `;
 
   const paymentText =
@@ -156,6 +174,7 @@ export function buildOrderPlacedEmail(
       paymentText,
       "",
       "We will email you again when your order ships.",
+      trackingTextLine(ctx.trackingUrl),
     ].join("\n"),
   };
 }
@@ -263,12 +282,14 @@ export function buildOrderShippedEmail(ctx: OrderEmailContext) {
     <p style="margin-top:20px;font-size:13px;color:#64748b;font-weight:600">Delivering to:</p>
     ${addressBlock(ctx)}
 
+    ${trackingCta(ctx.trackingUrl)}
+
     <p style="margin-top:20px">Thank you for shopping with us. We hope you enjoy your order!</p>
   `;
   return {
     subject: `Your order ${ctx.orderNumber} is on its way! 🚚`,
     html: baseLayout(`Order Shipped — ${ctx.orderNumber}`, body),
-    text: `Hi ${ctx.customerName}, your order ${ctx.orderNumber} has been shipped and is on the way! Total: ${formatCurrency(ctx.grandTotalAmount, ctx.currency)}.`,
+    text: `Hi ${ctx.customerName}, your order ${ctx.orderNumber} has been shipped and is on the way! Total: ${formatCurrency(ctx.grandTotalAmount, ctx.currency)}.${trackingTextLine(ctx.trackingUrl)}`,
   };
 }
 
@@ -285,12 +306,14 @@ export function buildOrderDeliveredEmail(ctx: OrderEmailContext) {
 
     ${itemsTable(ctx)}
 
+    ${trackingCta(ctx.trackingUrl)}
+
     <p style="margin-top:20px">Thank you for choosing <strong>Online Mandawee</strong>. We look forward to serving you again!</p>
   `;
   return {
     subject: `Your order ${ctx.orderNumber} has been delivered! ✅`,
     html: baseLayout(`Order Delivered — ${ctx.orderNumber}`, body),
-    text: `Hi ${ctx.customerName}, your order ${ctx.orderNumber} has been delivered. Thank you for shopping with us!`,
+    text: `Hi ${ctx.customerName}, your order ${ctx.orderNumber} has been delivered. Thank you for shopping with us!${trackingTextLine(ctx.trackingUrl)}`,
   };
 }
 
@@ -304,11 +327,12 @@ export function buildOrderCancelledEmail(ctx: OrderEmailContext) {
       <div class="value">${ctx.orderNumber}</div>
     </div>
     ${itemsTable(ctx)}
+    ${trackingCta(ctx.trackingUrl)}
     <p style="margin-top:20px">If you didn't request this cancellation or have any questions, please contact our support team.</p>
   `;
   return {
     subject: `Order ${ctx.orderNumber} has been cancelled`,
     html: baseLayout(`Order Cancelled — ${ctx.orderNumber}`, body),
-    text: `Hi ${ctx.customerName}, your order ${ctx.orderNumber} has been cancelled.`,
+    text: `Hi ${ctx.customerName}, your order ${ctx.orderNumber} has been cancelled.${trackingTextLine(ctx.trackingUrl)}`,
   };
 }

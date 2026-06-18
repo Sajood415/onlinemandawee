@@ -8,6 +8,8 @@ import {
 } from "@/lib/checkout/build-guest-checkout-quote";
 import { sendGuestOrderConfirmationEmail } from "@/lib/mail/send-guest-order-confirmation-email";
 import { sendVendorOrderNotifications } from "@/lib/mail/send-vendor-order-notifications";
+import { buildGuestOrderTrackingUrl } from "@/lib/orders/build-order-tracking-url";
+import { generateUniqueGuestTrackingToken } from "@/lib/orders/generate-guest-tracking-token";
 import { generateOpaqueToken } from "@/lib/utils/crypto";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 
@@ -35,6 +37,7 @@ export async function createGuestOrderFromQuote(input: {
 }) {
   const orderNumber = await generateUniqueOrderNumber();
   const guestEmail = normalizeEmailForAuth(input.guestEmail);
+  const guestTrackingToken = await generateUniqueGuestTrackingToken();
 
   const lineItemsByVendor = input.quote.lineItems.reduce<
     Record<string, typeof input.quote.lineItems>
@@ -48,6 +51,7 @@ export async function createGuestOrderFromQuote(input: {
     data: {
       userId: input.userId,
       guestEmail,
+      guestTrackingToken,
       stripePaymentIntentId: input.stripePaymentIntentId,
       orderNumber,
       status: "CREATED",
@@ -100,6 +104,7 @@ export async function createGuestOrderFromQuote(input: {
     to: guestEmail,
     customerName: input.guestName,
     orderNumber: order.orderNumber,
+    trackingUrl: buildGuestOrderTrackingUrl(guestTrackingToken),
     currency: input.quote.currency,
     grandTotalAmount: input.quote.grandTotalAmount,
     paymentMethod,

@@ -7,6 +7,7 @@ import type {
 } from "@/domain/order/order-status";
 import { prisma } from "@/lib/db/prisma";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
+import { guestTrackingOrderInclude } from "@/lib/orders/serialize-guest-public-order";
 
 const orderAdminInclude = {
   user: true,
@@ -272,6 +273,28 @@ export class OrderRepository {
   findByOrderNumber(orderNumber: string) {
     return prisma.order.findUnique({
       where: { orderNumber },
+    });
+  }
+
+  findByGuestTrackingToken(token: string) {
+    return prisma.order.findUnique({
+      where: { guestTrackingToken: token },
+      include: guestTrackingOrderInclude,
+    });
+  }
+
+  findByOrderNumberForGuestTracking(orderNumber: string) {
+    return prisma.order.findUnique({
+      where: { orderNumber },
+      include: guestTrackingOrderInclude,
+    });
+  }
+
+  setGuestTrackingToken(orderId: string, guestTrackingToken: string) {
+    return prisma.order.update({
+      where: { id: orderId },
+      data: { guestTrackingToken },
+      include: guestTrackingOrderInclude,
     });
   }
 

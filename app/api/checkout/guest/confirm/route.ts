@@ -75,7 +75,12 @@ export const POST = withErrorHandling(async (request) => {
 
   if (existingOrder) {
     return NextResponse.json(
-      { data: { orderNumber: existingOrder.orderNumber } },
+      {
+        data: {
+          orderNumber: existingOrder.orderNumber,
+          guestTrackingToken: existingOrder.guestTrackingToken,
+        },
+      },
       { status: 200 }
     );
   }
@@ -110,7 +115,13 @@ export const POST = withErrorHandling(async (request) => {
     });
 
     return NextResponse.json(
-      { data: { orderNumber: order.orderNumber, orderId: order.id } },
+      {
+        data: {
+          orderNumber: order.orderNumber,
+          orderId: order.id,
+          guestTrackingToken: order.guestTrackingToken,
+        },
+      },
       { status: 201 }
     );
   } catch (error) {

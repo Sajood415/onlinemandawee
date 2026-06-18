@@ -17,6 +17,7 @@ export async function sendGuestOrderConfirmationEmail(input: {
   to: string;
   customerName: string;
   orderNumber: string;
+  trackingUrl: string;
   currency: string;
   grandTotalAmount: number;
   paymentMethod: "cod" | "card";
@@ -27,6 +28,7 @@ export async function sendGuestOrderConfirmationEmail(input: {
     const ctx: OrderEmailContext = {
       customerName: input.customerName,
       orderNumber: input.orderNumber,
+      trackingUrl: input.trackingUrl,
       currency: input.currency,
       grandTotalAmount: input.grandTotalAmount,
       shippingAddress: input.shippingAddress,

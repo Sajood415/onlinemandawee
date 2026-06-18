@@ -18,6 +18,7 @@ import { CartRepository } from "@/repositories/cart.repository";
 import { CustomerAddressRepository } from "@/repositories/customer-address.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
+import { buildGuestOrderTrackingUrl } from "@/lib/orders/build-order-tracking-url";
 import { resolveDistanceDeliveryQuote } from "@/lib/delivery/resolve-distance-delivery";
 import { getRefundEligibility } from "@/lib/refunds/refund-eligibility";
 import { OrderSettlementService } from "@/services/order-settlement.service";
@@ -502,9 +503,15 @@ export class OrderService {
       const customerName = order.shippingFullName;
       if (!customerEmail) return;
 
+      const trackingUrl =
+        order.guestTrackingToken && order.guestEmail
+          ? buildGuestOrderTrackingUrl(order.guestTrackingToken)
+          : undefined;
+
       const ctx = {
         customerName,
         orderNumber: order.orderNumber,
+        trackingUrl,
         grandTotalAmount: order.grandTotalAmount,
         currency: order.currency,
         shippingAddress: {

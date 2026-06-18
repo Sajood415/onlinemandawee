@@ -564,6 +564,7 @@ model Order {
   id                    String        @id @default(auto()) @map("_id") @db.ObjectId
   userId                String?       @db.ObjectId
   guestEmail            String?
+  guestTrackingToken    String?       @unique
   orderNumber           String        @unique
   status                OrderStatus   @default(CREATED)
   paymentStatus         PaymentStatus @default(UNPAID)

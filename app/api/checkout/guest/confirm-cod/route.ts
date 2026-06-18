@@ -68,7 +68,13 @@ export const POST = withErrorHandling(async (request) => {
     });
 
     return NextResponse.json(
-      { data: { orderNumber: order.orderNumber, orderId: order.id } },
+      {
+        data: {
+          orderNumber: order.orderNumber,
+          orderId: order.id,
+          guestTrackingToken: order.guestTrackingToken,
+        },
+      },
       { status: 201 }
     );
   } catch (error) {
