@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   Building2,
@@ -8,13 +8,21 @@ import {
   RefreshCw,
   ShoppingBag,
   UserCheck,
+  UserPlus,
+  Users,
 } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 
+type SignupPeriod = "7d" | "30d" | "90d";
+
 type AdminDashboardOverview = {
   activeVendorsCount: number;
+  customersCount: number;
+  newCustomerSignupsCount: number;
+  signupPeriodFrom: string;
+  signupPeriodTo: string;
   recentOrdersCount: number;
   grossMerchandiseValue: number;
   totalCommissionAmount: number;
@@ -29,6 +37,29 @@ function formatCurrency(amount: number, currency = "USD") {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount / 100);
+}
+
+function formatPeriodLabel(fromIso: string, toIso: string) {
+  const from = new Date(fromIso);
+  const to = new Date(toIso);
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return "";
+  return `${from.toLocaleDateString()} – ${to.toLocaleDateString()}`;
+}
+
+function buildSignupPeriodRange(period: SignupPeriod) {
+  const to = new Date();
+  const from = new Date(to);
+  from.setHours(0, 0, 0, 0);
+
+  if (period === "7d") {
+    from.setDate(from.getDate() - 7);
+  } else if (period === "30d") {
+    from.setDate(from.getDate() - 30);
+  } else {
+    from.setDate(from.getDate() - 90);
+  }
+
+  return { from, to };
 }
 
 function MetricCard({
@@ -79,8 +110,19 @@ function SkeletonCard() {
 export default function AdminDashboardPage() {
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [overview, setOverview] = useState<AdminDashboardOverview | null>(null);
+  const [signupPeriod, setSignupPeriod] = useState<SignupPeriod>("30d");
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const signupPeriodLabel = useMemo(
+    () =>
+      signupPeriod === "7d"
+        ? "Last 7 days"
+        : signupPeriod === "30d"
+          ? "Last 30 days"
+          : "Last 90 days",
+    [signupPeriod]
+  );
 
   const fetchOverview = useCallback(async () => {
     const token = localStorage.getItem("accessToken");
@@ -89,7 +131,12 @@ export default function AdminDashboardPage() {
     setDataLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/admin/reports/overview", {
+      const { from, to } = buildSignupPeriodRange(signupPeriod);
+      const params = new URLSearchParams({
+        from: from.toISOString(),
+        to: to.toISOString(),
+      });
+      const response = await fetch(`/api/admin/reports/overview?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await parseApiResponse<AdminDashboardOverview>(response);
@@ -101,7 +148,7 @@ export default function AdminDashboardPage() {
     } finally {
       setDataLoading(false);
     }
-  }, []);
+  }, [signupPeriod]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -129,15 +176,31 @@ export default function AdminDashboardPage() {
               Platform summary and key performance metrics.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => void fetchOverview()}
-            disabled={dataLoading}
-            className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:opacity-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${dataLoading ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-neutral-600">
+              <span className="font-medium">Signup period</span>
+              <select
+                value={signupPeriod}
+                onChange={(event) =>
+                  setSignupPeriod(event.target.value as SignupPeriod)
+                }
+                className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="90d">Last 90 days</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => void fetchOverview()}
+              disabled={dataLoading}
+              className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${dataLoading ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
+          </div>
         </div>
       </div>
 
@@ -149,59 +212,99 @@ export default function AdminDashboardPage() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {dataLoading || !overview ? (
-            <>
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
-            </>
-          ) : (
-            <>
-              <MetricCard
-                label="Total Active Vendors"
-                value={overview.activeVendorsCount.toLocaleString()}
-                icon={<UserCheck className="h-5 w-5" />}
-                accent="bg-emerald-500"
-              />
-              <MetricCard
-                label="Recent Orders (30 days)"
-                value={overview.recentOrdersCount.toLocaleString()}
-                icon={<ShoppingBag className="h-5 w-5" />}
-                accent="bg-blue-500"
-              />
-              <MetricCard
-                label="Total Platform Sales"
-                value={formatCurrency(overview.grossMerchandiseValue)}
-                icon={<DollarSign className="h-5 w-5" />}
-                accent="bg-violet-500"
-                sub="Gross merchandise value"
-              />
-              <MetricCard
-                label="Total Transaction Fees Collected"
-                value={formatCurrency(overview.totalCommissionAmount)}
-                icon={<DollarSign className="h-5 w-5" />}
-                accent="bg-[#0f3460]"
-                sub="Flat per-order fees"
-              />
-              <MetricCard
-                label="Total Subscription Revenue"
-                value={formatCurrency(overview.totalSubscriptionRevenue)}
-                icon={<DollarSign className="h-5 w-5" />}
-                accent="bg-amber-500"
-                sub="Paid membership invoices"
-              />
-              <MetricCard
-                label="Pending Vendor Applications"
-                value={overview.pendingVendorsCount.toLocaleString()}
-                icon={<Building2 className="h-5 w-5" />}
-                accent="bg-orange-500"
-              />
-            </>
-          )}
+        <div className="mb-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
+            Users & vendors
+          </h2>
+          <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {dataLoading || !overview ? (
+              <>
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+              </>
+            ) : (
+              <>
+                <MetricCard
+                  label="Active vendors"
+                  value={overview.activeVendorsCount.toLocaleString()}
+                  icon={<UserCheck className="h-5 w-5" />}
+                  accent="bg-emerald-500"
+                  sub="Approved and active on the marketplace"
+                />
+                <MetricCard
+                  label="Registered customers"
+                  value={overview.customersCount.toLocaleString()}
+                  icon={<Users className="h-5 w-5" />}
+                  accent="bg-blue-500"
+                  sub="Total customer accounts"
+                />
+                <MetricCard
+                  label="New customer signups"
+                  value={overview.newCustomerSignupsCount.toLocaleString()}
+                  icon={<UserPlus className="h-5 w-5" />}
+                  accent="bg-violet-500"
+                  sub={`${signupPeriodLabel} · ${formatPeriodLabel(
+                    overview.signupPeriodFrom,
+                    overview.signupPeriodTo
+                  )}`}
+                />
+              </>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
+            Platform performance
+          </h2>
+          <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {dataLoading || !overview ? (
+              <>
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+              </>
+            ) : (
+              <>
+                <MetricCard
+                  label="Recent orders (30 days)"
+                  value={overview.recentOrdersCount.toLocaleString()}
+                  icon={<ShoppingBag className="h-5 w-5" />}
+                  accent="bg-sky-500"
+                />
+                <MetricCard
+                  label="Total platform sales"
+                  value={formatCurrency(overview.grossMerchandiseValue)}
+                  icon={<DollarSign className="h-5 w-5" />}
+                  accent="bg-indigo-500"
+                  sub="Gross merchandise value in selected period"
+                />
+                <MetricCard
+                  label="Transaction fees collected"
+                  value={formatCurrency(overview.totalCommissionAmount)}
+                  icon={<DollarSign className="h-5 w-5" />}
+                  accent="bg-[#0f3460]"
+                  sub="Flat per-order fees in selected period"
+                />
+                <MetricCard
+                  label="Subscription revenue"
+                  value={formatCurrency(overview.totalSubscriptionRevenue)}
+                  icon={<DollarSign className="h-5 w-5" />}
+                  accent="bg-amber-500"
+                  sub="Paid membership invoices in selected period"
+                />
+                <MetricCard
+                  label="Pending vendor applications"
+                  value={overview.pendingVendorsCount.toLocaleString()}
+                  icon={<Building2 className="h-5 w-5" />}
+                  accent="bg-orange-500"
+                />
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -24,8 +24,20 @@ export class AdminReportService {
   ) {}
 
   async overview(range: ReportRange) {
-    const customers = await this.userRepository.listByRole("CUSTOMER");
-    const vendors = await this.vendorProfileRepository.listByStatus();
+    const signupRange = this.resolveSignupRange(range);
+    const [
+      customersCount,
+      newCustomerSignupsCount,
+      vendors,
+    ] = await Promise.all([
+      this.userRepository.countByRole("CUSTOMER"),
+      this.userRepository.countCreatedInRange({
+        role: "CUSTOMER",
+        from: signupRange.from,
+        to: signupRange.to,
+      }),
+      this.vendorProfileRepository.listByStatus(),
+    ]);
     const orders = (await this.orderRepository.listAll()).filter((order) =>
       this.isWithinRange(order.createdAt, range)
     );
@@ -49,7 +61,10 @@ export class AdminReportService {
     const recentOrdersCount = orders.filter((order) => order.createdAt >= thirtyDaysAgo).length;
 
     return {
-      customersCount: customers.length,
+      customersCount,
+      newCustomerSignupsCount,
+      signupPeriodFrom: signupRange.from.toISOString(),
+      signupPeriodTo: signupRange.to.toISOString(),
       vendorsCount: vendors.length,
       activeVendorsCount: vendors.filter((vendor) => vendor.status === "ACTIVE").length,
       pendingVendorsCount: vendors.filter((vendor) => vendor.status === "PENDING_APPROVAL").length,
@@ -237,6 +252,23 @@ export class AdminReportService {
         waivedReason: invoice.waivedReason,
       })),
     };
+  }
+
+  private resolveSignupRange(range: ReportRange) {
+    if (range.from && range.to) {
+      return { from: range.from, to: range.to };
+    }
+
+    if (range.from) {
+      return { from: range.from, to: new Date() };
+    }
+
+    const to = range.to ?? new Date();
+    const from = new Date(to);
+    from.setDate(from.getDate() - 30);
+    from.setHours(0, 0, 0, 0);
+
+    return { from, to };
   }
 
   private isWithinRange(value: Date, range: ReportRange) {

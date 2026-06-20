@@ -123,4 +123,30 @@ export class UserRepository {
       },
     });
   }
+
+  countByRole(role: "CUSTOMER" | "VENDOR" | "ADMIN") {
+    return prisma.user.count({
+      where: { role },
+    });
+  }
+
+  countCreatedInRange(input: {
+    role: "CUSTOMER" | "VENDOR" | "ADMIN";
+    from?: Date;
+    to?: Date;
+  }) {
+    return prisma.user.count({
+      where: {
+        role: input.role,
+        ...(input.from || input.to
+          ? {
+              createdAt: {
+                ...(input.from ? { gte: input.from } : {}),
+                ...(input.to ? { lte: input.to } : {}),
+              },
+            }
+          : {}),
+      },
+    });
+  }
 }
