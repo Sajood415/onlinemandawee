@@ -6,7 +6,7 @@ import { generateOpaqueToken } from "@/lib/utils/crypto";
 export async function generateUniqueGuestTrackingToken() {
   for (let attempt = 0; attempt < 20; attempt++) {
     const candidate = generateOpaqueToken().replace(/-/g, "");
-    const existing = await prisma.order.findUnique({
+    const existing = await prisma.order.findFirst({
       where: { guestTrackingToken: candidate },
       select: { id: true },
     });

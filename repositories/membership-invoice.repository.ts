@@ -62,7 +62,7 @@ export class MembershipInvoiceRepository {
     });
   }
 
-  upsertByStripeInvoiceId(input: {
+  async upsertByStripeInvoiceId(input: {
     stripeInvoiceId: string;
     vendorProfileId: string;
     periodStart: Date;
@@ -82,54 +82,53 @@ export class MembershipInvoiceRepository {
     invoiceHostedUrl?: string | null;
     waivedReason?: string | null;
   }) {
-    return membershipInvoiceDelegate.upsert({
-      where: { stripeInvoiceId: input.stripeInvoiceId },
-      create: {
-        vendorProfileId: input.vendorProfileId,
-        periodStart: input.periodStart,
-        periodEnd: input.periodEnd,
-        dueAt: input.dueAt,
-        amount: input.amount,
-        currency: input.currency,
-        status: input.status,
-        paidAt: input.paidAt ?? null,
-        stripeCustomerId: input.stripeCustomerId ?? null,
-        stripeSubscriptionId: input.stripeSubscriptionId ?? null,
-        stripeInvoiceId: input.stripeInvoiceId,
-        stripePaymentId: input.stripePaymentId ?? null,
-        stripeEventId: input.stripeEventId ?? null,
-        failureCode: input.failureCode ?? null,
-        failureReason: input.failureReason ?? null,
-        attemptedAt: input.attemptedAt ?? null,
-        invoiceHostedUrl: input.invoiceHostedUrl ?? null,
-        waivedReason: input.waivedReason ?? null,
-      },
-      update: {
-        vendorProfileId: input.vendorProfileId,
-        periodStart: input.periodStart,
-        periodEnd: input.periodEnd,
-        dueAt: input.dueAt,
-        amount: input.amount,
-        currency: input.currency,
-        status: input.status,
-        paidAt: input.paidAt ?? null,
-        stripeCustomerId: input.stripeCustomerId ?? null,
-        stripeSubscriptionId: input.stripeSubscriptionId ?? null,
-        stripePaymentId: input.stripePaymentId ?? null,
-        stripeEventId: input.stripeEventId ?? null,
-        failureCode: input.failureCode ?? null,
-        failureReason: input.failureReason ?? null,
-        attemptedAt: input.attemptedAt ?? null,
-        invoiceHostedUrl: input.invoiceHostedUrl ?? null,
-        waivedReason: input.waivedReason ?? null,
-      },
-      include: {
-        vendorProfile: {
-          include: {
-            user: true,
-          },
+    const include = {
+      vendorProfile: {
+        include: {
+          user: true,
         },
       },
+    };
+
+    const data = {
+      vendorProfileId: input.vendorProfileId,
+      periodStart: input.periodStart,
+      periodEnd: input.periodEnd,
+      dueAt: input.dueAt,
+      amount: input.amount,
+      currency: input.currency,
+      status: input.status,
+      paidAt: input.paidAt ?? null,
+      stripeCustomerId: input.stripeCustomerId ?? null,
+      stripeSubscriptionId: input.stripeSubscriptionId ?? null,
+      stripePaymentId: input.stripePaymentId ?? null,
+      stripeEventId: input.stripeEventId ?? null,
+      failureCode: input.failureCode ?? null,
+      failureReason: input.failureReason ?? null,
+      attemptedAt: input.attemptedAt ?? null,
+      invoiceHostedUrl: input.invoiceHostedUrl ?? null,
+      waivedReason: input.waivedReason ?? null,
+    };
+
+    const existing = await membershipInvoiceDelegate.findFirst({
+      where: { stripeInvoiceId: input.stripeInvoiceId },
+      select: { id: true },
+    });
+
+    if (existing) {
+      return membershipInvoiceDelegate.update({
+        where: { id: existing.id },
+        data,
+        include,
+      });
+    }
+
+    return membershipInvoiceDelegate.create({
+      data: {
+        ...data,
+        stripeInvoiceId: input.stripeInvoiceId,
+      },
+      include,
     });
   }
 
@@ -216,7 +215,7 @@ export class MembershipInvoiceRepository {
     });
   }
 
-  markPendingByStripeInvoiceId(input: {
+  async markPendingByStripeInvoiceId(input: {
     stripeInvoiceId: string;
     stripeEventId?: string | null;
     stripePaymentId?: string | null;
@@ -224,8 +223,13 @@ export class MembershipInvoiceRepository {
     failureReason?: string | null;
     attemptedAt?: Date | null;
   }) {
+    const existing = await this.findByStripeInvoiceId(input.stripeInvoiceId);
+    if (!existing) {
+      return null;
+    }
+
     return membershipInvoiceDelegate.update({
-      where: { stripeInvoiceId: input.stripeInvoiceId },
+      where: { id: existing.id },
       data: {
         status: "PENDING",
         paidAt: null,

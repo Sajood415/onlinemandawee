@@ -46,7 +46,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_REALTIME_URL: z.string().url().optional(),
   REFUND_WINDOW_DAYS: z.coerce.number().int().min(1).max(30).default(3),
 }).superRefine((data, ctx) => {
-  if (data.NODE_ENV === "production" && !data.APP_URL) {
+  const isProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
+  if (data.NODE_ENV === "production" && !data.APP_URL && !isProductionBuild) {
     ctx.addIssue({
       code: "custom",
       message: "APP_URL is required in production so guest emails use the correct site URL.",

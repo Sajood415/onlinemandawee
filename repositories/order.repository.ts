@@ -340,7 +340,7 @@ export class OrderRepository {
   }
 
   findByGuestTrackingToken(token: string) {
-    return prisma.order.findUnique({
+    return prisma.order.findFirst({
       where: { guestTrackingToken: token },
       include: guestTrackingOrderInclude,
     });

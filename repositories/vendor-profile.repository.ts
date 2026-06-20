@@ -46,7 +46,7 @@ export class VendorProfileRepository {
   }
 
   findByStoreSlug(storeSlug: string) {
-    return prisma.vendorProfile.findUnique({
+    return prisma.vendorProfile.findFirst({
       where: { storeSlug },
     });
   }

@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db/prisma";
 
 export class VendorLedgerEntryRepository {
   findByRefundCaseId(refundCaseId: string) {
-    return prisma.vendorLedgerEntry.findUnique({
+    return prisma.vendorLedgerEntry.findFirst({
       where: { refundCaseId },
     });
   }

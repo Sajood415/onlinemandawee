@@ -913,7 +913,7 @@ export class RefundService {
 
     try {
       await prisma.$transaction(async (tx) => {
-        const existingInTx = await tx.vendorLedgerEntry.findUnique({
+        const existingInTx = await tx.vendorLedgerEntry.findFirst({
           where: { refundCaseId },
         });
         if (existingInTx) {
