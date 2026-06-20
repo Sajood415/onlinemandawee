@@ -310,7 +310,7 @@ model VendorProfile {
   id                             String                     @id @default(auto()) @map("_id") @db.ObjectId
   userId                         String                     @unique @db.ObjectId
   storeName                      String?
-  storeSlug                      String?                    @unique
+  storeSlug                      String?
   businessType                   BusinessType?
   industryType                   IndustryType?
   logoUrl                        String?
@@ -324,8 +324,8 @@ model VendorProfile {
   rejectionReason                String?
   suspendedAt                    DateTime?
   suspensionReason               String?
-  stripeCustomerId               String?                    @unique
-  stripeSubscriptionId           String?                    @unique
+  stripeCustomerId               String?
+  stripeSubscriptionId           String?
   stripeDefaultPaymentMethodId   String?
   subscriptionStatus             VendorSubscriptionStatus   @default(TRIAL)
   subscriptionTrialEndsAt        DateTime?
@@ -352,6 +352,9 @@ model VendorProfile {
 
   @@index([status, onboardingStep])
   @@index([subscriptionStatus, subscriptionGracePeriodEndsAt])
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+  @@index([storeSlug])
 }
 
 model VendorCoupon {
@@ -564,7 +567,7 @@ model Order {
   id                    String        @id @default(auto()) @map("_id") @db.ObjectId
   userId                String?       @db.ObjectId
   guestEmail            String?
-  guestTrackingToken    String?       @unique
+  guestTrackingToken    String?
   orderNumber           String        @unique
   status                OrderStatus   @default(CREATED)
   paymentStatus         PaymentStatus @default(UNPAID)
@@ -589,6 +592,7 @@ model Order {
   @@index([userId, createdAt])
   @@index([status, paymentStatus])
   @@index([guestEmail, createdAt])
+  @@index([guestTrackingToken])
 }
 
 model OrderVendor {
@@ -675,7 +679,7 @@ model VendorLedgerEntry {
   vendorProfileId      String                @db.ObjectId
   orderId              String?               @db.ObjectId
   orderVendorId        String?               @db.ObjectId
-  refundCaseId         String?               @unique @db.ObjectId
+  refundCaseId         String?               @db.ObjectId
   paymentTransactionId String?               @db.ObjectId
   payoutId             String?               @db.ObjectId
   bucket               LedgerBucket
@@ -687,6 +691,7 @@ model VendorLedgerEntry {
 
   @@index([vendorProfileId, bucket, createdAt])
   @@index([orderVendorId, entryType])
+  @@index([refundCaseId])
 }
 
 model Payout {
@@ -752,7 +757,7 @@ model MembershipInvoice {
   vendorProfile        VendorProfile           @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
 
   @@unique([vendorProfileId, periodStart, periodEnd])
-  @@unique([stripeInvoiceId])
+  @@index([stripeInvoiceId])
   @@index([status, dueAt])
   @@index([vendorProfileId, createdAt])
   @@index([stripeSubscriptionId, periodStart])
@@ -878,4 +883,38 @@ model GiftRequest {
   @@index([userId, createdAt])
   @@index([status, createdAt])
   @@index([senderEmail, createdAt])
+}
+
+model PlatformSettings {
+  id                        String   @id @map("_id")
+  transactionFeeAmountMinor Int      @default(399)
+  availableLocales          String[] @default(["en", "ps", "fa-AF"])
+  availableCurrencies       String[] @default(["USD", "EUR", "GBP", "CAD"])
+  updatedAt                 DateTime @updatedAt
+  updatedByUserId           String?  @db.ObjectId
+}
+
+enum HomeBannerPlacement {
+  HERO
+  SECTION
+}
+
+model HomeBanner {
+  id             String              @id @default(auto()) @map("_id") @db.ObjectId
+  title          String
+  subtitle       String?
+  placement      HomeBannerPlacement   @default(HERO)
+  imageUrl       String
+  imageMobileUrl String?
+  href           String
+  ctaLabel       String?
+  isActive       Boolean             @default(true)
+  sortOrder      Int                 @default(0)
+  startsAt       DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([placement, isActive, sortOrder])
+  @@index([startsAt, expiresAt])
 }

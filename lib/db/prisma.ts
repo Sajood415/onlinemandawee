@@ -13,12 +13,18 @@ declare global {
   var __prisma_schema_revision__: string | undefined;
 }
 
-/** Hash of prisma/schema.prisma — invalidates cached client after schema edits in dev. */
-function getPrismaSchemaRevision() {
+/** Hash schema + generated client so dev invalidates after `prisma generate`. */
+function getPrismaClientRevision() {
   try {
     const schemaPath = path.join(process.cwd(), "prisma/schema.prisma");
+    const clientPath = path.join(process.cwd(), "node_modules/.prisma/client/index.d.ts");
     const schema = readFileSync(schemaPath, "utf8");
-    return createHash("sha256").update(schema).digest("hex").slice(0, 16);
+    const clientTypes = readFileSync(clientPath, "utf8");
+    return createHash("sha256")
+      .update(schema)
+      .update(clientTypes)
+      .digest("hex")
+      .slice(0, 16);
   } catch {
     return "unknown";
   }
@@ -30,11 +36,11 @@ const createPrismaClient = () =>
   });
 
 const getPrismaClient = (): PrismaClient => {
-  const schemaRevision = getPrismaSchemaRevision();
+  const clientRevision = getPrismaClientRevision();
   const existing = globalThis.__prisma__;
   const revisionStale =
     env.NODE_ENV !== "production" &&
-    globalThis.__prisma_schema_revision__ !== schemaRevision;
+    globalThis.__prisma_schema_revision__ !== clientRevision;
 
   if (existing && revisionStale) {
     void existing.$disconnect().catch(() => undefined);
@@ -43,7 +49,7 @@ const getPrismaClient = (): PrismaClient => {
 
   if (!globalThis.__prisma__) {
     globalThis.__prisma__ = createPrismaClient();
-    globalThis.__prisma_schema_revision__ = schemaRevision;
+    globalThis.__prisma_schema_revision__ = clientRevision;
   }
 
   return globalThis.__prisma__;

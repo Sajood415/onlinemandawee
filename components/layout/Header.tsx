@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { CatalogImage } from "@/components/catalog/CatalogImage";
-import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { usePathname, useRouter, Link as LocaleLink } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
@@ -42,6 +42,7 @@ import {
 import { IconButton } from "@/components/layout/header/IconButton";
 import { CurrencySelector } from "@/components/layout/header/CurrencySelector";
 import { LanguageSelector } from "@/components/layout/header/LanguageSelector";
+import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
 import { MobileNavMenu } from "@/components/layout/header/MobileNavMenu";
 import {
   localizeDelivery,
@@ -141,10 +142,20 @@ export default function Header() {
   const tAuth = useTranslations("Auth");
   const pathname = usePathname();
   const locale = useLocale() as SupportedLocale;
+  const { availableLocales } = usePlatformConfig();
   const safeLocale: SupportedLocale =
     locale === "ps" || locale === "fa-AF" ? locale : "en";
   const isRtl = safeLocale !== "en";
   const copy = headerCopy[safeLocale];
+  const languageOptions = useMemo(
+    () =>
+      [
+        { code: "en", label: tAuth("languages.en"), flag: "🇺🇸" },
+        { code: "ps", label: tAuth("languages.ps"), flag: "🇦🇫" },
+        { code: "fa-AF", label: tAuth("languages.fa-AF"), flag: "🇦🇫" },
+      ].filter((language) => availableLocales.includes(language.code as SupportedLocale)),
+    [availableLocales, tAuth]
+  );
   const isVendorRegisterPage = pathname.includes("/vendor/register");
   const isAuthSignupPage = pathname.includes("/auth/signup");
   const hideSecondaryNav =
@@ -365,17 +376,15 @@ export default function Header() {
 
               {/* Language + currency selectors */}
               <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
-                <LanguageSelector
-                  locale={locale}
-                  label={tAuth("languages.select")}
-                  isRtl={isRtl}
-                  variant="dark"
-                  languages={[
-                    { code: "en", label: tAuth("languages.en"), flag: "🇺🇸" },
-                    { code: "ps", label: tAuth("languages.ps"), flag: "🇦🇫" },
-                    { code: "fa-AF", label: tAuth("languages.fa-AF"), flag: "🇦🇫" },
-                  ]}
-                />
+                {languageOptions.length > 1 ? (
+                  <LanguageSelector
+                    locale={locale}
+                    label={tAuth("languages.select")}
+                    isRtl={isRtl}
+                    variant="dark"
+                    languages={languageOptions}
+                  />
+                ) : null}
                 <CurrencySelector isRtl={isRtl} variant="dark" />
               </div>
 

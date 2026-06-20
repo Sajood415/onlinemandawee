@@ -156,12 +156,55 @@ export class ProductRepository {
   }
 
   listByApprovalStatus(approvalStatus?: ProductApprovalStatus) {
+    return this.listForAdmin({ approvalStatus });
+  }
+
+  listForAdmin(filters: {
+    approvalStatus?: ProductApprovalStatus;
+    search?: string;
+    vendorProfileId?: string;
+    isActive?: boolean;
+  }) {
+    const search = filters.search?.trim();
+
     return prisma.product.findMany({
-      where: approvalStatus
-        ? {
-            approvalStatus,
-          }
-        : undefined,
+      where: {
+        ...(filters.approvalStatus
+          ? { approvalStatus: filters.approvalStatus }
+          : {}),
+        ...(filters.vendorProfileId
+          ? { vendorProfileId: filters.vendorProfileId }
+          : {}),
+        ...(filters.isActive !== undefined
+          ? { isActive: filters.isActive }
+          : {}),
+        ...(search
+          ? {
+              OR: [
+                { name: { contains: search, mode: "insensitive" } },
+                { description: { contains: search, mode: "insensitive" } },
+                { sku: { contains: search, mode: "insensitive" } },
+                {
+                  vendorProfile: {
+                    storeName: { contains: search, mode: "insensitive" },
+                  },
+                },
+                {
+                  vendorProfile: {
+                    user: { email: { contains: search, mode: "insensitive" } },
+                  },
+                },
+                {
+                  vendorProfile: {
+                    user: {
+                      fullName: { contains: search, mode: "insensitive" },
+                    },
+                  },
+                },
+              ],
+            }
+          : {}),
+      },
       include: {
         category: true,
         vendorProfile: {

@@ -1,12 +1,23 @@
-import type { RefundCaseStatus } from "@/components/refunds/refund-types";
-import { REFUND_STATUS_BADGE, REFUND_STATUS_LABELS } from "@/components/refunds/refund-types";
+import type { RefundCaseStatus, RefundDecisionType } from "@/components/refunds/refund-types";
+import { getRefundOutcomeDisplay } from "@/components/refunds/refund-types";
 
-export function RefundStatusBadge({ status }: { status: RefundCaseStatus }) {
+export function RefundStatusBadge({
+  status,
+  decision,
+}: {
+  status: RefundCaseStatus;
+  decision?: { decisionType: RefundDecisionType } | null;
+}) {
+  const display = getRefundOutcomeDisplay({
+    status,
+    decision: decision ?? null,
+  });
+
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${REFUND_STATUS_BADGE[status]}`}
+      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${display.badgeClass}`}
     >
-      {REFUND_STATUS_LABELS[status]}
+      {display.label}
     </span>
   );
 }

@@ -130,7 +130,7 @@ export default function CustomerDisputesPage() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <RefundStatusBadge status={item.status} />
+                  <RefundStatusBadge status={item.status} decision={item.decision} />
                   <p className="mt-2 text-sm font-semibold text-neutral-900">
                     {formatRefundMoney(item.requestedAmount, item.order.currency, locale)}
                   </p>

@@ -134,11 +134,31 @@ export function VendorOnboardingWizard() {
   const [ag3, setAg3] = useState(false);
   const [ag4, setAg4] = useState(false);
   const [ag5, setAg5] = useState(false);
+  const [transactionFeeLabel, setTransactionFeeLabel] = useState("$3.99 per order");
 
   const authHeaders = useCallback((): Record<string, string> => {
     if (!accessToken) return {};
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/platform/settings");
+        if (!res.ok) return;
+        const data = await parseApiResponse<{
+          transactionFeeLabel: string;
+        }>(res);
+        if (!cancelled) setTransactionFeeLabel(data.transactionFeeLabel);
+      } catch {
+        // Keep default label
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -1148,7 +1168,10 @@ export function VendorOnboardingWizard() {
               </label>
               <label className={CHECK_ROW}>
                 <input type="checkbox" checked={ag3} onChange={(e) => setAg3(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>I agree to the commission: 3.99% on product sale price (subtotal only, not shipping).<RequiredMark /></span>
+                <span>
+                  I agree to the transaction fee: {transactionFeeLabel} (allocated from each customer
+                  order; not applied to shipping).<RequiredMark />
+                </span>
               </label>
               <label className={CHECK_ROW}>
                 <input type="checkbox" checked={ag4} onChange={(e) => setAg4(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />

@@ -9,6 +9,9 @@ import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { prisma } from "@/lib/db/prisma";
 import { getRefundEligibility } from "@/lib/refunds/refund-eligibility";
 import {
+  canCustomerOpenRefundCase,
+} from "@/lib/refunds/refund-request-eligibility";
+import {
   sendRefundDecisionEmails,
   sendRefundEscalatedAdminEmail,
   sendRefundOpenedCustomerEmail,
@@ -67,12 +70,15 @@ export class RefundService {
     }
 
     if (
-      orderItem.orderVendor.order.paymentStatus !== "PAID" &&
-      orderItem.orderVendor.order.paymentStatus !== "PARTIALLY_REFUNDED"
+      !canCustomerOpenRefundCase({
+        paymentStatus: orderItem.orderVendor.order.paymentStatus,
+        vendorOrderStatus: orderItem.orderVendor.status,
+      })
     ) {
       throw new AppError({
         code: ERROR_CODE.BAD_REQUEST,
-        message: "Refunds are only allowed for paid orders",
+        message:
+          "Refunds are only allowed for paid orders or cash-on-delivery orders marked delivered",
         statusCode: 400,
       });
     }
@@ -88,6 +94,7 @@ export class RefundService {
     const refundEligibility = getRefundEligibility({
       vendorOrderStatus: orderItem.orderVendor.status,
       deliveredAt: orderItem.orderVendor.deliveredAt,
+      statusChangedAt: orderItem.orderVendor.updatedAt,
       windowDays: env.REFUND_WINDOW_DAYS,
     });
 
@@ -444,9 +451,15 @@ export class RefundService {
       });
     }
 
+    const decisionType =
+      input.decisionType === "PARTIAL" &&
+      input.approvedAmount >= refundCase.requestedAmount
+        ? "APPROVE"
+        : input.decisionType;
+
     await this.refundDecisionRepository.create({
       refundCaseId,
-      decisionType: input.decisionType,
+      decisionType,
       approvedAmount: input.approvedAmount,
       reason: input.reason,
       decidedByUserId: auth.id,
@@ -479,7 +492,7 @@ export class RefundService {
       entityType: "RefundCase",
       entityId: refundCaseId,
       metadata: {
-        decisionType: input.decisionType,
+        decisionType,
         approvedAmount: input.approvedAmount,
       },
     });
@@ -620,6 +633,234 @@ export class RefundService {
     return {
       count: escalated.length,
       cases: escalated.map(({ id, status }) => ({ id, status })),
+    };
+  }
+
+  async adminFlagOrderForDispute(
+    auth: AuthenticatedUser,
+    orderId: string,
+    input: { note: string }
+  ) {
+    if (auth.role !== "ADMIN") {
+      throw new AppError({
+        code: ERROR_CODE.FORBIDDEN,
+        message: "Only admins can flag orders for dispute review",
+        statusCode: 403,
+      });
+    }
+
+    const order = await this.orderRepository.findById(orderId);
+    if (!order) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Order not found",
+        statusCode: 404,
+      });
+    }
+
+    const cases = await this.refundCaseRepository.listByOrderId(orderId);
+    const escalatedCaseIds: string[] = [];
+
+    for (const refundCase of cases) {
+      if (refundCase.status === "RESOLVED") continue;
+
+      if (refundCase.status === "WAITING_VENDOR") {
+        const updated = await this.refundCaseRepository.update({
+          id: refundCase.id,
+          status: "ESCALATED_ADMIN",
+          escalatedAt: new Date(),
+          vendorResponseDueAt: null,
+        });
+
+        escalatedCaseIds.push(updated.id);
+
+        void emitDisputeUpdated({
+          refundCaseId: updated.id,
+          status: updated.status,
+          updatedAt: updated.updatedAt,
+        });
+      }
+    }
+
+    await this.auditLogRepository.create({
+      actorUserId: auth.id,
+      actorRole: auth.role,
+      action: "order.flagged_for_dispute",
+      entityType: "Order",
+      entityId: orderId,
+      metadata: {
+        note: input.note,
+        escalatedCaseIds,
+        openCaseCount: cases.filter((refundCase) => refundCase.status !== "RESOLVED")
+          .length,
+      },
+    });
+
+    return {
+      orderId,
+      orderNumber: order.orderNumber,
+      flagged: true,
+      note: input.note,
+      escalatedCaseIds,
+      openCaseCount: cases.filter((refundCase) => refundCase.status !== "RESOLVED")
+        .length,
+    };
+  }
+
+  async adminMarkOrderRefunded(
+    auth: AuthenticatedUser,
+    orderId: string,
+    input: {
+      reason: string;
+      orderItemId?: string;
+      approvedAmount?: number;
+    }
+  ) {
+    if (auth.role !== "ADMIN") {
+      throw new AppError({
+        code: ERROR_CODE.FORBIDDEN,
+        message: "Only admins can mark orders as refunded",
+        statusCode: 403,
+      });
+    }
+
+    const order = await this.orderRepository.findByIdForAdmin(orderId);
+    if (!order) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Order not found",
+        statusCode: 404,
+      });
+    }
+
+    if (
+      order.paymentStatus !== "PAID" &&
+      order.paymentStatus !== "PARTIALLY_REFUNDED"
+    ) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Only paid orders can be marked as refunded",
+        statusCode: 400,
+      });
+    }
+
+    const allItems = order.vendorOrders.flatMap((vendorOrder) =>
+      vendorOrder.items.map((item) => ({
+        ...item,
+        orderVendorId: vendorOrder.id,
+      }))
+    );
+
+    const targetItems = input.orderItemId
+      ? allItems.filter((item) => item.id === input.orderItemId)
+      : allItems;
+
+    if (targetItems.length === 0) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Order item not found",
+        statusCode: 404,
+      });
+    }
+
+    const existingCases = await this.refundCaseRepository.listByOrderId(orderId);
+    const processedCaseIds: string[] = [];
+
+    for (const item of targetItems) {
+      const itemCases = existingCases.filter(
+        (refundCase) => refundCase.orderItemId === item.id
+      );
+      const approvedSoFar = itemCases.reduce((sum, refundCase) => {
+        return sum + (refundCase.decision?.approvedAmount ?? 0);
+      }, 0);
+      const remaining = item.lineTotalAmount - approvedSoFar;
+
+      if (remaining <= 0) continue;
+
+      const amountToApprove =
+        input.orderItemId && input.approvedAmount != null
+          ? Math.min(input.approvedAmount, remaining)
+          : remaining;
+
+      if (amountToApprove <= 0) continue;
+
+      const activeCase = itemCases.find(
+        (refundCase) => refundCase.status !== "RESOLVED" && !refundCase.decision
+      );
+
+      if (activeCase) {
+        const decisionType =
+          amountToApprove >= activeCase.requestedAmount ? "APPROVE" : "PARTIAL";
+        const decided = await this.adminDecision(auth, activeCase.id, {
+          decisionType,
+          approvedAmount: amountToApprove,
+          reason: input.reason,
+        });
+        processedCaseIds.push(decided.id);
+        continue;
+      }
+
+      const customerUserId = order.userId ?? auth.id;
+      const refundCase = await this.refundCaseRepository.create({
+        orderId: order.id,
+        orderItemId: item.id,
+        customerUserId,
+        vendorProfileId: item.vendorProfileId,
+        reason: "Admin dispute intervention",
+        description: input.reason,
+        requestedAmount: amountToApprove,
+        status: "ESCALATED_ADMIN",
+      });
+
+      await this.refundCaseRepository.update({
+        id: refundCase.id,
+        escalatedAt: new Date(),
+      });
+
+      await this.refundEvidenceRepository.create({
+        refundCaseId: refundCase.id,
+        actorUserId: auth.id,
+        actorRole: auth.role,
+        note: `Admin marked refunded: ${input.reason}`,
+      });
+
+      const decided = await this.adminDecision(auth, refundCase.id, {
+        decisionType: "APPROVE",
+        approvedAmount: amountToApprove,
+        reason: input.reason,
+      });
+      processedCaseIds.push(decided.id);
+    }
+
+    if (processedCaseIds.length === 0) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "No refundable amount remains on this order",
+        statusCode: 400,
+      });
+    }
+
+    const updatedOrder = await this.orderRepository.findById(orderId);
+
+    await this.auditLogRepository.create({
+      actorUserId: auth.id,
+      actorRole: auth.role,
+      action: "order.admin_refunded",
+      entityType: "Order",
+      entityId: orderId,
+      metadata: {
+        reason: input.reason,
+        orderItemId: input.orderItemId ?? null,
+        approvedAmount: input.approvedAmount ?? null,
+        refundCaseIds: processedCaseIds,
+      },
+    });
+
+    return {
+      orderId,
+      orderNumber: order.orderNumber,
+      paymentStatus: updatedOrder?.paymentStatus ?? order.paymentStatus,
+      refundCaseIds: processedCaseIds,
     };
   }
 

@@ -32,11 +32,16 @@ export function AdminRefundDecisionForm({ refundCase, onSuccess }: AdminRefundDe
             ? refundCase.requestedAmount
             : approvedAmount;
 
+      const resolvedDecisionType =
+        decisionType === "PARTIAL" && amountMinor >= refundCase.requestedAmount
+          ? "APPROVE"
+          : decisionType;
+
       await fetchWithAuth(`/api/refunds/${refundCase.id}/admin-decision`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          decisionType,
+          decisionType: resolvedDecisionType,
           approvedAmount: amountMinor,
           reason: reason.trim() || undefined,
         }),

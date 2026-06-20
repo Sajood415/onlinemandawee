@@ -47,8 +47,8 @@ type FeeSubscriptionReport = {
   from: string | null;
   to: string | null;
   rates: {
-    commissionRateBps: number;
-    commissionRatePercent: number;
+    transactionFeeAmountMinor: number;
+    transactionFeeLabel: string;
     membershipFeeAmount: number;
     membershipCurrency: string;
     membershipTrialDays: number;
@@ -135,8 +135,8 @@ export function FeeSubscriptionHistorySection() {
     "USD";
 
   const commissionLabel = report
-    ? `${report.rates.commissionRatePercent.toFixed(2)}% per order`
-    : "3.99% per order";
+    ? report.rates.transactionFeeLabel
+    : "$3.99 per order";
 
   const membershipLabel = report
     ? `${formatCurrency(report.rates.membershipFeeAmount, report.rates.membershipCurrency)} / month`

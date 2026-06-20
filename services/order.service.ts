@@ -192,6 +192,8 @@ export class OrderService {
   async listMyOrders(auth: AuthenticatedUser) {
     this.assertActiveCustomer(auth);
     await this.orderRepository.claimGuestOrdersForUser(auth.id, auth.email);
+    await this.orderRepository.backfillMissingDeliveredAtForUser(auth.id);
+    await this.reconcileDeliveredCodOrdersForUser(auth.id);
     const orders = await this.orderRepository.listByUserId(auth.id);
     return orders.map((order) => this.serializeOrder(order));
   }
@@ -199,6 +201,7 @@ export class OrderService {
   async getOrderForCustomer(auth: AuthenticatedUser, orderId: string) {
     this.assertActiveCustomer(auth);
     await this.orderRepository.claimGuestOrdersForUser(auth.id, auth.email);
+    await this.orderRepository.backfillMissingDeliveredAtForUser(auth.id);
     const order = await this.orderRepository.findById(orderId);
 
     if (!order || !this.customerOwnsOrder(auth, order)) {
@@ -616,6 +619,19 @@ export class OrderService {
     return updatedOrder.status;
   }
 
+  private async reconcileDeliveredCodOrdersForUser(userId: string) {
+    const orders = await this.orderRepository.listByUserId(userId);
+
+    for (const order of orders) {
+      if (order.paymentStatus !== "UNPAID") continue;
+
+      for (const vendorOrder of order.vendorOrders) {
+        if (vendorOrder.status !== "DELIVERED") continue;
+        await this.orderSettlementService.settleCodOnVendorDelivery(vendorOrder.id);
+      }
+    }
+  }
+
   private customerOwnsOrder(
     auth: AuthenticatedUser,
     order: NonNullable<Awaited<ReturnType<OrderRepository["findById"]>>>
@@ -678,6 +694,7 @@ export class OrderService {
         refundEligibility: getRefundEligibility({
           vendorOrderStatus: vendorOrder.status,
           deliveredAt: vendorOrder.deliveredAt,
+          statusChangedAt: vendorOrder.updatedAt,
           windowDays: env.REFUND_WINDOW_DAYS,
         }),
         currency: vendorOrder.currency,

@@ -381,7 +381,7 @@ export default function VendorOrdersPage() {
         }
         if (status === "DELIVERED") {
           toast.success(
-            "Order delivered. Net earnings recorded after the 3.99% fee. With bank or PayPal on file, payout is sent automatically; otherwise earnings stay on hold until admin releases payment."
+            `Order delivered. Net earnings recorded after the platform transaction fee. With bank or PayPal on file, payout is sent automatically; otherwise earnings stay on hold until admin releases payment.`
           );
           await fetchOrders(true);
         } else {

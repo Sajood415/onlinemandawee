@@ -16,6 +16,7 @@ import {
 
 import { PageLoader } from "@/components/ui/PageLoader";
 import { RequestRefundModal } from "@/components/refunds/RequestRefundModal";
+import { canCustomerRequestItemRefund } from "@/lib/refunds/refund-request-eligibility";
 import { useCustomerRouteGuard } from "@/components/customer/use-customer-route-guard";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -109,11 +110,17 @@ function OrderCard({
   const t = useTranslations("Account.overview");
   const locale = useLocale();
   const summaryStatus = overallOrderStatus(order);
-  const canRequestRefund =
-    order.paymentStatus === "PAID" || order.paymentStatus === "PARTIALLY_REFUNDED";
+  const isRefundablePayment =
+    order.paymentStatus === "PAID" ||
+    order.paymentStatus === "PARTIALLY_REFUNDED" ||
+    order.paymentStatus === "UNPAID";
 
   const isItemRefundEligible = (vendorOrder: CustomerVendorOrder) =>
-    canRequestRefund && vendorOrder.refundEligibility === "open";
+    canCustomerRequestItemRefund({
+      paymentStatus: order.paymentStatus,
+      vendorOrderStatus: vendorOrder.status,
+      refundEligibility: vendorOrder.refundEligibility,
+    });
 
   return (
     <article className="rounded-xl border border-neutral-200 bg-neutral-50 overflow-hidden">
@@ -192,9 +199,13 @@ function OrderCard({
                   const showRefundButton =
                     isItemRefundEligible(vendorOrder) && !hasActiveCase;
                   const showRefundExpired =
-                    canRequestRefund &&
+                    isRefundablePayment &&
                     !hasActiveCase &&
                     vendorOrder.refundEligibility === "expired";
+                  const showRefundAfterDelivery =
+                    isRefundablePayment &&
+                    !hasActiveCase &&
+                    vendorOrder.refundEligibility === "not_yet_delivered";
 
                   return (
                   <div
@@ -233,6 +244,11 @@ function OrderCard({
                       {showRefundExpired ? (
                         <p className="max-w-[9rem] text-right text-[11px] font-medium text-neutral-500">
                           {t("orders.refundPeriodExpired")}
+                        </p>
+                      ) : null}
+                      {showRefundAfterDelivery ? (
+                        <p className="max-w-[9rem] text-right text-[11px] font-medium text-neutral-500">
+                          {t("orders.refundAvailableAfterDelivery")}
                         </p>
                       ) : null}
                     </div>

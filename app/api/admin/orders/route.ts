@@ -6,17 +6,15 @@ import { AdminOrderService } from "@/services/admin-order.service";
 import { adminOrderListQuerySchema } from "@/validators/admin-order.validator";
 import { parseQuery } from "@/validators/request";
 
-const adminOrderService = new AdminOrderService();
-
 export const GET = withErrorHandling(
   withRbac(["ADMIN"], async (request) => {
+    const adminOrderService = new AdminOrderService();
     const query = parseQuery(request, adminOrderListQuerySchema);
     const result = await adminOrderService.list({
       page: query.page,
       pageSize: query.pageSize,
       vendorProfileId: query.vendorProfileId,
-      orderStatus: query.orderStatus,
-      vendorOrderStatus: query.vendorOrderStatus,
+      statusFilter: query.statusFilter,
       from: query.from,
       to: query.to,
       search: query.search,

@@ -26,6 +26,18 @@ export class PayoutRepository {
     });
   }
 
+  findByOrderVendorIds(orderVendorIds: string[]) {
+    if (orderVendorIds.length === 0) {
+      return Promise.resolve([]);
+    }
+
+    return prisma.payout.findMany({
+      where: {
+        orderVendorId: { in: orderVendorIds },
+      },
+    });
+  }
+
   findById(id: string) {
     return prisma.payout.findUnique({
       where: { id },

@@ -90,3 +90,23 @@ export const adminRefundDecisionSchema = z
       });
     }
   });
+
+export const adminOrderRefundSchema = z
+  .object({
+    reason: z.string().trim().min(3).max(1000),
+    orderItemId: z.string().min(1).optional(),
+    approvedAmount: z.number().int().positive().optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.approvedAmount != null && !value.orderItemId) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["approvedAmount"],
+        message: "Partial refunds require a specific order item",
+      });
+    }
+  });
+
+export const adminOrderFlagDisputeSchema = z.object({
+  note: z.string().trim().min(3).max(1000),
+});

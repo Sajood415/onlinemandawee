@@ -58,7 +58,8 @@ type DashboardSummary = {
   };
   feeEarnings: {
     currency: string;
-    transactionFeeRatePercent: number;
+    transactionFeeAmountMinor: number;
+    transactionFeeLabel: string;
     subscription: {
       monthlyAmount: number;
       currency: string;
@@ -335,7 +336,7 @@ export default function VendorDashboardPage() {
                 sub={
                   summary.netEarnings.holdBalance != null
                     ? `${formatCurrency(summary.netEarnings.holdBalance, summary.netEarnings.currency)} on hold · ${formatCurrency(summary.netEarnings.availableBalance ?? 0, summary.netEarnings.currency)} available`
-                    : "After 3.99% order fee; includes hold + available"
+                    : `After ${summary.feeEarnings.transactionFeeLabel}; includes hold + available`
                 }
               />
 

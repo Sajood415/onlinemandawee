@@ -664,7 +664,7 @@ export default function AdminVendorDetailPage() {
                 vendor.outstandingFees.currency
               )}
             </p>
-            <p className="mt-1 text-sm text-neutral-600">Total $3.99 fees from orders</p>
+            <p className="mt-1 text-sm text-neutral-600">Total transaction fees from orders</p>
           </div>
         </div>
       </section>

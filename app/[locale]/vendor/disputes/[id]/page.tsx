@@ -2,7 +2,6 @@
 
 import { RefundCaseDetailView } from "@/components/refunds/RefundCaseDetailView";
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
-import { VendorDashboardLayout } from "@/components/dashboard/VendorDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
@@ -15,14 +14,12 @@ export default function VendorDisputeDetailPage() {
   if (isLoading) return <PageLoader />;
 
   return (
-    <VendorDashboardLayout>
-      <RefundCaseDetailView
-        refundCaseId={params.id}
-        locale={locale}
-        role="VENDOR"
-        backHref="/vendor/disputes"
-        backLabel="Back to disputes"
-      />
-    </VendorDashboardLayout>
+    <RefundCaseDetailView
+      refundCaseId={params.id}
+      locale={locale}
+      role="VENDOR"
+      backHref="/vendor/disputes"
+      backLabel="Back to disputes"
+    />
   );
 }

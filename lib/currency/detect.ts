@@ -2,6 +2,7 @@ import {
   COUNTRY_CURRENCY,
   DEFAULT_CURRENCY,
   type SupportedCurrency,
+  SUPPORTED_CURRENCIES,
   normalizeCurrency,
 } from "@/lib/currency/constants";
 
@@ -27,20 +28,24 @@ export function resolveInitialCurrency(input: {
   country?: string | null;
   locale?: string;
   userPreference?: string | null;
+  allowedCurrencies?: readonly SupportedCurrency[];
 }): SupportedCurrency {
+  const allowed = input.allowedCurrencies ?? SUPPORTED_CURRENCIES;
+
   if (input.userPreference) {
-    return normalizeCurrency(input.userPreference);
+    return normalizeCurrency(input.userPreference, allowed);
   }
   if (input.stored) {
-    return normalizeCurrency(input.stored);
+    return normalizeCurrency(input.stored, allowed);
   }
   if (input.cookie) {
-    return normalizeCurrency(input.cookie);
+    return normalizeCurrency(input.cookie, allowed);
   }
   const fromCountry = detectCurrencyFromCountry(input.country);
-  if (fromCountry) return fromCountry;
+  if (fromCountry && allowed.includes(fromCountry)) return fromCountry;
   if (input.locale) {
-    return detectCurrencyFromLocale(input.locale);
+    const fromLocale = detectCurrencyFromLocale(input.locale);
+    if (allowed.includes(fromLocale)) return fromLocale;
   }
-  return DEFAULT_CURRENCY;
+  return normalizeCurrency(null, allowed);
 }

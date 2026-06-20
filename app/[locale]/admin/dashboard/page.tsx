@@ -181,11 +181,11 @@ export default function AdminDashboardPage() {
                 sub="Gross merchandise value"
               />
               <MetricCard
-                label="Total $3.99 Fees Collected"
+                label="Total Transaction Fees Collected"
                 value={formatCurrency(overview.totalCommissionAmount)}
                 icon={<DollarSign className="h-5 w-5" />}
                 accent="bg-[#0f3460]"
-                sub="Platform commission fees"
+                sub="Flat per-order fees"
               />
               <MetricCard
                 label="Total Subscription Revenue"

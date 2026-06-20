@@ -46,6 +46,19 @@ export const productActionSchema = z.object({
 
 export const adminProductsQuerySchema = z.object({
   approvalStatus: z.enum(productApprovalStatuses).optional(),
+  search: z.string().trim().min(1).optional(),
+  vendorProfileId: z.string().trim().min(1).optional(),
+  isActive: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) =>
+      value === undefined ? undefined : value === "true"
+    ),
+});
+
+export const adminUpdateProductSchema = updateProductSchema.extend({
+  approvalStatus: z.enum(productApprovalStatuses).optional(),
+  rejectionReason: z.string().trim().max(500).nullable().optional(),
 });
 
 export const publicProductsQuerySchema = z.object({

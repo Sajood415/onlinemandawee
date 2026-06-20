@@ -220,10 +220,12 @@
         "vendors": "پلورونکي",
         "products": "محصولات",
         "categories": "کټګورۍ",
+        "banners": "بینرونه",
         "orders": "امرونه",
         "giftRequests": "د ډالۍ غوښتنې",
         "disputes": "شخړې",
-        "users": "کاروونکي"
+        "users": "کاروونکي",
+        "settings": "تنظیمات"
       }
     },
     "vendor": {
@@ -276,7 +278,8 @@
         "emptyDescriptionLong": "تر اوسه هیڅ فرمایش نلرئ. د میلمانه فرمایشونه چې ستاسو بریښنالیک سره ثبت شوي وي، وروسته له نوم لیکنې یا ننوتلو دلته ښکاره کېږي.",
         "vendor": "پلورونکی",
         "qty": "شمېر",
-        "refundPeriodExpired": "د بیرته ورکولو موده پای ته رسېدلې."
+        "refundPeriodExpired": "د بیرته ورکولو موده پای ته رسېدلې.",
+        "refundAvailableAfterDelivery": "بیرته ورکول د تحویل وروسته شتون لري."
       },
       "addresses": {
         "title": "خوندي پتې",

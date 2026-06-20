@@ -1,8 +1,9 @@
-import { env } from "@/config/env";
 import { vendorHasExternalPayoutAccount } from "@/lib/vendor/external-payout-account";
+import { allocateFlatFeeToVendorSplit } from "@/lib/platform/transaction-fee";
 import { CommissionLedgerRepository } from "@/repositories/commission-ledger.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { PayoutRepository } from "@/repositories/payout.repository";
+import { PlatformSettingsRepository } from "@/repositories/platform-settings.repository";
 import { VendorLedgerEntryRepository } from "@/repositories/vendor-ledger-entry.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
 import { PayoutReleaseService } from "@/services/payout-release.service";
@@ -25,6 +26,7 @@ export class OrderSettlementService {
     private readonly commissionLedgerRepository = new CommissionLedgerRepository(),
     private readonly vendorLedgerEntryRepository = new VendorLedgerEntryRepository(),
     private readonly payoutRepository = new PayoutRepository(),
+    private readonly platformSettingsRepository = new PlatformSettingsRepository(),
     private readonly payoutReleaseService = new PayoutReleaseService()
   ) {}
 
@@ -47,17 +49,25 @@ export class OrderSettlementService {
       return { settled: false, reason: "already_settled" as const };
     }
 
-    const commissionAmount = Math.round(
-      (vendorOrder.subtotalAmount * env.COMMISSION_RATE_BPS) / 10000
-    );
+    const order = await this.orderRepository.findById(input.orderId);
+    const orderSubtotalAmount =
+      order?.vendorOrders.reduce((sum, split) => sum + split.subtotalAmount, 0) ??
+      vendorOrder.subtotalAmount;
+    const platformSettings = await this.platformSettingsRepository.getOrCreate();
+    const allocatedFee = allocateFlatFeeToVendorSplit({
+      vendorSubtotalAmount: vendorOrder.subtotalAmount,
+      orderSubtotalAmount,
+      flatFeeAmountMinor: platformSettings.transactionFeeAmountMinor,
+    });
+    const commissionAmount = Math.min(allocatedFee, vendorOrder.grandTotalAmount);
     const netEarningsAmount = vendorOrder.grandTotalAmount - commissionAmount;
 
     await this.commissionLedgerRepository.create({
       orderId: input.orderId,
       orderVendorId: vendorOrder.id,
       vendorProfileId: vendorOrder.vendorProfileId,
-      rateBps: env.COMMISSION_RATE_BPS,
-      baseAmount: vendorOrder.subtotalAmount,
+      rateBps: 0,
+      baseAmount: orderSubtotalAmount,
       commissionAmount,
       currency: vendorOrder.currency,
     });

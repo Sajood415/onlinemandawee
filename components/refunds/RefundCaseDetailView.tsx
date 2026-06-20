@@ -9,6 +9,7 @@ import { RefundEvidenceList } from "@/components/refunds/RefundEvidenceList";
 import { RefundStatusBadge } from "@/components/refunds/RefundStatusBadge";
 import { VendorRefundResponseForm } from "@/components/refunds/VendorRefundResponseForm";
 import type { RefundCaseDetail } from "@/components/refunds/refund-types";
+import { REFUND_DECISION_LABELS } from "@/components/refunds/refund-types";
 import {
   formatRefundDate,
   formatRefundMoney,
@@ -109,7 +110,7 @@ export function RefundCaseDetailView({
             </h1>
             <p className="mt-1 text-sm text-neutral-600">{refundCase.reason}</p>
           </div>
-          <RefundStatusBadge status={refundCase.status} />
+          <RefundStatusBadge status={refundCase.status} decision={refundCase.decision} />
         </div>
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -131,7 +132,9 @@ export function RefundCaseDetailView({
                   refundCase.order.currency,
                   locale
                 )}{" "}
-                ({refundCase.decision.decisionType})
+                <span className="text-neutral-500">
+                  ({REFUND_DECISION_LABELS[refundCase.decision.decisionType]})
+                </span>
               </p>
             ) : null}
           </div>

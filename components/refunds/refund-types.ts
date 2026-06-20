@@ -4,6 +4,8 @@ export type RefundCaseStatus =
   | "ESCALATED_ADMIN"
   | "RESOLVED";
 
+export type RefundDecisionType = "APPROVE" | "REJECT" | "PARTIAL";
+
 export type RefundCaseListItem = {
   id: string;
   orderId: string;
@@ -40,7 +42,7 @@ export type RefundCaseListItem = {
     storeSlug: string | null;
   };
   decision: {
-    decisionType: "APPROVE" | "REJECT" | "PARTIAL";
+    decisionType: RefundDecisionType;
     approvedAmount: number;
     createdAt: string;
   } | null;
@@ -61,7 +63,7 @@ export type RefundCaseDetail = RefundCaseListItem & {
     };
   };
   decision: {
-    decisionType: "APPROVE" | "REJECT" | "PARTIAL";
+    decisionType: RefundDecisionType;
     approvedAmount: number;
     reason: string | null;
     createdAt: string;
@@ -111,6 +113,35 @@ export const REFUND_STATUS_BADGE: Record<RefundCaseStatus, string> = {
   ESCALATED_ADMIN: "bg-orange-50 text-orange-700",
   RESOLVED: "bg-emerald-50 text-emerald-700",
 };
+
+export const REFUND_DECISION_LABELS: Record<RefundDecisionType, string> = {
+  APPROVE: "Approved in full",
+  PARTIAL: "Partially approved",
+  REJECT: "Rejected",
+};
+
+export const REFUND_DECISION_BADGE: Record<RefundDecisionType, string> = {
+  APPROVE: "bg-emerald-50 text-emerald-700",
+  PARTIAL: "bg-amber-50 text-amber-800",
+  REJECT: "bg-red-50 text-red-700",
+};
+
+export function getRefundOutcomeDisplay(input: {
+  status: RefundCaseStatus;
+  decision: { decisionType: RefundDecisionType } | null;
+}) {
+  if (input.status === "RESOLVED" && input.decision) {
+    return {
+      label: REFUND_DECISION_LABELS[input.decision.decisionType],
+      badgeClass: REFUND_DECISION_BADGE[input.decision.decisionType],
+    };
+  }
+
+  return {
+    label: REFUND_STATUS_LABELS[input.status],
+    badgeClass: REFUND_STATUS_BADGE[input.status],
+  };
+}
 
 export const REFUND_REASONS = [
   "Item not as described",

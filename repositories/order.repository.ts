@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 
 import type {
+  AdminOrderStatusFilter,
   OrderStatus,
   PaymentStatus,
   VendorOrderStatus,
@@ -31,12 +32,62 @@ export type AdminOrderListFilters = {
   page: number;
   pageSize: number;
   vendorProfileId?: string;
-  orderStatus?: OrderStatus;
-  vendorOrderStatus?: VendorOrderStatus;
+  statusFilter?: AdminOrderStatusFilter;
   from?: Date;
   to?: Date;
   search?: string;
 };
+
+function buildAdminStatusFilterWhere(
+  statusFilter: AdminOrderStatusFilter
+): Prisma.OrderWhereInput {
+  switch (statusFilter) {
+    case "PENDING":
+      return {
+        AND: [
+          { status: { not: "CANCELLED" } },
+          { paymentStatus: { notIn: ["REFUNDED", "PARTIALLY_REFUNDED"] } },
+          {
+            OR: [
+              { paymentStatus: { in: ["UNPAID", "PENDING"] } },
+              {
+                vendorOrders: {
+                  some: { status: { in: ["NEW", "PREPARING"] } },
+                },
+              },
+            ],
+          },
+        ],
+      };
+    case "SHIPPED":
+      return {
+        vendorOrders: {
+          some: { status: "SHIPPED" },
+        },
+      };
+    case "DELIVERED":
+      return {
+        vendorOrders: {
+          some: { status: "DELIVERED" },
+        },
+      };
+    case "CANCELLED":
+      return {
+        OR: [
+          { status: "CANCELLED" },
+          {
+            vendorOrders: {
+              some: { status: "CANCELLED" },
+            },
+          },
+        ],
+      };
+    case "REFUNDED":
+      return {
+        paymentStatus: { in: ["REFUNDED", "PARTIALLY_REFUNDED"] },
+      };
+  }
+}
 
 function endOfUtcDay(date: Date) {
   const value = new Date(date);
@@ -56,22 +107,14 @@ function buildAdminOrderWhere(filters: AdminOrderListFilters): Prisma.OrderWhere
     });
   }
 
-  if (filters.orderStatus) {
-    and.push({ status: filters.orderStatus });
+  if (filters.statusFilter) {
+    and.push(buildAdminStatusFilterWhere(filters.statusFilter));
   }
 
   if (filters.vendorProfileId) {
     and.push({
       vendorOrders: {
         some: { vendorProfileId: filters.vendorProfileId },
-      },
-    });
-  }
-
-  if (filters.vendorOrderStatus) {
-    and.push({
-      vendorOrders: {
-        some: { status: filters.vendorOrderStatus },
       },
     });
   }
@@ -218,6 +261,26 @@ export class OrderRepository {
         createdAt: "desc",
       },
     });
+  }
+
+  async backfillMissingDeliveredAtForUser(userId: string) {
+    const vendorOrders = await prisma.orderVendor.findMany({
+      where: {
+        status: "DELIVERED",
+        deliveredAt: null,
+        order: { userId },
+      },
+      select: { id: true, updatedAt: true },
+    });
+
+    await Promise.all(
+      vendorOrders.map((vendorOrder) =>
+        prisma.orderVendor.update({
+          where: { id: vendorOrder.id },
+          data: { deliveredAt: vendorOrder.updatedAt },
+        })
+      )
+    );
   }
 
   async claimGuestOrdersForUser(userId: string, email: string) {

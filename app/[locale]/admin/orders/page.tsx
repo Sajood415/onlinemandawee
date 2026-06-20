@@ -9,9 +9,11 @@ import {
   X,
 } from "lucide-react";
 
+import { AdminOrderDisputePanel } from "@/components/admin/AdminOrderDisputePanel";
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import type { OrderStatus, VendorOrderStatus } from "@/domain/order/order-status";
-import { orderStatuses, vendorOrderStatuses } from "@/domain/order/order-status";
+import { adminOrderStatusFilters } from "@/domain/order/order-status";
+import type { PayoutStatus } from "@/domain/payment/payment-types";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { Link } from "@/i18n/navigation";
@@ -52,8 +54,25 @@ type AdminOrderListItem = {
     grandTotalAmount: number;
     currency: string;
     commissionAmount: number | null;
+    payout: {
+      status: PayoutStatus | null;
+      amount: number | null;
+      currency: string | null;
+      holdUntil: string | null;
+      releasedAt: string | null;
+      sentAt: string | null;
+    };
+    items: Array<{
+      id: string;
+      productName: string;
+      productSku: string | null;
+      quantity: number;
+    }>;
   }>;
   totalCommissionAmount: number;
+  itemCount: number;
+  lineItemCount: number;
+  itemsPreview: string[];
 };
 
 type AdminOrderDetail = {
@@ -98,6 +117,14 @@ type AdminOrderDetail = {
       commissionAmount: number | null;
       currency: string | null;
     };
+    payout: {
+      status: PayoutStatus | null;
+      amount: number | null;
+      currency: string | null;
+      holdUntil: string | null;
+      releasedAt: string | null;
+      sentAt: string | null;
+    };
     items: Array<{
       id: string;
       productName: string;
@@ -109,6 +136,19 @@ type AdminOrderDetail = {
     }>;
   }>;
   totalCommissionAmount: number;
+  refundCases: Array<{
+    id: string;
+    orderItemId: string;
+    status: string;
+    reason: string;
+    requestedAmount: number;
+    createdAt: string;
+    decision: {
+      decisionType: string;
+      approvedAmount: number;
+      reason: string | null;
+    } | null;
+  }>;
 };
 
 type AdminOrderListResponse = {
@@ -161,6 +201,27 @@ function vendorStatusClass(status: VendorOrderStatus) {
   return "bg-blue-50 text-blue-700";
 }
 
+function paymentStatusClass(status: string) {
+  if (status === "PAID") return "bg-emerald-50 text-emerald-700";
+  if (status === "PENDING") return "bg-amber-50 text-amber-700";
+  if (status === "FAILED" || status === "REFUNDED") return "bg-rose-50 text-rose-700";
+  if (status === "PARTIALLY_REFUNDED") return "bg-orange-50 text-orange-700";
+  return "bg-neutral-100 text-neutral-700";
+}
+
+function payoutStatusClass(status: PayoutStatus | null) {
+  if (status === "SENT") return "bg-emerald-50 text-emerald-700";
+  if (status === "READY") return "bg-blue-50 text-blue-700";
+  if (status === "ON_HOLD") return "bg-amber-50 text-amber-700";
+  if (status === "FAILED") return "bg-rose-50 text-rose-700";
+  return "bg-neutral-100 text-neutral-500";
+}
+
+function payoutStatusLabel(status: PayoutStatus | null) {
+  if (!status) return "Not created";
+  return status.replaceAll("_", " ");
+}
+
 function customerLabel(order: AdminOrderListItem) {
   if (order.customer?.fullName) return order.customer.fullName;
   if (order.guestEmail) return order.guestEmail;
@@ -179,8 +240,7 @@ function buildQueryString(input: {
   page: number;
   pageSize: number;
   vendorProfileId: string;
-  orderStatus: string;
-  vendorOrderStatus: string;
+  statusFilter: string;
   from: string;
   to: string;
   search: string;
@@ -189,8 +249,7 @@ function buildQueryString(input: {
   params.set("page", String(input.page));
   params.set("pageSize", String(input.pageSize));
   if (input.vendorProfileId) params.set("vendorProfileId", input.vendorProfileId);
-  if (input.orderStatus) params.set("orderStatus", input.orderStatus);
-  if (input.vendorOrderStatus) params.set("vendorOrderStatus", input.vendorOrderStatus);
+  if (input.statusFilter) params.set("statusFilter", input.statusFilter);
   if (input.from) params.set("from", input.from);
   if (input.to) params.set("to", input.to);
   if (input.search.trim()) params.set("search", input.search.trim());
@@ -200,8 +259,7 @@ function buildQueryString(input: {
 type AppliedFilters = {
   search: string;
   vendorProfileId: string;
-  orderStatus: string;
-  vendorOrderStatus: string;
+  statusFilter: string;
   from: string;
   to: string;
 };
@@ -209,10 +267,17 @@ type AppliedFilters = {
 const EMPTY_FILTERS: AppliedFilters = {
   search: "",
   vendorProfileId: "",
-  orderStatus: "",
-  vendorOrderStatus: "",
+  statusFilter: "",
   from: "",
   to: "",
+};
+
+const STATUS_FILTER_LABELS: Record<(typeof adminOrderStatusFilters)[number], string> = {
+  PENDING: "Pending",
+  SHIPPED: "Shipped",
+  DELIVERED: "Delivered",
+  CANCELLED: "Cancelled",
+  REFUNDED: "Refunded",
 };
 
 export default function AdminOrdersPage() {
@@ -299,6 +364,22 @@ export default function AdminOrdersPage() {
     }
   }, []);
 
+  const refreshDetail = useCallback(async () => {
+    if (!detailOrderId) return;
+    try {
+      const res = await fetchWithAuth(`/api/admin/orders/${detailOrderId}`);
+      const data = await parseApiResponse<AdminOrderDetail>(res);
+      setDetail(data);
+      setOrders((current) =>
+        current.map((order) =>
+          order.id === data.id ? { ...order, paymentStatus: data.paymentStatus } : order
+        )
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to refresh order details.");
+    }
+  }, [detailOrderId]);
+
   const closeDetail = () => {
     setDetailOrderId(null);
     setDetail(null);
@@ -329,7 +410,8 @@ export default function AdminOrdersPage() {
         <div>
           <h1 className="text-2xl font-bold text-[#0f3460]">Orders</h1>
           <p className="mt-1 text-sm text-neutral-600">
-            Read-only marketplace order lookup for support and operations.
+            All marketplace orders across every vendor. Refunds are vendor-driven; use dispute
+            intervention when needed.
           </p>
         </div>
         <button
@@ -387,45 +469,24 @@ export default function AdminOrdersPage() {
           </div>
 
           <div>
-            <label className={LABEL_CLASS} htmlFor="admin-order-platform-status">
-              Platform status
+            <label className={LABEL_CLASS} htmlFor="admin-order-status-filter">
+              Order status
             </label>
             <select
-              id="admin-order-platform-status"
+              id="admin-order-status-filter"
               className={INPUT_CLASS}
-              value={draftFilters.orderStatus}
-              onChange={(event) =>
-                setDraftFilters((current) => ({ ...current, orderStatus: event.target.value }))
-              }
-            >
-              <option value="">All platform statuses</option>
-              {orderStatuses.map((status) => (
-                <option key={status} value={status}>
-                  {status.replaceAll("_", " ")}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className={LABEL_CLASS} htmlFor="admin-order-vendor-status">
-              Vendor fulfillment status
-            </label>
-            <select
-              id="admin-order-vendor-status"
-              className={INPUT_CLASS}
-              value={draftFilters.vendorOrderStatus}
+              value={draftFilters.statusFilter}
               onChange={(event) =>
                 setDraftFilters((current) => ({
                   ...current,
-                  vendorOrderStatus: event.target.value,
+                  statusFilter: event.target.value,
                 }))
               }
             >
-              <option value="">All vendor statuses</option>
-              {vendorOrderStatuses.map((status) => (
+              <option value="">All statuses</option>
+              {adminOrderStatusFilters.map((status) => (
                 <option key={status} value={status}>
-                  {status}
+                  {STATUS_FILTER_LABELS[status]}
                 </option>
               ))}
             </select>
@@ -498,14 +559,16 @@ export default function AdminOrdersPage() {
         <>
           <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[980px] border-collapse">
+              <table className="w-full min-w-[1180px] border-collapse">
                 <thead className="bg-neutral-50">
                   <tr className="border-b border-neutral-200 text-left text-xs font-semibold uppercase tracking-wider text-neutral-600">
                     <th className="px-4 py-3">Order</th>
                     <th className="px-4 py-3">Customer</th>
                     <th className="px-4 py-3">Vendors</th>
-                    <th className="px-4 py-3">Platform status</th>
+                    <th className="px-4 py-3">Items</th>
                     <th className="px-4 py-3">Payment</th>
+                    <th className="px-4 py-3">Transaction fee</th>
+                    <th className="px-4 py-3">Payout</th>
                     <th className="px-4 py-3">Total</th>
                     <th className="px-4 py-3" />
                   </tr>
@@ -516,41 +579,85 @@ export default function AdminOrdersPage() {
                       <td className="px-4 py-3 align-top text-sm">
                         <p className="font-semibold text-neutral-900">{order.orderNumber}</p>
                         <p className="text-xs text-neutral-500">{displayDate(order.createdAt)}</p>
-                      </td>
-                      <td className="px-4 py-3 align-top text-sm">
-                        <p className="font-medium text-neutral-900">{customerLabel(order)}</p>
-                        <p className="text-xs text-neutral-500">{customerEmail(order)}</p>
-                        <p className="text-xs text-neutral-500">{customerPhone(order)}</p>
-                      </td>
-                      <td className="px-4 py-3 align-top text-sm">
-                        <p className="text-neutral-700">{order.vendorCount} vendor(s)</p>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {order.vendorFulfillmentStatuses.map((status, index) => (
-                            <span
-                              key={`${order.id}-${status}-${index}`}
-                              className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${vendorStatusClass(status)}`}
-                            >
-                              {status}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 align-top text-sm">
                         <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${platformStatusClass(order.status)}`}
+                          className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${platformStatusClass(order.status)}`}
                         >
                           {order.status.replaceAll("_", " ")}
                         </span>
                       </td>
-                      <td className="px-4 py-3 align-top text-sm text-neutral-700">
-                        {order.paymentStatus.replaceAll("_", " ")}
+                      <td className="px-4 py-3 align-top text-sm">
+                        <p className="font-medium text-neutral-900">{customerLabel(order)}</p>
+                        <p className="text-xs text-neutral-500">{customerEmail(order)}</p>
+                      </td>
+                      <td className="px-4 py-3 align-top text-sm">
+                        <div className="space-y-2">
+                          {order.vendors.map((vendor) => (
+                            <div key={vendor.id}>
+                              <p className="font-medium text-neutral-900">
+                                {vendor.vendorStoreName ?? vendor.vendorStoreSlug ?? "Vendor"}
+                              </p>
+                              <span
+                                className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${vendorStatusClass(vendor.status)}`}
+                              >
+                                {vendor.status}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 align-top text-sm">
+                        <p className="font-medium text-neutral-900">
+                          {order.itemCount} unit{order.itemCount !== 1 ? "s" : ""}
+                        </p>
+                        <p className="text-xs text-neutral-500">
+                          {order.lineItemCount} line item{order.lineItemCount !== 1 ? "s" : ""}
+                        </p>
+                        {order.itemsPreview.length > 0 ? (
+                          <p className="mt-1 max-w-[180px] truncate text-xs text-neutral-500">
+                            {order.itemsPreview.join(", ")}
+                            {order.lineItemCount > order.itemsPreview.length ? "…" : ""}
+                          </p>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3 align-top text-sm">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${paymentStatusClass(order.paymentStatus)}`}
+                        >
+                          {order.paymentStatus.replaceAll("_", " ")}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 align-top text-sm">
+                        <p className="font-semibold text-neutral-900">
+                          {order.totalCommissionAmount > 0
+                            ? formatMoney(order.totalCommissionAmount, order.currency)
+                            : "—"}
+                        </p>
+                        <p className="text-xs text-neutral-500">Per-order fee (allocated)</p>
+                      </td>
+                      <td className="px-4 py-3 align-top text-sm">
+                        <div className="space-y-1">
+                          {order.vendors.map((vendor) => (
+                            <div key={vendor.id}>
+                              <span
+                                className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${payoutStatusClass(vendor.payout.status)}`}
+                              >
+                                {payoutStatusLabel(vendor.payout.status)}
+                              </span>
+                              {vendor.payout.amount != null ? (
+                                <p className="text-xs text-neutral-500">
+                                  {formatMoney(
+                                    vendor.payout.amount,
+                                    vendor.payout.currency ?? vendor.currency
+                                  )}
+                                </p>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
                       </td>
                       <td className="px-4 py-3 align-top text-sm">
                         <p className="font-semibold text-neutral-900">
                           {formatMoney(order.grandTotalAmount, order.currency)}
-                        </p>
-                        <p className="text-xs text-neutral-500">
-                          Commission {formatMoney(order.totalCommissionAmount, order.currency)}
                         </p>
                       </td>
                       <td className="px-4 py-3 align-top text-sm">
@@ -655,7 +762,9 @@ export default function AdminOrdersPage() {
                       >
                         {detail.status.replaceAll("_", " ")}
                       </span>
-                      <span className="inline-flex rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-neutral-700 ring-1 ring-neutral-200">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${paymentStatusClass(detail.paymentStatus)}`}
+                      >
                         {detail.paymentStatus.replaceAll("_", " ")}
                       </span>
                     </div>
@@ -687,7 +796,7 @@ export default function AdminOrdersPage() {
                         <dd>{formatMoney(detail.grandTotalAmount, detail.currency)}</dd>
                       </div>
                       <div className="flex justify-between font-semibold text-neutral-900">
-                        <dt>Total commission</dt>
+                        <dt>Total transaction fee</dt>
                         <dd>{formatMoney(detail.totalCommissionAmount, detail.currency)}</dd>
                       </div>
                     </dl>
@@ -718,6 +827,15 @@ export default function AdminOrdersPage() {
                     </div>
                   </div>
                 </section>
+
+                <AdminOrderDisputePanel
+                  orderId={detail.id}
+                  orderNumber={detail.orderNumber}
+                  paymentStatus={detail.paymentStatus}
+                  currency={detail.currency}
+                  refundCases={detail.refundCases}
+                  onUpdated={() => void refreshDetail()}
+                />
 
                 <section className="space-y-4">
                   <h3 className="text-sm font-semibold text-neutral-900">Vendor splits</h3>
@@ -760,7 +878,7 @@ export default function AdminOrdersPage() {
                             </span>
                           </p>
                           <p>
-                            Commission{" "}
+                            Transaction fee{" "}
                             <span className="font-semibold text-neutral-900">
                               {vendorOrder.commission.commissionAmount != null
                                 ? formatMoney(
@@ -770,6 +888,35 @@ export default function AdminOrdersPage() {
                                 : "—"}
                             </span>
                           </p>
+                          <p>
+                            Vendor payout{" "}
+                            <span
+                              className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${payoutStatusClass(vendorOrder.payout.status)}`}
+                            >
+                              {payoutStatusLabel(vendorOrder.payout.status)}
+                            </span>
+                          </p>
+                          {vendorOrder.payout.amount != null ? (
+                            <p>
+                              Payout amount{" "}
+                              <span className="font-semibold text-neutral-900">
+                                {formatMoney(
+                                  vendorOrder.payout.amount,
+                                  vendorOrder.payout.currency ?? vendorOrder.currency
+                                )}
+                              </span>
+                            </p>
+                          ) : null}
+                          {vendorOrder.payout.holdUntil ? (
+                            <p className="text-xs text-neutral-500">
+                              Hold until {displayDate(vendorOrder.payout.holdUntil)}
+                            </p>
+                          ) : null}
+                          {vendorOrder.payout.sentAt ? (
+                            <p className="text-xs text-neutral-500">
+                              Sent {displayDate(vendorOrder.payout.sentAt)}
+                            </p>
+                          ) : null}
                         </div>
                       </div>
 

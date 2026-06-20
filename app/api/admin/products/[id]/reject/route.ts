@@ -9,10 +9,9 @@ import {
 } from "@/validators/catalog.validator";
 import { parseOptionalBody, parseParams } from "@/validators/request";
 
-const adminProductService = new AdminProductService();
-
 export const POST = withErrorHandling(
   withRbac(["ADMIN"], async (request, context) => {
+    const adminProductService = new AdminProductService();
     const params = parseParams(await context.params, productIdParamsSchema);
     const body = await parseOptionalBody(request, productActionSchema, {});
     const result = await adminProductService.reject(

@@ -18,7 +18,8 @@ type FeeEarningsOrder = {
 
 type FeeEarningsBoard = {
   currency: string;
-  transactionFeeRatePercent: number;
+  transactionFeeAmountMinor: number;
+  transactionFeeLabel: string;
   subscription: {
     monthlyAmount: number;
     currency: string;
@@ -54,7 +55,7 @@ function formatDate(iso: string) {
 }
 
 export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
-  const feeLabel = `${data.transactionFeeRatePercent.toFixed(2)}% on product subtotal`;
+  const feeLabel = data.transactionFeeLabel;
 
   return (
     <section className="mt-10 space-y-6">

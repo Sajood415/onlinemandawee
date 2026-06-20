@@ -7,9 +7,14 @@ import { CurrencyProvider } from "@/store/currency-context";
 import { WishlistProvider } from "@/store/wishlist-context";
 import { ToastProvider } from "@/components/ui/toast/ToastContext";
 import { useToastUtils, setGlobalToastContext } from "@/lib/utils/toast";
+import {
+  PlatformConfigProvider,
+  type PlatformConfig,
+} from "@/components/providers/PlatformConfigProvider";
 
 interface AppProvidersProps {
   children: React.ReactNode;
+  initialPlatformConfig?: PlatformConfig;
 }
 
 function ToastInitializer({ children }: { children: React.ReactNode }) {
@@ -23,20 +28,22 @@ function ToastInitializer({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export function AppProviders({ children }: AppProvidersProps) {
+export function AppProviders({ children, initialPlatformConfig }: AppProvidersProps) {
   return (
     <AuthProvider>
-      <CurrencyProvider>
-        <CartProvider>
-          <WishlistProvider>
-            <ToastProvider>
-              <ToastInitializer>
-                {children}
-              </ToastInitializer>
-            </ToastProvider>
-          </WishlistProvider>
-        </CartProvider>
-      </CurrencyProvider>
+      <PlatformConfigProvider initialConfig={initialPlatformConfig}>
+        <CurrencyProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <ToastProvider>
+                <ToastInitializer>
+                  {children}
+                </ToastInitializer>
+              </ToastProvider>
+            </WishlistProvider>
+          </CartProvider>
+        </CurrencyProvider>
+      </PlatformConfigProvider>
     </AuthProvider>
   );
 }

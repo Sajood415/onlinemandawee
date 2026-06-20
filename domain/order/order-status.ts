@@ -27,3 +27,14 @@ export const vendorOrderStatuses = [
 export type OrderStatus = (typeof orderStatuses)[number];
 export type PaymentStatus = (typeof paymentStatuses)[number];
 export type VendorOrderStatus = (typeof vendorOrderStatuses)[number];
+
+/** Admin-facing order list filters (maps to platform + vendor + payment fields). */
+export const adminOrderStatusFilters = [
+  "PENDING",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+  "REFUNDED",
+] as const;
+
+export type AdminOrderStatusFilter = (typeof adminOrderStatusFilters)[number];

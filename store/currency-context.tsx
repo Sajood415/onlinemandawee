@@ -15,18 +15,19 @@ import {
   CURRENCY_COOKIE,
   CURRENCY_LABELS,
   type SupportedCurrency,
-  SUPPORTED_CURRENCIES,
 } from "@/lib/currency/constants";
 import { convertMajorUnits } from "@/lib/currency/convert";
 import { resolveInitialCurrency } from "@/lib/currency/detect";
 import { formatMajorUnits } from "@/lib/currency/format";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
+import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
 import { useAuth } from "@/store/auth-context";
 
 const STORAGE_KEY = "selectedCurrency";
 
 type CurrencyContextType = {
   currency: SupportedCurrency;
+  availableCurrencies: SupportedCurrency[];
   setCurrency: (currency: SupportedCurrency) => void;
   formatPrice: (amount: number, fromCurrency?: string) => string;
   convertPrice: (amount: number, fromCurrency?: string) => number;
@@ -62,19 +63,32 @@ async function persistCurrencyPreference(currency: SupportedCurrency, isAuthenti
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   const locale = useLocale();
   const { user, isAuthenticated } = useAuth();
-  const [currency, setCurrencyState] = useState<SupportedCurrency>("USD");
+  const { availableCurrencies, isLoading: configLoading } = usePlatformConfig();
+  const [currency, setCurrencyState] = useState<SupportedCurrency>(
+    availableCurrencies[0] ?? "USD"
+  );
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    if (configLoading) return;
+
     const initial = resolveInitialCurrency({
       stored: localStorage.getItem(STORAGE_KEY),
       cookie: readCookie(CURRENCY_COOKIE),
       locale,
       userPreference: user?.preferredCurrency ?? null,
+      allowedCurrencies: availableCurrencies,
     });
     setCurrencyState(initial);
     setReady(true);
-  }, [locale, user?.id]);
+  }, [locale, user?.id, user?.preferredCurrency, availableCurrencies, configLoading]);
+
+  useEffect(() => {
+    if (!ready || configLoading) return;
+    if (!availableCurrencies.includes(currency)) {
+      setCurrencyState(availableCurrencies[0] ?? "USD");
+    }
+  }, [availableCurrencies, currency, ready, configLoading]);
 
   useEffect(() => {
     if (!ready) return;
@@ -84,10 +98,11 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
 
   const setCurrency = useCallback(
     (next: SupportedCurrency) => {
+      if (!availableCurrencies.includes(next)) return;
       setCurrencyState(next);
       void persistCurrencyPreference(next, isAuthenticated);
     },
-    [isAuthenticated]
+    [availableCurrencies, isAuthenticated]
   );
 
   const convertPrice = useCallback(
@@ -105,8 +120,14 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ currency, setCurrency, formatPrice, convertPrice }),
-    [currency, setCurrency, formatPrice, convertPrice]
+    () => ({
+      currency,
+      availableCurrencies,
+      setCurrency,
+      formatPrice,
+      convertPrice,
+    }),
+    [currency, availableCurrencies, setCurrency, formatPrice, convertPrice]
   );
 
   return <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>;
@@ -120,4 +141,4 @@ export function useCurrency() {
   return context;
 }
 
-export { CURRENCY_LABELS, SUPPORTED_CURRENCIES };
+export { CURRENCY_LABELS };

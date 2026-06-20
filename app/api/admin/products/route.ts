@@ -6,12 +6,16 @@ import { AdminProductService } from "@/services/admin-product.service";
 import { adminProductsQuerySchema } from "@/validators/catalog.validator";
 import { parseQuery } from "@/validators/request";
 
-const adminProductService = new AdminProductService();
-
 export const GET = withErrorHandling(
   withRbac(["ADMIN"], async (request) => {
+    const adminProductService = new AdminProductService();
     const query = parseQuery(request, adminProductsQuerySchema);
-    const result = await adminProductService.list(query.approvalStatus);
+    const result = await adminProductService.list({
+      approvalStatus: query.approvalStatus,
+      search: query.search,
+      vendorProfileId: query.vendorProfileId,
+      isActive: query.isActive,
+    });
 
     return NextResponse.json({ data: result }, { status: 200 });
   })

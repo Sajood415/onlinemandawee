@@ -220,10 +220,12 @@
         "vendors": "Vendors",
         "products": "Products",
         "categories": "Categories",
+        "banners": "Banners",
         "orders": "Orders",
         "giftRequests": "Gift requests",
         "disputes": "Disputes",
-        "users": "Users"
+        "users": "Users",
+        "settings": "Settings"
       }
     },
     "vendor": {
@@ -276,7 +278,8 @@
         "emptyDescriptionLong": "You have no orders yet. Guest orders placed with your email will appear here after you sign up or sign in.",
         "vendor": "Vendor",
         "qty": "Qty",
-        "refundPeriodExpired": "Refund period has expired."
+        "refundPeriodExpired": "Refund period has expired.",
+        "refundAvailableAfterDelivery": "Refund available after delivery."
       },
       "addresses": {
         "title": "Saved addresses",

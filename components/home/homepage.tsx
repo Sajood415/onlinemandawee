@@ -3,6 +3,7 @@
 import { useLocale } from "next-intl";
 import { HomeHeroCarousel } from "./HomeHeroCarousel";
 import { HomeCategoryCarousel } from "./HomeCategoryCarousel";
+import { HomeSeasonalBanners } from "./HomeSeasonalBanners";
 import { HomeStackedSections } from "./HomeStackedSections";
 
 export function HomePage() {
@@ -15,6 +16,7 @@ export function HomePage() {
       <div className="w-full min-w-0 px-0 pt-9 sm:px-4 sm:pt-11 lg:px-6 xl:px-8">
         <HomeCategoryCarousel />
       </div>
+      <HomeSeasonalBanners />
       <HomeStackedSections />
     </div>
   );

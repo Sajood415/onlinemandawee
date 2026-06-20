@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
-import { AdminDashboardLayout } from "@/components/dashboard/AdminDashboardLayout";
 import { RefundStatusBadge } from "@/components/refunds/RefundStatusBadge";
 import type { RefundCaseListItem, RefundCaseStatus, RefundListResponse } from "@/components/refunds/refund-types";
 import { formatRefundDate, formatRefundMoney } from "@/components/refunds/format-refund-money";
@@ -74,8 +73,7 @@ export default function AdminDisputesPage() {
   const empty = useMemo(() => !loading && items.length === 0, [items.length, loading]);
 
   return (
-    <AdminDashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold text-neutral-900">Disputes</h1>
@@ -174,7 +172,7 @@ export default function AdminDisputesPage() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <RefundStatusBadge status={item.status} />
+                    <RefundStatusBadge status={item.status} decision={item.decision} />
                     <p className="mt-2 text-sm font-semibold text-neutral-900">
                       {formatRefundMoney(item.requestedAmount, item.order.currency, locale)}
                     </p>
@@ -208,7 +206,6 @@ export default function AdminDisputesPage() {
             </button>
           </div>
         ) : null}
-      </div>
-    </AdminDashboardLayout>
+    </div>
   );
 }

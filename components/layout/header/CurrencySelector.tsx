@@ -6,11 +6,7 @@ import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { type SupportedCurrency } from "@/lib/currency/constants";
-import {
-  CURRENCY_LABELS,
-  SUPPORTED_CURRENCIES,
-  useCurrency,
-} from "@/store/currency-context";
+import { CURRENCY_LABELS, useCurrency } from "@/store/currency-context";
 
 const dropdownVariants: Variants = {
   hidden: { opacity: 0, y: 15, scale: 0.97 },
@@ -30,7 +26,7 @@ type CurrencySelectorProps = {
 
 export function CurrencySelector({ isRtl, variant = "default" }: CurrencySelectorProps) {
   const t = useTranslations("Auth.currencies");
-  const { currency, setCurrency } = useCurrency();
+  const { currency, availableCurrencies, setCurrency } = useCurrency();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -43,6 +39,10 @@ export function CurrencySelector({ isRtl, variant = "default" }: CurrencySelecto
     window.addEventListener("mousedown", click);
     return () => window.removeEventListener("mousedown", click);
   }, []);
+
+  if (availableCurrencies.length <= 1) {
+    return null;
+  }
 
   return (
     <div className="relative" ref={ref}>
@@ -94,7 +94,7 @@ export function CurrencySelector({ isRtl, variant = "default" }: CurrencySelecto
             <p className="px-5 py-3 text-[9px] font-black text-black uppercase tracking-[0.2em] mb-1">
               {t("select")}
             </p>
-            {SUPPORTED_CURRENCIES.map((code) => (
+            {availableCurrencies.map((code) => (
               <button
                 key={code}
                 type="button"

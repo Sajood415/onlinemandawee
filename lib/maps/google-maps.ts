@@ -29,6 +29,15 @@ export function formatPostalAddress(address: PostalAddress) {
     .join(", ");
 }
 
+function normalizeCountryCode(country: string) {
+  const value = country.trim().toLowerCase();
+  if (value === "afghanistan" || value === "af") return "af";
+  if (value === "united states" || value === "usa" || value === "us") return "us";
+  if (value === "united kingdom" || value === "uk" || value === "gb") return "gb";
+  if (value === "canada" || value === "ca") return "ca";
+  return undefined;
+}
+
 function buildGeocodeQueries(address: PostalAddress) {
   const queries = [
     formatPostalAddress(address),
@@ -45,7 +54,7 @@ function shouldUseDevFallback() {
 }
 
 function getApiKey() {
-  const key = env.GOOGLE_MAPS_API_KEY;
+  const key = env.GOOGLE_MAPS_API_KEY?.trim();
   if (!key) {
     if (shouldUseDevFallback()) {
       return null;
@@ -74,11 +83,17 @@ function haversineKm(origin: GeoCoordinates, destination: GeoCoordinates) {
   return straightLineKm * 1.3;
 }
 
-async function geocodeQueryWithNominatim(query: string): Promise<GeoCoordinates | null> {
+async function geocodeQueryWithNominatim(
+  query: string,
+  countryCode?: string
+): Promise<GeoCoordinates | null> {
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.set("q", query);
   url.searchParams.set("format", "json");
   url.searchParams.set("limit", "1");
+  if (countryCode) {
+    url.searchParams.set("countrycodes", countryCode);
+  }
 
   const response = await fetch(url.toString(), {
     headers: {
@@ -106,8 +121,10 @@ async function geocodeQueryWithNominatim(query: string): Promise<GeoCoordinates 
 }
 
 async function geocodeAddressWithNominatim(address: PostalAddress): Promise<GeoCoordinates> {
+  const countryCode = normalizeCountryCode(address.country);
+
   for (const query of buildGeocodeQueries(address)) {
-    const result = await geocodeQueryWithNominatim(query);
+    const result = await geocodeQueryWithNominatim(query, countryCode);
     if (result) {
       return result;
     }
@@ -119,10 +136,15 @@ async function geocodeAddressWithNominatim(address: PostalAddress): Promise<GeoC
   );
 }
 
+type GoogleGeocodeResult =
+  | { kind: "ok"; coordinates: GeoCoordinates }
+  | { kind: "not_found" }
+  | { kind: "api_error"; message: string };
+
 async function geocodeQueryWithGoogle(
   query: string,
   key: string
-): Promise<GeoCoordinates | null> {
+): Promise<GoogleGeocodeResult> {
   const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
   url.searchParams.set("address", query);
   url.searchParams.set("key", key);
@@ -132,31 +154,53 @@ async function geocodeQueryWithGoogle(
     next: { revalidate: 0 },
   });
   if (!response.ok) {
-    return null;
+    return { kind: "api_error", message: "Google Geocoding request failed." };
   }
 
   const data = (await response.json()) as {
     status: string;
+    error_message?: string;
     results?: Array<{ geometry: { location: { lat: number; lng: number } } }>;
   };
 
-  const location = data.results?.[0]?.geometry?.location;
-  if (data.status !== "OK" || !location) {
-    return null;
+  if (data.status === "REQUEST_DENIED" || data.status === "INVALID_REQUEST") {
+    return {
+      kind: "api_error",
+      message: data.error_message ?? "Google Geocoding API rejected the request.",
+    };
   }
 
-  return { lat: location.lat, lng: location.lng };
+  const location = data.results?.[0]?.geometry?.location;
+  if (data.status !== "OK" || !location) {
+    return { kind: "not_found" };
+  }
+
+  return {
+    kind: "ok",
+    coordinates: { lat: location.lat, lng: location.lng },
+  };
 }
 
 async function geocodeAddressWithGoogle(
   address: PostalAddress,
   key: string
 ): Promise<GeoCoordinates> {
+  let apiErrorMessage: string | null = null;
+
   for (const query of buildGeocodeQueries(address)) {
     const result = await geocodeQueryWithGoogle(query, key);
-    if (result) {
-      return result;
+    if (result.kind === "ok") {
+      return result.coordinates;
     }
+    if (result.kind === "api_error") {
+      apiErrorMessage = result.message;
+      break;
+    }
+  }
+
+  if (apiErrorMessage) {
+    console.warn(`[maps] Google geocoding unavailable (${apiErrorMessage}) — trying OpenStreetMap.`);
+    return geocodeAddressWithNominatim(address);
   }
 
   throw new MapsApiError(
@@ -175,7 +219,15 @@ export async function geocodeAddress(address: PostalAddress): Promise<GeoCoordin
     return geocodeAddressWithNominatim(address);
   }
 
-  return geocodeAddressWithGoogle(address, key);
+  try {
+    return await geocodeAddressWithGoogle(address, key);
+  } catch (error) {
+    if (error instanceof MapsApiError && error.code === "ADDRESS_NOT_FOUND") {
+      console.warn("[maps] Google geocoding missed — trying OpenStreetMap fallback.");
+      return geocodeAddressWithNominatim(address);
+    }
+    throw error;
+  }
 }
 
 async function getDrivingDistanceKmWithGoogle(

@@ -51,7 +51,12 @@ export function isSupportedCurrency(value: string): value is SupportedCurrency {
   return (SUPPORTED_CURRENCIES as readonly string[]).includes(value);
 }
 
-export function normalizeCurrency(value: string | null | undefined): SupportedCurrency {
-  if (value && isSupportedCurrency(value)) return value;
-  return DEFAULT_CURRENCY;
+export function normalizeCurrency(
+  value: string | null | undefined,
+  allowed: readonly SupportedCurrency[] = SUPPORTED_CURRENCIES
+): SupportedCurrency {
+  if (value && isSupportedCurrency(value) && allowed.includes(value)) {
+    return value;
+  }
+  return allowed[0] ?? DEFAULT_CURRENCY;
 }
