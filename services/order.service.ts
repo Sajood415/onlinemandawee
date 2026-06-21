@@ -21,6 +21,7 @@ import { VendorProfileRepository } from "@/repositories/vendor-profile.repositor
 import { buildGuestOrderTrackingUrl } from "@/lib/orders/build-order-tracking-url";
 import { resolveDistanceDeliveryQuote } from "@/lib/delivery/resolve-distance-delivery";
 import { getRefundEligibility } from "@/lib/refunds/refund-eligibility";
+import { StandardConsolidationService } from "@/services/standard-consolidation.service";
 
 type QuoteLine = {
   cartItemId: string;
@@ -88,7 +89,8 @@ export class OrderService {
     private readonly customerAddressRepository = new CustomerAddressRepository(),
     private readonly orderRepository = new OrderRepository(),
     private readonly vendorProfileRepository = new VendorProfileRepository(),
-    private readonly auditLogRepository = new AuditLogRepository()
+    private readonly auditLogRepository = new AuditLogRepository(),
+    private readonly standardConsolidationService = new StandardConsolidationService()
   ) {}
 
   async createOrder(
@@ -141,6 +143,8 @@ export class OrderService {
         })),
       })),
     });
+
+    await this.standardConsolidationService.initializeForOrder(order.id);
 
     const cart = await this.cartRepository.findByUserId(auth.id);
 
@@ -561,6 +565,8 @@ export class OrderService {
     const allowedTransitions: Record<VendorOrderStatus, VendorOrderStatus[]> = {
       NEW: ["PREPARING", "CANCELLED"],
       PREPARING: ["SHIPPED", "CANCELLED"],
+      INBOUND_SHIPPED: [],
+      RECEIVED_AT_WAREHOUSE: [],
       SHIPPED: ["DELIVERED"],
       DELIVERED: [],
       CANCELLED: [],
@@ -600,7 +606,13 @@ export class OrderService {
     } else if (vendorStatuses.every((status) => status === "DELIVERED")) {
       nextStatus = "FULFILLED";
     } else if (
-      vendorStatuses.some((status) => status === "SHIPPED" || status === "DELIVERED") ||
+      vendorStatuses.some(
+        (status) =>
+          status === "INBOUND_SHIPPED" ||
+          status === "RECEIVED_AT_WAREHOUSE" ||
+          status === "SHIPPED" ||
+          status === "DELIVERED"
+      ) ||
       vendorStatuses.some((status) => status === "PREPARING")
     ) {
       nextStatus = "PARTIALLY_FULFILLED";

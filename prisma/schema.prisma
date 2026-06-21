@@ -132,9 +132,33 @@ enum OrderStatus {
 enum VendorOrderStatus {
   NEW
   PREPARING
+  INBOUND_SHIPPED
+  RECEIVED_AT_WAREHOUSE
   SHIPPED
   DELIVERED
   CANCELLED
+}
+
+enum InboundShipmentStatus {
+  PENDING_SHIPMENT
+  INBOUND_SHIPPED
+  RECEIVED
+}
+
+enum ConsolidationBatchStatus {
+  OPEN
+  PARTIALLY_RECEIVED
+  READY_TO_CONSOLIDATE
+  CONSOLIDATED
+  OUTBOUND_SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum OutboundShipmentStatus {
+  CONSOLIDATED
+  OUTBOUND_SHIPPED
+  DELIVERED
 }
 
 enum PaymentProvider {
@@ -595,6 +619,9 @@ model Order {
   updatedAt             DateTime      @updatedAt
   user                  User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   vendorOrders          OrderVendor[]
+  consolidationBatch    ConsolidationBatch?
+  outboundShipment      ConsolidatedOutboundShipment?
+  inboundShipments      VendorInboundShipment[]
   refundCases           RefundCase[]
 
   @@index([userId, createdAt])
@@ -620,10 +647,64 @@ model OrderVendor {
   updatedAt        DateTime          @updatedAt
   order            Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
   vendorProfile    VendorProfile     @relation(fields: [vendorProfileId], references: [id], onDelete: Restrict)
+  inboundShipment  VendorInboundShipment?
   items            OrderItem[]
 
   @@unique([orderId, vendorProfileId])
   @@index([vendorProfileId, status, createdAt])
+}
+
+model ConsolidationBatch {
+  id                    String                   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId               String                   @unique @db.ObjectId
+  status                ConsolidationBatchStatus @default(OPEN)
+  expectedVendorCount   Int
+  receivedVendorCount   Int                      @default(0)
+  readyToConsolidateAt  DateTime?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  order                 Order                    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  inboundShipments      VendorInboundShipment[]
+  outboundShipment      ConsolidatedOutboundShipment?
+
+  @@index([status, updatedAt])
+}
+
+model VendorInboundShipment {
+  id                   String               @id @default(auto()) @map("_id") @db.ObjectId
+  orderId              String               @db.ObjectId
+  orderVendorId        String               @unique @db.ObjectId
+  consolidationBatchId String               @db.ObjectId
+  vendorProfileId      String               @db.ObjectId
+  status               InboundShipmentStatus @default(PENDING_SHIPMENT)
+  trackingRef          String?
+  shippedAt            DateTime?
+  receivedAt           DateTime?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  order                Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderVendor          OrderVendor          @relation(fields: [orderVendorId], references: [id], onDelete: Cascade)
+  consolidationBatch   ConsolidationBatch   @relation(fields: [consolidationBatchId], references: [id], onDelete: Cascade)
+
+  @@index([consolidationBatchId, status, updatedAt])
+  @@index([vendorProfileId, status, createdAt])
+}
+
+model ConsolidatedOutboundShipment {
+  id                    String                @id @default(auto()) @map("_id") @db.ObjectId
+  orderId               String                @unique @db.ObjectId
+  consolidationBatchId  String                @unique @db.ObjectId
+  status                OutboundShipmentStatus @default(CONSOLIDATED)
+  trackingRef           String?
+  consolidatedAt        DateTime?
+  shippedAt             DateTime?
+  deliveredAt           DateTime?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  order                 Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  consolidationBatch    ConsolidationBatch    @relation(fields: [consolidationBatchId], references: [id], onDelete: Cascade)
+
+  @@index([status, updatedAt])
 }
 
 model OrderItem {

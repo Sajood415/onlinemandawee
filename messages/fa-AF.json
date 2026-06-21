@@ -19,9 +19,9 @@
         {
           "image": "https://onlinemandawee.com/cdn/shop/files/Add_a_heading.png?v=1766240466&width=2048",
           "imageMobile": "https://onlinemandawee.com/cdn/shop/files/FRESH_FOOD_5b8d8a57-2d79-47bc-89e6-230b2298a9d9.png?v=1766240466&width=750",
-          "headline": "غذای تازه برای زندگی سالم",
+          "headline": "",
           "sub": "",
-          "cta": "همین الآن خرید",
+          "cta": "",
           "href": "/products"
         }
       ],
@@ -222,6 +222,7 @@
         "categories": "دسته‌بندی‌ها",
         "banners": "بنرها",
         "orders": "سفارش‌ها",
+        "warehouse": "انبار",
         "giftRequests": "درخواست‌های هدیه",
         "disputes": "اختلافات",
         "users": "کاربران",

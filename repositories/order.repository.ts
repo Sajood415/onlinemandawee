@@ -22,6 +22,21 @@ const orderAdminInclude = {
       items: true,
     },
   },
+  consolidationBatch: {
+    include: {
+      inboundShipments: {
+        include: {
+          orderVendor: {
+            include: {
+              vendorProfile: true,
+            },
+          },
+        },
+      },
+      outboundShipment: true,
+    },
+  },
+  outboundShipment: true,
 } satisfies Prisma.OrderInclude;
 
 export type OrderWithAdminRelations = Prisma.OrderGetPayload<{

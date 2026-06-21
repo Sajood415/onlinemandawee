@@ -19,6 +19,8 @@ export const paymentStatuses = [
 export const vendorOrderStatuses = [
   "NEW",
   "PREPARING",
+  "INBOUND_SHIPPED",
+  "RECEIVED_AT_WAREHOUSE",
   "SHIPPED",
   "DELIVERED",
   "CANCELLED",

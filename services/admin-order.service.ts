@@ -292,6 +292,46 @@ export class AdminOrderService {
       },
       vendorOrders,
       totalCommissionAmount,
+      warehouse: {
+        inboundShipments:
+          order.consolidationBatch?.inboundShipments.map((shipment) => ({
+            id: shipment.id,
+            orderVendorId: shipment.orderVendorId,
+            vendorProfileId: shipment.orderVendor.vendorProfileId,
+            vendorStoreName: shipment.orderVendor.vendorProfile.storeName,
+            vendorStoreSlug: shipment.orderVendor.vendorProfile.storeSlug,
+            status: shipment.status,
+            trackingRef: shipment.trackingRef,
+            shippedAt: shipment.shippedAt?.toISOString() ?? null,
+            receivedAt: shipment.receivedAt?.toISOString() ?? null,
+            createdAt: shipment.createdAt.toISOString(),
+            updatedAt: shipment.updatedAt.toISOString(),
+          })) ?? [],
+        batch: order.consolidationBatch
+          ? {
+              id: order.consolidationBatch.id,
+              status: order.consolidationBatch.status,
+              expectedVendorCount: order.consolidationBatch.expectedVendorCount,
+              receivedVendorCount: order.consolidationBatch.receivedVendorCount,
+              readyToConsolidateAt:
+                order.consolidationBatch.readyToConsolidateAt?.toISOString() ?? null,
+              createdAt: order.consolidationBatch.createdAt.toISOString(),
+              updatedAt: order.consolidationBatch.updatedAt.toISOString(),
+            }
+          : null,
+        outboundShipment: order.outboundShipment
+          ? {
+              id: order.outboundShipment.id,
+              status: order.outboundShipment.status,
+              trackingRef: order.outboundShipment.trackingRef,
+              consolidatedAt: order.outboundShipment.consolidatedAt?.toISOString() ?? null,
+              shippedAt: order.outboundShipment.shippedAt?.toISOString() ?? null,
+              deliveredAt: order.outboundShipment.deliveredAt?.toISOString() ?? null,
+              createdAt: order.outboundShipment.createdAt.toISOString(),
+              updatedAt: order.outboundShipment.updatedAt.toISOString(),
+            }
+          : null,
+      },
     };
   }
 }

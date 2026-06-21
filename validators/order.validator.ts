@@ -21,7 +21,11 @@ export const orderIdParamsSchema = z.object({
 
 export const vendorOrderStatusSchema = z.object({
   status: z.enum(vendorOrderStatuses).refine(
-    (value) => value !== "NEW",
-    "Vendor order cannot be reset to NEW"
+    (value) =>
+      value === "PREPARING" ||
+      value === "SHIPPED" ||
+      value === "DELIVERED" ||
+      value === "CANCELLED",
+    "Unsupported status update"
   ),
 });

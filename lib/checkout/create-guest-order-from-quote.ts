@@ -12,6 +12,7 @@ import { buildGuestOrderTrackingUrl } from "@/lib/orders/build-order-tracking-ur
 import { generateUniqueGuestTrackingToken } from "@/lib/orders/generate-guest-tracking-token";
 import { generateOpaqueToken } from "@/lib/utils/crypto";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
+import { StandardConsolidationService } from "@/services/standard-consolidation.service";
 
 async function generateUniqueOrderNumber() {
   for (let i = 0; i < 20; i++) {
@@ -98,6 +99,9 @@ export async function createGuestOrderFromQuote(input: {
       },
     },
   });
+
+  const standardConsolidationService = new StandardConsolidationService();
+  await standardConsolidationService.initializeForOrder(order.id);
 
   await incrementCouponUsage(input.quote.appliedCoupons.map((coupon) => coupon.couponId));
 
