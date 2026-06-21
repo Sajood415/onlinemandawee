@@ -36,4 +36,24 @@ export class AuditLogRepository {
       },
     });
   }
+
+  findLatestByEntityAndAction(input: {
+    entityType: string;
+    entityId: string;
+    action: string;
+  }) {
+    return prisma.auditLog.findFirst({
+      where: {
+        entityType: input.entityType,
+        entityId: input.entityId,
+        action: input.action,
+      },
+      include: {
+        actorUser: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  }
 }

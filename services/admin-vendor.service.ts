@@ -20,6 +20,7 @@ import { env } from "@/config/env";
 
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import type { VendorStatus } from "@/domain/vendor/vendor-status";
+import type { SellerType } from "@/domain/vendor/vendor-types";
 
 export class AdminVendorService {
   constructor(
@@ -44,6 +45,8 @@ export class AdminVendorService {
       storeName: vendor.storeName,
       storeSlug: vendor.storeSlug,
       businessType: vendor.businessType,
+      sellerType: vendor.sellerType,
+      createdAt: vendor.createdAt.toISOString(),
       submittedAt: vendor.submittedAt?.toISOString() ?? null,
       approvedAt: vendor.approvedAt?.toISOString() ?? null,
       rejectedAt: vendor.rejectedAt?.toISOString() ?? null,
@@ -59,6 +62,11 @@ export class AdminVendorService {
 
   async detail(vendorProfileId: string) {
     const vendor = await this.requireVendor(vendorProfileId);
+    const sellerTypeAudit = await this.auditLogRepository.findLatestByEntityAndAction({
+      entityType: "VendorProfile",
+      entityId: vendorProfileId,
+      action: "admin.vendor_seller_type_updated",
+    });
 
     const [products, vendorOrders, membershipInvoices, commissionEntries] =
       await Promise.all([
@@ -91,6 +99,7 @@ export class AdminVendorService {
       onboardingStep: vendor.onboardingStep,
       storeName: vendor.storeName,
       storeSlug: vendor.storeSlug,
+      sellerType: vendor.sellerType,
       businessType: vendor.businessType,
       industryType: vendor.industryType ?? null,
       logoUrl: vendor.logoUrl,
@@ -101,6 +110,13 @@ export class AdminVendorService {
       rejectionReason: vendor.rejectionReason,
       suspendedAt: vendor.suspendedAt?.toISOString() ?? null,
       suspensionReason: vendor.suspensionReason,
+      sellerTypeAudit: {
+        updatedAt: (sellerTypeAudit?.createdAt ?? vendor.updatedAt).toISOString(),
+        updatedBy:
+          sellerTypeAudit?.actorUser?.fullName ??
+          sellerTypeAudit?.actorUser?.email ??
+          null,
+      },
       user: {
         id: vendor.user.id,
         fullName: vendor.user.fullName,
@@ -182,6 +198,68 @@ export class AdminVendorService {
         invoiceHostedUrl: invoice.invoiceHostedUrl,
         waivedReason: invoice.waivedReason,
       })),
+    };
+  }
+
+  async updateSellerType(
+    vendorProfileId: string,
+    input: { sellerType: SellerType; confirmDowngrade?: boolean },
+    admin: AuthenticatedUser
+  ) {
+    const vendor = await this.requireVendor(vendorProfileId);
+    const previousSellerType = vendor.sellerType;
+    const targetSellerType = input.sellerType;
+
+    if (previousSellerType === targetSellerType) {
+      return {
+        id: vendor.id,
+        sellerType: vendor.sellerType,
+        updatedAt: vendor.updatedAt.toISOString(),
+      };
+    }
+
+    if (targetSellerType === "PLATFORM" && vendor.status !== "ACTIVE") {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Only active approved vendors can be marked as PLATFORM",
+        statusCode: 400,
+      });
+    }
+
+    if (
+      previousSellerType === "PLATFORM" &&
+      targetSellerType === "THIRD_PARTY" &&
+      input.confirmDowngrade !== true
+    ) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message:
+          "Downgrading PLATFORM vendor requires explicit confirmation",
+        statusCode: 400,
+      });
+    }
+
+    const updated = await this.vendorProfileRepository.updateSellerType({
+      vendorProfileId,
+      sellerType: targetSellerType,
+    });
+
+    await this.auditLogRepository.create({
+      actorUserId: admin.id,
+      actorRole: admin.role,
+      action: "admin.vendor_seller_type_updated",
+      entityType: "VendorProfile",
+      entityId: vendorProfileId,
+      metadata: {
+        from: previousSellerType,
+        to: targetSellerType,
+      },
+    });
+
+    return {
+      id: updated.id,
+      sellerType: updated.sellerType,
+      updatedAt: updated.updatedAt.toISOString(),
     };
   }
 

@@ -5,6 +5,7 @@ import type {
   VendorOnboardingStep,
 } from "@/domain/vendor/vendor-onboarding-step";
 import type { VendorStatus } from "@/domain/vendor/vendor-status";
+import type { SellerType } from "@/domain/vendor/vendor-types";
 
 export class VendorProfileRepository {
   create(input: { userId: string }) {
@@ -129,6 +130,22 @@ export class VendorProfileRepository {
         subscriptionGracePeriodEndsAt: input.subscriptionGracePeriodEndsAt,
         subscriptionFailedPaymentCount: input.subscriptionFailedPaymentCount,
         subscriptionFailedAt: input.subscriptionFailedAt,
+      },
+    });
+  }
+
+  updateSellerType(input: { vendorProfileId: string; sellerType: SellerType }) {
+    return prisma.vendorProfile.update({
+      where: { id: input.vendorProfileId },
+      data: {
+        sellerType: input.sellerType,
+      },
+      include: {
+        user: true,
+        kycDocuments: true,
+        address: true,
+        payoutMethod: true,
+        agreementAcceptance: true,
       },
     });
   }

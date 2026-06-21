@@ -5,6 +5,7 @@ import { Ellipsis, Eye, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
+import type { SellerType } from "@/domain/vendor/vendor-types";
 import { DataTable } from "@/components/ui/data-table";
 import type { VendorStatus } from "@/domain/vendor/vendor-status";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
@@ -19,6 +20,8 @@ type VendorListItem = {
   storeName: string | null;
   storeSlug: string | null;
   businessType: string | null;
+  sellerType: SellerType;
+  createdAt: string;
   submittedAt: string | null;
   approvedAt: string | null;
   rejectedAt: string | null;
@@ -46,6 +49,11 @@ type ActionMenuState = {
   y: number;
 };
 
+type PendingSellerTypeChange = {
+  vendor: VendorListItem;
+  targetSellerType: SellerType;
+} | null;
+
 const statusFilters: StatusFilter[] = [
   "ALL",
   "PENDING_APPROVAL",
@@ -70,6 +78,11 @@ const displayDate = (iso: string | null) => {
   return date.toLocaleString();
 };
 
+const sellerTypeClass: Record<SellerType, string> = {
+  PLATFORM: "bg-blue-50 text-blue-700",
+  THIRD_PARTY: "bg-neutral-100 text-neutral-700",
+};
+
 const toErrorMessage = (error: unknown) =>
   error instanceof Error && error.message ? error.message : "Something went wrong";
 
@@ -83,9 +96,12 @@ export function AdminVendorRequests() {
   const [busyMap, setBusyMap] = useState<Record<string, boolean>>({});
   const [actionMenu, setActionMenu] = useState<ActionMenuState | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [pendingSellerTypeChange, setPendingSellerTypeChange] =
+    useState<PendingSellerTypeChange>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [actionReason, setActionReason] = useState("");
   const [actionSubmitting, setActionSubmitting] = useState(false);
+  const [downgradeConfirmed, setDowngradeConfirmed] = useState(false);
 
   const setVendorBusy = (vendorId: string, busy: boolean) => {
     setBusyMap((prev) => ({ ...prev, [vendorId]: busy }));
@@ -142,6 +158,12 @@ export function AdminVendorRequests() {
     setPendingAction({ type, vendor });
     setRejectReason("");
     setActionReason("");
+  };
+
+  const openSellerTypeModal = (vendor: VendorListItem, targetSellerType: SellerType) => {
+    setActionMenu(null);
+    setPendingSellerTypeChange({ vendor, targetSellerType });
+    setDowngradeConfirmed(false);
   };
 
   const submitAction = async () => {
@@ -216,6 +238,46 @@ export function AdminVendorRequests() {
     }
   };
 
+  const submitSellerTypeChange = async () => {
+    if (!pendingSellerTypeChange) return;
+
+    const { vendor, targetSellerType } = pendingSellerTypeChange;
+    if (
+      vendor.sellerType === "PLATFORM" &&
+      targetSellerType === "THIRD_PARTY" &&
+      !downgradeConfirmed
+    ) {
+      toast.error("Confirmation required", "Please confirm the downgrade warning.");
+      return;
+    }
+
+    setVendorBusy(vendor.id, true);
+    setActionSubmitting(true);
+    try {
+      const response = await fetchWithAuth(`/api/admin/vendors/${vendor.id}/seller-type`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sellerType: targetSellerType,
+          confirmDowngrade:
+            vendor.sellerType === "PLATFORM" && targetSellerType === "THIRD_PARTY"
+              ? true
+              : undefined,
+        }),
+      });
+      await parseApiResponse(response);
+      toast.success("Seller type updated");
+      setPendingSellerTypeChange(null);
+      setDowngradeConfirmed(false);
+      await loadVendors();
+    } catch (error) {
+      toast.error("Seller type update failed", toErrorMessage(error));
+    } finally {
+      setActionSubmitting(false);
+      setVendorBusy(vendor.id, false);
+    }
+  };
+
   const columns = useMemo<ColumnDef<VendorListItem>[]>(
     () => [
       {
@@ -244,6 +306,24 @@ export function AdminVendorRequests() {
         header: "Business Type",
         accessorKey: "businessType",
         cell: ({ row }) => row.original.businessType ?? "—",
+      },
+      {
+        header: "Seller Type",
+        accessorKey: "sellerType",
+        cell: ({ row }) => (
+          <span
+            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+              sellerTypeClass[row.original.sellerType]
+            }`}
+          >
+            {row.original.sellerType === "THIRD_PARTY" ? "THIRD PARTY" : "PLATFORM"}
+          </span>
+        ),
+      },
+      {
+        header: "Created",
+        accessorKey: "createdAt",
+        cell: ({ row }) => displayDate(row.original.createdAt),
       },
       {
         header: "Submitted",
@@ -410,6 +490,24 @@ export function AdminVendorRequests() {
                 Reactivate
               </button>
             ) : null}
+            {actionMenu.vendor.sellerType !== "PLATFORM" ? (
+              <button
+                type="button"
+                onClick={() => openSellerTypeModal(actionMenu.vendor, "PLATFORM")}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-blue-700 transition hover:bg-blue-50"
+              >
+                Set as PLATFORM
+              </button>
+            ) : null}
+            {actionMenu.vendor.sellerType !== "THIRD_PARTY" ? (
+              <button
+                type="button"
+                onClick={() => openSellerTypeModal(actionMenu.vendor, "THIRD_PARTY")}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-neutral-700 transition hover:bg-neutral-50"
+              >
+                Set as THIRD PARTY
+              </button>
+            ) : null}
           </div>
         </>
       ) : null}
@@ -492,6 +590,74 @@ export function AdminVendorRequests() {
                       : pendingAction.type === "suspend"
                         ? "Suspend"
                         : "Reactivate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {pendingSellerTypeChange ? (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/45 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-5 shadow-xl">
+            <h4 className="text-lg font-semibold text-neutral-900">Change seller type?</h4>
+            <p className="mt-1 text-sm text-neutral-600">
+              Update seller type for{" "}
+              <span className="font-semibold text-neutral-800">
+                {pendingSellerTypeChange.vendor.storeName ?? "Untitled store"}
+              </span>{" "}
+              to{" "}
+              <span className="font-semibold text-neutral-800">
+                {pendingSellerTypeChange.targetSellerType === "THIRD_PARTY"
+                  ? "THIRD PARTY"
+                  : "PLATFORM"}
+              </span>
+              .
+            </p>
+            {pendingSellerTypeChange.targetSellerType === "PLATFORM" ? (
+              <p className="mt-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+                PLATFORM can only be assigned when vendor status is ACTIVE.
+              </p>
+            ) : null}
+            {pendingSellerTypeChange.vendor.sellerType === "PLATFORM" &&
+            pendingSellerTypeChange.targetSellerType === "THIRD_PARTY" ? (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <p className="text-xs font-semibold text-amber-800">
+                  This vendor may currently be used for platform-owned delivery routing.
+                </p>
+                <label className="mt-2 flex items-start gap-2 text-xs text-amber-900">
+                  <input
+                    type="checkbox"
+                    checked={downgradeConfirmed}
+                    onChange={(event) => setDowngradeConfirmed(event.target.checked)}
+                    className="mt-0.5"
+                  />
+                  I confirm this downgrade and understand routing may be impacted.
+                </label>
+              </div>
+            ) : null}
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingSellerTypeChange(null);
+                  setDowngradeConfirmed(false);
+                }}
+                className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void submitSellerTypeChange()}
+                disabled={
+                  actionSubmitting ||
+                  (pendingSellerTypeChange.vendor.sellerType === "PLATFORM" &&
+                    pendingSellerTypeChange.targetSellerType === "THIRD_PARTY" &&
+                    !downgradeConfirmed)
+                }
+                className="rounded-lg bg-[#0f3460] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {actionSubmitting ? "Saving..." : "Confirm"}
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
+import type { SellerType } from "@/domain/vendor/vendor-types";
 import type { VendorStatus } from "@/domain/vendor/vendor-status";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -16,6 +17,7 @@ type VendorDetail = {
   onboardingStep: string;
   storeName: string | null;
   storeSlug: string | null;
+  sellerType: SellerType;
   businessType: string | null;
   industryType: string | null;
   logoUrl: string | null;
@@ -26,6 +28,10 @@ type VendorDetail = {
   rejectionReason: string | null;
   suspendedAt: string | null;
   suspensionReason: string | null;
+  sellerTypeAudit: {
+    updatedAt: string;
+    updatedBy: string | null;
+  } | null;
   user: {
     id: string;
     fullName: string;
@@ -180,6 +186,11 @@ const subscriptionStatusClass = (status: VendorDetail["subscription"]["status"])
   if (status === "TRIAL") return "bg-blue-50 text-blue-700";
   if (status === "FAILED") return "bg-amber-50 text-amber-700";
   return "bg-rose-50 text-rose-700";
+};
+
+const sellerTypeClass: Record<SellerType, string> = {
+  PLATFORM: "bg-blue-50 text-blue-700",
+  THIRD_PARTY: "bg-neutral-100 text-neutral-700",
 };
 
 const orderStatusClass = (status: string) => {
@@ -466,6 +477,19 @@ export default function AdminVendorDetailPage() {
             <p>Email: {vendor.user.email}</p>
             <p>Phone: {vendor.user.phone}</p>
             <p>Store slug: {vendor.storeSlug ?? "—"}</p>
+            <p>
+              Seller type:{" "}
+              <span
+                className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${sellerTypeClass[vendor.sellerType]}`}
+              >
+                {vendor.sellerType === "THIRD_PARTY" ? "THIRD PARTY" : "PLATFORM"}
+              </span>
+            </p>
+            <p>
+              Seller type updated:{" "}
+              {displayDate(vendor.sellerTypeAudit?.updatedAt ?? null)}
+            </p>
+            <p>Seller type updated by: {vendor.sellerTypeAudit?.updatedBy ?? "—"}</p>
             <p>Business type: {vendor.businessType ?? "—"}</p>
             <p>Industry type: {vendor.industryType ? vendor.industryType.replaceAll("_", " ") : "—"}</p>
             <p>Onboarding step: {vendor.onboardingStep.replaceAll("_", " ")}</p>

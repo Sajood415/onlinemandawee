@@ -5,6 +5,7 @@ import {
   industryTypes,
   kycDocumentTypes,
   payoutMethodTypes,
+  sellerTypes,
 } from "@/domain/vendor/vendor-types";
 import { vendorStatuses } from "@/domain/vendor/vendor-status";
 import { passwordFieldSchema } from "@/lib/auth/password-policy";
@@ -113,6 +114,11 @@ export const adminVendorListQuerySchema = z.object({
 
 export const vendorActionSchema = z.object({
   reason: z.string().trim().min(3).max(500).optional(),
+});
+
+export const adminVendorSellerTypeUpdateSchema = z.object({
+  sellerType: z.enum(sellerTypes),
+  confirmDowngrade: z.boolean().optional(),
 });
 
 export const vendorIdParamsSchema = z.object({
