@@ -6,12 +6,14 @@ import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { OrderRepository } from "@/repositories/order.repository";
+import { CheckoutFinalizationService } from "@/services/checkout-finalization.service";
 import { PaymentWebhookService } from "@/services/payment-webhook.service";
 import { StripeMembershipWebhookService } from "@/services/stripe-membership-webhook.service";
 
 const stripeMembershipWebhookService = new StripeMembershipWebhookService();
 const paymentWebhookService = new PaymentWebhookService();
 const orderRepository = new OrderRepository();
+const checkoutFinalizationService = new CheckoutFinalizationService();
 
 export const POST = withErrorHandling(async (request) => {
   const signature = request.headers.get("stripe-signature");
@@ -48,11 +50,27 @@ export const POST = withErrorHandling(async (request) => {
     const order = await orderRepository.findByStripePaymentIntentId(paymentIntent.id);
 
     if (!order) {
-      result = {
-        ignored: true,
-        reason: "order_not_found_for_payment_intent",
-        paymentIntentId: paymentIntent.id,
-      };
+      if (event.type === "payment_intent.succeeded") {
+        const finalized = await checkoutFinalizationService.finalizeFromPaidIntent({
+          paymentIntent,
+          source:
+            paymentIntent.metadata?.source === "customer_checkout"
+              ? "customer_checkout"
+              : "guest_checkout",
+        });
+        result = {
+          recovered: true,
+          orderId: finalized.id,
+          orderNumber: finalized.orderNumber,
+          paymentIntentId: paymentIntent.id,
+        };
+      } else {
+        result = {
+          ignored: true,
+          reason: "order_not_found_for_payment_intent",
+          paymentIntentId: paymentIntent.id,
+        };
+      }
     } else {
       result = await paymentWebhookService.process("STRIPE", {
         eventId: event.id,

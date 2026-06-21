@@ -12,10 +12,13 @@ import {
 import { sha256, generateOpaqueToken } from "@/lib/utils/crypto";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 import { withErrorHandling } from "@/middlewares/with-error-handling";
+import { CheckoutSnapshotRepository } from "@/repositories/checkout-snapshot.repository";
 import {
   checkoutDeliveryMethodSchema,
   checkoutCurrencySchema,
   checkoutGuestEmailSchema,
+  checkoutShippingAddressSchema,
+  checkoutShippingContactSchema,
   guestCheckoutCartItemSchema,
   guestCheckoutCouponsSchema,
   guestCheckoutDeliveryAddressSchema,
@@ -29,7 +32,11 @@ const intentBodySchema = z
     deliveryAddress: guestCheckoutDeliveryAddressSchema.optional(),
     checkoutGuestEmail: checkoutGuestEmailSchema.optional(),
   })
+  .merge(checkoutShippingContactSchema)
+  .merge(checkoutShippingAddressSchema.partial())
   .merge(guestCheckoutCouponsSchema);
+
+const checkoutSnapshotRepository = new CheckoutSnapshotRepository();
 
 export const POST = withErrorHandling(async (request) => {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -76,16 +83,37 @@ export const POST = withErrorHandling(async (request) => {
 
   try {
     const checkoutContextToken = generateOpaqueToken();
+    const checkoutContextHash = sha256(checkoutContextToken);
+    const checkoutGuestEmailHash = parsed.data.checkoutGuestEmail
+      ? sha256(normalizeEmailForAuth(parsed.data.checkoutGuestEmail))
+      : "";
+
     const paymentIntent = await createCheckoutPaymentIntent({
       quote,
       metadata: {
         source: "guest_checkout",
         itemCount: String(parsed.data.items.length),
         couponCount: String(quote.appliedCoupons.length),
-        checkoutContextHash: sha256(checkoutContextToken),
-        checkoutGuestEmailHash: parsed.data.checkoutGuestEmail
-          ? sha256(normalizeEmailForAuth(parsed.data.checkoutGuestEmail))
-          : "",
+        checkoutContextHash,
+        checkoutGuestEmailHash,
+      },
+    });
+
+    await checkoutSnapshotRepository.upsert({
+      paymentIntentId: paymentIntent.id,
+      source: "guest_checkout",
+      checkoutContextHash,
+      checkoutGuestEmailHash,
+      snapshot: {
+        quote,
+        guestName: parsed.data.guestName,
+        guestEmail: parsed.data.guestEmail,
+        guestPhone: parsed.data.guestPhone,
+        addressLine1: parsed.data.addressLine1 ?? null,
+        city: parsed.data.city ?? null,
+        country: parsed.data.country ?? null,
+        postalCode: parsed.data.postalCode ?? null,
+        deliveryMethod: parsed.data.deliveryMethod ?? quote.deliveryMethod,
       },
     });
 

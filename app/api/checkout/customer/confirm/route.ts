@@ -1,22 +1,10 @@
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
-import {
-  buildGuestCheckoutQuote,
-  GuestCheckoutQuoteError,
-} from "@/lib/checkout/build-guest-checkout-quote";
-import { createGuestOrderFromQuote } from "@/lib/checkout/create-guest-order-from-quote";
-import {
-  assertPaymentIntentMatchesQuote,
-  StripeCheckoutPaymentError,
-} from "@/lib/stripe/checkout-payment";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { withRbac } from "@/middlewares/with-rbac";
-import { prisma } from "@/lib/db/prisma";
-import { OrderSettlementService } from "@/services/order-settlement.service";
-import { safeEqual, sha256 } from "@/lib/utils/crypto";
+import { CheckoutFinalizationService } from "@/services/checkout-finalization.service";
 import {
   checkoutDeliveryMethodSchema,
   checkoutCurrencySchema,
@@ -38,7 +26,7 @@ const confirmBodySchema = z
   .merge(checkoutShippingAddressSchema.partial())
   .merge(guestCheckoutCouponsSchema);
 
-const orderSettlementService = new OrderSettlementService();
+const checkoutFinalizationService = new CheckoutFinalizationService();
 
 export const POST = withErrorHandling(
   withRbac(["CUSTOMER"], async (request, context) => {
@@ -81,129 +69,19 @@ export const POST = withErrorHandling(
       );
     }
 
-    const paymentMetadata = paymentIntent.metadata ?? {};
-    if (paymentMetadata.source !== "customer_checkout") {
-      return NextResponse.json(
-        {
-          error: {
-            code: "PAYMENT_CONTEXT_MISMATCH",
-            message: "Payment intent is not valid for customer checkout confirmation.",
-          },
-        },
-        { status: 400 }
-      );
-    }
-
-    if (paymentMetadata.checkoutCustomerUserId !== context.auth.id) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "PAYMENT_CONTEXT_MISMATCH",
-            message: "Payment intent does not belong to the authenticated customer.",
-          },
-        },
-        { status: 403 }
-      );
-    }
-
-    const expectedContextHash = paymentMetadata.checkoutContextHash;
-    if (
-      !expectedContextHash ||
-      !safeEqual(expectedContextHash, sha256(input.checkoutContextToken))
-    ) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "PAYMENT_CONTEXT_MISMATCH",
-            message: "Checkout session context is invalid or expired.",
-          },
-        },
-        { status: 400 }
-      );
-    }
-
-    const existingOrder = await prisma.order.findFirst({
-      where: { stripePaymentIntentId: input.paymentIntentId },
-    });
-
-    if (existingOrder) {
-      await orderSettlementService.settleOrderById({ orderId: existingOrder.id });
-
-      return NextResponse.json(
-        { data: { orderNumber: existingOrder.orderNumber } },
-        { status: 200 }
-      );
-    }
-
     try {
-      const quote = await buildGuestCheckoutQuote({
-        items: input.items,
-        currency: input.currency,
-        couponCodes: input.couponCodes,
-        vendorCoupons: input.vendorCoupons,
-        deliveryMethod: input.deliveryMethod,
-        deliveryAddress:
-          input.addressLine1 && input.city && input.country
-            ? {
-                addressLine1: input.addressLine1,
-                city: input.city,
-                country: input.country,
-                postalCode: input.postalCode ?? "",
-              }
-            : undefined,
+      const order = await checkoutFinalizationService.finalizeFromPaidIntent({
+        paymentIntent,
+        source: "customer_checkout",
+        checkoutContextToken: input.checkoutContextToken,
+        authenticatedUserId: context.auth.id,
       });
-
-      assertPaymentIntentMatchesQuote(paymentIntent, quote);
-
-      const order = await createGuestOrderFromQuote({
-        quote,
-        guestName: input.guestName,
-        guestEmail: input.guestEmail,
-        guestPhone: input.guestPhone,
-        addressLine1: input.addressLine1,
-        city: input.city,
-        country: input.country,
-        postalCode: input.postalCode,
-        paymentStatus: "PAID",
-        deliveryMethod: input.deliveryMethod ?? quote.deliveryMethod,
-        stripePaymentIntentId: input.paymentIntentId,
-        userId: context.auth.id,
-      });
-
-      await orderSettlementService.settleOrderById({ orderId: order.id });
 
       return NextResponse.json(
         { data: { orderNumber: order.orderNumber, orderId: order.id } },
         { status: 201 }
       );
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2002"
-      ) {
-        const recoveredOrder = await prisma.order.findUnique({
-          where: { stripePaymentIntentId: input.paymentIntentId },
-        });
-        if (recoveredOrder) {
-          await orderSettlementService.settleOrderById({ orderId: recoveredOrder.id });
-          return NextResponse.json(
-            { data: { orderNumber: recoveredOrder.orderNumber } },
-            { status: 200 }
-          );
-        }
-      }
-      if (error instanceof GuestCheckoutQuoteError) {
-        return NextResponse.json(
-          { error: { code: error.code, message: error.message } },
-          { status: error.status }
-        );
-      }
-      if (error instanceof StripeCheckoutPaymentError) {
-        return NextResponse.json(
-          { error: { code: error.code, message: error.message } },
-          { status: error.status }
-        );
-      }
       throw error;
     }
   })

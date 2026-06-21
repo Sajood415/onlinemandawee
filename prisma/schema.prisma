@@ -317,6 +317,22 @@ model IdempotencyKey {
   @@index([expiresAt])
 }
 
+model CheckoutSnapshot {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  paymentIntentId       String   @unique
+  source                String
+  userId                String?  @db.ObjectId
+  checkoutContextHash   String
+  checkoutGuestEmailHash String?
+  snapshot              Json
+  orderId               String?  @db.ObjectId
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([source, createdAt])
+}
+
 model AuditLog {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   actorUserId String?  @db.ObjectId

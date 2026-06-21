@@ -12,9 +12,12 @@ import {
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { withRbac } from "@/middlewares/with-rbac";
 import { sha256, generateOpaqueToken } from "@/lib/utils/crypto";
+import { CheckoutSnapshotRepository } from "@/repositories/checkout-snapshot.repository";
 import {
   checkoutDeliveryMethodSchema,
   checkoutCurrencySchema,
+  checkoutShippingAddressSchema,
+  checkoutShippingContactSchema,
   guestCheckoutCartItemSchema,
   guestCheckoutCouponsSchema,
   guestCheckoutDeliveryAddressSchema,
@@ -27,7 +30,11 @@ const intentBodySchema = z
     deliveryMethod: checkoutDeliveryMethodSchema.optional(),
     deliveryAddress: guestCheckoutDeliveryAddressSchema.optional(),
   })
+  .merge(checkoutShippingContactSchema)
+  .merge(checkoutShippingAddressSchema.partial())
   .merge(guestCheckoutCouponsSchema);
+
+const checkoutSnapshotRepository = new CheckoutSnapshotRepository();
 
 export const POST = withErrorHandling(
   withRbac(["CUSTOMER"], async (request, context) => {
@@ -75,14 +82,33 @@ export const POST = withErrorHandling(
 
     try {
       const checkoutContextToken = generateOpaqueToken();
+      const checkoutContextHash = sha256(checkoutContextToken);
       const paymentIntent = await createCheckoutPaymentIntent({
         quote,
         metadata: {
           source: "customer_checkout",
           itemCount: String(parsed.data.items.length),
           couponCount: String(quote.appliedCoupons.length),
-          checkoutContextHash: sha256(checkoutContextToken),
+          checkoutContextHash,
           checkoutCustomerUserId: context.auth.id,
+        },
+      });
+
+      await checkoutSnapshotRepository.upsert({
+        paymentIntentId: paymentIntent.id,
+        source: "customer_checkout",
+        userId: context.auth.id,
+        checkoutContextHash,
+        snapshot: {
+          quote,
+          guestName: parsed.data.guestName,
+          guestEmail: parsed.data.guestEmail,
+          guestPhone: parsed.data.guestPhone,
+          addressLine1: parsed.data.addressLine1 ?? null,
+          city: parsed.data.city ?? null,
+          country: parsed.data.country ?? null,
+          postalCode: parsed.data.postalCode ?? null,
+          deliveryMethod: parsed.data.deliveryMethod ?? quote.deliveryMethod,
         },
       });
 
