@@ -37,7 +37,6 @@ export function serializeGuestPublicOrder(order: GuestTrackingOrderRecord): Gues
     orderNumber: order.orderNumber,
     status: order.status,
     paymentStatus: order.paymentStatus,
-    paymentMethodLabel: order.paymentStatus === "UNPAID" ? "cod" : "card",
     currency: order.currency,
     subtotalAmount: order.subtotalAmount,
     deliveryAmount: order.deliveryAmount,

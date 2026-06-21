@@ -31,7 +31,8 @@ export async function createGuestOrderFromQuote(input: {
   city: string;
   country: string;
   postalCode: string;
-  paymentStatus: "PAID" | "UNPAID";
+  paymentStatus: "PAID";
+  deliveryMethod?: "PICKUP" | "EXPRESS" | "STANDARD";
   stripePaymentIntentId?: string;
   userId?: string;
 }) {
@@ -56,6 +57,7 @@ export async function createGuestOrderFromQuote(input: {
       orderNumber,
       status: "CREATED",
       paymentStatus: input.paymentStatus,
+      deliveryMethod: input.deliveryMethod ?? "STANDARD",
       currency: input.quote.currency,
       subtotalAmount: input.quote.subtotalAmount,
       deliveryAmount: input.quote.deliveryAmount,
@@ -98,7 +100,7 @@ export async function createGuestOrderFromQuote(input: {
 
   await incrementCouponUsage(input.quote.appliedCoupons.map((coupon) => coupon.couponId));
 
-  const paymentMethod = input.paymentStatus === "PAID" ? "card" : "cod";
+  const paymentMethod = "card";
 
   await sendGuestOrderConfirmationEmail({
     to: guestEmail,

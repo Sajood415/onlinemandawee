@@ -18,7 +18,6 @@ import {
 import {
   ArrowLeft,
   ArrowRight,
-  Banknote,
   CheckCircle,
   CreditCard,
   Loader2,
@@ -59,8 +58,6 @@ import { useCurrency } from "@/store/currency-context";
 const stripePromise = getStripePromise();
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
-
-type PaymentMethod = "card" | "cod";
 
 type LineItem = {
   productId: string;
@@ -682,13 +679,10 @@ function DeliveryCostStep({
 /* ─── Step 3: Payment method ─────────────────────────────────────────── */
 
 function PaymentMethodStep({
-  selected,
-  onSelect,
   stripeAvailable,
   quoteLoading,
   quoteError,
   canPlaceOrder,
-  paymentMethod,
   priceSummary,
   quote,
   stripeOptions,
@@ -710,16 +704,12 @@ function PaymentMethodStep({
   onRemoveCoupon,
   onRetryQuote,
   onBack,
-  onNext,
   onSuccess,
 }: {
-  selected: PaymentMethod;
-  onSelect: (m: PaymentMethod) => void;
   stripeAvailable: boolean;
   quoteLoading: boolean;
   quoteError: string | null;
   canPlaceOrder: boolean;
-  paymentMethod: PaymentMethod;
   priceSummary: PriceSummary | null;
   quote: QuoteSummary | null;
   stripeOptions: {
@@ -748,17 +738,12 @@ function PaymentMethodStep({
   onRemoveCoupon: (code: string, vendorProfileId: string) => void;
   onRetryQuote: () => void;
   onBack: () => void;
-  onNext: () => void;
   onSuccess: (orderNumber: string) => void;
 }) {
   return (
     <div className="space-y-6">
-      <p className="text-sm text-gray-600">Choose how you would like to pay for this order.</p>
-      <PaymentMethodSelector
-        selected={selected}
-        onSelect={onSelect}
-        stripeAvailable={stripeAvailable}
-      />
+      <p className="text-sm text-gray-600">Card payment is required to place this order.</p>
+      <PaymentMethodSelector stripeAvailable={stripeAvailable} />
 
       {couponEligibleVendors.length > 0 ? (
         <div className="space-y-4">
@@ -811,23 +796,7 @@ function PaymentMethodStep({
         </div>
       ) : null}
 
-      {paymentMethod === "cod" && canPlaceOrder && priceSummary ? (
-        <div className="rounded-xl bg-green-50 border border-green-100 p-4 flex gap-3">
-          <Truck size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-green-800 space-y-1">
-            <p className="font-semibold">Cash on Delivery</p>
-            <p className="text-green-700">
-              You will pay{" "}
-              <span className="font-bold">
-                {formatAmount(priceSummary.grandTotalAmount, priceSummary.currency)}
-              </span>{" "}
-              in cash when your order arrives.
-            </p>
-          </div>
-        </div>
-      ) : null}
-
-      {canPlaceOrder && paymentMethod === "card" && quote && stripeOptions && stripePromise ? (
+      {canPlaceOrder && quote && stripeOptions && stripePromise ? (
         <Elements stripe={stripePromise} options={stripeOptions}>
           <StripePayForm
             quote={quote}
@@ -842,43 +811,13 @@ function PaymentMethodStep({
           />
         </Elements>
       ) : null}
-
-      {paymentMethod === "cod" ? (
-        <div className="flex gap-3 pt-1">
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-200 text-gray-600 font-semibold py-3.5 hover:bg-gray-50 transition-colors"
-          >
-            <ArrowLeft size={17} className="shrink-0" strokeWidth={2} />
-            Back
-          </button>
-          <button
-            type="button"
-            onClick={onNext}
-            disabled={!canPlaceOrder || quoteLoading}
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors disabled:opacity-50"
-          >
-            <ArrowRight size={17} className="shrink-0" strokeWidth={2} />
-            Review Order
-          </button>
-        </div>
-      ) : null}
     </div>
   );
 }
 
 /* ─── Payment method selector ────────────────────────────────────────── */
 
-function PaymentMethodSelector({
-  selected,
-  onSelect,
-  stripeAvailable,
-}: {
-  selected: PaymentMethod;
-  onSelect: (m: PaymentMethod) => void;
-  stripeAvailable: boolean;
-}) {
+function PaymentMethodSelector({ stripeAvailable }: { stripeAvailable: boolean }) {
   const cardOption = {
     id: "card" as const,
     label: "Credit / Debit Card",
@@ -888,14 +827,7 @@ function PaymentMethodSelector({
     icon: <CreditCard size={22} className="text-blue-600" />,
     disabled: !stripeAvailable,
   };
-  const codOption = {
-    id: "cod" as const,
-    label: "Cash on Delivery",
-    sub: "Pay in cash when your order arrives",
-    icon: <Banknote size={22} className="text-green-600" />,
-    disabled: false,
-  };
-  const options = stripeAvailable ? [cardOption, codOption] : [codOption, cardOption];
+  const options = [cardOption];
 
   return (
     <div className="space-y-3">
@@ -904,13 +836,10 @@ function PaymentMethodSelector({
           key={opt.id}
           type="button"
           disabled={opt.disabled}
-          onClick={() => !opt.disabled && onSelect(opt.id)}
           className={`w-full flex items-center gap-4 rounded-xl border-2 px-5 py-4 text-left transition-all ${
             opt.disabled
               ? "opacity-40 cursor-not-allowed border-gray-100 bg-gray-50"
-              : selected === opt.id
-              ? "border-[#0f3460] bg-[#0f3460]/5"
-              : "border-gray-200 bg-white hover:border-gray-300"
+              : "border-[#0f3460] bg-[#0f3460]/5"
           }`}
         >
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
@@ -923,105 +852,12 @@ function PaymentMethodSelector({
             <p className="text-xs text-gray-500 mt-0.5">{opt.sub}</p>
           </div>
           <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-            selected === opt.id ? "border-[#0f3460] bg-[#0f3460]" : "border-gray-300"
+            "border-[#0f3460] bg-[#0f3460]"
           }`}>
-            {selected === opt.id && <div className="w-2 h-2 rounded-full bg-white" />}
+            <div className="w-2 h-2 rounded-full bg-white" />
           </div>
         </button>
       ))}
-    </div>
-  );
-}
-
-/* ─── COD confirm form ───────────────────────────────────────────────── */
-
-function CodForm({
-  summary,
-  contact,
-  address,
-  cartItems,
-  vendorCoupons,
-  checkoutApiBase,
-  useAuthCheckout,
-  onBack,
-  onSuccess,
-}: {
-  summary: PriceSummary;
-  contact: ContactForm;
-  address: AddressForm;
-  cartItems: Array<{ productId: string; quantity: number }>;
-  vendorCoupons: VendorCouponEntry[];
-  checkoutApiBase: string;
-  useAuthCheckout: boolean;
-  onBack: () => void;
-  onSuccess: (orderNumber: string) => void;
-}) {
-  const [placing, setPlacing] = useState(false);
-
-  const handlePlace = async () => {
-    setPlacing(true);
-    try {
-      const res = await postCheckout(
-        `${checkoutApiBase}/confirm-cod`,
-        {
-          guestName: contact.guestName,
-          guestEmail: contact.guestEmail,
-          guestPhone: contact.guestPhone,
-          addressLine1: address.addressLine1,
-          city: address.city,
-          country: address.country,
-          postalCode: address.postalCode,
-          currency: summary.currency,
-          items: cartItems,
-          vendorCoupons,
-        },
-        useAuthCheckout
-      );
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data?.error?.message ?? "Could not place order. Please try again.");
-        return;
-      }
-      onSuccess(data.data.orderNumber);
-    } catch {
-      toast.error("Network error. Please try again.");
-    } finally {
-      setPlacing(false);
-    }
-  };
-
-  return (
-    <div className="space-y-5">
-      <div className="rounded-xl bg-green-50 border border-green-100 p-4 flex gap-3">
-        <Truck size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-green-800 space-y-1">
-          <p className="font-semibold">Cash on Delivery</p>
-          <p className="text-green-700">
-            Delivery: {formatAmount(summary.deliveryAmount, summary.currency)}
-            {summary.deliveryBreakdown?.length ? (
-              <span className="text-green-600">
-                {" "}
-                ({summary.deliveryBreakdown.map((entry) => `${entry.distanceKm.toFixed(1)} km`).join(", ")})
-              </span>
-            ) : null}
-          </p>
-          <p className="text-green-700">
-            Your order will be placed and you pay <span className="font-bold">{formatAmount(summary.grandTotalAmount, summary.currency)}</span> in cash when it arrives.
-          </p>
-        </div>
-      </div>
-
-      <div className="flex gap-3 pt-1">
-        <button type="button" onClick={onBack} disabled={placing}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-200 text-gray-600 font-semibold py-3.5 hover:bg-gray-50 transition-colors disabled:opacity-50">
-          <ArrowLeft size={17} className="shrink-0" strokeWidth={2} />
-          Back
-        </button>
-        <button type="button" onClick={handlePlace} disabled={placing}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-green-600 text-white font-semibold py-3.5 hover:bg-green-700 transition-colors disabled:opacity-60">
-          {placing ? <><Loader2 size={17} className="animate-spin" /> Placing…</> : <><CheckCircle size={17} /> Place Order</>}
-        </button>
-      </div>
     </div>
   );
 }
@@ -1272,11 +1108,9 @@ function OrderSummary({
 
 function SuccessScreen({
   orderNumber,
-  paymentMethod,
   guestEmail,
 }: {
   orderNumber: string;
-  paymentMethod: PaymentMethod;
   guestEmail: string;
 }) {
   const router = useRouter();
@@ -1294,9 +1128,7 @@ function SuccessScreen({
           <p className="text-xs font-semibold uppercase tracking-wider text-green-600">Confirmation</p>
           <h1 className="text-2xl font-bold text-gray-900 mt-1">Order Placed!</h1>
           <p className="text-gray-500 mt-2 text-sm">
-            {paymentMethod === "cod"
-              ? "Your order is confirmed. Please have cash ready when your delivery arrives."
-              : "Your payment was successful and the vendor has been notified."}
+            Your payment was successful and the vendor has been notified.
           </p>
           {guestEmail ? (
             <p className="text-gray-500 mt-2 text-sm">
@@ -1309,13 +1141,6 @@ function SuccessScreen({
           <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Order Number</p>
           <p className="text-xl font-black text-[#0f3460] mt-1">{orderNumber}</p>
         </div>
-
-        {paymentMethod === "cod" && (
-          <div className="flex items-center gap-2 bg-green-50 rounded-xl px-4 py-3 text-sm text-green-700">
-            <Banknote size={18} className="flex-shrink-0" />
-            <span>Payment: Cash on Delivery</span>
-          </div>
-        )}
 
         <p className="text-xs text-gray-400">Keep this order number for your records.</p>
 
@@ -1361,9 +1186,6 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(0);
   const checkoutTopRef = useRef<HTMLDivElement>(null);
   const stripeAvailable = isStripeCheckoutConfigured();
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-    stripeAvailable ? "card" : "cod"
-  );
   const [contact, setContact] = useState<ContactForm>({ guestName: "", guestEmail: "", guestPhone: "" });
   const [address, setAddress] = useState<AddressForm>({ addressLine1: "", city: "", country: "", postalCode: "" });
   const [customerPrefillReady, setCustomerPrefillReady] = useState(false);
@@ -1374,7 +1196,7 @@ export default function CheckoutPage() {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
 
-  // Simple price summary (derived from cart, no Stripe needed for COD)
+  // Price summary used for delivery and totals display.
   const [priceSummary, setPriceSummary] = useState<PriceSummary | null>(null);
 
   const [successOrderNumber, setSuccessOrderNumber] = useState<string | null>(null);
@@ -1493,7 +1315,7 @@ export default function CheckoutPage() {
     }
   }, [address, cartItems.length, cartItemsPayload, checkoutApiBase, currency, isCustomerCheckout]);
 
-  const fetchCodPricing = useCallback(async (coupons: VendorCouponEntry[]) => {
+  const fetchPricing = useCallback(async (coupons: VendorCouponEntry[]) => {
     if (cartItems.length === 0 || !isDeliveryAddressComplete(address)) return;
     setQuoteLoading(true);
     setQuoteError(null);
@@ -1516,13 +1338,11 @@ export default function CheckoutPage() {
 
   const refreshPricing = useCallback(
     async (coupons: VendorCouponEntry[]) => {
-      if (paymentMethod === "cod") {
-        await fetchCodPricing(coupons);
-      } else if (paymentMethod === "card" && stripeAvailable) {
+      if (stripeAvailable) {
         await fetchStripeQuote(coupons);
       }
     },
-    [paymentMethod, stripeAvailable, fetchCodPricing, fetchStripeQuote]
+    [stripeAvailable, fetchStripeQuote]
   );
 
   const handleApplyCoupon = async (vendorProfileId: string) => {
@@ -1544,12 +1364,8 @@ export default function CheckoutPage() {
     setCouponFieldErrors((current) => ({ ...current, [vendorProfileId]: "" }));
 
     try {
-      const endpoint =
-        paymentMethod === "card" && stripeAvailable
-          ? `${checkoutApiBase}/intent`
-          : `${checkoutApiBase}/pricing`;
       const res = await postCheckout(
-        endpoint,
+        `${checkoutApiBase}/intent`,
         buildGuestCheckoutRequestBody(cartItemsPayload, currency, nextCoupons, address),
         isCustomerCheckout
       );
@@ -1569,9 +1385,7 @@ export default function CheckoutPage() {
       setVendorCoupons(nextCoupons);
       setCouponInputs((current) => ({ ...current, [vendorProfileId]: "" }));
       setPriceSummary(summary);
-      if (paymentMethod === "card" && stripeAvailable) {
-        setQuote(data as QuoteSummary);
-      }
+      setQuote(data as QuoteSummary);
       toast.success(`Coupon ${code} applied`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Could not apply coupon.";
@@ -1630,12 +1444,6 @@ export default function CheckoutPage() {
       postalCode: saved.postalCode ?? "",
     });
     setPriceSummary(null);
-    setQuote(null);
-    setQuoteError(null);
-  };
-
-  const handleMethodChange = (m: PaymentMethod) => {
-    setPaymentMethod(m);
     setQuote(null);
     setQuoteError(null);
   };
@@ -1720,7 +1528,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (step !== 1 || !isDeliveryAddressComplete(address)) return;
-    void fetchCodPricing(vendorCoupons);
+    void fetchPricing(vendorCoupons);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, currency, address.addressLine1, address.city, address.country, address.postalCode]);
 
@@ -1728,7 +1536,7 @@ export default function CheckoutPage() {
     if (step !== 2) return;
     void refreshPricing(vendorCoupons);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, paymentMethod, stripeAvailable, currency]);
+  }, [step, stripeAvailable, currency]);
 
   useEffect(() => {
     if (step !== 2 || couponEligibleVendors.length === 0) return;
@@ -1762,7 +1570,6 @@ export default function CheckoutPage() {
     return (
       <SuccessScreen
         orderNumber={successOrderNumber}
-        paymentMethod={paymentMethod}
         guestEmail={successEmail}
       />
     );
@@ -1843,7 +1650,7 @@ export default function CheckoutPage() {
                 summary={priceSummary}
                 loading={quoteLoading}
                 error={quoteError}
-                onRetry={() => void fetchCodPricing(vendorCoupons)}
+                onRetry={() => void fetchPricing(vendorCoupons)}
                 onNext={() => setStep(2)}
                 onBack={() => setStep(0)}
               />
@@ -1851,13 +1658,10 @@ export default function CheckoutPage() {
 
             {step === 2 && (
               <PaymentMethodStep
-                selected={paymentMethod}
-                onSelect={handleMethodChange}
                 stripeAvailable={stripeAvailable}
                 quoteLoading={quoteLoading}
                 quoteError={quoteError}
                 canPlaceOrder={canPlaceOrder}
-                paymentMethod={paymentMethod}
                 priceSummary={priceSummary}
                 quote={quote}
                 stripeOptions={stripeOptions}
@@ -1889,40 +1693,9 @@ export default function CheckoutPage() {
                   void handleRemoveCoupon(code, vendorProfileId)
                 }
                 onRetryQuote={() => void refreshPricing(vendorCoupons)}
-                onNext={() => setStep(3)}
                 onBack={() => setStep(1)}
                 onSuccess={handleSuccess}
               />
-            )}
-
-            {step === 3 && paymentMethod === "cod" && (
-              <div className="space-y-6">
-                <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4 space-y-3 text-sm">
-                  <p className="font-semibold text-gray-800">Shipping to</p>
-                  <p className="text-gray-600">
-                    {contact.guestName} · {contact.guestPhone}
-                    <br />
-                    {address.addressLine1}, {address.city}, {address.country}
-                    {address.postalCode ? ` ${address.postalCode}` : ""}
-                  </p>
-                  <p className="font-semibold text-gray-800 pt-1">Payment</p>
-                  <p className="text-gray-600">Cash on Delivery</p>
-                </div>
-
-                {canPlaceOrder && priceSummary ? (
-                  <CodForm
-                    summary={priceSummary}
-                    contact={contact}
-                    address={address}
-                    cartItems={cartItemsPayload}
-                    vendorCoupons={vendorCoupons}
-                    checkoutApiBase={checkoutApiBase}
-                    useAuthCheckout={isCustomerCheckout}
-                    onBack={() => setStep(2)}
-                    onSuccess={handleSuccess}
-                  />
-                ) : null}
-              </div>
             )}
           </div>
 

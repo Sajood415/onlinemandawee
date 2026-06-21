@@ -23,7 +23,6 @@ export type GuestPublicOrder = {
   orderNumber: string;
   status: string;
   paymentStatus: string;
-  paymentMethodLabel: "cod" | "card";
   currency: string;
   subtotalAmount: number;
   deliveryAmount: number;

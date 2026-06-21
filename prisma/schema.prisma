@@ -571,6 +571,7 @@ model Order {
   orderNumber           String        @unique
   status                OrderStatus   @default(CREATED)
   paymentStatus         PaymentStatus @default(UNPAID)
+  deliveryMethod        DeliveryMethod?
   currency              String
   subtotalAmount        Int
   deliveryAmount        Int

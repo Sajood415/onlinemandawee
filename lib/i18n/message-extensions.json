@@ -384,8 +384,8 @@
       "countryPlaceholder": "Afghanistan"
     },
     "payment": {
-      "cod": "Cash on Delivery",
-      "codSub": "Pay in cash when your order arrives",
+      "cod": "Card payment required",
+      "codSub": "Pay securely by card at checkout",
       "card": "Credit / Debit Card",
       "cardSub": "Visa, Mastercard, Amex — secured by Stripe",
       "cardUnavailable": "Stripe not configured — add keys to .env.local"
@@ -406,7 +406,7 @@
     },
     "success": {
       "title": "Order Placed!",
-      "codMessage": "Your order is confirmed. Please have cash ready when your delivery arrives.",
+      "codMessage": "Card payment is required. Please complete payment to place your order.",
       "cardMessage": "Your payment was successful and the vendor has been notified."
     },
     "errors": {

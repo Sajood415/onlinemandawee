@@ -24,7 +24,7 @@ export async function sendVendorOrderNotifications(input: {
   customerEmail?: string;
   customerPhone?: string;
   currency: string;
-  paymentMethod: "cod" | "card";
+  paymentMethod: "card";
   paymentStatus: "PAID" | "UNPAID";
   shippingAddress: OrderEmailContext["shippingAddress"];
   vendorGroups: VendorGroupInput[];

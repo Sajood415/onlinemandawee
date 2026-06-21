@@ -132,12 +132,10 @@ function trackingTextLine(trackingUrl?: string) {
 
 export function buildOrderPlacedEmail(
   ctx: OrderEmailContext,
-  options: { paymentMethod: "cod" | "card" }
+  options: { paymentMethod: "card" }
 ) {
   const paymentNote =
-    options.paymentMethod === "cod"
-      ? "Payment method: <strong>Cash on Delivery</strong>. Please have cash ready when your order arrives."
-      : "Payment: <strong>Paid by card</strong>. Your payment was processed successfully.";
+    "Payment: <strong>Paid by card</strong>. Your payment was processed successfully.";
 
   const body = `
     <span class="badge">✅ Order Confirmed</span>
@@ -158,10 +156,7 @@ export function buildOrderPlacedEmail(
     ${trackingCta(ctx.trackingUrl)}
   `;
 
-  const paymentText =
-    options.paymentMethod === "cod"
-      ? "Payment: Cash on Delivery."
-      : "Payment: Paid by card.";
+  const paymentText = "Payment: Paid by card.";
 
   return {
     subject: `Order confirmed — ${ctx.orderNumber}`,
@@ -189,7 +184,7 @@ export type VendorOrderEmailContext = {
   items: OrderEmailContext["items"];
   vendorTotalAmount: number;
   currency: string;
-  paymentMethod: "cod" | "card";
+  paymentMethod: "card";
   paymentStatus: "PAID" | "UNPAID";
   shippingAddress: OrderEmailContext["shippingAddress"];
 };
@@ -205,11 +200,9 @@ export function buildVendorNewOrderEmail(ctx: VendorOrderEmailContext) {
   };
 
   const paymentNote =
-    ctx.paymentMethod === "cod"
-      ? "Payment: <strong>Cash on Delivery</strong> — collect payment when you deliver."
-      : ctx.paymentStatus === "PAID"
-        ? "Payment: <strong>Paid by card</strong> — payment has been received."
-        : "Payment: <strong>Pending</strong> — payment has not been collected yet.";
+    ctx.paymentStatus === "PAID"
+      ? "Payment: <strong>Paid by card</strong> — payment has been received."
+      : "Payment: <strong>Pending</strong> — payment has not been collected yet.";
 
   const customerContact = [
     ctx.customerEmail ? `<strong>Email:</strong> ${ctx.customerEmail}` : null,
@@ -244,11 +237,9 @@ export function buildVendorNewOrderEmail(ctx: VendorOrderEmailContext) {
   `;
 
   const paymentText =
-    ctx.paymentMethod === "cod"
-      ? "Payment: Cash on Delivery."
-      : ctx.paymentStatus === "PAID"
-        ? "Payment: Paid by card."
-        : "Payment: Pending.";
+    ctx.paymentStatus === "PAID"
+      ? "Payment: Paid by card."
+      : "Payment: Pending.";
 
   return {
     subject: `New order ${ctx.orderNumber} — ${ctx.storeName}`,

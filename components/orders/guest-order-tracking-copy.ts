@@ -45,7 +45,6 @@ export function getGuestOrderTrackingCopy(locale: SupportedLocale) {
     loading: en ? "Loading order..." : ps ? "امر پورته کېږي..." : "در حال بارگذاری سفارش...",
     loadError: en ? "We could not load this order." : ps ? "دا امر پورته نشو." : "بارگذاری این سفارش ممکن نشد.",
     invalidLink: en ? "This tracking link is invalid or expired." : ps ? "دا تعقیب لینک ناسم دی." : "این لینک پیگیری نامعتبر است.",
-    cod: en ? "Cash on Delivery" : ps ? "د تحویل پر وخت نغدي" : "پرداخت در محل",
     cardPaid: en ? "Paid by card" : ps ? "د کارت له لارې تادیه شوی" : "پرداخت با کارت",
     privacyNote: en
       ? "Contact details and street address are partially masked on this public tracking page."

@@ -112,13 +112,11 @@ function OrderCard({
   const summaryStatus = overallOrderStatus(order);
   const isRefundablePayment =
     order.paymentStatus === "PAID" ||
-    order.paymentStatus === "PARTIALLY_REFUNDED" ||
-    order.paymentStatus === "UNPAID";
+    order.paymentStatus === "PARTIALLY_REFUNDED";
 
   const isItemRefundEligible = (vendorOrder: CustomerVendorOrder) =>
     canCustomerRequestItemRefund({
       paymentStatus: order.paymentStatus,
-      vendorOrderStatus: vendorOrder.status,
       refundEligibility: vendorOrder.refundEligibility,
     });
 

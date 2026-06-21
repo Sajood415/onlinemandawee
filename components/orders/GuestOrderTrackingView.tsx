@@ -91,7 +91,7 @@ export function GuestOrderTrackingView({
           <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{copy.payment}</p>
             <p className="mt-1 text-sm font-semibold text-slate-800">
-              {order.paymentMethodLabel === "cod" ? copy.cod : copy.cardPaid}
+              {copy.cardPaid}
             </p>
           </div>
           <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">

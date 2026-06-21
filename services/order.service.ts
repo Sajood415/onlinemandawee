@@ -21,7 +21,6 @@ import { VendorProfileRepository } from "@/repositories/vendor-profile.repositor
 import { buildGuestOrderTrackingUrl } from "@/lib/orders/build-order-tracking-url";
 import { resolveDistanceDeliveryQuote } from "@/lib/delivery/resolve-distance-delivery";
 import { getRefundEligibility } from "@/lib/refunds/refund-eligibility";
-import { OrderSettlementService } from "@/services/order-settlement.service";
 
 type QuoteLine = {
   cartItemId: string;
@@ -89,8 +88,7 @@ export class OrderService {
     private readonly customerAddressRepository = new CustomerAddressRepository(),
     private readonly orderRepository = new OrderRepository(),
     private readonly vendorProfileRepository = new VendorProfileRepository(),
-    private readonly auditLogRepository = new AuditLogRepository(),
-    private readonly orderSettlementService = new OrderSettlementService()
+    private readonly auditLogRepository = new AuditLogRepository()
   ) {}
 
   async createOrder(
@@ -109,6 +107,7 @@ export class OrderService {
     const order = await this.orderRepository.create({
       userId: auth.id,
       orderNumber,
+      deliveryMethod: input.method,
       currency: quote.currency,
       subtotalAmount: quote.subtotalCurrent,
       deliveryAmount: quote.deliveryTotal,
@@ -165,7 +164,7 @@ export class OrderService {
       customerEmail: auth.email,
       customerPhone: order.shippingPhone,
       currency: order.currency,
-      paymentMethod: order.paymentStatus === "PAID" ? "card" : "cod",
+      paymentMethod: "card",
       paymentStatus: order.paymentStatus === "PAID" ? "PAID" : "UNPAID",
       shippingAddress: {
         addressLine1: order.shippingAddressLine1,
@@ -193,7 +192,6 @@ export class OrderService {
     this.assertActiveCustomer(auth);
     await this.orderRepository.claimGuestOrdersForUser(auth.id, auth.email);
     await this.orderRepository.backfillMissingDeliveredAtForUser(auth.id);
-    await this.reconcileDeliveredCodOrdersForUser(auth.id);
     const orders = await this.orderRepository.listByUserId(auth.id);
     return orders.map((order) => this.serializeOrder(order));
   }
@@ -287,10 +285,6 @@ export class OrderService {
     // Send email notification to customer on key status changes
     if (status === "SHIPPED" || status === "DELIVERED" || status === "CANCELLED") {
       await this.sendOrderStatusEmail(vendorOrder.order.id, status);
-    }
-
-    if (status === "DELIVERED") {
-      await this.orderSettlementService.settleCodOnVendorDelivery(vendorOrderId);
     }
 
     return {
@@ -617,19 +611,6 @@ export class OrderService {
 
     const updatedOrder = await this.orderRepository.updateOrderStatus(orderId, nextStatus);
     return updatedOrder.status;
-  }
-
-  private async reconcileDeliveredCodOrdersForUser(userId: string) {
-    const orders = await this.orderRepository.listByUserId(userId);
-
-    for (const order of orders) {
-      if (order.paymentStatus !== "UNPAID") continue;
-
-      for (const vendorOrder of order.vendorOrders) {
-        if (vendorOrder.status !== "DELIVERED") continue;
-        await this.orderSettlementService.settleCodOnVendorDelivery(vendorOrder.id);
-      }
-    }
   }
 
   private customerOwnsOrder(

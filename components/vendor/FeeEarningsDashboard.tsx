@@ -153,8 +153,7 @@ export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
 
         {data.orders.length === 0 ? (
           <p className="px-5 py-12 text-center text-sm text-neutral-500">
-            No orders yet. Fees and earnings appear when orders are delivered (COD) or paid
-            online.
+            No orders yet. Fees and earnings appear after customer card payments are settled.
           </p>
         ) : (
           <div className="overflow-x-auto">

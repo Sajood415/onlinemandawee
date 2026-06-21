@@ -50,7 +50,7 @@ export class AdminPayoutService {
           await this.payoutReleaseService.assertAdminCanRelease(payout.id);
           payouts.push(payout);
         } catch {
-          // Held until delivery when vendor has no external payout account
+          // Not yet releasable (typically hold window not reached)
         }
       }
     }

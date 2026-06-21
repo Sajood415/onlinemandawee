@@ -1,19 +1,16 @@
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
-import { vendorHasExternalPayoutAccount } from "@/lib/vendor/external-payout-account";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { PayoutRepository } from "@/repositories/payout.repository";
 import { VendorLedgerEntryRepository } from "@/repositories/vendor-ledger-entry.repository";
-import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
 
 export class PayoutReleaseService {
   constructor(
     private readonly payoutRepository = new PayoutRepository(),
     private readonly vendorLedgerEntryRepository = new VendorLedgerEntryRepository(),
     private readonly orderRepository = new OrderRepository(),
-    private readonly vendorProfileRepository = new VendorProfileRepository(),
     private readonly auditLogRepository = new AuditLogRepository()
   ) {}
 
@@ -54,6 +51,10 @@ export class PayoutReleaseService {
 
     if (!payout || payout.status !== "ON_HOLD") {
       return { transferred: false, reason: "not_on_hold" as const };
+    }
+
+    if (payout.holdUntil > new Date()) {
+      return { transferred: false, reason: "hold_not_elapsed" as const };
     }
 
     const now = new Date();
@@ -108,18 +109,6 @@ export class PayoutReleaseService {
         code: ERROR_CODE.NOT_FOUND,
         message: "Order not found for payout",
         statusCode: 404,
-      });
-    }
-
-    const vendor = await this.vendorProfileRepository.findById(payout.vendorProfileId);
-    const hasExternal = vendorHasExternalPayoutAccount(vendor?.payoutMethod ?? null);
-
-    if (!hasExternal && vendorOrder.status !== "DELIVERED") {
-      throw new AppError({
-        code: ERROR_CODE.BAD_REQUEST,
-        message:
-          "Payout can only be released manually after the order is marked delivered (vendor has no external payout account on file)",
-        statusCode: 400,
       });
     }
 

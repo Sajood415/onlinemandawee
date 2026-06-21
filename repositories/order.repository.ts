@@ -161,6 +161,7 @@ export class OrderRepository {
     guestEmail?: string | null;
     stripePaymentIntentId?: string | null;
     orderNumber: string;
+    deliveryMethod?: "PICKUP" | "EXPRESS" | "STANDARD";
     currency: string;
     subtotalAmount: number;
     deliveryAmount: number;
@@ -200,6 +201,7 @@ export class OrderRepository {
         guestEmail: input.guestEmail ?? undefined,
         stripePaymentIntentId: input.stripePaymentIntentId ?? undefined,
         orderNumber: input.orderNumber,
+        deliveryMethod: input.deliveryMethod ?? undefined,
         currency: input.currency,
         subtotalAmount: input.subtotalAmount,
         deliveryAmount: input.deliveryAmount,

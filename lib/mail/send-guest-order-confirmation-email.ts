@@ -20,7 +20,7 @@ export async function sendGuestOrderConfirmationEmail(input: {
   trackingUrl: string;
   currency: string;
   grandTotalAmount: number;
-  paymentMethod: "cod" | "card";
+  paymentMethod: "card";
   shippingAddress: OrderEmailContext["shippingAddress"];
   lineItems: GuestOrderLineItem[];
 }) {

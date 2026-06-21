@@ -72,13 +72,11 @@ export class RefundService {
     if (
       !canCustomerOpenRefundCase({
         paymentStatus: orderItem.orderVendor.order.paymentStatus,
-        vendorOrderStatus: orderItem.orderVendor.status,
       })
     ) {
       throw new AppError({
         code: ERROR_CODE.BAD_REQUEST,
-        message:
-          "Refunds are only allowed for paid orders or cash-on-delivery orders marked delivered",
+        message: "Refunds are only allowed for paid orders",
         statusCode: 400,
       });
     }
