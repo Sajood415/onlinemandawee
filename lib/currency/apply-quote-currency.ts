@@ -62,5 +62,7 @@ export function applyQuoteCurrency(
     appliedCoupons,
     vendorSummaries,
     deliveryBreakdown,
+    deliveryMethod: quote.deliveryMethod,
+    requiresDeliveryAddress: quote.requiresDeliveryAddress,
   };
 }

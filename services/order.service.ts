@@ -121,6 +121,7 @@ export class OrderService {
       shippingPostalCode: quote.address.postalCode,
       vendorOrders: quote.vendorGroups.map((vendorGroup) => ({
         vendorProfileId: vendorGroup.vendorProfileId,
+        deliveryMethod: input.method,
         currency: quote.currency,
         subtotalAmount: vendorGroup.subtotalCurrent,
         deliveryAmount: vendorGroup.deliveryAmount,

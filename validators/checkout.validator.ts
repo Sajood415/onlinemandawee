@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { deliveryMethods } from "@/domain/delivery/delivery-types";
 import { SUPPORTED_CURRENCIES } from "@/lib/currency/constants";
 
 const lettersOnlyField = (label: string) =>
@@ -47,11 +48,17 @@ export const checkoutPostalCodeSchema = z
   });
 
 export const checkoutCurrencySchema = z.enum(SUPPORTED_CURRENCIES).default("USD");
+export const checkoutDeliveryMethodSchema = z
+  .enum(deliveryMethods)
+  .default("STANDARD");
 
 export const checkoutShippingContactSchema = z.object({
   guestName: checkoutGuestNameSchema,
   guestEmail: checkoutGuestEmailSchema,
   guestPhone: checkoutGuestPhoneSchema,
+});
+
+export const checkoutShippingAddressSchema = z.object({
   addressLine1: checkoutAddressLineSchema,
   city: checkoutCitySchema,
   country: checkoutCountrySchema,

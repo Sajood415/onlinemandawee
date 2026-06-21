@@ -95,7 +95,10 @@ export function validatePostalCode(value: string): string | null {
 
 export function validateCheckoutShippingForm(
   contact: CheckoutContactFields,
-  address: CheckoutAddressFields
+  address: CheckoutAddressFields,
+  options?: {
+    addressRequired?: boolean;
+  }
 ): Partial<Record<keyof CheckoutContactFields | keyof CheckoutAddressFields, string>> {
   const errors: Partial<
     Record<keyof CheckoutContactFields | keyof CheckoutAddressFields, string>
@@ -110,14 +113,17 @@ export function validateCheckoutShippingForm(
   const phoneError = validateGuestPhone(contact.guestPhone);
   if (phoneError) errors.guestPhone = phoneError;
 
-  const addressError = validateAddressLine(address.addressLine1);
-  if (addressError) errors.addressLine1 = addressError;
+  const addressRequired = options?.addressRequired ?? true;
+  if (addressRequired) {
+    const addressError = validateAddressLine(address.addressLine1);
+    if (addressError) errors.addressLine1 = addressError;
 
-  const cityError = validateCity(address.city);
-  if (cityError) errors.city = cityError;
+    const cityError = validateCity(address.city);
+    if (cityError) errors.city = cityError;
 
-  const countryError = validateCountry(address.country);
-  if (countryError) errors.country = countryError;
+    const countryError = validateCountry(address.country);
+    if (countryError) errors.country = countryError;
+  }
 
   const postalError = validatePostalCode(address.postalCode);
   if (postalError) errors.postalCode = postalError;

@@ -9,7 +9,6 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
-import { convertMajorUnits } from "@/lib/currency/convert";
 import { fetchPublicCatalogProduct } from "@/lib/products/public-catalog";
 import { useCurrency } from "@/store/currency-context";
 
@@ -25,6 +24,7 @@ type CartItem = {
   vendor: string;
   delivery: string;
   vendorProfileId?: string | null;
+  sellerType?: "PLATFORM" | "THIRD_PARTY";
   isVendorProduct?: boolean;
 };
 
@@ -59,6 +59,7 @@ const resolveProductDetails = async (productId: string) => {
     vendor: catalogProduct.vendor,
     delivery: catalogProduct.delivery,
     vendorProfileId: catalogProduct.vendorProfileId,
+    sellerType: catalogProduct.sellerType,
     isVendorProduct: catalogProduct.isVendorProduct,
   };
 };
@@ -153,6 +154,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             vendor: product.vendor,
             delivery: product.delivery,
             vendorProfileId: product.vendorProfileId,
+            sellerType: product.sellerType,
             isVendorProduct: product.isVendorProduct,
           };
           newCart = {

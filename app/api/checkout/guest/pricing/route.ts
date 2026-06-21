@@ -7,6 +7,7 @@ import {
 } from "@/lib/checkout/build-guest-checkout-quote";
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import {
+  checkoutDeliveryMethodSchema,
   checkoutCurrencySchema,
   guestCheckoutCartItemSchema,
   guestCheckoutCouponsSchema,
@@ -17,6 +18,7 @@ const pricingBodySchema = z
   .object({
     items: z.array(guestCheckoutCartItemSchema).min(1),
     currency: checkoutCurrencySchema,
+    deliveryMethod: checkoutDeliveryMethodSchema.optional(),
     deliveryAddress: guestCheckoutDeliveryAddressSchema.optional(),
   })
   .merge(guestCheckoutCouponsSchema);
@@ -38,6 +40,7 @@ export const POST = withErrorHandling(async (request) => {
       currency: parsed.data.currency,
       couponCodes: parsed.data.couponCodes,
       vendorCoupons: parsed.data.vendorCoupons,
+      deliveryMethod: parsed.data.deliveryMethod,
       deliveryAddress: parsed.data.deliveryAddress,
     });
     return NextResponse.json({ data: quote }, { status: 200 });

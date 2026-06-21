@@ -19,6 +19,7 @@ export type ApiCatalogProduct = {
     id: string;
     storeName: string | null;
     storeSlug: string | null;
+    sellerType: "PLATFORM" | "THIRD_PARTY";
     logoUrl: string | null;
     description: string | null;
   };
@@ -66,6 +67,7 @@ export type PublicCatalogProduct = {
   inStock: boolean;
   vendorSlug: string;
   vendorProfileId: string;
+  sellerType: "PLATFORM" | "THIRD_PARTY";
   stockQty: number;
   currency: string;
   isVendorProduct: true;
@@ -168,6 +170,7 @@ export function mapApiProductToCatalog(product: ApiCatalogProduct): PublicCatalo
     inStock,
     vendorSlug: product.vendorProfile.storeSlug ?? product.vendorProfile.id,
     vendorProfileId: product.vendorProfile.id,
+    sellerType: product.vendorProfile.sellerType,
     stockQty: product.stockQty,
     currency,
     isVendorProduct: true,

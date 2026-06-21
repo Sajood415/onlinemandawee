@@ -27,10 +27,10 @@ export async function createGuestOrderFromQuote(input: {
   guestName: string;
   guestEmail: string;
   guestPhone: string;
-  addressLine1: string;
-  city: string;
-  country: string;
-  postalCode: string;
+  addressLine1?: string;
+  city?: string;
+  country?: string;
+  postalCode?: string;
   paymentStatus: "PAID";
   deliveryMethod?: "PICKUP" | "EXPRESS" | "STANDARD";
   stripePaymentIntentId?: string;
@@ -57,7 +57,7 @@ export async function createGuestOrderFromQuote(input: {
       orderNumber,
       status: "CREATED",
       paymentStatus: input.paymentStatus,
-      deliveryMethod: input.deliveryMethod ?? "STANDARD",
+      deliveryMethod: input.deliveryMethod ?? input.quote.deliveryMethod ?? "STANDARD",
       currency: input.quote.currency,
       subtotalAmount: input.quote.subtotalAmount,
       deliveryAmount: input.quote.deliveryAmount,
@@ -65,14 +65,15 @@ export async function createGuestOrderFromQuote(input: {
       grandTotalAmount: input.quote.grandTotalAmount,
       shippingFullName: input.guestName,
       shippingPhone: input.guestPhone,
-      shippingAddressLine1: input.addressLine1,
-      shippingCity: input.city,
-      shippingCountry: input.country,
-      shippingPostalCode: input.postalCode,
+      shippingAddressLine1: input.addressLine1 ?? "",
+      shippingCity: input.city ?? "",
+      shippingCountry: input.country ?? "",
+      shippingPostalCode: input.postalCode ?? "",
       vendorOrders: {
         create: input.quote.vendorSummaries.map((summary) => ({
           vendorProfileId: summary.vendorProfileId,
           status: "NEW",
+          deliveryMethod: summary.deliveryMethod,
           currency: input.quote.currency,
           subtotalAmount: summary.subtotalAmount,
           deliveryAmount: summary.deliveryAmount,
@@ -111,10 +112,10 @@ export async function createGuestOrderFromQuote(input: {
     grandTotalAmount: input.quote.grandTotalAmount,
     paymentMethod,
     shippingAddress: {
-      addressLine1: input.addressLine1,
-      city: input.city,
-      country: input.country,
-      postalCode: input.postalCode || undefined,
+      addressLine1: input.addressLine1 ?? "",
+      city: input.city ?? "",
+      country: input.country ?? "",
+      postalCode: (input.postalCode ?? "") || undefined,
       phone: input.guestPhone,
     },
     lineItems: input.quote.lineItems,
@@ -129,10 +130,10 @@ export async function createGuestOrderFromQuote(input: {
     paymentMethod,
     paymentStatus: input.paymentStatus,
     shippingAddress: {
-      addressLine1: input.addressLine1,
-      city: input.city,
-      country: input.country,
-      postalCode: input.postalCode || undefined,
+      addressLine1: input.addressLine1 ?? "",
+      city: input.city ?? "",
+      country: input.country ?? "",
+      postalCode: (input.postalCode ?? "") || undefined,
       phone: input.guestPhone,
     },
     vendorGroups: input.quote.vendorSummaries.map((summary) => ({

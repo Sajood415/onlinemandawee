@@ -176,6 +176,7 @@ export class OrderRepository {
     vendorOrders: Array<{
       vendorProfileId: string;
       status?: VendorOrderStatus;
+      deliveryMethod?: "PICKUP" | "EXPRESS" | "STANDARD";
       currency: string;
       subtotalAmount: number;
       deliveryAmount: number;
@@ -217,6 +218,7 @@ export class OrderRepository {
           create: input.vendorOrders.map((vendorOrder) => ({
             vendorProfileId: vendorOrder.vendorProfileId,
             status: vendorOrder.status ?? "NEW",
+            deliveryMethod: vendorOrder.deliveryMethod ?? undefined,
             currency: vendorOrder.currency,
             subtotalAmount: vendorOrder.subtotalAmount,
             deliveryAmount: vendorOrder.deliveryAmount,

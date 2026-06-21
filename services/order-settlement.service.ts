@@ -4,16 +4,17 @@ import { OrderRepository } from "@/repositories/order.repository";
 import { PayoutRepository } from "@/repositories/payout.repository";
 import { VendorLedgerEntryRepository } from "@/repositories/vendor-ledger-entry.repository";
 
+type DeliveryMethodForSettlement = "PICKUP" | "EXPRESS" | "STANDARD" | null;
+
 type VendorOrderForSettlement = {
   id: string;
   vendorProfileId: string;
+  deliveryMethod?: DeliveryMethodForSettlement;
   subtotalAmount: number;
   deliveryAmount: number;
   grandTotalAmount: number;
   currency: string;
 };
-
-type DeliveryMethodForSettlement = "PICKUP" | "EXPRESS" | "STANDARD" | null;
 
 export class OrderSettlementService {
   constructor(
@@ -45,7 +46,9 @@ export class OrderSettlementService {
     // Commission base includes vendor subtotal plus vendor-owned delivery fees.
     // Standard delivery is platform revenue and should remain excluded by storing
     // it outside vendor-owned delivery amounts on the vendor split.
-    const includeDeliveryInCommission = input.deliveryMethod === "EXPRESS";
+    const effectiveDeliveryMethod =
+      vendorOrder.deliveryMethod ?? input.deliveryMethod ?? null;
+    const includeDeliveryInCommission = effectiveDeliveryMethod === "EXPRESS";
     const commissionBaseAmount = Math.max(0, vendorOrder.subtotalAmount) + (
       includeDeliveryInCommission ? Math.max(0, vendorOrder.deliveryAmount) : 0
     );

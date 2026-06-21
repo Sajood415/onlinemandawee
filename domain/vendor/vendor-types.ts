@@ -5,6 +5,7 @@ export const kycDocumentTypes = [
   "NATIONAL_ID",
 ] as const;
 export const payoutMethodTypes = ["BANK", "STRIPE"] as const;
+export const sellerTypes = ["PLATFORM", "THIRD_PARTY"] as const;
 export const industryTypes = [
   "BAKERY",
   "CLOTHING",
@@ -48,4 +49,5 @@ export const industryTypeLabels: Record<IndustryType, string> = {
 export type BusinessType = (typeof businessTypes)[number];
 export type KycDocumentType = (typeof kycDocumentTypes)[number];
 export type PayoutMethodType = (typeof payoutMethodTypes)[number];
+export type SellerType = (typeof sellerTypes)[number];
 export type IndustryType = (typeof industryTypes)[number];

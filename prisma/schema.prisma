@@ -81,6 +81,11 @@ enum IndustryType {
   OTHER
 }
 
+enum SellerType {
+  PLATFORM
+  THIRD_PARTY
+}
+
 enum KycDocumentType {
   PASSPORT
   DRIVERS_LICENSE
@@ -313,6 +318,7 @@ model VendorProfile {
   storeSlug                      String?
   businessType                   BusinessType?
   industryType                   IndustryType?
+  sellerType                     SellerType                 @default(THIRD_PARTY)
   logoUrl                        String?
   description                    String?
   onboardingStep                 VendorOnboardingStep       @default(ACCOUNT_SETUP)
@@ -351,6 +357,7 @@ model VendorProfile {
   promoBanners                   VendorPromoBanner[]
 
   @@index([status, onboardingStep])
+  @@index([sellerType, status])
   @@index([subscriptionStatus, subscriptionGracePeriodEndsAt])
   @@index([stripeCustomerId])
   @@index([stripeSubscriptionId])
@@ -601,6 +608,7 @@ model OrderVendor {
   orderId          String            @db.ObjectId
   vendorProfileId  String            @db.ObjectId
   status           VendorOrderStatus @default(NEW)
+  deliveryMethod   DeliveryMethod?
   deliveredAt      DateTime?
   currency         String
   subtotalAmount   Int

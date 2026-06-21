@@ -25,7 +25,6 @@ import {
   Package,
   ShoppingBag,
   ClipboardList,
-  Tag,
   Truck,
   X,
 } from "lucide-react";
@@ -146,6 +145,8 @@ type AddressForm = {
   postalCode: string;
 };
 
+type DeliveryMethod = "PICKUP" | "EXPRESS" | "STANDARD";
+
 function isDeliveryAddressComplete(address: AddressForm) {
   return (
     address.addressLine1.trim().length > 0 &&
@@ -182,15 +183,18 @@ function buildGuestCheckoutRequestBody(
   items: Array<{ productId: string; quantity: number }>,
   currency: string,
   vendorCoupons: VendorCouponEntry[],
-  address: AddressForm
+  address: AddressForm,
+  deliveryMethod: DeliveryMethod,
+  addressRequired: boolean
 ) {
   const body: Record<string, unknown> = {
     items,
     currency,
     vendorCoupons,
+    deliveryMethod,
   };
 
-  if (isDeliveryAddressComplete(address)) {
+  if (addressRequired && isDeliveryAddressComplete(address)) {
     body.deliveryAddress = {
       addressLine1: address.addressLine1.trim(),
       city: address.city.trim(),
@@ -367,6 +371,10 @@ type ShippingFieldErrors = Partial<
 function ShippingAddressStep({
   contact,
   address,
+  addressRequired,
+  hasThirdPartyProducts,
+  deliveryMethod,
+  onDeliveryMethodChange,
   savedAddresses,
   onContactChange,
   onAddressChange,
@@ -375,6 +383,10 @@ function ShippingAddressStep({
 }: {
   contact: ContactForm;
   address: AddressForm;
+  addressRequired: boolean;
+  hasThirdPartyProducts: boolean;
+  deliveryMethod: DeliveryMethod;
+  onDeliveryMethodChange: (method: DeliveryMethod) => void;
   savedAddresses: CustomerAddress[];
   onContactChange: (f: Partial<ContactForm>) => void;
   onAddressChange: (f: Partial<AddressForm>) => void;
@@ -394,7 +406,9 @@ function ShippingAddressStep({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const errors = validateCheckoutShippingForm(contact, address);
+    const errors = validateCheckoutShippingForm(contact, address, {
+      addressRequired,
+    });
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       toast.error("Please fix the highlighted fields.");
@@ -406,6 +420,32 @@ function ShippingAddressStep({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {hasThirdPartyProducts ? (
+        <div className="space-y-2">
+          <p className="text-sm font-semibold text-gray-700">Third-party delivery method</p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {([
+              ["PICKUP", "Pickup"],
+              ["EXPRESS", "Express"],
+              ["STANDARD", "Standard"],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => onDeliveryMethodChange(value)}
+                className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                  deliveryMethod === value
+                    ? "border-[#0f3460] bg-[#0f3460]/10 text-[#0f3460]"
+                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       {savedAddresses.length > 0 ? (
         <div className="space-y-3">
           <p className="text-sm font-semibold text-gray-700">Saved addresses</p>
@@ -490,10 +530,20 @@ function ShippingAddressStep({
       </div>
 
       <div className="space-y-4 border-t border-gray-100 pt-6">
-        <p className="text-sm font-semibold text-gray-700">Shipping address</p>
+        <p className="text-sm font-semibold text-gray-700">
+          {addressRequired ? "Shipping address" : "Pickup details"}
+        </p>
+        {!addressRequired ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Pickup orders do not require a delivery address.
+            {hasThirdPartyProducts && deliveryMethod === "PICKUP"
+              ? " You can continue with contact details only."
+              : ""}
+          </div>
+        ) : null}
         <InputField
           label="Street Address"
-          required
+          required={addressRequired}
           type="text"
           placeholder="123 Main Street, Apt 4"
           value={address.addressLine1}
@@ -503,6 +553,7 @@ function ShippingAddressStep({
             clearFieldError("addressLine1");
           }}
           onBlur={() => {
+            if (!addressRequired) return;
             const error = validateAddressLine(address.addressLine1);
             if (error) setFieldErrors((current) => ({ ...current, addressLine1: error }));
           }}
@@ -510,7 +561,7 @@ function ShippingAddressStep({
         <div className="grid grid-cols-2 gap-4">
           <InputField
             label="City"
-            required
+            required={addressRequired}
             type="text"
             placeholder="Kabul"
             value={address.city}
@@ -520,6 +571,7 @@ function ShippingAddressStep({
               clearFieldError("city");
             }}
             onBlur={() => {
+              if (!addressRequired) return;
               const error = validateCity(address.city);
               if (error) setFieldErrors((current) => ({ ...current, city: error }));
             }}
@@ -543,7 +595,7 @@ function ShippingAddressStep({
         </div>
         <InputField
           label="Country"
-          required
+          required={addressRequired}
           type="text"
           placeholder="Afghanistan"
           value={address.country}
@@ -553,6 +605,7 @@ function ShippingAddressStep({
             clearFieldError("country");
           }}
           onBlur={() => {
+            if (!addressRequired) return;
             const error = validateCountry(address.country);
             if (error) setFieldErrors((current) => ({ ...current, country: error }));
           }}
@@ -574,6 +627,9 @@ function ShippingAddressStep({
 
 function DeliveryCostStep({
   summary,
+  hasThirdPartyProducts,
+  deliveryMethod,
+  onDeliveryMethodChange,
   loading,
   error,
   onRetry,
@@ -581,6 +637,9 @@ function DeliveryCostStep({
   onBack,
 }: {
   summary: PriceSummary | null;
+  hasThirdPartyProducts: boolean;
+  deliveryMethod: DeliveryMethod;
+  onDeliveryMethodChange: (method: DeliveryMethod) => void;
   loading: boolean;
   error: string | null;
   onRetry: () => void;
@@ -588,7 +647,7 @@ function DeliveryCostStep({
   onBack: () => void;
 }) {
   const breakdown = summary?.deliveryBreakdown ?? [];
-  const canContinue = Boolean(summary?.deliveryBreakdown?.length) && !loading && !error;
+  const canContinue = Boolean(summary) && !loading && !error;
 
   return (
     <div className="space-y-6">
@@ -597,7 +656,11 @@ function DeliveryCostStep({
         <div className="text-sm text-blue-900 space-y-1">
           <p className="font-semibold">How delivery is calculated</p>
           <p className="text-blue-800">
-            Driving distance from each vendor to your address, plus a base fee and per-km rate.
+            {deliveryMethod === "PICKUP"
+              ? "Pickup orders have no delivery fee for third-party vendors."
+              : deliveryMethod === "EXPRESS"
+                ? "Express delivery uses vendor-defined delivery rules."
+                : "Standard delivery uses platform delivery rules for third-party vendors."}
           </p>
           {breakdown[0] ? (
             <p className="text-blue-700">
@@ -607,6 +670,32 @@ function DeliveryCostStep({
           ) : null}
         </div>
       </div>
+
+      {hasThirdPartyProducts ? (
+        <div className="space-y-2">
+          <p className="text-sm font-semibold text-gray-700">Third-party delivery method</p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {([
+              ["PICKUP", "Pickup"],
+              ["EXPRESS", "Express"],
+              ["STANDARD", "Standard"],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => onDeliveryMethodChange(value)}
+                className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                  deliveryMethod === value
+                    ? "border-[#0f3460] bg-[#0f3460]/10 text-[#0f3460]"
+                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
@@ -637,13 +726,21 @@ function DeliveryCostStep({
                 </p>
               </div>
               <p className="text-sm text-gray-600">
-                <span className="font-semibold text-gray-800">{entry.distanceKm.toFixed(1)} km</span>{" "}
-                driving distance
+                {entry.distanceKm > 0
+                  ? (
+                    <>
+                      <span className="font-semibold text-gray-800">{entry.distanceKm.toFixed(1)} km</span>{" "}
+                      driving distance
+                    </>
+                    )
+                  : "Method-based delivery fee"}
               </p>
-              <p className="text-xs text-gray-500">
-                {formatAmount(entry.baseFeeAmount, summary!.currency)} base +{" "}
-                {formatAmount(entry.perKmRateAmount, summary!.currency)}/km
-              </p>
+              {entry.baseFeeAmount > 0 || entry.perKmRateAmount > 0 ? (
+                <p className="text-xs text-gray-500">
+                  {formatAmount(entry.baseFeeAmount, summary!.currency)} base +{" "}
+                  {formatAmount(entry.perKmRateAmount, summary!.currency)}/km
+                </p>
+              ) : null}
             </div>
           ))}
           <div className="flex justify-between rounded-xl border border-[#0f3460]/15 bg-[#0f3460]/5 px-4 py-3 text-sm font-semibold text-[#0f3460]">
@@ -689,6 +786,8 @@ function PaymentMethodStep({
   stripePromise,
   contact,
   address,
+  deliveryMethod,
+  addressRequired,
   cartItems,
   vendorCoupons,
   checkoutApiBase,
@@ -723,6 +822,8 @@ function PaymentMethodStep({
   stripePromise: ReturnType<typeof getStripePromise>;
   contact: ContactForm;
   address: AddressForm;
+  deliveryMethod: DeliveryMethod;
+  addressRequired: boolean;
   cartItems: Array<{ productId: string; quantity: number }>;
   vendorCoupons: VendorCouponEntry[];
   checkoutApiBase: string;
@@ -802,6 +903,8 @@ function PaymentMethodStep({
             quote={quote}
             contact={contact}
             address={address}
+            deliveryMethod={deliveryMethod}
+            addressRequired={addressRequired}
             cartItems={cartItems}
             vendorCoupons={vendorCoupons}
             checkoutApiBase={checkoutApiBase}
@@ -868,6 +971,8 @@ function StripePayForm({
   quote,
   contact,
   address,
+  deliveryMethod,
+  addressRequired,
   cartItems,
   vendorCoupons,
   checkoutApiBase,
@@ -878,6 +983,8 @@ function StripePayForm({
   quote: QuoteSummary;
   contact: ContactForm;
   address: AddressForm;
+  deliveryMethod: DeliveryMethod;
+  addressRequired: boolean;
   cartItems: Array<{ productId: string; quantity: number }>;
   vendorCoupons: VendorCouponEntry[];
   checkoutApiBase: string;
@@ -903,12 +1010,14 @@ function StripePayForm({
               name: contact.guestName,
               email: contact.guestEmail,
               phone: contact.guestPhone,
-              address: {
-                line1: address.addressLine1,
-                city: address.city,
-                country: address.country,
-                postal_code: address.postalCode || undefined,
-              },
+              address: addressRequired
+                ? {
+                    line1: address.addressLine1,
+                    city: address.city,
+                    country: address.country,
+                    postal_code: address.postalCode || undefined,
+                  }
+                : undefined,
             },
           },
         },
@@ -928,10 +1037,15 @@ function StripePayForm({
             guestName: contact.guestName,
             guestEmail: contact.guestEmail,
             guestPhone: contact.guestPhone,
-            addressLine1: address.addressLine1,
-            city: address.city,
-            country: address.country,
-            postalCode: address.postalCode,
+            ...(addressRequired
+              ? {
+                  addressLine1: address.addressLine1,
+                  city: address.city,
+                  country: address.country,
+                  postalCode: address.postalCode,
+                }
+              : {}),
+            deliveryMethod,
             currency: quote.currency,
             items: cartItems,
             vendorCoupons,
@@ -1060,9 +1174,12 @@ function OrderSummary({
                     </span>
                   </div>
                   <p>
-                    {entry.distanceKm.toFixed(1)} km driving distance ·{" "}
-                    {formatAmount(entry.baseFeeAmount, summary.currency)} base +{" "}
-                    {formatAmount(entry.perKmRateAmount, summary.currency)}/km
+                    {entry.distanceKm > 0
+                      ? `${entry.distanceKm.toFixed(1)} km driving distance`
+                      : "Method-based delivery fee"}
+                    {entry.baseFeeAmount > 0 || entry.perKmRateAmount > 0
+                      ? ` · ${formatAmount(entry.baseFeeAmount, summary.currency)} base + ${formatAmount(entry.perKmRateAmount, summary.currency)}/km`
+                      : ""}
                   </p>
                 </div>
               ))}
@@ -1188,6 +1305,7 @@ export default function CheckoutPage() {
   const stripeAvailable = isStripeCheckoutConfigured();
   const [contact, setContact] = useState<ContactForm>({ guestName: "", guestEmail: "", guestPhone: "" });
   const [address, setAddress] = useState<AddressForm>({ addressLine1: "", city: "", country: "", postalCode: "" });
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("STANDARD");
   const [customerPrefillReady, setCustomerPrefillReady] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<CustomerAddress[]>([]);
 
@@ -1213,6 +1331,15 @@ export default function CheckoutPage() {
   );
 
   const cartItems = cart.items;
+  const hasPlatformProducts = useMemo(
+    () => cartItems.some((item) => item.sellerType === "PLATFORM"),
+    [cartItems]
+  );
+  const hasThirdPartyProducts = useMemo(
+    () => cartItems.some((item) => (item.sellerType ?? "THIRD_PARTY") === "THIRD_PARTY"),
+    [cartItems]
+  );
+  const addressRequired = hasPlatformProducts || deliveryMethod !== "PICKUP";
   const cartItemsPayload = useMemo(
     () => cartItems.map((item) => ({ productId: item.productId, quantity: item.quantity })),
     [cartItems]
@@ -1294,13 +1421,21 @@ export default function CheckoutPage() {
     !customerPrefillReady;
 
   const fetchStripeQuote = useCallback(async (coupons: VendorCouponEntry[]) => {
-    if (cartItems.length === 0 || !isDeliveryAddressComplete(address)) return;
+    if (cartItems.length === 0) return;
+    if (addressRequired && !isDeliveryAddressComplete(address)) return;
     setQuoteLoading(true);
     setQuoteError(null);
     try {
       const res = await postCheckout(
         `${checkoutApiBase}/intent`,
-        buildGuestCheckoutRequestBody(cartItemsPayload, currency, coupons, address),
+        buildGuestCheckoutRequestBody(
+          cartItemsPayload,
+          currency,
+          coupons,
+          address,
+          deliveryMethod,
+          addressRequired
+        ),
         isCustomerCheckout
       );
       const data = await parseApiResponse<QuoteSummary>(res);
@@ -1313,16 +1448,24 @@ export default function CheckoutPage() {
     } finally {
       setQuoteLoading(false);
     }
-  }, [address, cartItems.length, cartItemsPayload, checkoutApiBase, currency, isCustomerCheckout]);
+  }, [address, addressRequired, cartItems.length, cartItemsPayload, checkoutApiBase, currency, deliveryMethod, isCustomerCheckout]);
 
   const fetchPricing = useCallback(async (coupons: VendorCouponEntry[]) => {
-    if (cartItems.length === 0 || !isDeliveryAddressComplete(address)) return;
+    if (cartItems.length === 0) return;
+    if (addressRequired && !isDeliveryAddressComplete(address)) return;
     setQuoteLoading(true);
     setQuoteError(null);
     try {
       const res = await postCheckout(
         `${checkoutApiBase}/pricing`,
-        buildGuestCheckoutRequestBody(cartItemsPayload, currency, coupons, address),
+        buildGuestCheckoutRequestBody(
+          cartItemsPayload,
+          currency,
+          coupons,
+          address,
+          deliveryMethod,
+          addressRequired
+        ),
         isCustomerCheckout
       );
       const data = await parseApiResponse<PriceSummary>(res);
@@ -1334,7 +1477,7 @@ export default function CheckoutPage() {
     } finally {
       setQuoteLoading(false);
     }
-  }, [address, cartItems.length, cartItemsPayload, checkoutApiBase, currency, isCustomerCheckout]);
+  }, [address, addressRequired, cartItems.length, cartItemsPayload, checkoutApiBase, currency, deliveryMethod, isCustomerCheckout]);
 
   const refreshPricing = useCallback(
     async (coupons: VendorCouponEntry[]) => {
@@ -1366,7 +1509,14 @@ export default function CheckoutPage() {
     try {
       const res = await postCheckout(
         `${checkoutApiBase}/intent`,
-        buildGuestCheckoutRequestBody(cartItemsPayload, currency, nextCoupons, address),
+        buildGuestCheckoutRequestBody(
+          cartItemsPayload,
+          currency,
+          nextCoupons,
+          address,
+          deliveryMethod,
+          addressRequired
+        ),
         isCustomerCheckout
       );
       const data = await parseApiResponse<PriceSummary & Partial<QuoteSummary>>(res);
@@ -1527,10 +1677,11 @@ export default function CheckoutPage() {
   }, [cartItems, displaySummary]);
 
   useEffect(() => {
-    if (step !== 1 || !isDeliveryAddressComplete(address)) return;
+    if (step !== 1) return;
+    if (addressRequired && !isDeliveryAddressComplete(address)) return;
     void fetchPricing(vendorCoupons);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, currency, address.addressLine1, address.city, address.country, address.postalCode]);
+  }, [step, currency, deliveryMethod, addressRequired, address.addressLine1, address.city, address.country, address.postalCode]);
 
   useEffect(() => {
     if (step !== 2) return;
@@ -1637,6 +1788,10 @@ export default function CheckoutPage() {
               <ShippingAddressStep
                 contact={contact}
                 address={address}
+                addressRequired={addressRequired}
+                hasThirdPartyProducts={hasThirdPartyProducts}
+                deliveryMethod={deliveryMethod}
+                onDeliveryMethodChange={setDeliveryMethod}
                 savedAddresses={savedAddresses}
                 onContactChange={(f) => setContact((prev) => ({ ...prev, ...f }))}
                 onAddressChange={(f) => setAddress((prev) => ({ ...prev, ...f }))}
@@ -1648,6 +1803,14 @@ export default function CheckoutPage() {
             {step === 1 && (
               <DeliveryCostStep
                 summary={priceSummary}
+                hasThirdPartyProducts={hasThirdPartyProducts}
+                deliveryMethod={deliveryMethod}
+                onDeliveryMethodChange={(method) => {
+                  setDeliveryMethod(method);
+                  setPriceSummary(null);
+                  setQuote(null);
+                  setQuoteError(null);
+                }}
                 loading={quoteLoading}
                 error={quoteError}
                 onRetry={() => void fetchPricing(vendorCoupons)}
@@ -1668,6 +1831,8 @@ export default function CheckoutPage() {
                 stripePromise={stripePromise}
                 contact={contact}
                 address={address}
+                deliveryMethod={deliveryMethod}
+                addressRequired={addressRequired}
                 cartItems={cartItemsPayload}
                 vendorCoupons={vendorCoupons}
                 checkoutApiBase={checkoutApiBase}
@@ -1709,7 +1874,7 @@ export default function CheckoutPage() {
               loading={(step === 1 || step === 2) && quoteLoading}
               deliveryError={step >= 1 ? quoteError : null}
               isPaymentStep={step >= 1}
-              hasPricedDelivery={Boolean(priceSummary?.deliveryBreakdown?.length)}
+              hasPricedDelivery={Boolean(priceSummary)}
             />
           </div>
         </div>

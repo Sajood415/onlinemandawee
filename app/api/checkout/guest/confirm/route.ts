@@ -14,7 +14,9 @@ import { getStripeServerClient } from "@/lib/stripe/server";
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { prisma } from "@/lib/db/prisma";
 import {
+  checkoutDeliveryMethodSchema,
   checkoutCurrencySchema,
+  checkoutShippingAddressSchema,
   checkoutShippingContactSchema,
   guestCheckoutCartItemSchema,
   guestCheckoutCouponsSchema,
@@ -24,9 +26,11 @@ const confirmBodySchema = z
   .object({
     paymentIntentId: z.string().min(1),
     currency: checkoutCurrencySchema,
+    deliveryMethod: checkoutDeliveryMethodSchema.optional(),
     items: z.array(guestCheckoutCartItemSchema).min(1),
   })
   .merge(checkoutShippingContactSchema)
+  .merge(checkoutShippingAddressSchema.partial())
   .merge(guestCheckoutCouponsSchema);
 
 export const POST = withErrorHandling(async (request) => {
@@ -91,12 +95,16 @@ export const POST = withErrorHandling(async (request) => {
       currency: input.currency,
       couponCodes: input.couponCodes,
       vendorCoupons: input.vendorCoupons,
-      deliveryAddress: {
-        addressLine1: input.addressLine1,
-        city: input.city,
-        country: input.country,
-        postalCode: input.postalCode,
-      },
+      deliveryMethod: input.deliveryMethod,
+      deliveryAddress:
+        input.addressLine1 && input.city && input.country
+          ? {
+              addressLine1: input.addressLine1,
+              city: input.city,
+              country: input.country,
+              postalCode: input.postalCode ?? "",
+            }
+          : undefined,
     });
 
     assertPaymentIntentMatchesQuote(paymentIntent, quote);
@@ -111,6 +119,7 @@ export const POST = withErrorHandling(async (request) => {
       country: input.country,
       postalCode: input.postalCode,
       paymentStatus: "PAID",
+      deliveryMethod: input.deliveryMethod ?? quote.deliveryMethod,
       stripePaymentIntentId: input.paymentIntentId,
     });
 

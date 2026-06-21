@@ -15,6 +15,9 @@ import {
 import { prisma } from "@/lib/db/prisma";
 import { isMongoObjectId } from "@/lib/db/object-id";
 import type { PostalAddress } from "@/lib/maps/google-maps";
+import type { DeliveryMethod } from "@/domain/delivery/delivery-types";
+import type { SellerType } from "@/domain/vendor/vendor-types";
+import { DeliveryPricingService } from "@/services/delivery-pricing.service";
 
 export type GuestCheckoutCartItem = {
   productId: string;
@@ -27,6 +30,7 @@ export type GuestCheckoutLineItem = {
   productImage: string | null;
   productSku: string | null;
   vendorProfileId: string;
+  sellerType: SellerType;
   categoryId: string;
   quantity: number;
   unitPriceAmount: number;
@@ -46,6 +50,8 @@ export type AppliedGuestCoupon = {
 
 export type GuestCheckoutVendorSummary = {
   vendorProfileId: string;
+  sellerType: SellerType;
+  deliveryMethod: DeliveryMethod;
   subtotalAmount: number;
   discountAmount: number;
   deliveryAmount: number;
@@ -65,6 +71,8 @@ export type GuestCheckoutQuote = {
   appliedCoupons: AppliedGuestCoupon[];
   vendorSummaries: GuestCheckoutVendorSummary[];
   deliveryBreakdown?: GuestCheckoutDeliveryBreakdown[];
+  deliveryMethod: DeliveryMethod;
+  requiresDeliveryAddress: boolean;
 };
 
 export { GuestCheckoutQuoteError };
@@ -106,12 +114,15 @@ export async function buildGuestCheckoutQuote(input: {
   couponCodes?: string[];
   vendorCoupons?: GuestCheckoutCouponEntry[];
   deliveryAddress?: PostalAddress;
+  deliveryMethod?: DeliveryMethod;
 }): Promise<GuestCheckoutQuote> {
   const currency = input.currency ?? "USD";
   const couponEntries = normalizeGuestCheckoutCoupons({
     vendorCoupons: input.vendorCoupons,
     couponCodes: input.couponCodes,
   });
+  const deliveryPricingService = new DeliveryPricingService();
+  const selectedThirdPartyMethod: DeliveryMethod = input.deliveryMethod ?? "STANDARD";
 
   const products = await Promise.all(
     input.items.map(async (item) => {
@@ -148,6 +159,7 @@ export async function buildGuestCheckoutQuote(input: {
       productImage: product!.images[0] ?? null,
       productSku: product!.sku ?? null,
       vendorProfileId: product!.vendorProfileId,
+      sellerType: product!.vendorProfile.sellerType,
       categoryId: product!.categoryId,
       quantity: item.quantity,
       unitPriceAmount,
@@ -158,17 +170,112 @@ export async function buildGuestCheckoutQuote(input: {
 
   const subtotalAmount = lineItems.reduce((sum, item) => sum + item.lineTotalAmount, 0);
 
-  const vendorProfileIds = [...new Set(lineItems.map((item) => item.vendorProfileId))];
+  const hasPlatformItems = lineItems.some((item) => item.sellerType === "PLATFORM");
+  const hasThirdPartyItems = lineItems.some(
+    (item) => item.sellerType === "THIRD_PARTY"
+  );
+  const requiresDeliveryAddress =
+    hasPlatformItems || selectedThirdPartyMethod !== "PICKUP";
+
+  if (requiresDeliveryAddress && !input.deliveryAddress) {
+    throw new GuestCheckoutQuoteError(
+      "DELIVERY_ADDRESS_REQUIRED",
+      "Delivery address is required for this order.",
+      400
+    );
+  }
+
   let deliveryAmount = 0;
   let deliveryBreakdown: GuestCheckoutDeliveryBreakdown[] | undefined;
 
-  if (input.deliveryAddress) {
-    const deliveryQuote = await calculateGuestDelivery({
-      vendorProfileIds,
-      deliveryAddress: input.deliveryAddress,
-    });
-    deliveryAmount = deliveryQuote.totalAmount;
-    deliveryBreakdown = deliveryQuote.breakdown;
+  const deliveryByVendorForSettlement = new Map<string, number>();
+  const breakdownEntries: GuestCheckoutDeliveryBreakdown[] = [];
+
+  if (hasPlatformItems && input.deliveryAddress) {
+    const platformVendorIds = [
+      ...new Set(
+        lineItems
+          .filter((item) => item.sellerType === "PLATFORM")
+          .map((item) => item.vendorProfileId)
+      ),
+    ];
+
+    if (platformVendorIds.length > 0) {
+      const platformDeliveryQuote = await calculateGuestDelivery({
+        vendorProfileIds: platformVendorIds,
+        deliveryAddress: input.deliveryAddress,
+      });
+      deliveryAmount += platformDeliveryQuote.totalAmount;
+      for (const entry of platformDeliveryQuote.breakdown) {
+        deliveryByVendorForSettlement.set(entry.vendorProfileId, entry.deliveryAmount);
+        breakdownEntries.push(entry);
+      }
+    }
+  }
+
+  if (hasThirdPartyItems) {
+    const thirdPartyItems = lineItems.filter(
+      (item) => item.sellerType === "THIRD_PARTY"
+    );
+    const thirdPartyVendorGroups = Object.values(
+      thirdPartyItems.reduce<Record<string, { vendorProfileId: string; subtotalCurrent: number }>>(
+        (acc, item) => {
+          acc[item.vendorProfileId] ??= {
+            vendorProfileId: item.vendorProfileId,
+            subtotalCurrent: 0,
+          };
+          acc[item.vendorProfileId].subtotalCurrent += item.lineTotalAmount;
+          return acc;
+        },
+        {}
+      )
+    );
+
+    if (selectedThirdPartyMethod === "PICKUP") {
+      for (const vendorGroup of thirdPartyVendorGroups) {
+        deliveryByVendorForSettlement.set(vendorGroup.vendorProfileId, 0);
+      }
+    } else if (input.deliveryAddress) {
+      const thirdPartyDeliveryQuote = await deliveryPricingService.quote({
+        method: selectedThirdPartyMethod,
+        countryCode: input.deliveryAddress.country,
+        currency,
+        items: thirdPartyItems.map((item) => ({
+          vendorProfileId: item.vendorProfileId,
+          quantity: item.quantity,
+          currentLineTotal: item.lineTotalAmount,
+        })),
+        vendorGroups: thirdPartyVendorGroups,
+      });
+
+      deliveryAmount += thirdPartyDeliveryQuote.totalAmount;
+      for (const entry of thirdPartyDeliveryQuote.breakdown) {
+        const isExpress = selectedThirdPartyMethod === "EXPRESS";
+        deliveryByVendorForSettlement.set(
+          entry.vendorProfileId,
+          isExpress ? entry.amount : 0
+        );
+        const existing = breakdownEntries.find(
+          (value) => value.vendorProfileId === entry.vendorProfileId
+        );
+        if (existing) {
+          existing.deliveryAmount += entry.amount;
+          continue;
+        }
+        breakdownEntries.push({
+          vendorProfileId: entry.vendorProfileId,
+          vendorStoreName: null,
+          distanceKm: 0,
+          baseFeeAmount: 0,
+          perKmRateAmount: 0,
+          deliveryAmount: entry.amount,
+        });
+      }
+    }
+  }
+
+  if (breakdownEntries.length > 0) {
+    deliveryBreakdown = breakdownEntries;
   }
 
   const vendorSubtotals = lineItems.reduce<Record<string, number>>((acc, item) => {
@@ -264,17 +371,37 @@ export async function buildGuestCheckoutQuote(input: {
   const discountAmount = appliedCoupons.reduce((sum, coupon) => sum + coupon.discountAmount, 0);
   const grandTotalAmount = Math.max(0, subtotalAmount + deliveryAmount - discountAmount);
 
-  const deliveryByVendor = new Map(
-    (deliveryBreakdown ?? []).map((entry) => [entry.vendorProfileId, entry.deliveryAmount])
-  );
+  const vendorSellerType = new Map<string, SellerType>();
+  for (const item of lineItems) {
+    vendorSellerType.set(item.vendorProfileId, item.sellerType);
+  }
+  const vendorStoreName = new Map<string, string | null>();
+  for (const product of products) {
+    if (product.product) {
+      vendorStoreName.set(
+        product.product.vendorProfileId,
+        product.product.vendorProfile.storeName
+      );
+    }
+  }
+  for (const entry of deliveryBreakdown ?? []) {
+    if (!entry.vendorStoreName) {
+      entry.vendorStoreName = vendorStoreName.get(entry.vendorProfileId) ?? null;
+    }
+  }
 
   const vendorSummaries: GuestCheckoutVendorSummary[] = Object.entries(vendorSubtotals).map(
     ([vendorProfileId, vendorSubtotal]) => {
       const discount = vendorDiscounts[vendorProfileId]?.amount ?? 0;
       const couponCode = vendorDiscounts[vendorProfileId]?.code ?? null;
-      const vendorDelivery = deliveryByVendor.get(vendorProfileId) ?? 0;
+      const vendorDelivery = deliveryByVendorForSettlement.get(vendorProfileId) ?? 0;
+      const sellerType = vendorSellerType.get(vendorProfileId) ?? "THIRD_PARTY";
+      const vendorDeliveryMethod =
+        sellerType === "PLATFORM" ? "STANDARD" : selectedThirdPartyMethod;
       return {
         vendorProfileId,
+        sellerType,
+        deliveryMethod: vendorDeliveryMethod,
         subtotalAmount: vendorSubtotal,
         discountAmount: discount,
         deliveryAmount: vendorDelivery,
@@ -294,6 +421,8 @@ export async function buildGuestCheckoutQuote(input: {
     appliedCoupons,
     vendorSummaries,
     deliveryBreakdown,
+    deliveryMethod: selectedThirdPartyMethod,
+    requiresDeliveryAddress,
   };
 
   return applyQuoteCurrency(quote, currency);
