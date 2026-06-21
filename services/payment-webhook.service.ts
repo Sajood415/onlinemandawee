@@ -73,9 +73,35 @@ export class PaymentWebhookService {
       }
 
       if (
-        order.paymentStatus === "PAID" ||
-        order.paymentStatus === "PARTIALLY_REFUNDED" ||
-        order.paymentStatus === "REFUNDED"
+        input.eventType === "payment.failed" &&
+        (order.paymentStatus === "PAID" ||
+          order.paymentStatus === "PARTIALLY_REFUNDED" ||
+          order.paymentStatus === "REFUNDED")
+      ) {
+        const alreadyProcessedResponse = {
+          provider,
+          eventId: input.eventId,
+          orderId: order.id,
+          orderStatus: order.status,
+          paymentStatus: order.paymentStatus,
+          alreadyProcessed: true,
+        };
+
+        await this.idempotencyKeyRepository.markSucceeded({
+          key: idempotencyKey,
+          responseCode: 200,
+          responseBody: alreadyProcessedResponse,
+          resourceType: "Order",
+          resourceId: order.id,
+        });
+
+        return alreadyProcessedResponse;
+      }
+
+      if (
+        input.eventType === "payment.succeeded" &&
+        (order.paymentStatus === "PARTIALLY_REFUNDED" ||
+          order.paymentStatus === "REFUNDED")
       ) {
         const alreadyProcessedResponse = {
           provider,

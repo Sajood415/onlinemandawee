@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import {
@@ -14,6 +15,7 @@ import { getStripeServerClient } from "@/lib/stripe/server";
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { withRbac } from "@/middlewares/with-rbac";
 import { prisma } from "@/lib/db/prisma";
+import { OrderSettlementService } from "@/services/order-settlement.service";
 import {
   checkoutDeliveryMethodSchema,
   checkoutCurrencySchema,
@@ -33,6 +35,8 @@ const confirmBodySchema = z
   .merge(checkoutShippingContactSchema)
   .merge(checkoutShippingAddressSchema.partial())
   .merge(guestCheckoutCouponsSchema);
+
+const orderSettlementService = new OrderSettlementService();
 
 export const POST = withErrorHandling(
   withRbac(["CUSTOMER"], async (request, context) => {
@@ -80,6 +84,8 @@ export const POST = withErrorHandling(
     });
 
     if (existingOrder) {
+      await orderSettlementService.settleOrderById({ orderId: existingOrder.id });
+
       return NextResponse.json(
         { data: { orderNumber: existingOrder.orderNumber } },
         { status: 200 }
@@ -121,11 +127,28 @@ export const POST = withErrorHandling(
         userId: context.auth.id,
       });
 
+      await orderSettlementService.settleOrderById({ orderId: order.id });
+
       return NextResponse.json(
         { data: { orderNumber: order.orderNumber, orderId: order.id } },
         { status: 201 }
       );
     } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        const recoveredOrder = await prisma.order.findUnique({
+          where: { stripePaymentIntentId: input.paymentIntentId },
+        });
+        if (recoveredOrder) {
+          await orderSettlementService.settleOrderById({ orderId: recoveredOrder.id });
+          return NextResponse.json(
+            { data: { orderNumber: recoveredOrder.orderNumber } },
+            { status: 200 }
+          );
+        }
+      }
       if (error instanceof GuestCheckoutQuoteError) {
         return NextResponse.json(
           { error: { code: error.code, message: error.message } },

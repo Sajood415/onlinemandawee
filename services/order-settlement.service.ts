@@ -1,8 +1,8 @@
+import { Prisma } from "@prisma/client";
+
 import { env } from "@/config/env";
-import { CommissionLedgerRepository } from "@/repositories/commission-ledger.repository";
+import { prisma } from "@/lib/db/prisma";
 import { OrderRepository } from "@/repositories/order.repository";
-import { PayoutRepository } from "@/repositories/payout.repository";
-import { VendorLedgerEntryRepository } from "@/repositories/vendor-ledger-entry.repository";
 
 type DeliveryMethodForSettlement = "PICKUP" | "EXPRESS" | "STANDARD" | null;
 
@@ -17,12 +17,7 @@ type VendorOrderForSettlement = {
 };
 
 export class OrderSettlementService {
-  constructor(
-    private readonly orderRepository = new OrderRepository(),
-    private readonly commissionLedgerRepository = new CommissionLedgerRepository(),
-    private readonly vendorLedgerEntryRepository = new VendorLedgerEntryRepository(),
-    private readonly payoutRepository = new PayoutRepository()
-  ) {}
+  constructor(private readonly orderRepository = new OrderRepository()) {}
 
   /**
    * Records platform commission, vendor hold balance, and payout for one vendor split.
@@ -36,12 +31,6 @@ export class OrderSettlementService {
     deliveryMethod?: DeliveryMethodForSettlement;
   }) {
     const { vendorOrder } = input;
-    const existingCommission =
-      await this.commissionLedgerRepository.findByOrderVendorId(vendorOrder.id);
-
-    if (existingCommission) {
-      return { settled: false, reason: "already_settled" as const };
-    }
 
     // Commission base includes vendor subtotal plus vendor-owned delivery fees.
     // Standard delivery is platform revenue and should remain excluded by storing
@@ -49,52 +38,81 @@ export class OrderSettlementService {
     const effectiveDeliveryMethod =
       vendorOrder.deliveryMethod ?? input.deliveryMethod ?? null;
     const includeDeliveryInCommission = effectiveDeliveryMethod === "EXPRESS";
-    const commissionBaseAmount = Math.max(0, vendorOrder.subtotalAmount) + (
-      includeDeliveryInCommission ? Math.max(0, vendorOrder.deliveryAmount) : 0
-    );
+    const commissionBaseAmount =
+      Math.max(0, vendorOrder.subtotalAmount) +
+      (includeDeliveryInCommission ? Math.max(0, vendorOrder.deliveryAmount) : 0);
     const commissionAmount = Math.min(
       Math.round((commissionBaseAmount * env.COMMISSION_RATE_BPS) / 10000),
       vendorOrder.grandTotalAmount
     );
     const netEarningsAmount = vendorOrder.grandTotalAmount - commissionAmount;
 
-    await this.commissionLedgerRepository.create({
-      orderId: input.orderId,
-      orderVendorId: vendorOrder.id,
-      vendorProfileId: vendorOrder.vendorProfileId,
-      rateBps: env.COMMISSION_RATE_BPS,
-      baseAmount: commissionBaseAmount,
-      commissionAmount,
-      currency: vendorOrder.currency,
-    });
-
-    await this.vendorLedgerEntryRepository.create({
-      vendorProfileId: vendorOrder.vendorProfileId,
-      orderId: input.orderId,
-      orderVendorId: vendorOrder.id,
-      paymentTransactionId: input.paymentTransactionId,
-      bucket: "HOLD",
-      entryType: "SALE_HOLD",
-      amount: netEarningsAmount,
-      currency: vendorOrder.currency,
-      description: `Held earnings for ${input.orderNumber}`,
-    });
-
     const holdUntil = new Date();
     holdUntil.setUTCDate(holdUntil.getUTCDate() + env.PAYOUT_HOLD_DAYS);
 
-    let payout = await this.payoutRepository.findByOrderVendorId(vendorOrder.id);
+    try {
+      await prisma.$transaction(async (tx) => {
+        const existingCommission = await tx.commissionLedger.findUnique({
+          where: { orderVendorId: vendorOrder.id },
+        });
+        if (existingCommission) return;
 
-    if (!payout) {
-      payout = await this.payoutRepository.create({
-        vendorProfileId: vendorOrder.vendorProfileId,
-        orderVendorId: vendorOrder.id,
-        amount: netEarningsAmount,
-        currency: vendorOrder.currency,
-        holdUntil,
+        await tx.commissionLedger.create({
+          data: {
+            orderId: input.orderId,
+            orderVendorId: vendorOrder.id,
+            vendorProfileId: vendorOrder.vendorProfileId,
+            rateBps: env.COMMISSION_RATE_BPS,
+            baseAmount: commissionBaseAmount,
+            commissionAmount,
+            currency: vendorOrder.currency,
+          },
+        });
+
+        await tx.vendorLedgerEntry.create({
+          data: {
+            vendorProfileId: vendorOrder.vendorProfileId,
+            orderId: input.orderId,
+            orderVendorId: vendorOrder.id,
+            paymentTransactionId: input.paymentTransactionId ?? null,
+            bucket: "HOLD",
+            entryType: "SALE_HOLD",
+            amount: netEarningsAmount,
+            currency: vendorOrder.currency,
+            description: `Held earnings for ${input.orderNumber}`,
+          },
+        });
+
+        const existingPayout = await tx.payout.findUnique({
+          where: { orderVendorId: vendorOrder.id },
+        });
+
+        if (!existingPayout) {
+          await tx.payout.create({
+            data: {
+              vendorProfileId: vendorOrder.vendorProfileId,
+              orderVendorId: vendorOrder.id,
+              amount: netEarningsAmount,
+              currency: vendorOrder.currency,
+              holdUntil,
+            },
+          });
+          return;
+        }
+
+        await tx.payout.update({
+          where: { id: existingPayout.id },
+          data: { holdUntil },
+        });
       });
-    } else {
-      await this.payoutRepository.updateHoldUntil(payout.id, holdUntil);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        return { settled: false, reason: "already_settled" as const };
+      }
+      throw error;
     }
 
     return {
@@ -129,6 +147,26 @@ export class OrderSettlementService {
     await this.orderRepository.updateOrderStatus(input.orderId, "PAID", "PAID");
 
     return results;
+  }
+
+  async settleOrderById(input: { orderId: string; paymentTransactionId?: string }) {
+    const order = await this.orderRepository.findById(input.orderId);
+    if (!order) {
+      return {
+        settled: false,
+        reason: "order_not_found" as const,
+        results: [] as unknown[],
+      };
+    }
+
+    const results = await this.settlePaidOrder({
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      vendorOrders: order.vendorOrders,
+      paymentTransactionId: input.paymentTransactionId,
+    });
+
+    return { settled: true, results };
   }
 
   /**

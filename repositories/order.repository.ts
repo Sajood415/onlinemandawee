@@ -373,6 +373,26 @@ export class OrderRepository {
     });
   }
 
+  findByStripePaymentIntentId(stripePaymentIntentId: string) {
+    return prisma.order.findUnique({
+      where: { stripePaymentIntentId },
+      include: {
+        vendorOrders: {
+          include: {
+            vendorProfile: {
+              include: {
+                user: true,
+              },
+            },
+            inboundShipment: true,
+            items: true,
+          },
+        },
+        user: true,
+      },
+    });
+  }
+
   findByGuestTrackingToken(token: string) {
     return prisma.order.findFirst({
       where: { guestTrackingToken: token },

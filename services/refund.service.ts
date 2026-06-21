@@ -7,6 +7,7 @@ import type { PaymentStatus } from "@/domain/order/order-status";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { prisma } from "@/lib/db/prisma";
+import { getStripeServerClient } from "@/lib/stripe/server";
 import { getRefundEligibility } from "@/lib/refunds/refund-eligibility";
 import {
   canCustomerOpenRefundCase,
@@ -20,10 +21,13 @@ import {
 } from "@/lib/mail/send-refund-emails";
 import { emitDisputeUpdated } from "@/lib/realtime/emit-dispute-updated";
 import { publishDisputeEvent } from "@/lib/realtime/publish-dispute-event";
+import { durationFromNow } from "@/lib/utils/duration";
+import { sha256 } from "@/lib/utils/crypto";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { CaseMessageRepository } from "@/repositories/case-message.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { PayoutRepository } from "@/repositories/payout.repository";
+import { IdempotencyKeyRepository } from "@/repositories/idempotency-key.repository";
 import {
   RefundCaseRepository,
   type RefundCaseListFilters,
@@ -33,6 +37,14 @@ import { RefundEvidenceRepository } from "@/repositories/refund-evidence.reposit
 import { VendorLedgerEntryRepository } from "@/repositories/vendor-ledger-entry.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
 
+type StripeRefundMetadata = {
+  id: string;
+  status: string;
+  failureCode: string | null;
+  failureReason: string | null;
+  attemptedAt: Date;
+};
+
 export class RefundService {
   constructor(
     private readonly orderRepository = new OrderRepository(),
@@ -41,6 +53,7 @@ export class RefundService {
     private readonly refundDecisionRepository = new RefundDecisionRepository(),
     private readonly caseMessageRepository = new CaseMessageRepository(),
     private readonly payoutRepository = new PayoutRepository(),
+    private readonly idempotencyKeyRepository = new IdempotencyKeyRepository(),
     private readonly vendorLedgerEntryRepository = new VendorLedgerEntryRepository(),
     private readonly vendorProfileRepository = new VendorProfileRepository(),
     private readonly auditLogRepository = new AuditLogRepository()
@@ -299,11 +312,21 @@ export class RefundService {
     }
 
     if (input.action === "ACCEPT") {
+      const stripeRefund = await this.executeStripeRefund({
+        refundCase,
+        approvedAmount: refundCase.requestedAmount,
+      });
+
       await this.refundDecisionRepository.create({
         refundCaseId,
         decisionType: "APPROVE",
         approvedAmount: refundCase.requestedAmount,
         reason: input.explanation,
+        stripeRefundId: stripeRefund.id,
+        stripeRefundStatus: stripeRefund.status,
+        stripeRefundFailureCode: stripeRefund.failureCode ?? undefined,
+        stripeRefundFailureReason: stripeRefund.failureReason ?? undefined,
+        stripeRefundAttemptedAt: stripeRefund.attemptedAt,
         decidedByUserId: auth.id,
       });
 
@@ -455,11 +478,26 @@ export class RefundService {
         ? "APPROVE"
         : input.decisionType;
 
+    const requiresStripeRefund =
+      decisionType === "APPROVE" || decisionType === "PARTIAL";
+    let stripeRefund: StripeRefundMetadata | null = null;
+    if (requiresStripeRefund) {
+      stripeRefund = await this.executeStripeRefund({
+        refundCase,
+        approvedAmount: input.approvedAmount,
+      });
+    }
+
     await this.refundDecisionRepository.create({
       refundCaseId,
       decisionType,
       approvedAmount: input.approvedAmount,
       reason: input.reason,
+      stripeRefundId: stripeRefund?.id,
+      stripeRefundStatus: stripeRefund?.status,
+      stripeRefundFailureCode: stripeRefund?.failureCode ?? undefined,
+      stripeRefundFailureReason: stripeRefund?.failureReason ?? undefined,
+      stripeRefundAttemptedAt: stripeRefund?.attemptedAt,
       decidedByUserId: auth.id,
     });
 
@@ -470,7 +508,7 @@ export class RefundService {
       vendorResponseDueAt: null,
     });
 
-    if (input.decisionType === "APPROVE" || input.decisionType === "PARTIAL") {
+    if (requiresStripeRefund) {
       await this.applyRefundFinancials(
         refundCaseId,
         updated.orderId,
@@ -889,6 +927,134 @@ export class RefundService {
     return refundCase;
   }
 
+  private async executeStripeRefund(input: {
+    refundCase: NonNullable<Awaited<ReturnType<RefundCaseRepository["findById"]>>>;
+    approvedAmount: number;
+  }): Promise<StripeRefundMetadata> {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new AppError({
+        code: ERROR_CODE.INTERNAL_SERVER_ERROR,
+        message: "Stripe is not configured for refunds",
+        statusCode: 503,
+      });
+    }
+
+    if (!input.refundCase.order.stripePaymentIntentId) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Order has no Stripe payment intent to refund",
+        statusCode: 400,
+      });
+    }
+
+    const idempotencyKey = `stripe_refund:${input.refundCase.id}:${input.approvedAmount}`;
+    const requestHash = sha256(
+      JSON.stringify({
+        refundCaseId: input.refundCase.id,
+        approvedAmount: input.approvedAmount,
+        paymentIntentId: input.refundCase.order.stripePaymentIntentId,
+      })
+    );
+
+    const existingKey = await this.idempotencyKeyRepository.findByKey(idempotencyKey);
+    if (existingKey?.status === "SUCCEEDED" && existingKey.responseBody) {
+      const response = existingKey.responseBody as Record<string, unknown>;
+      return {
+        id: String(response.id ?? ""),
+        status: String(response.status ?? ""),
+        failureCode: response.failureCode ? String(response.failureCode) : null,
+        failureReason: response.failureReason ? String(response.failureReason) : null,
+        attemptedAt: response.attemptedAt
+          ? new Date(String(response.attemptedAt))
+          : new Date(),
+      };
+    }
+
+    if (!existingKey) {
+      await this.idempotencyKeyRepository.createInProgress({
+        key: idempotencyKey,
+        scope: "stripe_refund",
+        requestHash,
+        expiresAt: durationFromNow("7d"),
+      });
+    }
+
+    const stripe = getStripeServerClient();
+
+    try {
+      const refund = await stripe.refunds.create(
+        {
+          payment_intent: input.refundCase.order.stripePaymentIntentId,
+          amount: input.approvedAmount,
+          metadata: {
+            refundCaseId: input.refundCase.id,
+            orderId: input.refundCase.orderId,
+          },
+        },
+        { idempotencyKey }
+      );
+
+      const metadata: StripeRefundMetadata = {
+        id: refund.id,
+        status: refund.status ?? "unknown",
+        failureCode: refund.failure_reason ?? null,
+        failureReason: refund.failure_reason ?? null,
+        attemptedAt: new Date(),
+      };
+
+      if (refund.status !== "succeeded") {
+        const failureBody = {
+          id: metadata.id,
+          status: metadata.status,
+          failureCode: metadata.failureCode,
+          failureReason: metadata.failureReason ?? "Stripe refund did not succeed",
+          attemptedAt: metadata.attemptedAt.toISOString(),
+        };
+        await this.idempotencyKeyRepository.markFailed({
+          key: idempotencyKey,
+          responseCode: 502,
+          responseBody: failureBody,
+        });
+
+        throw new AppError({
+          code: ERROR_CODE.INTERNAL_SERVER_ERROR,
+          message: `Stripe refund failed with status ${metadata.status}`,
+          statusCode: 502,
+        });
+      }
+
+      await this.idempotencyKeyRepository.markSucceeded({
+        key: idempotencyKey,
+        responseCode: 200,
+        responseBody: {
+          id: metadata.id,
+          status: metadata.status,
+          failureCode: metadata.failureCode,
+          failureReason: metadata.failureReason,
+          attemptedAt: metadata.attemptedAt.toISOString(),
+        },
+        resourceType: "RefundCase",
+        resourceId: input.refundCase.id,
+      });
+
+      return metadata;
+    } catch (error) {
+      const isAppError = error instanceof AppError;
+      if (!isAppError) {
+        await this.idempotencyKeyRepository.markFailed({
+          key: idempotencyKey,
+          responseCode: 502,
+          responseBody: {
+            error: "stripe_refund_failed",
+            message: "Stripe refund request failed",
+            attemptedAt: new Date().toISOString(),
+          },
+        });
+      }
+      throw error;
+    }
+  }
+
   private async applyRefundFinancials(
     refundCaseId: string,
     orderId: string,
@@ -1045,6 +1211,12 @@ export class RefundService {
             decisionType: refundCase.decision.decisionType,
             approvedAmount: refundCase.decision.approvedAmount,
             reason: refundCase.decision.reason,
+            stripeRefundId: refundCase.decision.stripeRefundId,
+            stripeRefundStatus: refundCase.decision.stripeRefundStatus,
+            stripeRefundFailureCode: refundCase.decision.stripeRefundFailureCode,
+            stripeRefundFailureReason: refundCase.decision.stripeRefundFailureReason,
+            stripeRefundAttemptedAt:
+              refundCase.decision.stripeRefundAttemptedAt?.toISOString() ?? null,
             createdAt: refundCase.decision.createdAt.toISOString(),
           }
         : null,
@@ -1100,6 +1272,7 @@ export class RefundService {
         ? {
             decisionType: refundCase.decision.decisionType,
             approvedAmount: refundCase.decision.approvedAmount,
+            stripeRefundStatus: refundCase.decision.stripeRefundStatus,
             createdAt: refundCase.decision.createdAt.toISOString(),
           }
         : null,

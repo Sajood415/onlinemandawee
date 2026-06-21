@@ -614,7 +614,7 @@ model Order {
   shippingCity          String
   shippingCountry       String
   shippingPostalCode    String
-  stripePaymentIntentId String?
+  stripePaymentIntentId String?       @unique
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
   user                  User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -899,12 +899,18 @@ model RefundDecision {
   decisionType    RefundDecisionType
   approvedAmount  Int
   reason          String?
+  stripeRefundId            String?
+  stripeRefundStatus        String?
+  stripeRefundFailureCode   String?
+  stripeRefundFailureReason String?
+  stripeRefundAttemptedAt   DateTime?
   decidedByUserId String             @db.ObjectId
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
   refundCase      RefundCase         @relation(fields: [refundCaseId], references: [id], onDelete: Cascade)
 
   @@index([decidedByUserId, createdAt])
+  @@index([stripeRefundId])
 }
 
 model CaseMessage {

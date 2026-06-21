@@ -14,6 +14,11 @@ export class RefundDecisionRepository {
     decisionType: RefundDecisionType;
     approvedAmount: number;
     reason?: string;
+    stripeRefundId?: string;
+    stripeRefundStatus?: string;
+    stripeRefundFailureCode?: string;
+    stripeRefundFailureReason?: string;
+    stripeRefundAttemptedAt?: Date;
     decidedByUserId: string;
   }) {
     return refundDecisionDelegate.create({
@@ -22,6 +27,11 @@ export class RefundDecisionRepository {
         decisionType: input.decisionType,
         approvedAmount: input.approvedAmount,
         reason: input.reason ?? null,
+        stripeRefundId: input.stripeRefundId ?? null,
+        stripeRefundStatus: input.stripeRefundStatus ?? null,
+        stripeRefundFailureCode: input.stripeRefundFailureCode ?? null,
+        stripeRefundFailureReason: input.stripeRefundFailureReason ?? null,
+        stripeRefundAttemptedAt: input.stripeRefundAttemptedAt ?? null,
         decidedByUserId: input.decidedByUserId,
       },
     });
