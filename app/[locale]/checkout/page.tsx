@@ -843,7 +843,7 @@ function PaymentMethodSelector({ stripeAvailable }: { stripeAvailable: boolean }
           }`}
         >
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-            opt.disabled ? "bg-gray-100" : selected === opt.id ? "bg-white shadow-sm" : "bg-gray-50"
+            opt.disabled ? "bg-gray-100" : "bg-white shadow-sm"
           }`}>
             {opt.icon}
           </div>
