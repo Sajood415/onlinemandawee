@@ -74,6 +74,7 @@ type LineItem = {
 type QuoteSummary = {
   clientSecret: string;
   paymentIntentId: string;
+  checkoutContextToken: string;
   subtotalAmount: number;
   deliveryAmount: number;
   discountAmount: number;
@@ -147,6 +148,45 @@ type AddressForm = {
 
 type DeliveryMethod = "PICKUP" | "EXPRESS" | "STANDARD";
 
+const CHECKOUT_PENDING_STORAGE_KEY = "checkout-pending-confirmations";
+
+type PendingCheckoutConfirmation = {
+  checkoutApiBase: string;
+  useAuthCheckout: boolean;
+  payload: {
+    paymentIntentId: string;
+    checkoutContextToken: string;
+    guestName: string;
+    guestEmail: string;
+    guestPhone: string;
+    addressLine1?: string;
+    city?: string;
+    country?: string;
+    postalCode?: string;
+    deliveryMethod: DeliveryMethod;
+    currency: string;
+    items: Array<{ productId: string; quantity: number }>;
+    vendorCoupons: VendorCouponEntry[];
+  };
+};
+
+function persistPendingCheckoutConfirmation(input: PendingCheckoutConfirmation) {
+  if (typeof window === "undefined") return;
+  const raw = window.sessionStorage.getItem(CHECKOUT_PENDING_STORAGE_KEY);
+  const existing = raw ? (JSON.parse(raw) as Record<string, PendingCheckoutConfirmation>) : {};
+  existing[input.payload.paymentIntentId] = input;
+  window.sessionStorage.setItem(CHECKOUT_PENDING_STORAGE_KEY, JSON.stringify(existing));
+}
+
+function clearPendingCheckoutConfirmation(paymentIntentId: string) {
+  if (typeof window === "undefined") return;
+  const raw = window.sessionStorage.getItem(CHECKOUT_PENDING_STORAGE_KEY);
+  if (!raw) return;
+  const existing = JSON.parse(raw) as Record<string, PendingCheckoutConfirmation>;
+  delete existing[paymentIntentId];
+  window.sessionStorage.setItem(CHECKOUT_PENDING_STORAGE_KEY, JSON.stringify(existing));
+}
+
 function isDeliveryAddressComplete(address: AddressForm) {
   return (
     address.addressLine1.trim().length > 0 &&
@@ -183,6 +223,7 @@ function buildGuestCheckoutRequestBody(
   items: Array<{ productId: string; quantity: number }>,
   currency: string,
   vendorCoupons: VendorCouponEntry[],
+  checkoutGuestEmail: string,
   address: AddressForm,
   deliveryMethod: DeliveryMethod,
   addressRequired: boolean
@@ -192,6 +233,7 @@ function buildGuestCheckoutRequestBody(
     currency,
     vendorCoupons,
     deliveryMethod,
+    checkoutGuestEmail,
   };
 
   if (addressRequired && isDeliveryAddressComplete(address)) {
@@ -792,6 +834,7 @@ function PaymentMethodStep({
   vendorCoupons,
   checkoutApiBase,
   useAuthCheckout,
+  locale,
   couponEligibleVendors,
   checkoutOffers,
   couponInputs,
@@ -828,6 +871,7 @@ function PaymentMethodStep({
   vendorCoupons: VendorCouponEntry[];
   checkoutApiBase: string;
   useAuthCheckout: boolean;
+  locale: string;
   couponEligibleVendors: CouponEligibleVendor[];
   checkoutOffers: CheckoutVendorOffer[];
   couponInputs: Record<string, string>;
@@ -909,6 +953,7 @@ function PaymentMethodStep({
             vendorCoupons={vendorCoupons}
             checkoutApiBase={checkoutApiBase}
             useAuthCheckout={useAuthCheckout}
+            locale={locale}
             onBack={onBack}
             onSuccess={onSuccess}
           />
@@ -977,6 +1022,7 @@ function StripePayForm({
   vendorCoupons,
   checkoutApiBase,
   useAuthCheckout,
+  locale,
   onBack,
   onSuccess,
 }: {
@@ -989,6 +1035,7 @@ function StripePayForm({
   vendorCoupons: VendorCouponEntry[];
   checkoutApiBase: string;
   useAuthCheckout: boolean;
+  locale: string;
   onBack: () => void;
   onSuccess: (orderNumber: string) => void;
 }) {
@@ -1000,11 +1047,36 @@ function StripePayForm({
     e.preventDefault();
     if (!stripe || !elements) return;
     setPaying(true);
+    const completeUrl = `${window.location.origin}/${locale}/checkout/complete`;
+    const confirmPayload = {
+      paymentIntentId: quote.paymentIntentId,
+      checkoutContextToken: quote.checkoutContextToken,
+      guestName: contact.guestName,
+      guestEmail: contact.guestEmail,
+      guestPhone: contact.guestPhone,
+      ...(addressRequired
+        ? {
+            addressLine1: address.addressLine1,
+            city: address.city,
+            country: address.country,
+            postalCode: address.postalCode,
+          }
+        : {}),
+      deliveryMethod,
+      currency: quote.currency,
+      items: cartItems,
+      vendorCoupons,
+    };
+    persistPendingCheckoutConfirmation({
+      checkoutApiBase,
+      useAuthCheckout,
+      payload: confirmPayload,
+    });
     try {
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: window.location.origin + "/checkout/complete",
+          return_url: completeUrl,
           payment_method_data: {
             billing_details: {
               name: contact.guestName,
@@ -1032,24 +1104,7 @@ function StripePayForm({
       if (paymentIntent?.status === "succeeded") {
         const res = await postCheckout(
           `${checkoutApiBase}/confirm`,
-          {
-            paymentIntentId: paymentIntent.id,
-            guestName: contact.guestName,
-            guestEmail: contact.guestEmail,
-            guestPhone: contact.guestPhone,
-            ...(addressRequired
-              ? {
-                  addressLine1: address.addressLine1,
-                  city: address.city,
-                  country: address.country,
-                  postalCode: address.postalCode,
-                }
-              : {}),
-            deliveryMethod,
-            currency: quote.currency,
-            items: cartItems,
-            vendorCoupons,
-          },
+          confirmPayload,
           useAuthCheckout
         );
         const data = await res.json();
@@ -1057,6 +1112,7 @@ function StripePayForm({
           toast.error(data?.error?.message ?? "Order could not be recorded. Please contact support.");
           return;
         }
+        clearPendingCheckoutConfirmation(paymentIntent.id);
         onSuccess(data.data.orderNumber);
       }
     } catch {
@@ -1432,6 +1488,7 @@ export default function CheckoutPage() {
           cartItemsPayload,
           currency,
           coupons,
+          contact.guestEmail,
           address,
           deliveryMethod,
           addressRequired
@@ -1448,7 +1505,7 @@ export default function CheckoutPage() {
     } finally {
       setQuoteLoading(false);
     }
-  }, [address, addressRequired, cartItems.length, cartItemsPayload, checkoutApiBase, currency, deliveryMethod, isCustomerCheckout]);
+  }, [address, addressRequired, cartItems.length, cartItemsPayload, checkoutApiBase, contact.guestEmail, currency, deliveryMethod, isCustomerCheckout]);
 
   const fetchPricing = useCallback(async (coupons: VendorCouponEntry[]) => {
     if (cartItems.length === 0) return;
@@ -1462,6 +1519,7 @@ export default function CheckoutPage() {
           cartItemsPayload,
           currency,
           coupons,
+          contact.guestEmail,
           address,
           deliveryMethod,
           addressRequired
@@ -1477,7 +1535,7 @@ export default function CheckoutPage() {
     } finally {
       setQuoteLoading(false);
     }
-  }, [address, addressRequired, cartItems.length, cartItemsPayload, checkoutApiBase, currency, deliveryMethod, isCustomerCheckout]);
+  }, [address, addressRequired, cartItems.length, cartItemsPayload, checkoutApiBase, contact.guestEmail, currency, deliveryMethod, isCustomerCheckout]);
 
   const refreshPricing = useCallback(
     async (coupons: VendorCouponEntry[]) => {
@@ -1513,6 +1571,7 @@ export default function CheckoutPage() {
           cartItemsPayload,
           currency,
           nextCoupons,
+          contact.guestEmail,
           address,
           deliveryMethod,
           addressRequired
@@ -1837,6 +1896,7 @@ export default function CheckoutPage() {
                 vendorCoupons={vendorCoupons}
                 checkoutApiBase={checkoutApiBase}
                 useAuthCheckout={isCustomerCheckout}
+                locale={locale}
                 couponEligibleVendors={couponEligibleVendors}
                 checkoutOffers={checkoutOffers}
                 couponInputs={couponInputs}

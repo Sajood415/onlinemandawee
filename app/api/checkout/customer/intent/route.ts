@@ -11,6 +11,7 @@ import {
 } from "@/lib/stripe/checkout-payment";
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { withRbac } from "@/middlewares/with-rbac";
+import { sha256, generateOpaqueToken } from "@/lib/utils/crypto";
 import {
   checkoutDeliveryMethodSchema,
   checkoutCurrencySchema,
@@ -29,7 +30,7 @@ const intentBodySchema = z
   .merge(guestCheckoutCouponsSchema);
 
 export const POST = withErrorHandling(
-  withRbac(["CUSTOMER"], async (request) => {
+  withRbac(["CUSTOMER"], async (request, context) => {
     if (!process.env.STRIPE_SECRET_KEY) {
       return NextResponse.json(
         {
@@ -73,12 +74,15 @@ export const POST = withErrorHandling(
     }
 
     try {
+      const checkoutContextToken = generateOpaqueToken();
       const paymentIntent = await createCheckoutPaymentIntent({
         quote,
         metadata: {
           source: "customer_checkout",
           itemCount: String(parsed.data.items.length),
           couponCount: String(quote.appliedCoupons.length),
+          checkoutContextHash: sha256(checkoutContextToken),
+          checkoutCustomerUserId: context.auth.id,
         },
       });
 
@@ -87,6 +91,7 @@ export const POST = withErrorHandling(
           data: {
             clientSecret: paymentIntent.client_secret,
             paymentIntentId: paymentIntent.id,
+            checkoutContextToken,
             ...quote,
           },
         },

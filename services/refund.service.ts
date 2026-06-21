@@ -1070,8 +1070,7 @@ export class RefundService {
     }
 
     const payout = await this.payoutRepository.findByOrderVendorId(orderVendorId);
-    const bucket =
-      payout && payout.status === "ON_HOLD" ? "HOLD" : "AVAILABLE";
+    const bucket = payout && payout.status === "ON_HOLD" ? "HOLD" : "AVAILABLE";
     const entryType =
       bucket === "HOLD" ? "REFUND_DEBIT_HOLD" : "REFUND_DEBIT_AVAILABLE";
 
@@ -1084,6 +1083,36 @@ export class RefundService {
           return;
         }
 
+        const orderVendor = await tx.orderVendor.findUnique({
+          where: { id: orderVendorId },
+          select: {
+            grandTotalAmount: true,
+          },
+        });
+        const commission = await tx.commissionLedger.findUnique({
+          where: { orderVendorId },
+          select: {
+            commissionAmount: true,
+          },
+        });
+
+        const refundableGrossAmount = orderVendor?.grandTotalAmount ?? 0;
+        const commissionAmount = commission?.commissionAmount ?? 0;
+        const commissionRefundAmount =
+          refundableGrossAmount > 0
+            ? Math.min(
+                approvedAmount,
+                Math.max(
+                  0,
+                  Math.round((approvedAmount * commissionAmount) / refundableGrossAmount)
+                )
+              )
+            : 0;
+        const vendorDebitAmount = Math.max(
+          0,
+          Math.min(approvedAmount, approvedAmount - commissionRefundAmount)
+        );
+
         await tx.vendorLedgerEntry.create({
           data: {
             vendorProfileId,
@@ -1093,9 +1122,12 @@ export class RefundService {
             payoutId: payout?.id ?? null,
             bucket,
             entryType,
-            amount: -approvedAmount,
+            amount: -vendorDebitAmount,
             currency,
-            description: `Refund approved for order vendor ${orderVendorId}`,
+            description:
+              commissionRefundAmount > 0
+                ? `Refund approved for order vendor ${orderVendorId}. Vendor debit excludes ${commissionRefundAmount} retained commission reversal.`
+                : `Refund approved for order vendor ${orderVendorId}`,
           },
         });
 
@@ -1103,7 +1135,7 @@ export class RefundService {
           await tx.payout.update({
             where: { id: payout.id },
             data: {
-              amount: Math.max(0, payout.amount - approvedAmount),
+              amount: Math.max(0, payout.amount - vendorDebitAmount),
             },
           });
         }

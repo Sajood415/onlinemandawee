@@ -16,6 +16,7 @@ import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { withRbac } from "@/middlewares/with-rbac";
 import { prisma } from "@/lib/db/prisma";
 import { OrderSettlementService } from "@/services/order-settlement.service";
+import { safeEqual, sha256 } from "@/lib/utils/crypto";
 import {
   checkoutDeliveryMethodSchema,
   checkoutCurrencySchema,
@@ -28,6 +29,7 @@ import {
 const confirmBodySchema = z
   .object({
     paymentIntentId: z.string().min(1),
+    checkoutContextToken: z.string().min(1),
     currency: checkoutCurrencySchema,
     deliveryMethod: checkoutDeliveryMethodSchema.optional(),
     items: z.array(guestCheckoutCartItemSchema).min(1),
@@ -73,6 +75,47 @@ export const POST = withErrorHandling(
           error: {
             code: "PAYMENT_NOT_COMPLETED",
             message: "Payment has not been completed",
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const paymentMetadata = paymentIntent.metadata ?? {};
+    if (paymentMetadata.source !== "customer_checkout") {
+      return NextResponse.json(
+        {
+          error: {
+            code: "PAYMENT_CONTEXT_MISMATCH",
+            message: "Payment intent is not valid for customer checkout confirmation.",
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    if (paymentMetadata.checkoutCustomerUserId !== context.auth.id) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "PAYMENT_CONTEXT_MISMATCH",
+            message: "Payment intent does not belong to the authenticated customer.",
+          },
+        },
+        { status: 403 }
+      );
+    }
+
+    const expectedContextHash = paymentMetadata.checkoutContextHash;
+    if (
+      !expectedContextHash ||
+      !safeEqual(expectedContextHash, sha256(input.checkoutContextToken))
+    ) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "PAYMENT_CONTEXT_MISMATCH",
+            message: "Checkout session context is invalid or expired.",
           },
         },
         { status: 400 }
