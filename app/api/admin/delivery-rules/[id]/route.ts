@@ -24,3 +24,12 @@ export const PATCH = withErrorHandling(
     return NextResponse.json({ data: result }, { status: 200 });
   })
 );
+
+export const DELETE = withErrorHandling(
+  withRbac(["ADMIN"], async (_request, context) => {
+    const params = parseParams(await context.params, deliveryRuleIdParamsSchema);
+    const result = await adminDeliveryService.deleteRule(params.id, context.auth);
+
+    return NextResponse.json({ data: result }, { status: 200 });
+  })
+);

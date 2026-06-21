@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
@@ -80,6 +80,25 @@ async function postCheckoutConfirm(
 }
 
 export default function CheckoutCompletePage() {
+  return (
+    <Suspense fallback={<CheckoutCompleteLoadingState message="Finalizing your payment..." />}>
+      <CheckoutCompletePageContent />
+    </Suspense>
+  );
+}
+
+function CheckoutCompleteLoadingState({ message }: { message: string }) {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center px-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#0f3460]" />
+        <p className="mt-3 text-sm text-slate-600">{message}</p>
+      </div>
+    </div>
+  );
+}
+
+function CheckoutCompletePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [state, setState] = useState<CompletionState>({
@@ -183,14 +202,7 @@ export default function CheckoutCompletePage() {
   }, [router, searchParams]);
 
   if (state.type === "loading") {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center px-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#0f3460]" />
-          <p className="mt-3 text-sm text-slate-600">{state.message}</p>
-        </div>
-      </div>
-    );
+    return <CheckoutCompleteLoadingState message={state.message} />;
   }
 
   if (state.type === "error") {

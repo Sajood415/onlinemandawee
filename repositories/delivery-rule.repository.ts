@@ -104,4 +104,37 @@ export class DeliveryRuleRepository {
       orderBy: [{ scope: "asc" }, { createdAt: "desc" }],
     });
   }
+
+  findFirstActiveByMethodAndScope(input: {
+    method: DeliveryMethod;
+    scope: DeliveryRuleScope;
+    excludeId?: string;
+  }) {
+    return prisma.deliveryRule.findFirst({
+      where: {
+        method: input.method,
+        scope: input.scope,
+        isActive: true,
+        ...(input.excludeId
+          ? {
+              id: {
+                not: input.excludeId,
+              },
+            }
+          : {}),
+      },
+      include: {
+        vendorProfile: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  }
+
+  deleteById(id: string) {
+    return prisma.deliveryRule.delete({
+      where: { id },
+    });
+  }
 }
