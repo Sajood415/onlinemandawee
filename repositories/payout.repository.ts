@@ -61,6 +61,84 @@ export class PayoutRepository {
     });
   }
 
+  listForAdmin(input: {
+    statuses?: PayoutStatus[];
+    holdUntilLte?: Date;
+    holdUntilGt?: Date;
+  }) {
+    return prisma.payout
+      .findMany({
+      where: {
+        ...(input.statuses && input.statuses.length > 0
+          ? {
+              status: { in: input.statuses },
+            }
+          : {}),
+        ...(input.holdUntilLte
+          ? {
+              holdUntil: { lte: input.holdUntilLte },
+            }
+          : {}),
+        ...(input.holdUntilGt
+          ? {
+              holdUntil: { gt: input.holdUntilGt },
+            }
+          : {}),
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      })
+      .then(async (payouts) => {
+        const vendorIds = [...new Set(payouts.map((payout) => payout.vendorProfileId))];
+        const orderVendorIds = [...new Set(payouts.map((payout) => payout.orderVendorId))];
+
+        const [vendors, orderVendors] = await Promise.all([
+          prisma.vendorProfile.findMany({
+            where: { id: { in: vendorIds } },
+            select: {
+              id: true,
+              storeName: true,
+              storeSlug: true,
+            },
+          }),
+          prisma.orderVendor.findMany({
+            where: { id: { in: orderVendorIds } },
+            select: {
+              id: true,
+              orderId: true,
+              order: {
+                select: {
+                  orderNumber: true,
+                },
+              },
+            },
+          }),
+        ]);
+
+        const vendorById = new Map(vendors.map((vendor) => [vendor.id, vendor]));
+        const orderVendorById = new Map(
+          orderVendors.map((orderVendor) => [orderVendor.id, orderVendor])
+        );
+
+        return payouts.map((payout) => ({
+          ...payout,
+          vendorProfile: vendorById.get(payout.vendorProfileId) ?? {
+            id: payout.vendorProfileId,
+            storeName: null,
+            storeSlug: null,
+          },
+          orderVendor: orderVendorById.get(payout.orderVendorId) ?? {
+            id: payout.orderVendorId,
+            orderId: null,
+            order: {
+              orderNumber: "—",
+            },
+          },
+        }));
+      });
+  }
+
   listReleasable(input: { vendorProfileId?: string; now: Date }) {
     return prisma.payout.findMany({
       where: {

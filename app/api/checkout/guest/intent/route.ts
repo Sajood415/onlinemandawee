@@ -99,7 +99,7 @@ export const POST = withErrorHandling(async (request) => {
       },
     });
 
-    await checkoutSnapshotRepository.upsert({
+    await checkoutSnapshotRepository.createIfAbsent({
       paymentIntentId: paymentIntent.id,
       source: "guest_checkout",
       checkoutContextHash,

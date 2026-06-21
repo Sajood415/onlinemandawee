@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
+import { Prisma } from "@prisma/client";
 
 type CheckoutSource = "guest_checkout" | "customer_checkout";
 
@@ -29,7 +30,7 @@ export class CheckoutSnapshotRepository {
     });
   }
 
-  upsert(input: {
+  createIfAbsent(input: {
     paymentIntentId: string;
     source: CheckoutSource;
     userId?: string;
@@ -37,24 +38,30 @@ export class CheckoutSnapshotRepository {
     checkoutGuestEmailHash?: string;
     snapshot: Record<string, unknown>;
   }) {
-    return prisma.checkoutSnapshot.upsert({
-      where: { paymentIntentId: input.paymentIntentId },
-      update: {
-        source: input.source,
-        userId: input.userId ?? null,
-        checkoutContextHash: input.checkoutContextHash,
-        checkoutGuestEmailHash: input.checkoutGuestEmailHash ?? null,
-        snapshot: input.snapshot as any,
-      },
-      create: {
-        paymentIntentId: input.paymentIntentId,
-        source: input.source,
-        userId: input.userId ?? null,
-        checkoutContextHash: input.checkoutContextHash,
-        checkoutGuestEmailHash: input.checkoutGuestEmailHash ?? null,
-        snapshot: input.snapshot as any,
-      },
-    });
+    return prisma.checkoutSnapshot
+      .create({
+        data: {
+          paymentIntentId: input.paymentIntentId,
+          source: input.source,
+          userId: input.userId ?? null,
+          checkoutContextHash: input.checkoutContextHash,
+          checkoutGuestEmailHash: input.checkoutGuestEmailHash ?? null,
+          snapshot: input.snapshot as any,
+        },
+      })
+      .catch(async (error) => {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          return this.findByPaymentIntentId(input.paymentIntentId);
+        }
+        throw error;
+      })
+      .then((record) => {
+        if (record) return record;
+        throw new Error("Checkout snapshot conflict");
+      });
   }
 
   markConsumed(input: { paymentIntentId: string; orderId: string }) {

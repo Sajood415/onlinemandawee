@@ -58,4 +58,21 @@ export class VendorLedgerEntryRepository {
       },
     });
   }
+
+  listByOrderVendorIds(orderVendorIds: string[]) {
+    if (orderVendorIds.length === 0) {
+      return Promise.resolve([]);
+    }
+
+    return prisma.vendorLedgerEntry.findMany({
+      where: {
+        orderVendorId: {
+          in: orderVendorIds,
+        },
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+  }
 }

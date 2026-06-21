@@ -29,7 +29,6 @@ export class AdminPayoutService {
     let payouts: Awaited<ReturnType<PayoutRepository["listReleasable"]>>;
 
     if (input.payoutId) {
-      await this.payoutReleaseService.assertAdminCanRelease(input.payoutId);
       const payout = await this.payoutRepository.findById(input.payoutId);
       if (!payout) {
         throw new AppError({
@@ -73,6 +72,64 @@ export class AdminPayoutService {
     return {
       count: released.length,
       payouts: released,
+    };
+  }
+
+  async markSent(input: { payoutId: string }, admin: AuthenticatedUser) {
+    const payout = await this.payoutReleaseService.markSent(input.payoutId, admin);
+    return { payout };
+  }
+
+  async queues() {
+    const now = new Date();
+    const [hold, ready, released] = await Promise.all([
+      this.payoutRepository.listForAdmin({
+        statuses: ["ON_HOLD"],
+        holdUntilGt: now,
+      }),
+      this.payoutRepository.listForAdmin({
+        statuses: ["ON_HOLD"],
+        holdUntilLte: now,
+      }),
+      this.payoutRepository.listForAdmin({
+        statuses: ["READY", "SENT"],
+      }),
+    ]);
+
+    return {
+      now: now.toISOString(),
+      hold: hold.map((payout) => this.serializePayout(payout, now)),
+      ready: ready.map((payout) => this.serializePayout(payout, now)),
+      released: released.map((payout) => this.serializePayout(payout, now)),
+    };
+  }
+
+  private serializePayout(
+    payout: Awaited<ReturnType<PayoutRepository["listForAdmin"]>>[number],
+    now: Date
+  ) {
+    const vendorLabel = payout.vendorProfile.storeName ?? payout.vendorProfile.storeSlug ?? "Vendor";
+    return {
+      id: payout.id,
+      status: payout.status,
+      amount: payout.amount,
+      currency: payout.currency,
+      holdUntil: payout.holdUntil.toISOString(),
+      releasedAt: payout.releasedAt?.toISOString() ?? null,
+      sentAt: payout.sentAt?.toISOString() ?? null,
+      createdAt: payout.createdAt.toISOString(),
+      vendor: {
+        id: payout.vendorProfile.id,
+        storeName: payout.vendorProfile.storeName,
+        storeSlug: payout.vendorProfile.storeSlug,
+        label: vendorLabel,
+      },
+      order: {
+        orderVendorId: payout.orderVendor.id,
+        orderId: payout.orderVendor.orderId,
+        orderNumber: payout.orderVendor.order.orderNumber,
+      },
+      eligibleForRelease: payout.status === "ON_HOLD" && payout.holdUntil <= now,
     };
   }
 }

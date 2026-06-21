@@ -33,6 +33,10 @@ type SnapshotPayload = {
   deliveryMethod: "PICKUP" | "EXPRESS" | "STANDARD";
 };
 
+async function wait(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function parseSnapshotPayload(raw: unknown): SnapshotPayload {
   if (!raw || typeof raw !== "object") {
     throw new AppError({
@@ -85,9 +89,18 @@ export class CheckoutFinalizationService {
       return existingOrder;
     }
 
-    const snapshotRecord = await this.checkoutSnapshotRepository.findByPaymentIntentId(
+    let snapshotRecord = await this.checkoutSnapshotRepository.findByPaymentIntentId(
       input.paymentIntent.id
     );
+    if (!snapshotRecord) {
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        await wait(250);
+        snapshotRecord = await this.checkoutSnapshotRepository.findByPaymentIntentId(
+          input.paymentIntent.id
+        );
+        if (snapshotRecord) break;
+      }
+    }
     if (!snapshotRecord) {
       throw new AppError({
         code: ERROR_CODE.NOT_FOUND,

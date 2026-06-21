@@ -223,6 +223,7 @@ function buildGuestCheckoutRequestBody(
   items: Array<{ productId: string; quantity: number }>,
   currency: string,
   vendorCoupons: VendorCouponEntry[],
+  contact: ContactForm,
   checkoutGuestEmail: string,
   address: AddressForm,
   deliveryMethod: DeliveryMethod,
@@ -233,6 +234,9 @@ function buildGuestCheckoutRequestBody(
     currency,
     vendorCoupons,
     deliveryMethod,
+    guestName: contact.guestName,
+    guestEmail: contact.guestEmail,
+    guestPhone: contact.guestPhone,
     checkoutGuestEmail,
   };
 
@@ -1488,6 +1492,7 @@ export default function CheckoutPage() {
           cartItemsPayload,
           currency,
           coupons,
+          contact,
           contact.guestEmail,
           address,
           deliveryMethod,
@@ -1505,7 +1510,7 @@ export default function CheckoutPage() {
     } finally {
       setQuoteLoading(false);
     }
-  }, [address, addressRequired, cartItems.length, cartItemsPayload, checkoutApiBase, contact.guestEmail, currency, deliveryMethod, isCustomerCheckout]);
+  }, [address, addressRequired, cartItems.length, cartItemsPayload, checkoutApiBase, contact, currency, deliveryMethod, isCustomerCheckout]);
 
   const fetchPricing = useCallback(async (coupons: VendorCouponEntry[]) => {
     if (cartItems.length === 0) return;
@@ -1519,6 +1524,7 @@ export default function CheckoutPage() {
           cartItemsPayload,
           currency,
           coupons,
+          contact,
           contact.guestEmail,
           address,
           deliveryMethod,
@@ -1535,7 +1541,7 @@ export default function CheckoutPage() {
     } finally {
       setQuoteLoading(false);
     }
-  }, [address, addressRequired, cartItems.length, cartItemsPayload, checkoutApiBase, contact.guestEmail, currency, deliveryMethod, isCustomerCheckout]);
+  }, [address, addressRequired, cartItems.length, cartItemsPayload, checkoutApiBase, contact, currency, deliveryMethod, isCustomerCheckout]);
 
   const refreshPricing = useCallback(
     async (coupons: VendorCouponEntry[]) => {
@@ -1571,6 +1577,7 @@ export default function CheckoutPage() {
           cartItemsPayload,
           currency,
           nextCoupons,
+          contact,
           contact.guestEmail,
           address,
           deliveryMethod,

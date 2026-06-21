@@ -26,3 +26,7 @@ export const releasePayoutSchema = z
       });
     }
   });
+
+export const markPayoutSentSchema = z.object({
+  payoutId: z.string().min(1),
+});

@@ -125,6 +125,15 @@ type AdminOrderDetail = {
       releasedAt: string | null;
       sentAt: string | null;
     };
+    vendorLedgerEntries: Array<{
+      id: string;
+      bucket: string;
+      entryType: string;
+      amount: number;
+      currency: string;
+      description: string | null;
+      createdAt: string;
+    }>;
     items: Array<{
       id: string;
       productName: string;
@@ -1113,6 +1122,11 @@ export default function AdminOrdersPage() {
                               Hold until {displayDate(vendorOrder.payout.holdUntil)}
                             </p>
                           ) : null}
+                          {vendorOrder.payout.releasedAt ? (
+                            <p className="text-xs text-neutral-500">
+                              Released {displayDate(vendorOrder.payout.releasedAt)}
+                            </p>
+                          ) : null}
                           {vendorOrder.payout.sentAt ? (
                             <p className="text-xs text-neutral-500">
                               Sent {displayDate(vendorOrder.payout.sentAt)}
@@ -1151,6 +1165,43 @@ export default function AdminOrdersPage() {
                                 </td>
                               </tr>
                             ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="mt-4 overflow-x-auto">
+                        <table className="w-full min-w-[680px] border-collapse text-sm">
+                          <thead>
+                            <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500">
+                              <th className="px-2 py-2">Ledger bucket</th>
+                              <th className="px-2 py-2">Entry type</th>
+                              <th className="px-2 py-2">Amount</th>
+                              <th className="px-2 py-2">Timestamp</th>
+                              <th className="px-2 py-2">Description</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {vendorOrder.vendorLedgerEntries.length === 0 ? (
+                              <tr>
+                                <td className="px-2 py-3 text-neutral-500" colSpan={5}>
+                                  No vendor ledger entries for this vendor split.
+                                </td>
+                              </tr>
+                            ) : (
+                              vendorOrder.vendorLedgerEntries.map((entry) => (
+                                <tr key={entry.id} className="border-b border-neutral-100">
+                                  <td className="px-2 py-2">{entry.bucket}</td>
+                                  <td className="px-2 py-2">{entry.entryType}</td>
+                                  <td className="px-2 py-2">
+                                    {formatMoney(entry.amount, entry.currency)}
+                                  </td>
+                                  <td className="px-2 py-2">{displayDate(entry.createdAt)}</td>
+                                  <td className="px-2 py-2 text-neutral-600">
+                                    {entry.description ?? "—"}
+                                  </td>
+                                </tr>
+                              ))
+                            )}
                           </tbody>
                         </table>
                       </div>

@@ -8,6 +8,7 @@ import {
 } from "@/repositories/order.repository";
 import { PayoutRepository } from "@/repositories/payout.repository";
 import { RefundCaseRepository } from "@/repositories/refund-case.repository";
+import { VendorLedgerEntryRepository } from "@/repositories/vendor-ledger-entry.repository";
 
 type CommissionRow = Awaited<
   ReturnType<CommissionLedgerRepository["findByOrderVendorIds"]>
@@ -17,12 +18,17 @@ type PayoutRow = Awaited<
   ReturnType<PayoutRepository["findByOrderVendorIds"]>
 >[number];
 
+type VendorLedgerRow = Awaited<
+  ReturnType<VendorLedgerEntryRepository["listByOrderVendorIds"]>
+>[number];
+
 export class AdminOrderService {
   constructor(
     private readonly orderRepository = new OrderRepository(),
     private readonly commissionLedgerRepository = new CommissionLedgerRepository(),
     private readonly payoutRepository = new PayoutRepository(),
-    private readonly refundCaseRepository = new RefundCaseRepository()
+    private readonly refundCaseRepository = new RefundCaseRepository(),
+    private readonly vendorLedgerEntryRepository = new VendorLedgerEntryRepository()
   ) {}
 
   async list(filters: AdminOrderListFilters) {
@@ -64,10 +70,16 @@ export class AdminOrderService {
 
     const commissionByOrderVendorId = await this.loadCommissionMap([order]);
     const payoutByOrderVendorId = await this.loadPayoutMap([order]);
+    const vendorLedgerByOrderVendorId = await this.loadVendorLedgerMap([order]);
     const refundCases = await this.refundCaseRepository.listByOrderId(orderId);
 
     return {
-      ...this.serializeDetail(order, commissionByOrderVendorId, payoutByOrderVendorId),
+      ...this.serializeDetail(
+        order,
+        commissionByOrderVendorId,
+        payoutByOrderVendorId,
+        vendorLedgerByOrderVendorId
+      ),
       refundCases: refundCases.map((refundCase) => ({
         id: refundCase.id,
         orderItemId: refundCase.orderItemId,
@@ -102,6 +114,23 @@ export class AdminOrderService {
       orderVendorIds
     );
     return new Map(rows.map((row) => [row.orderVendorId, row]));
+  }
+
+  private async loadVendorLedgerMap(orders: OrderWithAdminRelations[]) {
+    const orderVendorIds = orders.flatMap((order) =>
+      order.vendorOrders.map((vendorOrder) => vendorOrder.id)
+    );
+    const rows = await this.vendorLedgerEntryRepository.listByOrderVendorIds(orderVendorIds);
+    const map = new Map<string, VendorLedgerRow[]>();
+
+    for (const row of rows) {
+      if (!row.orderVendorId) continue;
+      const existing = map.get(row.orderVendorId) ?? [];
+      existing.push(row);
+      map.set(row.orderVendorId, existing);
+    }
+
+    return map;
   }
 
   private serializeCommission(
@@ -218,7 +247,8 @@ export class AdminOrderService {
   private serializeDetail(
     order: OrderWithAdminRelations,
     commissionByOrderVendorId: Map<string, CommissionRow>,
-    payoutByOrderVendorId: Map<string, PayoutRow>
+    payoutByOrderVendorId: Map<string, PayoutRow>,
+    vendorLedgerByOrderVendorId: Map<string, VendorLedgerRow[]>
   ) {
     const vendorOrders = order.vendorOrders.map((vendorOrder) => {
       const commission = this.serializeCommission(
@@ -242,6 +272,17 @@ export class AdminOrderService {
         couponCode: vendorOrder.couponCode,
         commission,
         payout,
+        vendorLedgerEntries: (vendorLedgerByOrderVendorId.get(vendorOrder.id) ?? []).map(
+          (entry) => ({
+            id: entry.id,
+            bucket: entry.bucket,
+            entryType: entry.entryType,
+            amount: entry.amount,
+            currency: entry.currency,
+            description: entry.description,
+            createdAt: entry.createdAt.toISOString(),
+          })
+        ),
         items: vendorOrder.items.map((item) => ({
           id: item.id,
           productId: item.productId,
