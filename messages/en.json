@@ -306,6 +306,8 @@
       "orderStatus": {
         "NEW": "New",
         "PREPARING": "Preparing",
+        "INBOUND_SHIPPED": "Inbound Shipped",
+        "RECEIVED_AT_WAREHOUSE": "Received At Warehouse",
         "SHIPPED": "Shipped",
         "DELIVERED": "Delivered",
         "CANCELLED": "Cancelled"

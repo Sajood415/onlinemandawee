@@ -4,9 +4,12 @@ import type { GuestPublicOrder } from "@/lib/orders/guest-public-order-types";
 import { maskAddressLine, maskEmail, maskPhone } from "@/lib/orders/mask-guest-pii";
 
 export const guestTrackingOrderInclude = {
+  consolidationBatch: true,
+  outboundShipment: true,
   vendorOrders: {
     orderBy: { createdAt: "asc" as const },
     include: {
+      inboundShipment: true,
       vendorProfile: {
         select: {
           storeName: true,
@@ -60,11 +63,40 @@ export function serializeGuestPublicOrder(order: GuestTrackingOrderRecord): Gues
       storeName: vendorOrder.vendorProfile.storeName,
       status: vendorOrder.status,
       deliveredAt: vendorOrder.deliveredAt?.toISOString() ?? null,
+      deliveryMethod: vendorOrder.deliveryMethod,
       currency: vendorOrder.currency,
       subtotalAmount: vendorOrder.subtotalAmount,
       deliveryAmount: vendorOrder.deliveryAmount,
       discountAmount: vendorOrder.discountAmount,
       grandTotalAmount: vendorOrder.grandTotalAmount,
+      warehouse: {
+        inboundShipment: vendorOrder.inboundShipment
+          ? {
+              status: vendorOrder.inboundShipment.status,
+              trackingRef: vendorOrder.inboundShipment.trackingRef,
+              shippedAt: vendorOrder.inboundShipment.shippedAt?.toISOString() ?? null,
+              receivedAt: vendorOrder.inboundShipment.receivedAt?.toISOString() ?? null,
+            }
+          : null,
+        batch: order.consolidationBatch
+          ? {
+              status: order.consolidationBatch.status,
+              expectedVendorCount: order.consolidationBatch.expectedVendorCount,
+              receivedVendorCount: order.consolidationBatch.receivedVendorCount,
+              readyToConsolidateAt:
+                order.consolidationBatch.readyToConsolidateAt?.toISOString() ?? null,
+            }
+          : null,
+        outboundShipment: order.outboundShipment
+          ? {
+              status: order.outboundShipment.status,
+              trackingRef: order.outboundShipment.trackingRef,
+              consolidatedAt: order.outboundShipment.consolidatedAt?.toISOString() ?? null,
+              shippedAt: order.outboundShipment.shippedAt?.toISOString() ?? null,
+              deliveredAt: order.outboundShipment.deliveredAt?.toISOString() ?? null,
+            }
+          : null,
+      },
       items: vendorOrder.items.map((item) => ({
         productName: item.productName,
         productImage: item.productImage,

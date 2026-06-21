@@ -306,6 +306,8 @@
       "orderStatus": {
         "NEW": "جدید",
         "PREPARING": "در حال آماده‌سازی",
+        "INBOUND_SHIPPED": "به انبار ارسال شد",
+        "RECEIVED_AT_WAREHOUSE": "در انبار دریافت شد",
         "SHIPPED": "ارسال شده",
         "DELIVERED": "تحویل شده",
         "CANCELLED": "لغو شده"

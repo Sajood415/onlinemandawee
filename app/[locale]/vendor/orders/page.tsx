@@ -29,11 +29,29 @@ type OrderItem = {
   lineTotalAmount: number;
 };
 
-type VendorOrderStatus = "NEW" | "PREPARING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+type VendorOrderStatus =
+  | "NEW"
+  | "PREPARING"
+  | "INBOUND_SHIPPED"
+  | "RECEIVED_AT_WAREHOUSE"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "CANCELLED";
+type WarehouseInboundShipmentStatus = "PENDING_SHIPMENT" | "INBOUND_SHIPPED" | "RECEIVED";
+type ConsolidationBatchStatus =
+  | "OPEN"
+  | "PARTIALLY_RECEIVED"
+  | "READY_TO_CONSOLIDATE"
+  | "CONSOLIDATED"
+  | "OUTBOUND_SHIPPED"
+  | "DELIVERED"
+  | "CANCELLED";
+type OutboundShipmentStatus = "CONSOLIDATED" | "OUTBOUND_SHIPPED" | "DELIVERED";
 
 type VendorOrder = {
   id: string;
   status: VendorOrderStatus;
+  deliveryMethod: "PICKUP" | "EXPRESS" | "STANDARD" | null;
   currency: string;
   subtotalAmount: number;
   deliveryAmount: number;
@@ -53,6 +71,36 @@ type VendorOrder = {
     shippingCountry: string;
     shippingPostalCode: string;
   };
+  warehouse: {
+    inboundShipment: {
+      id: string;
+      status: WarehouseInboundShipmentStatus;
+      trackingRef: string | null;
+      shippedAt: string | null;
+      receivedAt: string | null;
+      createdAt: string;
+      updatedAt: string;
+    } | null;
+    batch: {
+      id: string;
+      status: ConsolidationBatchStatus;
+      expectedVendorCount: number;
+      receivedVendorCount: number;
+      readyToConsolidateAt: string | null;
+      createdAt: string;
+      updatedAt: string;
+    } | null;
+    outboundShipment: {
+      id: string;
+      status: OutboundShipmentStatus;
+      trackingRef: string | null;
+      consolidatedAt: string | null;
+      shippedAt: string | null;
+      deliveredAt: string | null;
+      createdAt: string;
+      updatedAt: string;
+    } | null;
+  };
   items: OrderItem[];
 };
 
@@ -61,6 +109,8 @@ type VendorOrder = {
 const STATUS_COLORS: Record<VendorOrderStatus, string> = {
   NEW: "bg-blue-50 text-blue-700 border border-blue-200",
   PREPARING: "bg-yellow-50 text-yellow-700 border border-yellow-200",
+  INBOUND_SHIPPED: "bg-cyan-50 text-cyan-700 border border-cyan-200",
+  RECEIVED_AT_WAREHOUSE: "bg-indigo-50 text-indigo-700 border border-indigo-200",
   SHIPPED: "bg-cyan-50 text-cyan-700 border border-cyan-200",
   DELIVERED: "bg-green-50 text-green-700 border border-green-200",
   CANCELLED: "bg-red-50 text-red-700 border border-red-200",
@@ -69,15 +119,19 @@ const STATUS_COLORS: Record<VendorOrderStatus, string> = {
 const STATUS_LABELS: Record<VendorOrderStatus, string> = {
   NEW: "New",
   PREPARING: "Preparing",
+  INBOUND_SHIPPED: "Inbound Shipped",
+  RECEIVED_AT_WAREHOUSE: "Received At Warehouse",
   SHIPPED: "Shipped",
   DELIVERED: "Delivered",
   CANCELLED: "Cancelled",
 };
 
-// Allowed transitions from each status
+// Allowed transitions from each status (non-standard flow)
 const NEXT_STATUSES: Record<VendorOrderStatus, VendorOrderStatus[]> = {
   NEW: ["PREPARING", "CANCELLED"],
   PREPARING: ["SHIPPED", "CANCELLED"],
+  INBOUND_SHIPPED: [],
+  RECEIVED_AT_WAREHOUSE: [],
   SHIPPED: ["DELIVERED"],
   DELIVERED: [],
   CANCELLED: [],
@@ -86,6 +140,8 @@ const NEXT_STATUSES: Record<VendorOrderStatus, VendorOrderStatus[]> = {
 const NEXT_STATUS_LABELS: Record<VendorOrderStatus, string> = {
   NEW: "New",
   PREPARING: "Accept & Prepare",
+  INBOUND_SHIPPED: "Inbound Shipped",
+  RECEIVED_AT_WAREHOUSE: "Received At Warehouse",
   SHIPPED: "Mark Shipped",
   DELIVERED: "Mark Delivered",
   CANCELLED: "Cancel Order",
@@ -94,6 +150,8 @@ const NEXT_STATUS_LABELS: Record<VendorOrderStatus, string> = {
 const NEXT_STATUS_COLORS: Record<VendorOrderStatus, string> = {
   NEW: "bg-gray-100 text-gray-600",
   PREPARING: "bg-indigo-600 text-white hover:bg-indigo-700",
+  INBOUND_SHIPPED: "bg-cyan-50 text-cyan-700",
+  RECEIVED_AT_WAREHOUSE: "bg-indigo-50 text-indigo-700",
   SHIPPED: "bg-cyan-600 text-white hover:bg-cyan-700",
   DELIVERED: "bg-green-600 text-white hover:bg-green-700",
   CANCELLED: "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100",
@@ -128,17 +186,44 @@ function formatDate(iso: string) {
   });
 }
 
+function formatDateTime(iso: string | null) {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function warehouseStatusClass(status: string) {
+  if (status === "RECEIVED" || status === "DELIVERED") return "bg-emerald-50 text-emerald-700";
+  if (status === "READY_TO_CONSOLIDATE" || status === "CONSOLIDATED")
+    return "bg-blue-50 text-blue-700";
+  if (status === "INBOUND_SHIPPED" || status === "OUTBOUND_SHIPPED")
+    return "bg-cyan-50 text-cyan-700";
+  if (status === "PARTIALLY_RECEIVED") return "bg-amber-50 text-amber-700";
+  if (status === "CANCELLED") return "bg-rose-50 text-rose-700";
+  return "bg-neutral-100 text-neutral-700";
+}
+
 /* ─── Status Change Buttons ──────────────────────────────────────────── */
 
 function StatusActions({
   order,
+  isStandardWorkflow,
   onStatusChange,
 }: {
   order: VendorOrder;
+  isStandardWorkflow: boolean;
   onStatusChange: (vendorOrderId: string, status: VendorOrderStatus) => Promise<void>;
 }) {
-  const nextStatuses = NEXT_STATUSES[order.status];
   const [updating, setUpdating] = useState<VendorOrderStatus | null>(null);
+  if (isStandardWorkflow) return null;
+  const nextStatuses = NEXT_STATUSES[order.status];
 
   if (nextStatuses.length === 0) return null;
 
@@ -171,17 +256,146 @@ function StatusActions({
   );
 }
 
+function StandardWarehouseActions({
+  order,
+  onInboundShip,
+}: {
+  order: VendorOrder;
+  onInboundShip: (vendorOrderId: string, trackingRef?: string) => Promise<void>;
+}) {
+  const [trackingRef, setTrackingRef] = useState(order.warehouse.inboundShipment?.trackingRef ?? "");
+  const [submitting, setSubmitting] = useState(false);
+  const isStandardWorkflow = order.deliveryMethod === "STANDARD";
+  if (!isStandardWorkflow) return null;
+
+  const alreadySubmitted =
+    order.status === "INBOUND_SHIPPED" ||
+    order.status === "RECEIVED_AT_WAREHOUSE" ||
+    order.warehouse.inboundShipment?.status === "INBOUND_SHIPPED" ||
+    order.warehouse.inboundShipment?.status === "RECEIVED";
+
+  const canSubmit =
+    !alreadySubmitted && (order.status === "NEW" || order.status === "PREPARING");
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    try {
+      await onInboundShip(order.id, trackingRef.trim() || undefined);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-cyan-200 bg-cyan-50/60 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wider text-cyan-700">
+        Standard Warehouse Action
+      </p>
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end">
+        <div className="flex-1">
+          <label className="mb-1 block text-xs font-medium text-cyan-800">
+            Tracking reference (optional)
+          </label>
+          <input
+            value={trackingRef}
+            onChange={(event) => setTrackingRef(event.target.value)}
+            disabled={!canSubmit || submitting}
+            placeholder="AWB / Waybill / Internal reference"
+            className="w-full rounded-lg border border-cyan-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-cyan-400"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => void handleSubmit()}
+          disabled={!canSubmit || submitting}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {submitting ? <Loader2 size={14} className="animate-spin" /> : null}
+          Send To Warehouse
+        </button>
+      </div>
+
+      {alreadySubmitted ? (
+        <div className="mt-3 space-y-1 text-xs text-cyan-900">
+          <p>
+            Shipment status:{" "}
+            <span className="font-semibold">
+              {order.warehouse.inboundShipment?.status ?? "INBOUND_SHIPPED"}
+            </span>
+          </p>
+          <p>
+            Tracking:{" "}
+            <span className="font-semibold">{order.warehouse.inboundShipment?.trackingRef ?? "—"}</span>
+          </p>
+          <p>
+            Sent at:{" "}
+            <span className="font-semibold">
+              {formatDateTime(order.warehouse.inboundShipment?.shippedAt ?? null)}
+            </span>
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /* ─── Order Row Component ────────────────────────────────────────────── */
 
 function OrderRow({
   order,
   onStatusChange,
+  onInboundShip,
 }: {
   order: VendorOrder;
   onStatusChange: (vendorOrderId: string, status: VendorOrderStatus) => Promise<void>;
+  onInboundShip: (vendorOrderId: string, trackingRef?: string) => Promise<void>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const totalItems = order.items.reduce((s, i) => s + i.quantity, 0);
+  const isStandardWorkflow = order.deliveryMethod === "STANDARD";
+  const warehouseTimeline = [
+    {
+      key: "preparing",
+      label: "Preparing",
+      at:
+        order.status === "PREPARING" ||
+        order.status === "INBOUND_SHIPPED" ||
+        order.status === "RECEIVED_AT_WAREHOUSE" ||
+        order.status === "DELIVERED"
+          ? order.updatedAt
+          : null,
+    },
+    {
+      key: "inbound-shipped",
+      label: "Inbound Shipped",
+      at: order.warehouse.inboundShipment?.shippedAt ?? null,
+    },
+    {
+      key: "received",
+      label: "Received At Warehouse",
+      at: order.warehouse.inboundShipment?.receivedAt ?? null,
+    },
+    {
+      key: "batch-ready",
+      label: "Ready To Consolidate",
+      at: order.warehouse.batch?.readyToConsolidateAt ?? null,
+    },
+    {
+      key: "consolidated",
+      label: "Consolidated",
+      at: order.warehouse.outboundShipment?.consolidatedAt ?? null,
+    },
+    {
+      key: "outbound-shipped",
+      label: "Outbound Shipped",
+      at: order.warehouse.outboundShipment?.shippedAt ?? null,
+    },
+    {
+      key: "delivered",
+      label: "Delivered",
+      at: order.warehouse.outboundShipment?.deliveredAt ?? null,
+    },
+  ];
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-shadow hover:shadow-md">
@@ -202,6 +416,11 @@ function OrderRow({
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${PAYMENT_STATUS_COLORS[order.order.paymentStatus] ?? "bg-gray-100 text-gray-600"}`}>
               {order.order.paymentStatus.replace(/_/g, " ")}
             </span>
+            {isStandardWorkflow ? (
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                Standard warehouse
+              </span>
+            ) : null}
           </div>
           <p className="text-xs text-gray-400 mt-1">{formatDate(order.createdAt)}</p>
         </div>
@@ -255,9 +474,9 @@ function OrderRow({
                     {item.productImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={item.productImage} alt={item.productName}
-                        className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-gray-200" />
+                        className="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-200" />
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center shrink-0">
                         <Package size={16} className="text-gray-400" />
                       </div>
                     )}
@@ -265,7 +484,7 @@ function OrderRow({
                       <p className="text-sm font-medium text-gray-800 truncate">{item.productName}</p>
                       {item.productSku && <p className="text-xs text-gray-400">SKU: {item.productSku}</p>}
                     </div>
-                    <div className="text-right flex-shrink-0">
+                    <div className="text-right shrink-0">
                       <p className="text-xs text-gray-500">
                         {item.quantity} × {formatCurrency(item.unitPriceAmount, item.currency)}
                       </p>
@@ -297,6 +516,93 @@ function OrderRow({
             </div>
           </div>
 
+          {isStandardWorkflow ? (
+            <section className="rounded-xl border border-neutral-200 p-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Warehouse visibility
+              </h3>
+              <div className="mt-3 grid gap-4 md:grid-cols-3">
+                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                  <p className="text-xs font-semibold text-neutral-600">Inbound shipment</p>
+                  <span
+                    className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${warehouseStatusClass(order.warehouse.inboundShipment?.status ?? "PENDING_SHIPMENT")}`}
+                  >
+                    {order.warehouse.inboundShipment?.status ?? "PENDING_SHIPMENT"}
+                  </span>
+                  <p className="mt-2 text-xs text-neutral-700">
+                    Tracking: {order.warehouse.inboundShipment?.trackingRef ?? "—"}
+                  </p>
+                  <p className="text-xs text-neutral-700">
+                    Sent: {formatDateTime(order.warehouse.inboundShipment?.shippedAt ?? null)}
+                  </p>
+                  <p className="text-xs text-neutral-700">
+                    Received: {formatDateTime(order.warehouse.inboundShipment?.receivedAt ?? null)}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                  <p className="text-xs font-semibold text-neutral-600">Consolidation batch</p>
+                  {order.warehouse.batch ? (
+                    <span
+                      className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${warehouseStatusClass(order.warehouse.batch.status)}`}
+                    >
+                      {order.warehouse.batch.status}
+                    </span>
+                  ) : (
+                    <span className="mt-2 inline-flex rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-700">
+                      Not created
+                    </span>
+                  )}
+                  <p className="mt-2 text-xs text-neutral-700">
+                    Progress: {order.warehouse.batch?.receivedVendorCount ?? 0}/
+                    {order.warehouse.batch?.expectedVendorCount ?? 0}
+                  </p>
+                  <p className="text-xs text-neutral-700">
+                    Ready at: {formatDateTime(order.warehouse.batch?.readyToConsolidateAt ?? null)}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                  <p className="text-xs font-semibold text-neutral-600">Outbound shipment</p>
+                  {order.warehouse.outboundShipment ? (
+                    <span
+                      className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${warehouseStatusClass(order.warehouse.outboundShipment.status)}`}
+                    >
+                      {order.warehouse.outboundShipment.status}
+                    </span>
+                  ) : (
+                    <span className="mt-2 inline-flex rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-700">
+                      Not created
+                    </span>
+                  )}
+                  <p className="mt-2 text-xs text-neutral-700">
+                    Tracking: {order.warehouse.outboundShipment?.trackingRef ?? "—"}
+                  </p>
+                  <p className="text-xs text-neutral-700">
+                    Shipped: {formatDateTime(order.warehouse.outboundShipment?.shippedAt ?? null)}
+                  </p>
+                  <p className="text-xs text-neutral-700">
+                    Delivered: {formatDateTime(order.warehouse.outboundShipment?.deliveredAt ?? null)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-lg border border-neutral-200 bg-white p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+                  Warehouse timeline
+                </p>
+                <ol className="mt-2 grid gap-2 md:grid-cols-2">
+                  {warehouseTimeline.map((step) => (
+                    <li key={step.key} className="flex items-center justify-between rounded-md bg-neutral-50 px-3 py-2">
+                      <span className="text-xs font-medium text-neutral-800">{step.label}</span>
+                      <span className="text-xs text-neutral-600">{formatDateTime(step.at)}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </section>
+          ) : null}
+
           {/* Status actions */}
           <div className="border-t border-gray-100 pt-4">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
@@ -306,7 +612,17 @@ function OrderRow({
               <span className={`px-3 py-1.5 rounded-xl text-xs font-semibold ${STATUS_COLORS[order.status]}`}>
                 Current: {STATUS_LABELS[order.status]}
               </span>
-              <StatusActions order={order} onStatusChange={onStatusChange} />
+              <span className="rounded-xl bg-neutral-100 px-3 py-1.5 text-xs font-semibold text-neutral-700">
+                Delivery method: {order.deliveryMethod ?? "—"}
+              </span>
+              <StatusActions
+                order={order}
+                isStandardWorkflow={isStandardWorkflow}
+                onStatusChange={onStatusChange}
+              />
+            </div>
+            <div className="mt-3">
+              <StandardWarehouseActions order={order} onInboundShip={onInboundShip} />
             </div>
             {order.status === "SHIPPED" && (
               <p className="text-xs text-cyan-600 mt-2">
@@ -331,6 +647,8 @@ const STATUS_FILTER_OPTIONS = [
   { label: "All", value: "ALL" },
   { label: "New", value: "NEW" },
   { label: "Preparing", value: "PREPARING" },
+  { label: "Inbound Shipped", value: "INBOUND_SHIPPED" },
+  { label: "Received At Warehouse", value: "RECEIVED_AT_WAREHOUSE" },
   { label: "Shipped", value: "SHIPPED" },
   { label: "Delivered", value: "DELIVERED" },
   { label: "Cancelled", value: "CANCELLED" },
@@ -392,6 +710,34 @@ export default function VendorOrdersPage() {
         }
       } catch {
         toast.error("Network error. Please try again.");
+      }
+    },
+    [fetchOrders]
+  );
+
+  const handleInboundShip = useCallback(
+    async (vendorOrderId: string, trackingRef?: string) => {
+      try {
+        const res = await fetchWithAuth(`/api/vendor/orders/${vendorOrderId}/inbound-ship`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            trackingRef: trackingRef?.trim() ? trackingRef.trim() : undefined,
+          }),
+        });
+        await parseApiResponse<{
+          status: WarehouseInboundShipmentStatus;
+          shippedAt: string | null;
+          trackingRef: string | null;
+        }>(res);
+
+        toast.success("Shipment submitted to warehouse.");
+
+        await fetchOrders(true);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Could not submit shipment to warehouse.";
+        toast.error(message);
       }
     },
     [fetchOrders]
@@ -501,7 +847,12 @@ export default function VendorOrdersPage() {
             Showing {filtered.length} of {orders.length} order{orders.length !== 1 ? "s" : ""}
           </p>
           {filtered.map((order) => (
-            <OrderRow key={order.id} order={order} onStatusChange={handleStatusChange} />
+            <OrderRow
+              key={order.id}
+              order={order}
+              onStatusChange={handleStatusChange}
+              onInboundShip={handleInboundShip}
+            />
           ))}
         </div>
       )}

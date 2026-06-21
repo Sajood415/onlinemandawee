@@ -306,6 +306,8 @@
       "orderStatus": {
         "NEW": "نوی",
         "PREPARING": "چمتو کېږي",
+        "INBOUND_SHIPPED": "ګودام ته لېږل شوی",
+        "RECEIVED_AT_WAREHOUSE": "په ګودام کې ترلاسه شو",
         "SHIPPED": "لېږل شوی",
         "DELIVERED": "تحویل شوی",
         "CANCELLED": "لغوه شوی"

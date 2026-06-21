@@ -42,6 +42,64 @@ function overallOrderStatus(order: GuestPublicOrder) {
   return "NEW";
 }
 
+function formatDateTime(value: string | null, locale: SupportedLocale) {
+  if (!value) return "—";
+  return new Date(value).toLocaleString(
+    locale === "fa-AF" ? "fa-AF" : locale === "ps" ? "ps-AF" : "en-US"
+  );
+}
+
+function warehouseCustomerStatus(vendorOrder: GuestPublicOrder["vendorOrders"][number]) {
+  if (vendorOrder.deliveryMethod !== "STANDARD") return null;
+  const outbound = vendorOrder.warehouse.outboundShipment;
+  const batch = vendorOrder.warehouse.batch;
+  const inbound = vendorOrder.warehouse.inboundShipment;
+  if (outbound?.status === "DELIVERED" || vendorOrder.status === "DELIVERED") return "Delivered";
+  if (outbound?.status === "OUTBOUND_SHIPPED") return "Out For Delivery";
+  if (outbound?.status === "CONSOLIDATED" || batch?.status === "CONSOLIDATED") return "Consolidated";
+  if (batch?.status === "READY_TO_CONSOLIDATE") return "Waiting For Remaining Vendors";
+  if (inbound?.status === "RECEIVED" || vendorOrder.status === "RECEIVED_AT_WAREHOUSE")
+    return "Received At Warehouse";
+  if (inbound?.status === "INBOUND_SHIPPED" || vendorOrder.status === "INBOUND_SHIPPED")
+    return "Sent To Warehouse";
+  if (vendorOrder.status === "PREPARING") return "Preparing";
+  return "Order Placed";
+}
+
+function warehouseTimeline(
+  order: GuestPublicOrder,
+  vendorOrder: GuestPublicOrder["vendorOrders"][number]
+) {
+  const inbound = vendorOrder.warehouse.inboundShipment;
+  const batch = vendorOrder.warehouse.batch;
+  const outbound = vendorOrder.warehouse.outboundShipment;
+  return [
+    { label: "Order Placed", at: order.createdAt },
+    {
+      label: "Preparing",
+      at:
+        vendorOrder.status === "PREPARING" ||
+        vendorOrder.status === "INBOUND_SHIPPED" ||
+        vendorOrder.status === "RECEIVED_AT_WAREHOUSE" ||
+        vendorOrder.status === "DELIVERED"
+          ? order.updatedAt
+          : null,
+    },
+    { label: "Sent To Warehouse", at: inbound?.shippedAt ?? null },
+    { label: "Received At Warehouse", at: inbound?.receivedAt ?? null },
+    {
+      label: "Waiting For Remaining Vendors",
+      at:
+        batch?.status === "PARTIALLY_RECEIVED" || batch?.status === "READY_TO_CONSOLIDATE"
+          ? order.updatedAt
+          : null,
+    },
+    { label: "Consolidated", at: outbound?.consolidatedAt ?? null },
+    { label: "Out For Delivery", at: outbound?.shippedAt ?? null },
+    { label: "Delivered", at: outbound?.deliveredAt ?? vendorOrder.deliveredAt },
+  ];
+}
+
 type GuestOrderTrackingViewProps = {
   order: GuestPublicOrder;
   showLookupPrompt?: boolean;
@@ -138,12 +196,45 @@ export function GuestOrderTrackingView({
                 {vendorOrder.storeName ?? copy.vendor}
               </h2>
             </div>
-            <span
-              className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${STATUS_COLORS[vendorOrder.status] ?? STATUS_COLORS.NEW}`}
-            >
-              {GUEST_VENDOR_STATUS_LABELS[vendorOrder.status]?.[locale] ?? vendorOrder.status}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-700">
+                {vendorOrder.deliveryMethod ?? "—"}
+              </span>
+              <span
+                className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${STATUS_COLORS[vendorOrder.status] ?? STATUS_COLORS.NEW}`}
+              >
+                {GUEST_VENDOR_STATUS_LABELS[vendorOrder.status]?.[locale] ?? vendorOrder.status}
+              </span>
+            </div>
           </div>
+
+          {vendorOrder.deliveryMethod === "STANDARD" ? (
+            <div className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                Warehouse status
+              </p>
+              <p className="mt-1 text-sm font-semibold text-indigo-900">
+                {warehouseCustomerStatus(vendorOrder)}
+              </p>
+              <p className="mt-1 text-xs text-indigo-900/80">
+                Inbound: {vendorOrder.warehouse.inboundShipment?.status ?? "PENDING_SHIPMENT"} ·
+                Consolidation: {vendorOrder.warehouse.batch?.status ?? "OPEN"} · Outbound:{" "}
+                {vendorOrder.warehouse.outboundShipment?.status ?? "Not created"}
+              </p>
+
+              <ol className="mt-3 space-y-1.5">
+                {warehouseTimeline(order, vendorOrder).map((stage) => (
+                  <li
+                    key={`${vendorOrder.storeName ?? "vendor"}-${stage.label}`}
+                    className="flex items-center justify-between rounded-md bg-white/70 px-2 py-1.5 text-xs text-slate-700"
+                  >
+                    <span className="font-medium text-slate-800">{stage.label}</span>
+                    <span>{formatDateTime(stage.at, locale)}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
 
           <div className="space-y-3">
             {vendorOrder.items.map((item) => (
@@ -229,7 +320,7 @@ export function GuestOrderTrackingShell({
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-[#f6f8fc]">
-      <section className="border-b border-[#0f3460]/10 bg-gradient-to-br from-[#0f3460] via-[#123f74] to-[#0f3460] text-white">
+      <section className="border-b border-[#0f3460]/10 bg-linear-to-br from-[#0f3460] via-[#123f74] to-[#0f3460] text-white">
         <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
           <nav className="mb-5 flex items-center gap-2 text-sm text-white/70">
             <Link href="/" className="transition hover:text-white hover:underline">

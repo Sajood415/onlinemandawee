@@ -19,6 +19,7 @@ const orderAdminInclude = {
           user: true,
         },
       },
+      inboundShipment: true,
       items: true,
     },
   },
@@ -264,6 +265,12 @@ export class OrderRepository {
     return prisma.order.findMany({
       where: { userId },
       include: {
+        consolidationBatch: {
+          include: {
+            outboundShipment: true,
+          },
+        },
+        outboundShipment: true,
         vendorOrders: {
           include: {
             vendorProfile: {
@@ -271,6 +278,7 @@ export class OrderRepository {
                 user: true,
               },
             },
+            inboundShipment: true,
             items: true,
           },
         },
@@ -337,6 +345,12 @@ export class OrderRepository {
     return prisma.order.findUnique({
       where: { id },
       include: {
+        consolidationBatch: {
+          include: {
+            outboundShipment: true,
+          },
+        },
+        outboundShipment: true,
         vendorOrders: {
           include: {
             vendorProfile: {
@@ -344,6 +358,7 @@ export class OrderRepository {
                 user: true,
               },
             },
+            inboundShipment: true,
             items: true,
           },
         },
@@ -384,8 +399,18 @@ export class OrderRepository {
     return prisma.orderVendor.findMany({
       where: { vendorProfileId },
       include: {
-        order: true,
+        order: {
+          include: {
+            consolidationBatch: {
+              include: {
+                outboundShipment: true,
+              },
+            },
+            outboundShipment: true,
+          },
+        },
         vendorProfile: true,
+        inboundShipment: true,
         items: true,
       },
       orderBy: {

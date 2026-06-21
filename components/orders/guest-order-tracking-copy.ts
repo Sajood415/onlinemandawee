@@ -57,6 +57,16 @@ export function getGuestOrderTrackingCopy(locale: SupportedLocale) {
 export const GUEST_VENDOR_STATUS_LABELS: Record<string, Record<SupportedLocale, string>> = {
   NEW: { en: "New", ps: "نوی", "fa-AF": "جدید" },
   PREPARING: { en: "Preparing", ps: "چمتو کېږي", "fa-AF": "در حال آماده‌سازی" },
+  INBOUND_SHIPPED: {
+    en: "Inbound Shipped",
+    ps: "ګودام ته لېږل شوی",
+    "fa-AF": "به انبار ارسال شد",
+  },
+  RECEIVED_AT_WAREHOUSE: {
+    en: "Received At Warehouse",
+    ps: "په ګودام کې ترلاسه شو",
+    "fa-AF": "در انبار دریافت شد",
+  },
   SHIPPED: { en: "Shipped", ps: "لېږل شوی", "fa-AF": "ارسال شده" },
   DELIVERED: { en: "Delivered", ps: "تحویل شوی", "fa-AF": "تحویل شده" },
   CANCELLED: { en: "Cancelled", ps: "لغوه شوی", "fa-AF": "لغو شده" },

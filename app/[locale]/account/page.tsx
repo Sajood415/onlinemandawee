@@ -24,7 +24,24 @@ import { parseApiResponse } from "@/lib/http/parse-api-response";
 const INPUT_CLASS =
   "mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
 
-type VendorOrderStatus = "NEW" | "PREPARING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+type VendorOrderStatus =
+  | "NEW"
+  | "PREPARING"
+  | "INBOUND_SHIPPED"
+  | "RECEIVED_AT_WAREHOUSE"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "CANCELLED";
+type InboundShipmentStatus = "PENDING_SHIPMENT" | "INBOUND_SHIPPED" | "RECEIVED";
+type ConsolidationBatchStatus =
+  | "OPEN"
+  | "PARTIALLY_RECEIVED"
+  | "READY_TO_CONSOLIDATE"
+  | "CONSOLIDATED"
+  | "OUTBOUND_SHIPPED"
+  | "DELIVERED"
+  | "CANCELLED";
+type OutboundShipmentStatus = "CONSOLIDATED" | "OUTBOUND_SHIPPED" | "DELIVERED";
 
 type CustomerOrderItem = {
   id: string;
@@ -41,9 +58,40 @@ type CustomerVendorOrder = {
   vendorStoreName: string | null;
   status: VendorOrderStatus;
   deliveredAt: string | null;
+  deliveryMethod: "PICKUP" | "EXPRESS" | "STANDARD" | null;
   refundEligibility: "not_yet_delivered" | "open" | "expired";
   currency: string;
   grandTotalAmount: number;
+  warehouse: {
+    inboundShipment: {
+      id: string;
+      status: InboundShipmentStatus;
+      trackingRef: string | null;
+      shippedAt: string | null;
+      receivedAt: string | null;
+      createdAt: string;
+      updatedAt: string;
+    } | null;
+    batch: {
+      id: string;
+      status: ConsolidationBatchStatus;
+      expectedVendorCount: number;
+      receivedVendorCount: number;
+      readyToConsolidateAt: string | null;
+      createdAt: string;
+      updatedAt: string;
+    } | null;
+    outboundShipment: {
+      id: string;
+      status: OutboundShipmentStatus;
+      trackingRef: string | null;
+      consolidatedAt: string | null;
+      shippedAt: string | null;
+      deliveredAt: string | null;
+      createdAt: string;
+      updatedAt: string;
+    } | null;
+  };
   items: CustomerOrderItem[];
 };
 
@@ -70,10 +118,67 @@ type CustomerOrder = {
 const STATUS_COLORS: Record<VendorOrderStatus, string> = {
   NEW: "bg-blue-50 text-blue-700 border border-blue-200",
   PREPARING: "bg-yellow-50 text-yellow-700 border border-yellow-200",
+  INBOUND_SHIPPED: "bg-cyan-50 text-cyan-700 border border-cyan-200",
+  RECEIVED_AT_WAREHOUSE: "bg-indigo-50 text-indigo-700 border border-indigo-200",
   SHIPPED: "bg-cyan-50 text-cyan-700 border border-cyan-200",
   DELIVERED: "bg-green-50 text-green-700 border border-green-200",
   CANCELLED: "bg-red-50 text-red-700 border border-red-200",
 };
+
+function formatDateTime(value: string | null, locale: string) {
+  if (!value) return "—";
+  return new Date(value).toLocaleString(locale);
+}
+
+function getCustomerWarehouseStatus(vendorOrder: CustomerVendorOrder) {
+  if (vendorOrder.deliveryMethod !== "STANDARD") return null;
+  const outbound = vendorOrder.warehouse.outboundShipment;
+  const batch = vendorOrder.warehouse.batch;
+  const inbound = vendorOrder.warehouse.inboundShipment;
+
+  if (outbound?.status === "DELIVERED" || vendorOrder.status === "DELIVERED") return "Delivered";
+  if (outbound?.status === "OUTBOUND_SHIPPED") return "Out For Delivery";
+  if (outbound?.status === "CONSOLIDATED" || batch?.status === "CONSOLIDATED") return "Consolidated";
+  if (batch?.status === "READY_TO_CONSOLIDATE") return "Waiting For Remaining Vendors";
+  if (inbound?.status === "RECEIVED" || vendorOrder.status === "RECEIVED_AT_WAREHOUSE")
+    return "Received At Warehouse";
+  if (inbound?.status === "INBOUND_SHIPPED" || vendorOrder.status === "INBOUND_SHIPPED")
+    return "Sent To Warehouse";
+  if (vendorOrder.status === "PREPARING") return "Preparing";
+  return "Order Placed";
+}
+
+function buildCustomerWarehouseTimeline(order: CustomerOrder, vendorOrder: CustomerVendorOrder) {
+  const batch = vendorOrder.warehouse.batch;
+  const outbound = vendorOrder.warehouse.outboundShipment;
+  const inbound = vendorOrder.warehouse.inboundShipment;
+
+  return [
+    { label: "Order Placed", at: order.createdAt },
+    {
+      label: "Preparing",
+      at:
+        vendorOrder.status === "PREPARING" ||
+        vendorOrder.status === "INBOUND_SHIPPED" ||
+        vendorOrder.status === "RECEIVED_AT_WAREHOUSE" ||
+        vendorOrder.status === "DELIVERED"
+          ? order.updatedAt
+          : null,
+    },
+    { label: "Sent To Warehouse", at: inbound?.shippedAt ?? null },
+    { label: "Received At Warehouse", at: inbound?.receivedAt ?? null },
+    {
+      label: "Waiting For Remaining Vendors",
+      at:
+        batch?.status === "PARTIALLY_RECEIVED" || batch?.status === "READY_TO_CONSOLIDATE"
+          ? batch.updatedAt
+          : null,
+    },
+    { label: "Consolidated", at: outbound?.consolidatedAt ?? null },
+    { label: "Out For Delivery", at: outbound?.shippedAt ?? null },
+    { label: "Delivered", at: outbound?.deliveredAt ?? vendorOrder.deliveredAt },
+  ];
+}
 
 function formatMoney(amount: number, currency: string, locale: string) {
   try {
@@ -184,12 +289,45 @@ function OrderCard({
                 <p className="text-sm font-semibold text-neutral-900">
                   {vendorOrder.vendorStoreName ?? t("orders.vendor")}
                 </p>
-                <span
-                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_COLORS[vendorOrder.status]}`}
-                >
-                  {t(`orderStatus.${vendorOrder.status}`)}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-700">
+                    {vendorOrder.deliveryMethod ?? "—"}
+                  </span>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_COLORS[vendorOrder.status]}`}
+                  >
+                    {t(`orderStatus.${vendorOrder.status}`)}
+                  </span>
+                </div>
               </div>
+
+              {vendorOrder.deliveryMethod === "STANDARD" ? (
+                <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/40 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                    Warehouse status
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-indigo-900">
+                    {getCustomerWarehouseStatus(vendorOrder)}
+                  </p>
+                  <p className="mt-1 text-xs text-indigo-900/80">
+                    Inbound: {vendorOrder.warehouse.inboundShipment?.status ?? "PENDING_SHIPMENT"} ·
+                    Consolidation: {vendorOrder.warehouse.batch?.status ?? "OPEN"} · Outbound:{" "}
+                    {vendorOrder.warehouse.outboundShipment?.status ?? "Not created"}
+                  </p>
+
+                  <ol className="mt-3 space-y-1.5">
+                    {buildCustomerWarehouseTimeline(order, vendorOrder).map((stage) => (
+                      <li
+                        key={`${vendorOrder.id}-${stage.label}`}
+                        className="flex items-center justify-between rounded-md bg-white/70 px-2 py-1.5 text-xs text-neutral-700"
+                      >
+                        <span className="font-medium text-neutral-800">{stage.label}</span>
+                        <span>{formatDateTime(stage.at, locale)}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ) : null}
 
               <div className="mt-3 space-y-2">
                 {vendorOrder.items.map((item) => {
@@ -240,12 +378,12 @@ function OrderCard({
                         </button>
                       ) : null}
                       {showRefundExpired ? (
-                        <p className="max-w-[9rem] text-right text-[11px] font-medium text-neutral-500">
+                        <p className="max-w-36 text-right text-[11px] font-medium text-neutral-500">
                           {t("orders.refundPeriodExpired")}
                         </p>
                       ) : null}
                       {showRefundAfterDelivery ? (
-                        <p className="max-w-[9rem] text-right text-[11px] font-medium text-neutral-500">
+                        <p className="max-w-36 text-right text-[11px] font-medium text-neutral-500">
                           {t("orders.refundAvailableAfterDelivery")}
                         </p>
                       ) : null}

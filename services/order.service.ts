@@ -225,6 +225,7 @@ export class OrderService {
     return vendorOrders.map((vendorOrder) => ({
       id: vendorOrder.id,
       status: vendorOrder.status,
+      deliveryMethod: vendorOrder.deliveryMethod,
       currency: vendorOrder.currency,
       subtotalAmount: vendorOrder.subtotalAmount,
       deliveryAmount: vendorOrder.deliveryAmount,
@@ -243,6 +244,43 @@ export class OrderService {
         shippingCity: vendorOrder.order.shippingCity,
         shippingCountry: vendorOrder.order.shippingCountry,
         shippingPostalCode: vendorOrder.order.shippingPostalCode,
+      },
+      warehouse: {
+        inboundShipment: vendorOrder.inboundShipment
+          ? {
+              id: vendorOrder.inboundShipment.id,
+              status: vendorOrder.inboundShipment.status,
+              trackingRef: vendorOrder.inboundShipment.trackingRef,
+              shippedAt: vendorOrder.inboundShipment.shippedAt?.toISOString() ?? null,
+              receivedAt: vendorOrder.inboundShipment.receivedAt?.toISOString() ?? null,
+              createdAt: vendorOrder.inboundShipment.createdAt.toISOString(),
+              updatedAt: vendorOrder.inboundShipment.updatedAt.toISOString(),
+            }
+          : null,
+        batch: vendorOrder.order.consolidationBatch
+          ? {
+              id: vendorOrder.order.consolidationBatch.id,
+              status: vendorOrder.order.consolidationBatch.status,
+              expectedVendorCount: vendorOrder.order.consolidationBatch.expectedVendorCount,
+              receivedVendorCount: vendorOrder.order.consolidationBatch.receivedVendorCount,
+              readyToConsolidateAt:
+                vendorOrder.order.consolidationBatch.readyToConsolidateAt?.toISOString() ?? null,
+              createdAt: vendorOrder.order.consolidationBatch.createdAt.toISOString(),
+              updatedAt: vendorOrder.order.consolidationBatch.updatedAt.toISOString(),
+            }
+          : null,
+        outboundShipment: vendorOrder.order.outboundShipment
+          ? {
+              id: vendorOrder.order.outboundShipment.id,
+              status: vendorOrder.order.outboundShipment.status,
+              trackingRef: vendorOrder.order.outboundShipment.trackingRef,
+              consolidatedAt: vendorOrder.order.outboundShipment.consolidatedAt?.toISOString() ?? null,
+              shippedAt: vendorOrder.order.outboundShipment.shippedAt?.toISOString() ?? null,
+              deliveredAt: vendorOrder.order.outboundShipment.deliveredAt?.toISOString() ?? null,
+              createdAt: vendorOrder.order.outboundShipment.createdAt.toISOString(),
+              updatedAt: vendorOrder.order.outboundShipment.updatedAt.toISOString(),
+            }
+          : null,
       },
       items: vendorOrder.items,
     }));
@@ -675,6 +713,7 @@ export class OrderService {
         vendorProfileId: vendorOrder.vendorProfileId,
         vendorStoreSlug: vendorOrder.vendorProfile.storeSlug,
         vendorStoreName: vendorOrder.vendorProfile.storeName,
+        deliveryMethod: vendorOrder.deliveryMethod,
         vendorUser: "user" in vendorOrder.vendorProfile
           ? {
               id: vendorOrder.vendorProfile.user.id,
@@ -696,6 +735,43 @@ export class OrderService {
         deliveryAmount: vendorOrder.deliveryAmount,
         discountAmount: vendorOrder.discountAmount,
         grandTotalAmount: vendorOrder.grandTotalAmount,
+        warehouse: {
+          inboundShipment: vendorOrder.inboundShipment
+            ? {
+                id: vendorOrder.inboundShipment.id,
+                status: vendorOrder.inboundShipment.status,
+                trackingRef: vendorOrder.inboundShipment.trackingRef,
+                shippedAt: vendorOrder.inboundShipment.shippedAt?.toISOString() ?? null,
+                receivedAt: vendorOrder.inboundShipment.receivedAt?.toISOString() ?? null,
+                createdAt: vendorOrder.inboundShipment.createdAt.toISOString(),
+                updatedAt: vendorOrder.inboundShipment.updatedAt.toISOString(),
+              }
+            : null,
+          batch: order.consolidationBatch
+            ? {
+                id: order.consolidationBatch.id,
+                status: order.consolidationBatch.status,
+                expectedVendorCount: order.consolidationBatch.expectedVendorCount,
+                receivedVendorCount: order.consolidationBatch.receivedVendorCount,
+                readyToConsolidateAt:
+                  order.consolidationBatch.readyToConsolidateAt?.toISOString() ?? null,
+                createdAt: order.consolidationBatch.createdAt.toISOString(),
+                updatedAt: order.consolidationBatch.updatedAt.toISOString(),
+              }
+            : null,
+          outboundShipment: order.outboundShipment
+            ? {
+                id: order.outboundShipment.id,
+                status: order.outboundShipment.status,
+                trackingRef: order.outboundShipment.trackingRef,
+                consolidatedAt: order.outboundShipment.consolidatedAt?.toISOString() ?? null,
+                shippedAt: order.outboundShipment.shippedAt?.toISOString() ?? null,
+                deliveredAt: order.outboundShipment.deliveredAt?.toISOString() ?? null,
+                createdAt: order.outboundShipment.createdAt.toISOString(),
+                updatedAt: order.outboundShipment.updatedAt.toISOString(),
+              }
+            : null,
+        },
         items: vendorOrder.items,
       })),
     };
