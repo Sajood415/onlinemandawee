@@ -10,11 +10,9 @@ const LINK_MAP: Record<string, string> = {
   "About Mandawee": "/about",
   "How It Works": "/how-it-works",
   "Vendor Program": "/vendor/register",
-  Careers: "/careers",
   "Help Center": "/help",
   "Contact Us": "/contact",
   "Track Order": "/orders",
-  "Delivery Areas": "/delivery",
   "Privacy Policy": "/privacy",
   "Terms of Service": "/terms",
   "Refund Policy": "/refunds",
@@ -22,10 +20,15 @@ const LINK_MAP: Record<string, string> = {
 };
 
 const NAV_COLUMN_PATHS = [
-  ["/about", "/how-it-works", "/vendor/register", "/careers"],
-  ["/help", "/contact", "/orders", "/delivery"],
+  ["/about", "/how-it-works", "/vendor/register"],
+  ["/help", "/contact", "/orders"],
   ["/privacy", "/terms", "/refunds", "/vendor/terms"],
 ] as const;
+
+const HIDDEN_COLUMN_LINK_INDICES: Record<number, Set<number>> = {
+  0: new Set([3]),
+  1: new Set([3]),
+};
 
 /* ── Social SVGs ─────────────────────────────────────────────────────────── */
 const TikTokIcon = () => (
@@ -210,6 +213,9 @@ export default function Footer() {
               </h3>
               <ul className="space-y-3.5">
                 {column.links.map((label: string, linkIndex: number) => {
+                  if (HIDDEN_COLUMN_LINK_INDICES[columnIndex]?.has(linkIndex)) {
+                    return null;
+                  }
                   const href =
                     NAV_COLUMN_PATHS[columnIndex]?.[linkIndex] ??
                     LINK_MAP[label] ??
@@ -255,12 +261,6 @@ export default function Footer() {
                 className="hover:text-primary transition-colors cursor-pointer"
               >
                 {copy.terms}
-              </Link>
-              <Link
-                href="/sitemap"
-                className="hover:text-primary transition-colors cursor-pointer"
-              >
-                {copy.sitemap}
               </Link>
             </div>
             <div className="h-4 w-px bg-slate-200" />
