@@ -5,6 +5,7 @@ import { createGuestOrderFromQuote } from "@/lib/checkout/create-guest-order-fro
 import type { GuestCheckoutQuote } from "@/lib/checkout/build-guest-checkout-quote";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import { getStripeServerClient } from "@/lib/stripe/server";
 import { safeEqual, sha256 } from "@/lib/utils/crypto";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 import { CheckoutSnapshotRepository } from "@/repositories/checkout-snapshot.repository";
@@ -32,6 +33,9 @@ type SnapshotPayload = {
   postalCode?: string | null;
   deliveryMethod: "PICKUP" | "EXPRESS" | "STANDARD";
 };
+
+const OUT_OF_STOCK_ERROR_MESSAGE =
+  "Some items are out of stock. Please refresh your cart and try again.";
 
 async function wait(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
@@ -217,6 +221,15 @@ export class CheckoutFinalizationService {
         order = await this.orderRepository.findByStripePaymentIntentId(
           input.paymentIntent.id
         );
+      } else if (this.isOutOfStockOrderCreationError(error)) {
+        const refunded = await this.tryRefundOnOrderCreationFailure(input.paymentIntent.id);
+        throw new AppError({
+          code: ERROR_CODE.CONFLICT,
+          message: refunded
+            ? "Order could not be created because stock changed after payment. Your payment has been refunded."
+            : "Order could not be created because stock changed after payment. Automatic refund failed and requires manual support.",
+          statusCode: 409,
+        });
       } else {
         throw error;
       }
@@ -239,5 +252,36 @@ export class CheckoutFinalizationService {
     }
 
     return order;
+  }
+
+  private isOutOfStockOrderCreationError(error: unknown) {
+    return (
+      error instanceof AppError &&
+      error.code === ERROR_CODE.BAD_REQUEST &&
+      error.message === OUT_OF_STOCK_ERROR_MESSAGE
+    );
+  }
+
+  private async tryRefundOnOrderCreationFailure(paymentIntentId: string) {
+    try {
+      const stripe = getStripeServerClient();
+      await stripe.refunds.create(
+        {
+          payment_intent: paymentIntentId,
+          reason: "requested_by_customer",
+          metadata: {
+            reason: "order_creation_failed_out_of_stock",
+            source: "checkout_finalization",
+            paymentIntentId,
+          },
+        },
+        {
+          idempotencyKey: `checkout-order-create-failed:${paymentIntentId}`,
+        }
+      );
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

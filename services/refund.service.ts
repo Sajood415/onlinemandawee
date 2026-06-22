@@ -326,22 +326,46 @@ export class RefundService {
     }
 
     if (input.action === "ACCEPT") {
-      const stripeRefund = await this.executeStripeRefund({
-        refundCase,
-        approvedAmount: refundCase.requestedAmount,
-      });
+      try {
+        await this.refundDecisionRepository.create({
+          refundCaseId,
+          decisionType: "APPROVE",
+          approvedAmount: refundCase.requestedAmount,
+          reason: input.explanation,
+          decidedByUserId: auth.id,
+        });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          throw new AppError({
+            code: ERROR_CODE.BAD_REQUEST,
+            message: "Refund case is already resolved",
+            statusCode: 400,
+          });
+        }
+        throw error;
+      }
 
-      await this.refundDecisionRepository.create({
+      let stripeRefund: StripeRefundMetadata;
+      try {
+        stripeRefund = await this.executeStripeRefund({
+          refundCase,
+          approvedAmount: refundCase.requestedAmount,
+        });
+      } catch (error) {
+        await this.refundDecisionRepository.deleteByRefundCaseId(refundCaseId);
+        throw error;
+      }
+
+      await this.refundDecisionRepository.updateStripeMetadata({
         refundCaseId,
-        decisionType: "APPROVE",
-        approvedAmount: refundCase.requestedAmount,
-        reason: input.explanation,
         stripeRefundId: stripeRefund.id,
         stripeRefundStatus: stripeRefund.status,
         stripeRefundFailureCode: stripeRefund.failureCode ?? undefined,
         stripeRefundFailureReason: stripeRefund.failureReason ?? undefined,
         stripeRefundAttemptedAt: stripeRefund.attemptedAt,
-        decidedByUserId: auth.id,
       });
 
       const updated = await this.refundCaseRepository.update({
@@ -492,28 +516,51 @@ export class RefundService {
         ? "APPROVE"
         : input.decisionType;
 
-    const requiresStripeRefund =
-      decisionType === "APPROVE" || decisionType === "PARTIAL";
-    let stripeRefund: StripeRefundMetadata | null = null;
-    if (requiresStripeRefund) {
-      stripeRefund = await this.executeStripeRefund({
-        refundCase,
+    try {
+      await this.refundDecisionRepository.create({
+        refundCaseId,
+        decisionType,
         approvedAmount: input.approvedAmount,
+        reason: input.reason,
+        decidedByUserId: auth.id,
       });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        throw new AppError({
+          code: ERROR_CODE.BAD_REQUEST,
+          message: "Refund case is already resolved",
+          statusCode: 400,
+        });
+      }
+      throw error;
     }
 
-    await this.refundDecisionRepository.create({
-      refundCaseId,
-      decisionType,
-      approvedAmount: input.approvedAmount,
-      reason: input.reason,
-      stripeRefundId: stripeRefund?.id,
-      stripeRefundStatus: stripeRefund?.status,
-      stripeRefundFailureCode: stripeRefund?.failureCode ?? undefined,
-      stripeRefundFailureReason: stripeRefund?.failureReason ?? undefined,
-      stripeRefundAttemptedAt: stripeRefund?.attemptedAt,
-      decidedByUserId: auth.id,
-    });
+    const requiresStripeRefund =
+      decisionType === "APPROVE" || decisionType === "PARTIAL";
+    if (requiresStripeRefund) {
+      let stripeRefund: StripeRefundMetadata;
+      try {
+        stripeRefund = await this.executeStripeRefund({
+          refundCase,
+          approvedAmount: input.approvedAmount,
+        });
+      } catch (error) {
+        await this.refundDecisionRepository.deleteByRefundCaseId(refundCaseId);
+        throw error;
+      }
+
+      await this.refundDecisionRepository.updateStripeMetadata({
+        refundCaseId,
+        stripeRefundId: stripeRefund.id,
+        stripeRefundStatus: stripeRefund.status,
+        stripeRefundFailureCode: stripeRefund.failureCode ?? undefined,
+        stripeRefundFailureReason: stripeRefund.failureReason ?? undefined,
+        stripeRefundAttemptedAt: stripeRefund.attemptedAt,
+      });
+    }
 
     const updated = await this.refundCaseRepository.update({
       id: refundCaseId,
