@@ -1134,6 +1134,7 @@ export class RefundService {
     const bucket = payout && payout.status === "ON_HOLD" ? "HOLD" : "AVAILABLE";
     const entryType =
       bucket === "HOLD" ? "REFUND_DEBIT_HOLD" : "REFUND_DEBIT_AVAILABLE";
+    const payoutStatus = payout?.status ?? null;
 
     try {
       await prisma.$transaction(async (tx) => {
@@ -1173,6 +1174,10 @@ export class RefundService {
           0,
           Math.min(approvedAmount, approvedAmount - commissionRefundAmount)
         );
+        const payoutAlreadySent = payoutStatus === "SENT";
+        const payoutDescriptionSuffix = payoutAlreadySent
+          ? " Payout is already SENT; this debit is recorded as vendor liability owed back to platform."
+          : "";
 
         await tx.vendorLedgerEntry.create({
           data: {
@@ -1187,18 +1192,22 @@ export class RefundService {
             currency,
             description:
               commissionRefundAmount > 0
-                ? `Refund approved for order vendor ${orderVendorId}. Vendor debit excludes ${commissionRefundAmount} retained commission reversal.`
-                : `Refund approved for order vendor ${orderVendorId}`,
+                ? `Refund approved for order vendor ${orderVendorId}. Vendor debit excludes ${commissionRefundAmount} retained commission reversal.${payoutDescriptionSuffix}`
+                : `Refund approved for order vendor ${orderVendorId}.${payoutDescriptionSuffix}`,
           },
         });
 
-        if (payout && (payout.status === "ON_HOLD" || payout.status === "READY")) {
+        const canAdjustPayoutAmount =
+          payout && (payout.status === "ON_HOLD" || payout.status === "READY");
+        if (canAdjustPayoutAmount) {
           await tx.payout.update({
             where: { id: payout.id },
             data: {
               amount: Math.max(0, payout.amount - vendorDebitAmount),
             },
           });
+        } else if (payoutStatus === "SENT") {
+          // Sent payouts are immutable; liability is represented by the ledger debit above.
         }
       });
     } catch (error) {

@@ -225,6 +225,7 @@ export class OrderService {
     return vendorOrders.map((vendorOrder) => ({
       id: vendorOrder.id,
       status: vendorOrder.status,
+      sellerType: vendorOrder.vendorProfile.sellerType,
       deliveryMethod: vendorOrder.deliveryMethod,
       currency: vendorOrder.currency,
       subtotalAmount: vendorOrder.subtotalAmount,

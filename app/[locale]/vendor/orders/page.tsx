@@ -51,6 +51,7 @@ type OutboundShipmentStatus = "CONSOLIDATED" | "OUTBOUND_SHIPPED" | "DELIVERED";
 type VendorOrder = {
   id: string;
   status: VendorOrderStatus;
+  sellerType: "PLATFORM" | "THIRD_PARTY";
   deliveryMethod: "PICKUP" | "EXPRESS" | "STANDARD" | null;
   currency: string;
   subtotalAmount: number;
@@ -265,7 +266,8 @@ function StandardWarehouseActions({
 }) {
   const [trackingRef, setTrackingRef] = useState(order.warehouse.inboundShipment?.trackingRef ?? "");
   const [submitting, setSubmitting] = useState(false);
-  const isStandardWorkflow = order.deliveryMethod === "STANDARD";
+  const isStandardWorkflow =
+    order.deliveryMethod === "STANDARD" && order.sellerType === "THIRD_PARTY";
   if (!isStandardWorkflow) return null;
 
   const alreadySubmitted =
@@ -352,7 +354,8 @@ function OrderRow({
 }) {
   const [expanded, setExpanded] = useState(false);
   const totalItems = order.items.reduce((s, i) => s + i.quantity, 0);
-  const isStandardWorkflow = order.deliveryMethod === "STANDARD";
+  const isStandardWorkflow =
+    order.deliveryMethod === "STANDARD" && order.sellerType === "THIRD_PARTY";
   const warehouseTimeline = [
     {
       key: "preparing",
