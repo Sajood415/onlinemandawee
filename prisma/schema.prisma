@@ -873,6 +873,7 @@ model RefundCase {
   id                  String           @id @default(auto()) @map("_id") @db.ObjectId
   orderId             String           @db.ObjectId
   orderItemId         String           @db.ObjectId
+  activeOrderItemKey  String?          @unique
   customerUserId      String           @db.ObjectId
   vendorProfileId     String           @db.ObjectId
   reason              String

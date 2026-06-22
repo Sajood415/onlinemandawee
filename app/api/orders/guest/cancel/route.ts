@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { consumeRateLimit } from "@/lib/http/simple-rate-limit";
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { prisma } from "@/lib/db/prisma";
 import { buildOrderCancelledEmail } from "@/lib/mail/order-status-email";
@@ -11,7 +12,23 @@ const cancelSchema = z.object({
   guestEmail: z.string().email(),
 });
 
+function getClientIp(request: Request) {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0]?.trim() || "unknown";
+  return request.headers.get("x-real-ip") ?? "unknown";
+}
+
 export const POST = withErrorHandling(async (request) => {
+  const ip = getClientIp(request);
+  const limit = consumeRateLimit(`guest-cancel:${ip}`, 10, 15 * 60_000);
+
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: { code: "RATE_LIMITED", message: "Too many cancellation attempts. Please try again later." } },
+      { status: 429 }
+    );
+  }
+
   const body = await request.json();
   const parsed = cancelSchema.safeParse(body);
 
@@ -34,6 +51,19 @@ export const POST = withErrorHandling(async (request) => {
     return NextResponse.json(
       { error: { code: "NOT_FOUND", message: "No order found with that order number and email." } },
       { status: 404 }
+    );
+  }
+
+  if (order.paymentStatus === "PAID") {
+    return NextResponse.json(
+      {
+        error: {
+          code: "CANNOT_CANCEL_PAID_ORDER",
+          message:
+            "This order has already been paid and cannot be cancelled through guest cancellation.",
+        },
+      },
+      { status: 409 }
     );
   }
 

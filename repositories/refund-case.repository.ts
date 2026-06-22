@@ -157,6 +157,7 @@ export class RefundCaseRepository {
   create(input: {
     orderId: string;
     orderItemId: string;
+    activeOrderItemKey?: string | null;
     customerUserId: string;
     vendorProfileId: string;
     reason: string;
@@ -169,6 +170,7 @@ export class RefundCaseRepository {
       data: {
         orderId: input.orderId,
         orderItemId: input.orderItemId,
+        activeOrderItemKey: input.activeOrderItemKey ?? input.orderItemId,
         customerUserId: input.customerUserId,
         vendorProfileId: input.vendorProfileId,
         reason: input.reason,
@@ -295,6 +297,7 @@ export class RefundCaseRepository {
   update(input: {
     id: string;
     status?: RefundCaseStatus;
+    activeOrderItemKey?: string | null;
     vendorExplanation?: string | null;
     escalatedAt?: Date | null;
     finalDecisionAt?: Date | null;
@@ -304,6 +307,8 @@ export class RefundCaseRepository {
       where: { id: input.id },
       data: {
         status: input.status,
+        activeOrderItemKey:
+          input.status === "RESOLVED" ? null : input.activeOrderItemKey,
         vendorExplanation: input.vendorExplanation,
         escalatedAt: input.escalatedAt,
         finalDecisionAt: input.finalDecisionAt,

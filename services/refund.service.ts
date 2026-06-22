@@ -152,17 +152,31 @@ export class RefundService {
       });
     }
 
-    const refundCase = await this.refundCaseRepository.create({
-      orderId: orderItem.orderVendor.orderId,
-      orderItemId: orderItem.id,
-      customerUserId: auth.id,
-      vendorProfileId: orderItem.vendorProfileId,
-      reason: input.reason,
-      description: input.description,
-      requestedAmount: input.requestedAmount,
-      status: "WAITING_VENDOR",
-      vendorResponseDueAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
-    });
+    const refundCase = await this.refundCaseRepository
+      .create({
+        orderId: orderItem.orderVendor.orderId,
+        orderItemId: orderItem.id,
+        customerUserId: auth.id,
+        vendorProfileId: orderItem.vendorProfileId,
+        reason: input.reason,
+        description: input.description,
+        requestedAmount: input.requestedAmount,
+        status: "WAITING_VENDOR",
+        vendorResponseDueAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
+      })
+      .catch((error: unknown) => {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          throw new AppError({
+            code: ERROR_CODE.BAD_REQUEST,
+            message: "An active refund case already exists for this item",
+            statusCode: 400,
+          });
+        }
+        throw error;
+      });
 
     if (input.evidenceFileUrl || input.evidenceNote) {
       await this.refundEvidenceRepository.create({
