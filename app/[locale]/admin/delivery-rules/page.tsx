@@ -38,7 +38,7 @@ type VendorOption = {
 };
 
 type RuleFormState = {
-  method: "EXPRESS" | "STANDARD";
+  method: DeliveryMethod;
   scope: DeliveryRuleScope;
   vendorProfileId: string;
   countryCode: string;
@@ -104,7 +104,7 @@ export default function AdminDeliveryRulesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [methodFilter, setMethodFilter] = useState<"ALL" | "EXPRESS" | "STANDARD">("ALL");
+  const [methodFilter, setMethodFilter] = useState<"ALL" | DeliveryMethod>("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
 
   const [formOpen, setFormOpen] = useState(false);
@@ -161,7 +161,7 @@ export default function AdminDeliveryRulesPage() {
   const openEdit = (rule: DeliveryRuleRecord) => {
     setEditingRule(rule);
     setForm({
-      method: rule.method === "EXPRESS" ? "EXPRESS" : "STANDARD",
+      method: rule.method,
       scope: rule.scope,
       vendorProfileId: rule.vendorProfileId ?? "",
       countryCode: rule.countryCode ?? "",
@@ -282,7 +282,7 @@ export default function AdminDeliveryRulesPage() {
         <div>
           <h1 className="text-2xl font-bold text-[#0f3460]">Delivery Rules</h1>
           <p className="mt-1 text-sm text-neutral-600">
-            Manage EXPRESS and STANDARD pricing rules for operational checkout safety.
+            Manage PICKUP, EXPRESS, and STANDARD pricing rules for operational checkout safety.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -311,10 +311,11 @@ export default function AdminDeliveryRulesPage() {
             className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-700"
             value={methodFilter}
             onChange={(event) =>
-              setMethodFilter(event.target.value as "ALL" | "EXPRESS" | "STANDARD")
+              setMethodFilter(event.target.value as "ALL" | DeliveryMethod)
             }
           >
             <option value="ALL">All methods</option>
+            <option value="PICKUP">PICKUP</option>
             <option value="EXPRESS">EXPRESS</option>
             <option value="STANDARD">STANDARD</option>
           </select>
@@ -449,10 +450,11 @@ export default function AdminDeliveryRulesPage() {
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      method: event.target.value as "EXPRESS" | "STANDARD",
+                      method: event.target.value as DeliveryMethod,
                     }))
                   }
                 >
+                  <option value="PICKUP">PICKUP</option>
                   <option value="EXPRESS">EXPRESS</option>
                   <option value="STANDARD">STANDARD</option>
                 </select>
