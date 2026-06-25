@@ -1,6 +1,5 @@
 "use client";
 
-<<<<<<< HEAD
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
@@ -157,78 +156,10 @@ function CheckoutCompletePageContent() {
           destinationHref: "/orders",
           destinationLabel: "Track order",
         });
-=======
-import { Suspense, useEffect, useRef, useState } from "react";
-import { useLocale } from "next-intl";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
-
-import { PageLoader } from "@/components/ui/PageLoader";
-import {
-  clearPendingCheckout,
-  readPendingCheckout,
-  saveCheckoutSuccess,
-} from "@/lib/checkout/pending-checkout-session";
-import { toast } from "@/lib/utils/toast";
-
-async function postCheckoutConfirm(
-  checkoutApiBase: string,
-  body: Record<string, unknown>,
-  useAuthCheckout: boolean
-) {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (useAuthCheckout) {
-    const { fetchWithAuth } = await import("@/lib/http/fetch-with-auth");
-    return fetchWithAuth(`${checkoutApiBase}/confirm`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
-  }
-
-  return fetch(`${checkoutApiBase}/confirm`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body),
-  });
-}
-
-function CheckoutCompleteContent() {
-  const locale = useLocale();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const handledRef = useRef(false);
-  const [message, setMessage] = useState("Confirming your payment…");
-
-  useEffect(() => {
-    if (handledRef.current) return;
-    handledRef.current = true;
-
-    const paymentIntentId = searchParams.get("payment_intent");
-    const redirectStatus = searchParams.get("redirect_status");
-
-    if (!paymentIntentId) {
-      router.replace(`/${locale}/checkout`);
-      return;
-    }
-
-    if (redirectStatus && redirectStatus !== "succeeded") {
-      toast.error("Payment was not completed. Please try again.");
-      router.replace(`/${locale}/checkout`);
-      return;
-    }
-
-    void (async () => {
-      const pending = readPendingCheckout();
-      if (!pending) {
-        toast.error("Checkout session expired. Please try again.");
-        router.replace(`/${locale}/checkout`);
->>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
         return;
       }
 
       try {
-<<<<<<< HEAD
         const confirmed = await postCheckoutConfirm(pending);
         clearPendingConfirmation(paymentIntent.id);
         localStorage.removeItem("onlinemandawee-cart");
@@ -304,69 +235,7 @@ function CheckoutCompleteContent() {
         >
           {state.destinationLabel}
         </Link>
-=======
-        const response = await postCheckoutConfirm(
-          pending.checkoutApiBase,
-          {
-            paymentIntentId,
-            guestName: pending.contact.guestName,
-            guestEmail: pending.contact.guestEmail,
-            guestPhone: pending.contact.guestPhone,
-            addressLine1: pending.address.addressLine1,
-            city: pending.address.city,
-            country: pending.address.country,
-            postalCode: pending.address.postalCode,
-            currency: pending.currency,
-            items: pending.cartItems,
-            vendorCoupons: pending.vendorCoupons,
-          },
-          pending.useAuthCheckout
-        );
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data?.error?.message ?? "Order could not be recorded.");
-        }
-
-        clearPendingCheckout();
-        saveCheckoutSuccess({
-          orderNumber: data.data.orderNumber,
-          guestEmail: pending.contact.guestEmail,
-          paymentMethod: "card",
-        });
-        router.replace(`/${locale}/checkout`);
-      } catch (error) {
-        setMessage(
-          error instanceof Error ? error.message : "Payment confirmation failed."
-        );
-        toast.error(
-          error instanceof Error ? error.message : "Payment confirmation failed."
-        );
-        window.setTimeout(() => {
-          router.replace(`/${locale}/checkout`);
-        }, 2500);
-      }
-    })();
-  }, [locale, router, searchParams]);
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-6 py-5 text-sm text-gray-700 shadow-sm">
-        <Loader2 className="h-5 w-5 animate-spin text-[#0f3460]" />
-        {message}
->>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
       </div>
     </div>
   );
 }
-<<<<<<< HEAD
-=======
-
-export default function CheckoutCompletePage() {
-  return (
-    <Suspense fallback={<PageLoader message="Confirming your payment…" fullScreen />}>
-      <CheckoutCompleteContent />
-    </Suspense>
-  );
-}
->>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)

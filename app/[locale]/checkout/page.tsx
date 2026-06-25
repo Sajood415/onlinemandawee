@@ -3,17 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import { CheckoutStripeProvider } from "@/components/checkout/CheckoutStripeProvider";
 import {
-  getStripeCheckoutLoadErrorMessage,
-  getStripeKeyMode,
-} from "@/lib/stripe/checkout-client";
-import {
+  getStripeCheckoutLocale,
+  getStripePromise,
   isStripeCheckoutConfigured,
   STRIPE_CHECKOUT_CURRENCY_LABEL,
-  getStripePromise,
 } from "@/lib/stripe/client";
 import {
+  Elements,
   PaymentElement,
   useElements,
   useStripe,
@@ -33,12 +30,6 @@ import {
 } from "lucide-react";
 
 import { PageLoader } from "@/components/ui/PageLoader";
-import { SearchableSelect } from "@/components/ui/SearchableSelect";
-import {
-  getCitiesForCountryName,
-  getPostalCodesForCity,
-  SHIPPING_COUNTRIES,
-} from "@/lib/geo/shipping-locations";
 import { convertMajorUnits } from "@/lib/currency/convert";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -56,17 +47,14 @@ import {
   validateCountry,
   validatePostalCode,
 } from "@/lib/checkout/checkout-field-validation";
-import {
-  clearPendingCheckout,
-  consumeCheckoutSuccess,
-  savePendingCheckout,
-} from "@/lib/checkout/pending-checkout-session";
 import { toast } from "@/lib/utils/toast";
 import { useAuth } from "@/store/auth-context";
 import { useCart } from "@/store/cart-context";
 import { useCurrency } from "@/store/currency-context";
 
 /* ─── Stripe setup ───────────────────────────────────────────────────── */
+
+const stripePromise = getStripePromise();
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 
@@ -462,29 +450,6 @@ function ShippingAddressStep({
     });
   };
 
-  const countryOptions = useMemo(
-    () =>
-      SHIPPING_COUNTRIES.map((country) => ({
-        value: country.name,
-        label: `${country.flag} ${country.name}`,
-      })),
-    []
-  );
-
-  const cityOptions = useMemo(() => {
-    return getCitiesForCountryName(address.country).map((city) => ({
-      value: city.name,
-      label: city.name,
-    }));
-  }, [address.country]);
-
-  const postalOptions = useMemo(() => {
-    return getPostalCodesForCity(address.country, address.city).map((code) => ({
-      value: code,
-      label: code,
-    }));
-  }, [address.country, address.city]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const errors = validateCheckoutShippingForm(contact, address, {
@@ -639,7 +604,6 @@ function ShippingAddressStep({
             if (error) setFieldErrors((current) => ({ ...current, addressLine1: error }));
           }}
         />
-<<<<<<< HEAD
         <div className="grid grid-cols-2 gap-4">
           <InputField
             label="City"
@@ -680,90 +644,17 @@ function ShippingAddressStep({
           required={addressRequired}
           type="text"
           placeholder="Afghanistan"
-=======
-        <SearchableSelect
-          label="Country"
-          required
->>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
           value={address.country}
-          options={countryOptions}
-          placeholder="Select country"
-          searchPlaceholder="Search countries…"
           error={fieldErrors.country}
-          onChange={(value) => {
-            onAddressChange({ country: value, city: "", postalCode: "" });
-            setFieldErrors((current) => {
-              const next = { ...current };
-              const countryError = validateCountry(value);
-              if (countryError) next.country = countryError;
-              else delete next.country;
-              delete next.city;
-              delete next.postalCode;
-              return next;
-            });
+          onChange={(e) => {
+            onAddressChange({ country: sanitizeCityCountryInput(e.target.value) });
+            clearFieldError("country");
           }}
-<<<<<<< HEAD
           onBlur={() => {
             if (!addressRequired) return;
             const error = validateCountry(address.country);
             if (error) setFieldErrors((current) => ({ ...current, country: error }));
-=======
-          emptyMessage="No countries match your search"
-        />
-        <SearchableSelect
-          label="City"
-          required
-          value={address.city}
-          options={cityOptions}
-          placeholder={address.country ? "Select or search city" : "Select a country first"}
-          searchPlaceholder="Search cities…"
-          error={fieldErrors.city}
-          disabled={!address.country}
-          allowCustom
-          onChange={(value) => {
-            const city = sanitizeCityCountryInput(value);
-            onAddressChange({ city, postalCode: "" });
-            setFieldErrors((current) => {
-              const next = { ...current };
-              const cityError = validateCity(city);
-              if (cityError) next.city = cityError;
-              else delete next.city;
-              delete next.postalCode;
-              return next;
-            });
->>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
           }}
-          emptyMessage={
-            address.country
-              ? "No cities match — type to use a custom city"
-              : "Choose a country first"
-          }
-        />
-        <SearchableSelect
-          label="Postal Code"
-          value={address.postalCode}
-          options={postalOptions}
-          placeholder={address.city ? "Select or search postal code" : "Select a city first"}
-          searchPlaceholder="Search postal codes…"
-          error={fieldErrors.postalCode}
-          disabled={!address.city}
-          allowCustom
-          onChange={(value) => {
-            const postalCode = sanitizePostalCodeInput(value);
-            onAddressChange({ postalCode });
-            setFieldErrors((current) => {
-              const next = { ...current };
-              const postalError = validatePostalCode(postalCode);
-              if (postalError) next.postalCode = postalError;
-              else delete next.postalCode;
-              return next;
-            });
-          }}
-          emptyMessage={
-            address.city
-              ? "No postal codes listed — type to enter manually"
-              : "Choose a city first"
-          }
         />
       </div>
 
@@ -937,7 +828,8 @@ function PaymentMethodStep({
   canPlaceOrder,
   priceSummary,
   quote,
-  locale,
+  stripeOptions,
+  stripePromise,
   contact,
   address,
   deliveryMethod,
@@ -966,7 +858,15 @@ function PaymentMethodStep({
   canPlaceOrder: boolean;
   priceSummary: PriceSummary | null;
   quote: QuoteSummary | null;
-  locale: string;
+  stripeOptions: {
+    clientSecret: string;
+    locale: "auto" | "en";
+    appearance: {
+      theme: "stripe";
+      variables: { colorPrimary: string; borderRadius: string; fontFamily: string };
+    };
+  } | null;
+  stripePromise: ReturnType<typeof getStripePromise>;
   contact: ContactForm;
   address: AddressForm;
   deliveryMethod: DeliveryMethod;
@@ -1045,31 +945,9 @@ function PaymentMethodStep({
         </div>
       ) : null}
 
-<<<<<<< HEAD
       {canPlaceOrder && quote && stripeOptions && stripePromise ? (
         <Elements stripe={stripePromise} options={stripeOptions}>
-=======
-      {paymentMethod === "cod" && canPlaceOrder && priceSummary ? (
-        <div className="rounded-xl bg-green-50 border border-green-100 p-4 flex gap-3">
-          <Truck size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-green-800 space-y-1">
-            <p className="font-semibold">Cash on Delivery</p>
-            <p className="text-green-700">
-              You will pay{" "}
-              <span className="font-bold">
-                {formatAmount(priceSummary.grandTotalAmount, priceSummary.currency)}
-              </span>{" "}
-              in cash when your order arrives.
-            </p>
-          </div>
-        </div>
-      ) : null}
-
-      {canPlaceOrder && paymentMethod === "card" && quote?.clientSecret ? (
-        <CheckoutStripeProvider clientSecret={quote.clientSecret} locale={locale}>
->>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
           <StripePayForm
-            locale={locale}
             quote={quote}
             contact={contact}
             address={address}
@@ -1082,9 +960,8 @@ function PaymentMethodStep({
             locale={locale}
             onBack={onBack}
             onSuccess={onSuccess}
-            onRetryPaymentForm={onRetryQuote}
           />
-        </CheckoutStripeProvider>
+        </Elements>
       ) : null}
     </div>
   );
@@ -1140,7 +1017,6 @@ function PaymentMethodSelector({ stripeAvailable }: { stripeAvailable: boolean }
 /* ─── Card / Stripe payment form ─────────────────────────────────────── */
 
 function StripePayForm({
-  locale,
   quote,
   contact,
   address,
@@ -1153,9 +1029,7 @@ function StripePayForm({
   locale,
   onBack,
   onSuccess,
-  onRetryPaymentForm,
 }: {
-  locale: string;
   quote: QuoteSummary;
   contact: ContactForm;
   address: AddressForm;
@@ -1168,22 +1042,10 @@ function StripePayForm({
   locale: string;
   onBack: () => void;
   onSuccess: (orderNumber: string) => void;
-  onRetryPaymentForm: () => void;
 }) {
   const stripe = useStripe();
   const elements = useElements();
   const [paying, setPaying] = useState(false);
-  const [paymentElementError, setPaymentElementError] = useState<string | null>(null);
-  const publishableKeyMode = getStripeKeyMode(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
-
-  useEffect(() => {
-    setPaymentElementError(null);
-  }, [quote.clientSecret]);
-
-  const handleRetryPaymentForm = () => {
-    setPaymentElementError(null);
-    onRetryPaymentForm();
-  };
 
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1215,24 +1077,10 @@ function StripePayForm({
       payload: confirmPayload,
     });
     try {
-      savePendingCheckout({
-        contact,
-        address,
-        cartItems,
-        vendorCoupons,
-        checkoutApiBase,
-        useAuthCheckout,
-        currency: quote.currency,
-      });
-
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-<<<<<<< HEAD
           return_url: completeUrl,
-=======
-          return_url: `${window.location.origin}/${locale}/checkout/complete`,
->>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
           payment_method_data: {
             billing_details: {
               name: contact.guestName,
@@ -1268,11 +1116,7 @@ function StripePayForm({
           toast.error(data?.error?.message ?? "Order could not be recorded. Please contact support.");
           return;
         }
-<<<<<<< HEAD
         clearPendingCheckoutConfirmation(paymentIntent.id);
-=======
-        clearPendingCheckout();
->>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
         onSuccess(data.data.orderNumber);
       }
     } catch {
@@ -1284,33 +1128,12 @@ function StripePayForm({
 
   return (
     <form onSubmit={handlePay} className="space-y-5">
-      {paymentElementError ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 space-y-3">
-          <p>{paymentElementError}</p>
-          <button
-            type="button"
-            onClick={handleRetryPaymentForm}
-            className="text-sm font-semibold text-[#0f3460] underline hover:no-underline"
-          >
-            Reload card form
-          </button>
-        </div>
-      ) : null}
       <div className="rounded-xl border border-gray-200 p-4">
         <PaymentElement
-          key={quote.clientSecret}
           options={{
             layout: "tabs",
+            wallets: { applePay: "never", googlePay: "never" },
           }}
-          onLoadError={(event) => {
-            const message = getStripeCheckoutLoadErrorMessage(
-              event.error?.message,
-              publishableKeyMode
-            );
-            setPaymentElementError(message);
-            toast.error(message);
-          }}
-          onReady={() => setPaymentElementError(null)}
         />
       </div>
       <div className="flex gap-3 pt-1">
@@ -1539,21 +1362,7 @@ export default function CheckoutPage() {
 
   const [step, setStep] = useState(0);
   const checkoutTopRef = useRef<HTMLDivElement>(null);
-  const orderCompleteRef = useRef(false);
-  const cartClearedRef = useRef(false);
   const stripeAvailable = isStripeCheckoutConfigured();
-<<<<<<< HEAD
-=======
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-    stripeAvailable ? "card" : "cod"
-  );
-
-  useEffect(() => {
-    if (stripeAvailable) {
-      void getStripePromise();
-    }
-  }, [stripeAvailable]);
->>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
   const [contact, setContact] = useState<ContactForm>({ guestName: "", guestEmail: "", guestPhone: "" });
   const [address, setAddress] = useState<AddressForm>({ addressLine1: "", city: "", country: "", postalCode: "" });
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("STANDARD");
@@ -1613,35 +1422,10 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
-    const completed = consumeCheckoutSuccess();
-    if (!completed) return;
-
-    orderCompleteRef.current = true;
-    setSuccessEmail(completed.guestEmail);
-    setSuccessOrderNumber(completed.orderNumber);
-    if (completed.paymentMethod === "cod") {
-      setPaymentMethod("cod");
-    }
-  }, []);
-
-  useEffect(() => {
-    if (successOrderNumber || orderCompleteRef.current) return;
-    if (cartItems.length === 0) {
+    if (cartItems.length === 0 && !successOrderNumber) {
       router.replace("/");
     }
   }, [cartItems.length, router, successOrderNumber]);
-
-  useEffect(() => {
-    if (!successOrderNumber || cartClearedRef.current) return;
-    cartClearedRef.current = true;
-
-    localStorage.removeItem("onlinemandawee-cart");
-    clearPendingCheckout();
-
-    for (const item of cart.items) {
-      removeItem(item.id);
-    }
-  }, [successOrderNumber, cart.items, removeItem]);
 
   useEffect(() => {
     checkoutTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1843,13 +1627,29 @@ export default function CheckoutPage() {
     await refreshPricing(nextCoupons);
   };
 
+  const stripeOptions = useMemo(
+    () =>
+      quote?.clientSecret
+        ? {
+            clientSecret: quote.clientSecret,
+            locale: getStripeCheckoutLocale(locale),
+            appearance: {
+              theme: "stripe" as const,
+              variables: { colorPrimary: "#0f3460", borderRadius: "12px", fontFamily: "inherit" },
+            },
+          }
+        : null,
+    [quote?.clientSecret, locale]
+  );
+
   const handleSuccess = useCallback(
     (orderNumber: string) => {
-      orderCompleteRef.current = true;
+      localStorage.removeItem("onlinemandawee-cart");
+      cart.items.forEach((item) => removeItem(item.id));
       setSuccessEmail(contact.guestEmail);
       setSuccessOrderNumber(orderNumber);
     },
-    [contact.guestEmail]
+    [cart.items, removeItem, contact.guestEmail]
   );
 
   const handleSelectSavedAddress = (saved: CustomerAddress) => {
@@ -2098,7 +1898,8 @@ export default function CheckoutPage() {
                 canPlaceOrder={canPlaceOrder}
                 priceSummary={priceSummary}
                 quote={quote}
-                locale={locale}
+                stripeOptions={stripeOptions}
+                stripePromise={stripePromise}
                 contact={contact}
                 address={address}
                 deliveryMethod={deliveryMethod}

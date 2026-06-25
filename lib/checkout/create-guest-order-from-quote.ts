@@ -11,8 +11,6 @@ import { sendGuestOrderConfirmationEmail } from "@/lib/mail/send-guest-order-con
 import { sendVendorOrderNotifications } from "@/lib/mail/send-vendor-order-notifications";
 import { buildGuestOrderTrackingUrl } from "@/lib/orders/build-order-tracking-url";
 import { generateUniqueGuestTrackingToken } from "@/lib/orders/generate-guest-tracking-token";
-import { AppError } from "@/lib/errors/app-error";
-import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { generateOpaqueToken } from "@/lib/utils/crypto";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 import { StandardConsolidationService } from "@/services/standard-consolidation.service";
@@ -52,12 +50,6 @@ export async function createGuestOrderFromQuote(input: {
     return acc;
   }, {});
 
-<<<<<<< HEAD
-  const requiredStockByProduct = input.quote.lineItems.reduce<Record<string, number>>(
-    (acc, item) => {
-      acc[item.productId] = (acc[item.productId] ?? 0) + item.quantity;
-      return acc;
-=======
   await decrementStockForOrderItems(
     input.quote.lineItems.map((item) => ({
       productId: item.productId,
@@ -76,6 +68,7 @@ export async function createGuestOrderFromQuote(input: {
       orderNumber,
       status: "CREATED",
       paymentStatus: input.paymentStatus,
+      deliveryMethod: input.deliveryMethod ?? input.quote.deliveryMethod ?? "STANDARD",
       currency: input.quote.currency,
       subtotalAmount: input.quote.subtotalAmount,
       deliveryAmount: input.quote.deliveryAmount,
@@ -83,14 +76,15 @@ export async function createGuestOrderFromQuote(input: {
       grandTotalAmount: input.quote.grandTotalAmount,
       shippingFullName: input.guestName,
       shippingPhone: input.guestPhone,
-      shippingAddressLine1: input.addressLine1,
-      shippingCity: input.city,
-      shippingCountry: input.country,
-      shippingPostalCode: input.postalCode,
+      shippingAddressLine1: input.addressLine1 ?? "",
+      shippingCity: input.city ?? "",
+      shippingCountry: input.country ?? "",
+      shippingPostalCode: input.postalCode ?? "",
       vendorOrders: {
         create: input.quote.vendorSummaries.map((summary) => ({
           vendorProfileId: summary.vendorProfileId,
           status: "NEW",
+          deliveryMethod: summary.deliveryMethod,
           currency: input.quote.currency,
           subtotalAmount: summary.subtotalAmount,
           deliveryAmount: summary.deliveryAmount,
@@ -115,82 +109,7 @@ export async function createGuestOrderFromQuote(input: {
           },
         })),
       },
->>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
     },
-    {}
-  );
-
-  const order = await prisma.$transaction(async (tx) => {
-    for (const [productId, requiredQty] of Object.entries(requiredStockByProduct)) {
-      const updated = await tx.product.updateMany({
-        where: {
-          id: productId,
-          stockQty: { gte: requiredQty },
-        },
-        data: {
-          stockQty: { decrement: requiredQty },
-        },
-      });
-
-      if (updated.count !== 1) {
-        throw new AppError({
-          code: ERROR_CODE.BAD_REQUEST,
-          message: "Some items are out of stock. Please refresh your cart and try again.",
-          statusCode: 400,
-        });
-      }
-    }
-
-    return tx.order.create({
-      data: {
-        userId: input.userId,
-        guestEmail,
-        guestTrackingToken,
-        stripePaymentIntentId: input.stripePaymentIntentId,
-        orderNumber,
-        status: "CREATED",
-        paymentStatus: input.paymentStatus,
-        deliveryMethod: input.deliveryMethod ?? input.quote.deliveryMethod ?? "STANDARD",
-        currency: input.quote.currency,
-        subtotalAmount: input.quote.subtotalAmount,
-        deliveryAmount: input.quote.deliveryAmount,
-        discountAmount: input.quote.discountAmount,
-        grandTotalAmount: input.quote.grandTotalAmount,
-        shippingFullName: input.guestName,
-        shippingPhone: input.guestPhone,
-        shippingAddressLine1: input.addressLine1 ?? "",
-        shippingCity: input.city ?? "",
-        shippingCountry: input.country ?? "",
-        shippingPostalCode: input.postalCode ?? "",
-        vendorOrders: {
-          create: input.quote.vendorSummaries.map((summary) => ({
-            vendorProfileId: summary.vendorProfileId,
-            status: "NEW",
-            deliveryMethod: summary.deliveryMethod,
-            currency: input.quote.currency,
-            subtotalAmount: summary.subtotalAmount,
-            deliveryAmount: summary.deliveryAmount,
-            discountAmount: summary.discountAmount,
-            grandTotalAmount: summary.grandTotalAmount,
-            couponCode: summary.couponCode,
-            items: {
-              create: (lineItemsByVendor[summary.vendorProfileId] ?? []).map((item) => ({
-                productId: item.productId,
-                quantity: item.quantity,
-                currency: item.currency,
-                unitPriceAmount: item.unitPriceAmount,
-                lineTotalAmount: item.lineTotalAmount,
-                productName: item.productName,
-                productImage: item.productImage,
-                productSku: item.productSku,
-                vendorProfileId: item.vendorProfileId,
-                categoryId: item.categoryId,
-              })),
-            },
-          })),
-        },
-      },
-    });
   });
 
   const standardConsolidationService = new StandardConsolidationService();

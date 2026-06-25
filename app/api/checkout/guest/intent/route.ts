@@ -9,12 +9,9 @@ import {
   createCheckoutPaymentIntent,
   StripeCheckoutPaymentError,
 } from "@/lib/stripe/checkout-payment";
-<<<<<<< HEAD
+import { getStripeKeyMode } from "@/lib/stripe/checkout-client";
 import { sha256, generateOpaqueToken } from "@/lib/utils/crypto";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
-=======
-import { getStripeKeyMode } from "@/lib/stripe/checkout-client";
->>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { CheckoutSnapshotRepository } from "@/repositories/checkout-snapshot.repository";
 import {

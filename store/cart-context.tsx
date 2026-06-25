@@ -9,17 +9,12 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
-<<<<<<< HEAD
-import { fetchPublicCatalogProduct } from "@/lib/products/public-catalog";
-=======
-import { convertMajorUnits } from "@/lib/currency/convert";
 import {
   fetchPublicCatalogProduct,
   resolveDefaultCatalogVariant,
   resolveProductUnitPriceMinor,
 } from "@/lib/products/public-catalog";
 import { assertSufficientStock } from "@/lib/products/product-stock";
->>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
 import { useCurrency } from "@/store/currency-context";
 
 type CartItem = {
@@ -65,27 +60,10 @@ const CART_STORAGE_KEY = "onlinemandawee-cart";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-<<<<<<< HEAD
-const resolveProductDetails = async (productId: string) => {
-  const catalogProduct = await fetchPublicCatalogProduct(productId);
-  return {
-    name: catalogProduct.name.en,
-    description: catalogProduct.description.en,
-    price: catalogProduct.price,
-    currency: catalogProduct.currency || "USD",
-    image: catalogProduct.image,
-    vendor: catalogProduct.vendor,
-    delivery: catalogProduct.delivery,
-    vendorProfileId: catalogProduct.vendorProfileId,
-    sellerType: catalogProduct.sellerType,
-    isVendorProduct: catalogProduct.isVendorProduct,
-  };
-};
-=======
 function cartLineKey(productId: string, variantId?: string) {
   return `${productId}:${variantId ?? ""}`;
 }
->>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
+
 
 function normalizeCartItem(item: CartItem): CartItem {
   return {
@@ -205,18 +183,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
             variantId,
             variantName: options?.variantName ?? selectedVariant?.name,
             quantity,
-<<<<<<< HEAD
-            productName: product.name,
-            productDescription: product.description,
-            productPrice: product.price,
-            productCurrency: product.currency,
-            productImage: product.image,
-            vendor: product.vendor,
-            delivery: product.delivery,
-            vendorProfileId: product.vendorProfileId,
-            sellerType: product.sellerType,
-            isVendorProduct: product.isVendorProduct,
-=======
             productName: catalogProduct.name.en,
             productDescription: catalogProduct.description.en,
             productPrice: unitPriceMinor / 100,
@@ -225,8 +191,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
             vendor: catalogProduct.vendor,
             delivery: catalogProduct.delivery,
             vendorProfileId: catalogProduct.vendorProfileId,
+            sellerType: catalogProduct.sellerType,
             isVendorProduct: catalogProduct.isVendorProduct,
->>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
           };
           newCart = {
             items: [...prev.items, newItem],
