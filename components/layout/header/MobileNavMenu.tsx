@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Baby, ChevronDown, HelpCircle, LogOut, UserCircle, Zap } from "lucide-react";
+import { Baby, ChevronDown, HelpCircle, LogOut, UserCircle } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { headerCopy } from "@/components/layout/header/header-copy";
@@ -41,12 +41,16 @@ export function MobileNavMenu({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const navLinks = [
-    { href: "/baby-packages", label: copy.babyCare, icon: <Baby size={18} /> },
+  const navLinks: Array<{
+    href: string;
+    label: string;
+    icon: React.ReactNode;
+    highlight?: boolean;
+  }> = [
     {
-      href: "/deals",
-      label: copy.dailyDeals,
-      icon: <Zap size={18} />,
+      href: "/category/baby-care",
+      label: copy.babyCare,
+      icon: <Baby size={18} />,
       highlight: true,
     },
     { href: "/contact", label: copy.support, icon: <HelpCircle size={18} /> },

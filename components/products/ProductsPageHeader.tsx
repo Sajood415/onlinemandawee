@@ -77,7 +77,7 @@ export function ProductsPageHeader({
                 value={searchQuery}
                 onChange={(event) => onSearchChange(event.target.value)}
                 placeholder={copy.searchPlaceholder}
-                className={`h-12 w-full rounded-2xl border border-white/20 bg-white/95 text-sm font-medium text-neutral-900 shadow-[0_12px_40px_rgba(15,52,96,0.18)] outline-none transition placeholder:text-neutral-400 focus:border-white focus:bg-white focus:ring-4 focus:ring-white/25 ${
+                className={`h-12 w-full rounded-2xl border border-white/20 bg-white/95 text-sm font-medium text-neutral-900 shadow-[0_12px_40px_rgba(15,52,96,0.18)] outline-none transition placeholder:text-neutral-400 focus:border-white focus:bg-white focus:ring-4 focus:ring-white/25 [&::-ms-clear]:hidden [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden ${
                   isRtl ? "pe-11 ps-12 text-right" : "ps-12 pe-11 text-left"
                 }`}
               />

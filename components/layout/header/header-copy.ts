@@ -14,7 +14,6 @@ export type HeaderCopy = {
   gifts: string;
   new: string;
   babyCare: string;
-  dailyDeals: string;
   support: string;
   more: string;
   quickLinks: string;
@@ -53,7 +52,6 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     gifts: "Gifts",
     new: "New",
     babyCare: "Baby Care",
-    dailyDeals: "Daily Deals",
     support: "Support",
     more: "More",
     quickLinks: "Quick Links",
@@ -91,7 +89,6 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     gifts: "ډالۍ",
     new: "نوی",
     babyCare: "د ماشوم پاملرنه",
-    dailyDeals: "ورځني وړاندیزونه",
     support: "مرسته",
     more: "نور",
     quickLinks: "چټک لینکونه",
@@ -129,7 +126,6 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     gifts: "هدایا",
     new: "جدید",
     babyCare: "مراقبت نوزاد",
-    dailyDeals: "پیشنهادهای روزانه",
     support: "پشتیبانی",
     more: "بیشتر",
     quickLinks: "لینک‌های سریع",

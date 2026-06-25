@@ -727,6 +727,8 @@ model OrderItem {
   id              String       @id @default(auto()) @map("_id") @db.ObjectId
   orderVendorId   String       @db.ObjectId
   productId       String       @db.ObjectId
+  variantId       String?      @db.ObjectId
+  variantName     String?
   quantity        Int
   currency        String
   unitPriceAmount Int

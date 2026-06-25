@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { KeyRound, Loader2, Mail, UserCircle2 } from "lucide-react";
 
 import { PasswordRequirements } from "@/components/vendor/onboarding/PasswordRequirements";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { usePasswordRules } from "@/lib/i18n/use-password-rules";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -353,8 +354,7 @@ export function CustomerProfileSection({
       <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm text-neutral-700 sm:col-span-2">
                 Current password
-                <input
-                  type="password"
+                <PasswordInput
                   className={INPUT_CLASS}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
@@ -364,8 +364,7 @@ export function CustomerProfileSection({
               </label>
               <label className="block text-sm text-neutral-700">
                 New password
-                <input
-                  type="password"
+                <PasswordInput
                   className={INPUT_CLASS}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -375,8 +374,7 @@ export function CustomerProfileSection({
               </label>
               <label className="block text-sm text-neutral-700">
                 Confirm new password
-                <input
-                  type="password"
+                <PasswordInput
                   className={INPUT_CLASS}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -483,8 +481,7 @@ export function CustomerProfileSection({
               <form onSubmit={(e) => void confirmResetPassword(e)} className="max-w-lg space-y-3">
                 <label className="block text-sm text-neutral-700">
                   New password
-                  <input
-                    type="password"
+                  <PasswordInput
                     className={INPUT_CLASS}
                     value={resetNewPassword}
                     onChange={(e) => setResetNewPassword(e.target.value)}
@@ -494,8 +491,7 @@ export function CustomerProfileSection({
                 </label>
                 <label className="block text-sm text-neutral-700">
                   Confirm new password
-                  <input
-                    type="password"
+                  <PasswordInput
                     className={INPUT_CLASS}
                     value={resetConfirmPassword}
                     onChange={(e) => setResetConfirmPassword(e.target.value)}

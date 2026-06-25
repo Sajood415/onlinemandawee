@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Pencil, Plus, ToggleLeft, ToggleRight, X } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
@@ -45,6 +45,7 @@ export default function AdminCategoriesPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
+  const formSectionRef = useRef<HTMLDivElement>(null);
 
   /* ── Fetch ──────────────────────────────────────────────────────── */
 
@@ -86,7 +87,9 @@ export default function AdminCategoriesPage() {
     setFormSortOrder(String(cat.sortOrder));
     setFormParentId(cat.parentId ?? "");
     setFormIsActive(cat.isActive);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    requestAnimationFrame(() => {
+      formSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   /* ── Submit (create or update) ──────────────────────────────────── */
@@ -210,11 +213,25 @@ export default function AdminCategoriesPage() {
       </div>
 
       {/* ── Create / Edit form ──────────────────────────────────── */}
-      <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+      <div
+        ref={formSectionRef}
+        className={`scroll-mt-4 rounded-2xl border bg-white p-5 shadow-sm sm:p-6 ${
+          editingId
+            ? "border-primary/30 ring-2 ring-primary/15"
+            : "border-neutral-200"
+        }`}
+      >
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-neutral-900">
-            {editingId ? "Edit category" : "New category"}
-          </h2>
+          <div>
+            <h2 className="text-base font-semibold text-neutral-900">
+              {editingId ? "Edit category" : "New category"}
+            </h2>
+            {editingId ? (
+              <p className="mt-1 text-sm text-neutral-500">
+                Update the fields below, then click Save changes.
+              </p>
+            ) : null}
+          </div>
           {editingId && (
             <button
               type="button"
@@ -242,6 +259,20 @@ export default function AdminCategoriesPage() {
                 placeholder="e.g. Dried Fruits & Nuts"
               />
             </div>
+
+            {editingId ? (
+              <div className="flex flex-col gap-1.5 lg:col-span-2">
+                <label className={LABEL}>Slug</label>
+                <input
+                  className={`${INPUT} bg-neutral-50 text-neutral-500`}
+                  value={
+                    categories.find((category) => category.id === editingId)?.slug ?? ""
+                  }
+                  readOnly
+                  aria-readonly
+                />
+              </div>
+            ) : null}
 
             {/* Parent category */}
             <div className="flex flex-col gap-1.5">
@@ -350,14 +381,16 @@ export default function AdminCategoriesPage() {
                   <th className="px-3 py-2">Sub-categories</th>
                   <th className="px-3 py-2">Sort</th>
                   <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Actions</th>
+                  <th className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-8px_0_12px_-8px_rgba(0,0,0,0.12)]">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((cat) => (
                   <tr
                     key={cat.id}
-                    className={`border-b border-neutral-100 transition-colors ${
+                    className={`group border-b border-neutral-100 transition-colors ${
                       editingId === cat.id ? "bg-primary/5" : "hover:bg-neutral-50"
                     }`}
                   >
@@ -387,13 +420,17 @@ export default function AdminCategoriesPage() {
                         {cat.isActive ? "Active" : "Inactive"}
                       </span>
                     </td>
-                    <td className="px-3 py-3">
+                    <td
+                      className={`sticky right-0 z-10 px-3 py-3 shadow-[-8px_0_12px_-8px_rgba(0,0,0,0.12)] ${
+                        editingId === cat.id ? "bg-primary/5" : "bg-white group-hover:bg-neutral-50"
+                      }`}
+                    >
                       <div className="flex items-center gap-2">
                         {/* Edit */}
                         <button
                           type="button"
                           onClick={() => startEdit(cat)}
-                          className="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                          className="relative z-10 inline-flex items-center gap-1 rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                           Edit
@@ -404,7 +441,7 @@ export default function AdminCategoriesPage() {
                           type="button"
                           disabled={togglingId === cat.id}
                           onClick={() => void toggleActive(cat)}
-                          className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium transition disabled:opacity-60 ${
+                          className={`relative z-10 inline-flex items-center gap-1 rounded-md border bg-white px-2.5 py-1.5 text-xs font-medium transition disabled:opacity-60 ${
                             cat.isActive
                               ? "border-amber-200 text-amber-700 hover:bg-amber-50"
                               : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"

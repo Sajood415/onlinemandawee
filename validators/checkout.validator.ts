@@ -37,14 +37,19 @@ export const checkoutAddressLineSchema = z
   .min(1, "Street address is required")
   .max(255);
 
-export const checkoutCitySchema = lettersOnlyField("City");
+export const checkoutCitySchema = z
+  .string()
+  .trim()
+  .min(1, "City is required")
+  .max(120)
+  .regex(/^[A-Za-z\s'-]+$/, "City must contain letters only");
 export const checkoutCountrySchema = lettersOnlyField("Country");
 
 export const checkoutPostalCodeSchema = z
   .string()
   .trim()
-  .refine((value) => value === "" || /^\d+$/.test(value), {
-    message: "Postal code must contain numbers only",
+  .refine((value) => value === "" || /^[A-Za-z0-9\s-]+$/.test(value), {
+    message: "Postal code format is invalid",
   });
 
 export const checkoutCurrencySchema = z.enum(SUPPORTED_CURRENCIES).default("USD");
@@ -68,6 +73,7 @@ export const checkoutShippingAddressSchema = z.object({
 export const guestCheckoutCartItemSchema = z.object({
   productId: z.string().min(1),
   quantity: z.number().int().min(1),
+  variantId: z.string().min(1).optional(),
 });
 
 export const vendorCouponEntrySchema = z.object({

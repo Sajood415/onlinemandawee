@@ -53,6 +53,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${plusJakarta.variable} ${poppins.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`}
     >
+      <head>
+        <link rel="preconnect" href="https://js.stripe.com" />
+        <link rel="preconnect" href="https://m.stripe.network" crossOrigin="anonymous" />
+      </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col font-sans">
         {children}
       </body>

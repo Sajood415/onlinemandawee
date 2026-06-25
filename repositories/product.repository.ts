@@ -129,6 +129,9 @@ export class ProductRepository {
       },
       include: {
         category: true,
+        variants: {
+          orderBy: { createdAt: "asc" as const },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -233,7 +236,7 @@ export class ProductRepository {
   }
 
   listPublic(filters: {
-    categorySlug?: string;
+    categoryIds?: string[];
     vendorStoreSlug?: string;
     search?: string;
   }) {
@@ -270,13 +273,21 @@ export class ProductRepository {
                     },
                   },
                 },
+                {
+                  category: {
+                    name: {
+                      contains: filters.search,
+                      mode: "insensitive",
+                    },
+                  },
+                },
               ],
             }
           : {}),
-        ...(filters.categorySlug
+        ...(filters.categoryIds?.length
           ? {
-              category: {
-                slug: filters.categorySlug,
+              categoryId: {
+                in: filters.categoryIds,
               },
             }
           : {}),

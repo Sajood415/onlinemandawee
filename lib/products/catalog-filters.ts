@@ -1,3 +1,4 @@
+import { convertMajorUnits } from "@/lib/currency/convert";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 
 type CatalogProduct = {
@@ -5,10 +6,20 @@ type CatalogProduct = {
   category: string;
   vendor: string;
   price: number;
+  currency?: string;
   rating: number;
   description?: Record<SupportedLocale, string>;
   categoryName?: string;
 };
+
+export function getCatalogPriceInCurrency(
+  product: { price: number; currency?: string },
+  displayCurrency: string
+) {
+  const fromCurrency = product.currency ?? "USD";
+  const converted = convertMajorUnits(product.price, fromCurrency, displayCurrency);
+  return Math.round(converted * 100) / 100;
+}
 
 const productMatchesSearch = (
   product: CatalogProduct,
@@ -39,6 +50,8 @@ type FilterInput = {
   selectedVendor: string[];
   priceRange: [number, number];
   locale: SupportedLocale;
+  displayCurrency: string;
+  allowedCategorySlugs?: Set<string>;
 };
 
 type SortBy = "featured" | "price-low" | "price-high" | "rating";
@@ -53,25 +66,36 @@ export const filterCatalogProducts = <T extends CatalogProduct>(
       ? productMatchesSearch(product, search, input.locale)
       : true;
     const matchesCategory =
-      input.selectedCategory === "all" || product.category === input.selectedCategory;
+      input.selectedCategory === "all" ||
+      (input.allowedCategorySlugs
+        ? input.allowedCategorySlugs.has(product.category)
+        : product.category === input.selectedCategory);
     const matchesVendor =
       input.selectedVendor.length === 0 || input.selectedVendor.includes(product.vendor);
+    const displayPrice = getCatalogPriceInCurrency(product, input.displayCurrency);
     const matchesPrice =
-      product.price >= input.priceRange[0] && product.price <= input.priceRange[1];
+      displayPrice >= input.priceRange[0] && displayPrice <= input.priceRange[1];
     return matchesSearch && matchesCategory && matchesVendor && matchesPrice;
   });
 };
 
 export const sortCatalogProducts = <T extends CatalogProduct>(
   products: T[],
-  sortBy: SortBy
+  sortBy: SortBy,
+  displayCurrency = "USD"
 ) => {
   return [...products].sort((a, b) => {
     switch (sortBy) {
       case "price-low":
-        return a.price - b.price;
+        return (
+          getCatalogPriceInCurrency(a, displayCurrency) -
+          getCatalogPriceInCurrency(b, displayCurrency)
+        );
       case "price-high":
-        return b.price - a.price;
+        return (
+          getCatalogPriceInCurrency(b, displayCurrency) -
+          getCatalogPriceInCurrency(a, displayCurrency)
+        );
       case "rating":
         return b.rating - a.rating;
       default:

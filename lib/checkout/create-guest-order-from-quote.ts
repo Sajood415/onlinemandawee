@@ -6,6 +6,7 @@ import {
   incrementCouponUsage,
   type GuestCheckoutQuote,
 } from "@/lib/checkout/build-guest-checkout-quote";
+import { decrementStockForOrderItems } from "@/lib/inventory/decrement-order-stock";
 import { sendGuestOrderConfirmationEmail } from "@/lib/mail/send-guest-order-confirmation-email";
 import { sendVendorOrderNotifications } from "@/lib/mail/send-vendor-order-notifications";
 import { buildGuestOrderTrackingUrl } from "@/lib/orders/build-order-tracking-url";
@@ -51,10 +52,70 @@ export async function createGuestOrderFromQuote(input: {
     return acc;
   }, {});
 
+<<<<<<< HEAD
   const requiredStockByProduct = input.quote.lineItems.reduce<Record<string, number>>(
     (acc, item) => {
       acc[item.productId] = (acc[item.productId] ?? 0) + item.quantity;
       return acc;
+=======
+  await decrementStockForOrderItems(
+    input.quote.lineItems.map((item) => ({
+      productId: item.productId,
+      productName: item.productName,
+      quantity: item.quantity,
+      variantId: item.variantId,
+    }))
+  );
+
+  const order = await prisma.order.create({
+    data: {
+      userId: input.userId,
+      guestEmail,
+      guestTrackingToken,
+      stripePaymentIntentId: input.stripePaymentIntentId,
+      orderNumber,
+      status: "CREATED",
+      paymentStatus: input.paymentStatus,
+      currency: input.quote.currency,
+      subtotalAmount: input.quote.subtotalAmount,
+      deliveryAmount: input.quote.deliveryAmount,
+      discountAmount: input.quote.discountAmount,
+      grandTotalAmount: input.quote.grandTotalAmount,
+      shippingFullName: input.guestName,
+      shippingPhone: input.guestPhone,
+      shippingAddressLine1: input.addressLine1,
+      shippingCity: input.city,
+      shippingCountry: input.country,
+      shippingPostalCode: input.postalCode,
+      vendorOrders: {
+        create: input.quote.vendorSummaries.map((summary) => ({
+          vendorProfileId: summary.vendorProfileId,
+          status: "NEW",
+          currency: input.quote.currency,
+          subtotalAmount: summary.subtotalAmount,
+          deliveryAmount: summary.deliveryAmount,
+          discountAmount: summary.discountAmount,
+          grandTotalAmount: summary.grandTotalAmount,
+          couponCode: summary.couponCode,
+          items: {
+            create: (lineItemsByVendor[summary.vendorProfileId] ?? []).map((item) => ({
+              productId: item.productId,
+              variantId: item.variantId ?? null,
+              variantName: item.variantName ?? null,
+              quantity: item.quantity,
+              currency: item.currency,
+              unitPriceAmount: item.unitPriceAmount,
+              lineTotalAmount: item.lineTotalAmount,
+              productName: item.productName,
+              productImage: item.productImage,
+              productSku: item.productSku,
+              vendorProfileId: item.vendorProfileId,
+              categoryId: item.categoryId,
+            })),
+          },
+        })),
+      },
+>>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
     },
     {}
   );

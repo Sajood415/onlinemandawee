@@ -9,8 +9,12 @@ import {
   createCheckoutPaymentIntent,
   StripeCheckoutPaymentError,
 } from "@/lib/stripe/checkout-payment";
+<<<<<<< HEAD
 import { sha256, generateOpaqueToken } from "@/lib/utils/crypto";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
+=======
+import { getStripeKeyMode } from "@/lib/stripe/checkout-client";
+>>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { CheckoutSnapshotRepository } from "@/repositories/checkout-snapshot.repository";
 import {
@@ -79,6 +83,27 @@ export const POST = withErrorHandling(async (request) => {
       );
     }
     throw error;
+  }
+
+  const publishableKeyMode = getStripeKeyMode(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+  const secretKeyMode = getStripeKeyMode(process.env.STRIPE_SECRET_KEY);
+
+  if (
+    !process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
+    publishableKeyMode === "unknown" ||
+    secretKeyMode === "unknown" ||
+    publishableKeyMode !== secretKeyMode
+  ) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "CONFIG_ERROR",
+          message:
+            "Stripe keys are misconfigured. NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY and STRIPE_SECRET_KEY must be from the same Stripe account and both use test or live mode.",
+        },
+      },
+      { status: 503 }
+    );
   }
 
   try {

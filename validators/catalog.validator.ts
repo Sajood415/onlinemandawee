@@ -67,6 +67,10 @@ export const publicProductsQuerySchema = z.object({
   search: z.string().trim().min(1).optional(),
 });
 
+export const categorySlugParamsSchema = z.object({
+  slug: z.string().min(1),
+});
+
 export const storeSlugParamsSchema = z.object({
   storeSlug: z.string().min(1),
 });

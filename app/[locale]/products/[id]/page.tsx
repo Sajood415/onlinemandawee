@@ -36,6 +36,9 @@ import {
   resolveProductUnitPriceMinor,
   type PublicCatalogProduct,
 } from "@/lib/products/public-catalog";
+import {
+  resolveAvailableStockQty,
+} from "@/lib/products/product-stock";
 import { fetchRelatedProductsByCategory } from "@/lib/products/related-products";
 
 const featureTranslations = {
@@ -251,25 +254,43 @@ export default function ProductDetailPage() {
     return formatPrice(product.price * 1.15, productCurrency);
   }, [product, activeVariant, formatPrice, productCurrency]);
 
-  const inStock = useMemo(() => {
-    if (!product) return false;
-    if (activeVariant) return activeVariant.stockQty > 0;
-    return product.inStock;
-  }, [product, activeVariant]);
+  const availableStock = useMemo(() => {
+    if (!product) return 0;
+    return resolveAvailableStockQty(product, activeVariant?.id);
+  }, [product, activeVariant?.id]);
+
+  const inStock = availableStock > 0;
 
   const handleAddToCart = async () => {
     if (!product) return;
 
     setIsAdding(true);
     try {
-      await addItem(product.id, quantity);
+      await addItem(product.id, quantity, {
+        variantId: activeVariant?.id,
+        variantName: activeVariant?.name,
+      });
       toast.success(locale === "en" ? `Added ${quantity} item(s) to cart!` : locale === "ps" ? `کارټ ته ${quantity} توکي اضافه شول!` : `${quantity} مورد به سبد اضافه شد!`);
-    } catch {
-      toast.error(locale === "en" ? "Failed to add to cart" : locale === "ps" ? "کارټ ته اضافه کول ناکام شول" : "افزودن به سبد ناموفق بود");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : locale === "en"
+            ? "Failed to add to cart"
+            : locale === "ps"
+              ? "کارټ ته اضافه کول ناکام شول"
+              : "افزودن به سبد ناموفق بود"
+      );
     } finally {
       setIsAdding(false);
     }
   };
+
+  useEffect(() => {
+    if (quantity > availableStock && availableStock > 0) {
+      setQuantity(availableStock);
+    }
+  }, [availableStock, quantity]);
 
   if (loading) {
     return (
@@ -469,15 +490,15 @@ export default function ProductDetailPage() {
               <span className={`text-sm text-green-600 font-medium ${isRtl ? "mr-2" : "ml-2"}`}>
                 {inStock
                   ? locale === "en"
-                    ? "In stock"
+                    ? `In stock (${availableStock})`
                     : locale === "ps"
-                      ? "په ذخیره کې"
-                      : "موجود"
+                      ? `په ذخیره کې (${availableStock})`
+                      : `موجود (${availableStock})`
                   : locale === "en"
-                    ? "Out of stock"
+                    ? "Sold out"
                     : locale === "ps"
-                      ? "په ذخیره کې نشته"
-                      : "ناموجود"}
+                      ? "پلورل شوی"
+                      : "تمام شده"}
               </span>
             </div>
 
@@ -541,20 +562,34 @@ export default function ProductDetailPage() {
                   {locale === "en" ? "Options" : locale === "ps" ? "انتخابونه" : "گزینه‌ها"}
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  {activeVariants.map((variant) => (
+                  {activeVariants.map((variant) => {
+                    const variantSoldOut = variant.stockQty <= 0;
+                    const isSelected =
+                      (selectedVariantId ?? activeVariants[0]?.id) === variant.id;
+
+                    return (
                     <button
                       key={variant.id}
                       type="button"
+                      disabled={variantSoldOut}
                       onClick={() => setSelectedVariantId(variant.id)}
-                      className={`rounded-full border px-3 py-1.5 text-sm transition ${
-                        (selectedVariantId ?? activeVariants[0]?.id) === variant.id
+                      className={`rounded-full border px-3 py-1.5 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                        isSelected
                           ? "border-primary bg-primary/10 text-primary"
                           : "border-gray-300 text-gray-700 hover:border-gray-400"
                       }`}
                     >
                       {variant.name}
+                      {variantSoldOut
+                        ? locale === "en"
+                          ? " (Sold out)"
+                          : locale === "ps"
+                            ? " (پلورل شوی)"
+                            : " (تمام شده)"
+                        : ` (${variant.stockQty})`}
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -591,7 +626,8 @@ export default function ProductDetailPage() {
                 <div className="flex items-center border border-gray-300 rounded-full bg-white">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className={`px-4 py-2 hover:bg-gray-100 transition-colors text-lg font-medium ${
+                    disabled={!inStock}
+                    className={`px-4 py-2 hover:bg-gray-100 transition-colors text-lg font-medium disabled:opacity-50 ${
                       isRtl ? "rounded-r-full" : "rounded-l-full"
                     }`}
                   >
@@ -601,8 +637,9 @@ export default function ProductDetailPage() {
                     {quantity}
                   </span>
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className={`px-4 py-2 hover:bg-gray-100 transition-colors text-lg font-medium ${
+                    onClick={() => setQuantity(Math.min(availableStock, quantity + 1))}
+                    disabled={!inStock || quantity >= availableStock}
+                    className={`px-4 py-2 hover:bg-gray-100 transition-colors text-lg font-medium disabled:opacity-50 ${
                       isRtl ? "rounded-l-full" : "rounded-r-full"
                     }`}
                   >

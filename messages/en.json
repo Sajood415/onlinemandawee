@@ -140,8 +140,7 @@
           "links": [
             "About Mandawee",
             "How It Works",
-            "Vendor Program",
-            "Careers"
+            "Vendor Program"
           ]
         },
         {
@@ -149,8 +148,7 @@
           "links": [
             "Help Center",
             "Contact Us",
-            "Track Order",
-            "Delivery Areas"
+            "Track Order"
           ]
         },
         {
@@ -201,6 +199,8 @@
     "qty": "Qty",
     "new": "New",
     "home": "Home",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "errors": {
       "generic": "Something went wrong. Please try again.",
       "network": "Network error. Please try again."

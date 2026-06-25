@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 
 import { PageLoader } from "@/components/ui/PageLoader";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { resolvePostAuthRedirect } from "@/lib/auth/client-auth-routing";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
@@ -107,11 +108,11 @@ export function LoginPageClient() {
             <label className="mb-1 block text-sm font-semibold text-neutral-700">
               {t("password")}
             </label>
-            <input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
               className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>

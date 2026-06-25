@@ -31,6 +31,7 @@ type ProductsMobileFiltersDrawerProps = {
     showProducts: string;
     products: string;
   };
+  formatPriceLabel: (amount: number) => string;
 };
 
 export function ProductsMobileFiltersDrawer({
@@ -49,6 +50,7 @@ export function ProductsMobileFiltersDrawer({
   onToggleVendor,
   onPriceChange,
   labels,
+  formatPriceLabel,
 }: ProductsMobileFiltersDrawerProps) {
   return (
     <AnimatePresence>
@@ -97,6 +99,7 @@ export function ProductsMobileFiltersDrawer({
                 onToggleVendor={onToggleVendor}
                 onPriceChange={onPriceChange}
                 labels={labels}
+                formatPriceLabel={formatPriceLabel}
               />
             </div>
 

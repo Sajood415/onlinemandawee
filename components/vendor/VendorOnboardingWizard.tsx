@@ -16,6 +16,7 @@ import type { VendorUploadKind } from "@/domain/vendor/vendor-upload-kind";
 import { FileAttachmentField } from "@/components/vendor/onboarding/FileAttachmentField";
 import type { OnboardingStatusPayload } from "@/components/vendor/onboarding/types";
 import { PasswordRequirements } from "@/components/vendor/onboarding/PasswordRequirements";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { PhoneNumberField } from "@/components/vendor/onboarding/PhoneNumberField";
 import {
   EMAIL_REGEX,
@@ -875,9 +876,8 @@ export function VendorOnboardingWizard() {
                           Password
                           <RequiredMark />
                         </label>
-                        <input
+                        <PasswordInput
                           id="vo-pass"
-                          type="password"
                           className={CONTROL}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
@@ -894,9 +894,8 @@ export function VendorOnboardingWizard() {
                           Confirm password
                           <RequiredMark />
                         </label>
-                        <input
+                        <PasswordInput
                           id="vo-pass2"
-                          type="password"
                           className={CONTROL}
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}

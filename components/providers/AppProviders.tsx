@@ -11,6 +11,7 @@ import {
   PlatformConfigProvider,
   type PlatformConfig,
 } from "@/components/providers/PlatformConfigProvider";
+import { StripePreloader } from "@/components/providers/StripePreloader";
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -37,6 +38,7 @@ export function AppProviders({ children, initialPlatformConfig }: AppProvidersPr
             <WishlistProvider>
               <ToastProvider>
                 <ToastInitializer>
+                  <StripePreloader />
                   {children}
                 </ToastInitializer>
               </ToastProvider>

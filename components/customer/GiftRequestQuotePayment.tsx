@@ -1,10 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
-import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { useEffect, useState } from "react";
+import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { CreditCard, Loader2 } from "lucide-react";
+import { useLocale } from "next-intl";
 
+import { CheckoutStripeProvider } from "@/components/checkout/CheckoutStripeProvider";
+import {
+  getStripeCheckoutLoadErrorMessage,
+  getStripeKeyMode,
+} from "@/lib/stripe/checkout-client";
 import { getStripePromise, isStripeCheckoutConfigured } from "@/lib/stripe/client";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -36,27 +42,44 @@ function formatMoney(amountMinor: number, currency: string) {
 
 function GiftRequestStripePaymentForm({
   requestId,
-  payment,
+  clientSecret,
   onPaid,
+  onRetry,
 }: {
   requestId: string;
-  payment: PaymentIntentData;
+  clientSecret: string;
   onPaid: () => void;
+  onRetry: () => void;
 }) {
+  const locale = useLocale();
   const stripe = useStripe();
   const elements = useElements();
   const [paying, setPaying] = useState(false);
+  const [paymentElementReady, setPaymentElementReady] = useState(false);
+  const [paymentElementError, setPaymentElementError] = useState<string | null>(null);
+  const publishableKeyMode = getStripeKeyMode(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+
+  useEffect(() => {
+    setPaymentElementReady(false);
+    setPaymentElementError(null);
+  }, [clientSecret]);
 
   const handlePay = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!stripe || !elements) return;
+    if (!stripe || !elements || !paymentElementReady) return;
 
     setPaying(true);
     try {
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        toast.error(submitError.message ?? "Please check your card details.");
+        return;
+      }
+
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/account/gift-requests`,
+          return_url: `${window.location.origin}/${locale}/account/gift-requests`,
         },
         redirect: "if_required",
       });
@@ -88,10 +111,40 @@ function GiftRequestStripePaymentForm({
 
   return (
     <form onSubmit={(event) => void handlePay(event)} className="space-y-4">
-      <PaymentElement />
+      {paymentElementError ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 space-y-3">
+          <p>{paymentElementError}</p>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="text-sm font-semibold text-[#0f3460] underline hover:no-underline"
+          >
+            Reload card form
+          </button>
+        </div>
+      ) : null}
+      <div className="rounded-xl border border-neutral-200 p-4">
+        <PaymentElement
+          key={clientSecret}
+          options={{ layout: "tabs" }}
+          onLoadError={(event) => {
+            const message = getStripeCheckoutLoadErrorMessage(
+              event.error?.message,
+              publishableKeyMode
+            );
+            setPaymentElementError(message);
+            setPaymentElementReady(false);
+            toast.error(message);
+          }}
+          onReady={() => {
+            setPaymentElementError(null);
+            setPaymentElementReady(true);
+          }}
+        />
+      </div>
       <button
         type="submit"
-        disabled={!stripe || paying}
+        disabled={!stripe || !elements || !paymentElementReady || paying}
         className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-60 sm:w-auto"
       >
         {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
@@ -110,41 +163,38 @@ export function GiftRequestQuotePayment({
   quoteImageUrl,
   onPaid,
 }: GiftRequestQuotePaymentProps) {
+  const locale = useLocale();
   const [loading, setLoading] = useState(false);
   const [payment, setPayment] = useState<PaymentIntentData | null>(null);
-  const stripePromise = useMemo(() => getStripePromise(), []);
+  const [intentError, setIntentError] = useState<string | null>(null);
+
+  const loadIntent = async () => {
+    if (!isStripeCheckoutConfigured()) return;
+
+    setLoading(true);
+    setIntentError(null);
+    try {
+      const response = await fetchWithAuth(
+        `/api/customer/gift-requests/${requestId}/payment/intent`,
+        { method: "POST" }
+      );
+      const data = await parseApiResponse<PaymentIntentData>(response);
+      setPayment(data);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not start payment";
+      setIntentError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isStripeCheckoutConfigured()) return;
 
-    let cancelled = false;
-    const loadIntent = async () => {
-      setLoading(true);
-      try {
-        const response = await fetchWithAuth(
-          `/api/customer/gift-requests/${requestId}/payment/intent`,
-          { method: "POST" }
-        );
-        const data = await parseApiResponse<PaymentIntentData>(response);
-        if (!cancelled) setPayment(data);
-      } catch (err) {
-        if (!cancelled) {
-          toast.error(err instanceof Error ? err.message : "Could not start payment");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
+    void getStripePromise();
     void loadIntent();
-    return () => {
-      cancelled = true;
-    };
   }, [requestId]);
-
-  const stripeOptions = payment?.clientSecret
-    ? { clientSecret: payment.clientSecret }
-    : undefined;
 
   return (
     <section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -180,15 +230,27 @@ export function GiftRequestQuotePayment({
           <Loader2 className="h-4 w-4 animate-spin" />
           Preparing secure checkout...
         </div>
-      ) : payment && stripeOptions && stripePromise ? (
+      ) : intentError ? (
+        <div className="mt-4 space-y-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <p>{intentError}</p>
+          <button
+            type="button"
+            onClick={() => void loadIntent()}
+            className="text-sm font-semibold text-[#0f3460] underline hover:no-underline"
+          >
+            Try again
+          </button>
+        </div>
+      ) : payment?.clientSecret ? (
         <div className="mt-4 rounded-xl border border-white/80 bg-white p-4">
-          <Elements stripe={stripePromise} options={stripeOptions}>
+          <CheckoutStripeProvider clientSecret={payment.clientSecret} locale={locale}>
             <GiftRequestStripePaymentForm
               requestId={requestId}
-              payment={payment}
+              clientSecret={payment.clientSecret}
               onPaid={onPaid}
+              onRetry={() => void loadIntent()}
             />
-          </Elements>
+          </CheckoutStripeProvider>
         </div>
       ) : null}
     </section>

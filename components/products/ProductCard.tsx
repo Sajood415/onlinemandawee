@@ -7,8 +7,13 @@ import { Heart, Loader2, ShoppingBag, Truck } from "lucide-react";
 import { CatalogImage } from "@/components/catalog/CatalogImage";
 import { QuantitySelector } from "@/components/cart/QuantitySelector";
 import { StarRating } from "@/components/products/StarRating";
-import type { CatalogRow } from "@/components/products/types";
 import { getProductsCopy } from "@/components/products/copy";
+import type { CatalogRow } from "@/components/products/types";
+import {
+  getActiveCatalogVariants,
+  resolveDefaultCatalogVariant,
+} from "@/lib/products/public-catalog";
+import { resolveAvailableStockQty } from "@/lib/products/product-stock";
 import {
   localizeDelivery,
   localizeVendor,
@@ -26,6 +31,13 @@ type ProductCardProps = {
 
 export function ProductCard({ product, locale, priority = false }: ProductCardProps) {
   const copy = getProductsCopy(locale);
+  const activeVariants = getActiveCatalogVariants("variants" in product ? product.variants : undefined);
+  const hasVariants = activeVariants.length > 1;
+  const defaultVariant =
+    activeVariants.length === 1 ? activeVariants[0] : resolveDefaultCatalogVariant(
+      "variants" in product ? product.variants : undefined
+    );
+  const inStock = "inStock" in product ? product.inStock : true;
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -42,12 +54,19 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
   const handleAddToCart = async (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
+    if (!inStock) return;
     setIsAdding(true);
     try {
-      await addItem(product.id, quantity);
+      await addItem(
+        product.id,
+        quantity,
+        defaultVariant
+          ? { variantId: defaultVariant.id, variantName: defaultVariant.name }
+          : undefined
+      );
       toast.success(copy.addedToCart);
-    } catch {
-      toast.error(copy.addToCartFailed);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : copy.addToCartFailed);
     } finally {
       setIsAdding(false);
     }
@@ -79,7 +98,9 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
                 className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide shadow-sm ${
                   product.badge.en === "Best Seller"
                     ? "bg-primary text-white"
-                    : "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : product.badge.en === "Sold Out"
+                      ? "border border-red-200 bg-red-50 text-red-700"
+                      : "border border-emerald-200 bg-emerald-50 text-emerald-700"
                 }`}
               >
                 {product.badge[locale]}
@@ -146,33 +167,56 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
           </div>
 
           <div className="mt-auto flex flex-col gap-3 pt-4">
-            <div className="flex min-w-0 flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
-              <span className="shrink-0 text-xs font-semibold text-neutral-600">
-                {copy.quantity}
-              </span>
-              <div className="flex min-w-0 w-full justify-center xl:w-auto xl:justify-end">
-                <QuantitySelector
-                  compact
-                  quantity={quantity}
-                  onDecrease={() => setQuantity((value) => Math.max(1, value - 1))}
-                  onIncrease={() => setQuantity((value) => value + 1)}
-                  disabled={isAdding}
-                />
+            {!hasVariants ? (
+              <div className="flex min-w-0 flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+                <span className="shrink-0 text-xs font-semibold text-neutral-600">
+                  {copy.quantity}
+                </span>
+                <div className="flex min-w-0 w-full justify-center xl:w-auto xl:justify-end">
+                  <QuantitySelector
+                    compact
+                    quantity={quantity}
+                    onDecrease={() => setQuantity((value) => Math.max(1, value - 1))}
+                    onIncrease={() =>
+                      setQuantity((value) => {
+                        const maxQty = resolveAvailableStockQty(
+                          {
+                            stockQty: product.stockQty,
+                            variants: "variants" in product ? product.variants : undefined,
+                          },
+                          defaultVariant?.id
+                        );
+                        return Math.min(maxQty, value + 1);
+                      })
+                    }
+                    disabled={isAdding || !inStock}
+                  />
+                </div>
               </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              disabled={isAdding}
-              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isAdding ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
+            ) : null}
+            {hasVariants && inStock ? (
+              <Link
+                href={`/products/${product.id}`}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-primary/90"
+              >
                 <ShoppingBag className="h-4 w-4" />
-              )}
-              {copy.addToCart}
-            </button>
+                {copy.chooseOptions}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={isAdding || !inStock}
+                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isAdding ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ShoppingBag className="h-4 w-4" />
+                )}
+                {!inStock ? "Sold out" : copy.addToCart}
+              </button>
+            )}
           </div>
         </div>
       </div>

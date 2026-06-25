@@ -62,6 +62,7 @@ export function getProductsCopy(locale: SupportedLocale) {
         : "پاک کردن همه فیلترها",
     quantity: en ? "Quantity" : ps ? "مقدار" : "تعداد",
     addToCart: en ? "Add to cart" : ps ? "کارټ ته اضافه کړئ" : "افزودن به سبد",
+    chooseOptions: en ? "Choose options" : ps ? "انتخابونه وټاکئ" : "انتخاب گزینه‌ها",
     addedToCart: en ? "Added to cart!" : ps ? "کارټ ته اضافه شو!" : "به سبد اضافه شد!",
     addToCartFailed: en
       ? "Failed to add to cart"

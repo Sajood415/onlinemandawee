@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
@@ -20,8 +20,12 @@ import type {
 } from "@/components/products/types";
 import {
   filterCatalogProducts,
+  getCatalogPriceInCurrency,
   sortCatalogProducts,
 } from "@/lib/products/catalog-filters";
+import { collectCategorySlugTree } from "@/lib/categories/category-tree";
+import { convertMajorUnits } from "@/lib/currency/convert";
+import { formatMajorUnits } from "@/lib/currency/format";
 import {
   fetchPublicCatalogProducts,
   invalidatePublicCatalogCache,
@@ -30,6 +34,7 @@ import {
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { usePathname, useRouter } from "@/i18n/navigation";
+import { useCurrency } from "@/store/currency-context";
 
 function ProductsPageContent() {
   const locale = useLocale() as SupportedLocale;
@@ -38,30 +43,44 @@ function ProductsPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const { currency: displayCurrency } = useCurrency();
+  const prevDisplayCurrencyRef = useRef(displayCurrency);
 
   const [searchQuery, setSearchQuery] = useState(
     () => searchParams.get("search") ?? ""
   );
   const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState(
+    () => searchParams.get("category") ?? "all"
+  );
   const [selectedVendor, setSelectedVendor] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [maxPrice, setMaxPrice] = useState(1000);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [sortBy, setSortBy] = useState<ProductSortBy>("featured");
   const [vendorProducts, setVendorProducts] = useState<PublicCatalogProduct[]>([]);
-  const [apiCategories, setApiCategories] = useState<CategoryOption[]>([]);
+  const [apiCategories, setApiCategories] = useState<
+    Array<{ id: string; name: string; slug: string; parentId: string | null }>
+  >([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
+  const internalCategoryUpdate = useRef(false);
   const internalSearchUpdate = useRef(false);
+  const productsLayoutRef = useRef<HTMLDivElement>(null);
+  const scrollAnchorTopRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (internalSearchUpdate.current) {
       internalSearchUpdate.current = false;
       return;
     }
-    const next = searchParams.get("search") ?? "";
-    setSearchQuery(next);
-    setDebouncedSearch(next);
+    const nextSearch = searchParams.get("search") ?? "";
+    const nextCategory = searchParams.get("category") ?? "all";
+    setSearchQuery(nextSearch);
+    setDebouncedSearch(nextSearch);
+    if (!internalCategoryUpdate.current) {
+      setSelectedCategory(nextCategory);
+    }
+    internalCategoryUpdate.current = false;
   }, [searchParams]);
 
   const clearSearch = useCallback(() => {
@@ -107,38 +126,49 @@ function ProductsPageContent() {
   }, [debouncedSearch, pathname, router, searchParams]);
 
   useEffect(() => {
+    const trimmedCategory = selectedCategory === "all" ? "" : selectedCategory;
+    const current = searchParams.get("category") ?? "";
+    if (trimmedCategory === current) return;
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (trimmedCategory) {
+      params.set("category", trimmedCategory);
+    } else {
+      params.delete("category");
+    }
+
+    const qs = params.toString();
+    internalCategoryUpdate.current = true;
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [selectedCategory, pathname, router, searchParams]);
+
+  useEffect(() => {
     let mounted = true;
 
     const load = async () => {
       setCatalogLoading(true);
       try {
         const trimmedSearch = debouncedSearch.trim();
+        const categoryFilter =
+          selectedCategory !== "all" ? selectedCategory : undefined;
         const [products, categoriesRes] = await Promise.all([
           fetchPublicCatalogProducts(
-            trimmedSearch ? { search: trimmedSearch } : undefined
+            trimmedSearch || categoryFilter
+              ? { search: trimmedSearch || undefined, category: categoryFilter }
+              : undefined
           ),
           fetch("/api/catalog/categories"),
         ]);
         const categories = categoriesRes.ok
-          ? await parseApiResponse<{ id: string; name: string; slug: string }[]>(
-              categoriesRes
-            )
+          ? await parseApiResponse<
+              Array<{ id: string; name: string; slug: string; parentId: string | null }>
+            >(categoriesRes)
           : [];
 
         if (!mounted) return;
 
         setVendorProducts(products);
-        setApiCategories(
-          categories.map((category) => ({
-            id: category.slug,
-            label: { en: category.name, ps: category.name, "fa-AF": category.name },
-          }))
-        );
-
-        const prices = products.map((product) => product.price);
-        const computedMax = Math.max(100, ...prices, 0);
-        setMaxPrice(computedMax);
-        setPriceRange((current) => [current[0], Math.max(current[1], computedMax)]);
+        setApiCategories(categories);
       } catch {
         if (mounted) setVendorProducts([]);
       } finally {
@@ -150,11 +180,52 @@ function ProductsPageContent() {
     return () => {
       mounted = false;
     };
-  }, [debouncedSearch]);
+  }, [debouncedSearch, selectedCategory]);
+
+  const categoryOptions = useMemo<CategoryOption[]>(
+    () =>
+      apiCategories.map((category) => ({
+        id: category.slug,
+        label: { en: category.name, ps: category.name, "fa-AF": category.name },
+      })),
+    [apiCategories]
+  );
+
+  const allowedCategorySlugs = useMemo(() => {
+    if (selectedCategory === "all") return undefined;
+    return collectCategorySlugTree(apiCategories, selectedCategory);
+  }, [apiCategories, selectedCategory]);
+
+  useEffect(() => {
+    const prices = vendorProducts.map((product) =>
+      getCatalogPriceInCurrency(product, displayCurrency)
+    );
+    const computedMax = Math.ceil(Math.max(100, ...prices, 0));
+
+    setMaxPrice(computedMax);
+
+    if (prevDisplayCurrencyRef.current !== displayCurrency) {
+      setPriceRange((current) => {
+        const convertedMax = Math.round(
+          convertMajorUnits(current[1], prevDisplayCurrencyRef.current, displayCurrency)
+        );
+        return [0, Math.min(Math.max(0, convertedMax), computedMax)];
+      });
+      prevDisplayCurrencyRef.current = displayCurrency;
+      return;
+    }
+
+    setPriceRange((current) => [0, Math.min(current[1], computedMax)]);
+  }, [vendorProducts, displayCurrency]);
+
+  const formatPriceLabel = useCallback(
+    (amount: number) => formatMajorUnits(amount, displayCurrency, locale),
+    [displayCurrency, locale]
+  );
 
   const allProducts = useMemo<CatalogRow[]>(() => vendorProducts, [vendorProducts]);
 
-  const categories = useMemo(() => apiCategories, [apiCategories]);
+  const categories = useMemo(() => categoryOptions, [categoryOptions]);
 
   const vendors = useMemo(() => {
     const names = new Set<string>();
@@ -170,6 +241,8 @@ function ProductsPageContent() {
         selectedVendor,
         priceRange,
         locale,
+        displayCurrency,
+        allowedCategorySlugs,
       }),
     [
       allProducts,
@@ -178,13 +251,36 @@ function ProductsPageContent() {
       selectedVendor,
       priceRange,
       locale,
+      displayCurrency,
+      allowedCategorySlugs,
     ]
   );
 
   const sortedProducts = useMemo(
-    () => sortCatalogProducts(filteredProducts, sortBy),
-    [filteredProducts, sortBy]
+    () => sortCatalogProducts(filteredProducts, sortBy, displayCurrency),
+    [filteredProducts, sortBy, displayCurrency]
   );
+
+  const handlePriceChange = useCallback((max: number) => {
+    if (productsLayoutRef.current) {
+      scrollAnchorTopRef.current = productsLayoutRef.current.getBoundingClientRect().top;
+    }
+    setPriceRange([0, max]);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (scrollAnchorTopRef.current === null || !productsLayoutRef.current) return;
+
+    const previousTop = scrollAnchorTopRef.current;
+    const newTop = productsLayoutRef.current.getBoundingClientRect().top;
+    const delta = newTop - previousTop;
+
+    if (delta !== 0) {
+      window.scrollBy({ top: delta, left: 0, behavior: "auto" });
+    }
+
+    scrollAnchorTopRef.current = null;
+  }, [priceRange, sortedProducts.length]);
 
   const toggleVendor = (vendor: string) => {
     setSelectedVendor((prev) =>
@@ -222,13 +318,24 @@ function ProductsPageContent() {
     products: copy.products,
   };
 
+  const activeCategoryName =
+    selectedCategory !== "all"
+      ? apiCategories.find((category) => category.slug === selectedCategory)?.name
+      : undefined;
+
   const headerCopy = debouncedSearch.trim()
     ? {
         ...copy,
         allProducts: copy.searchResults,
         shopSubtitle: copy.searchResultsFor(debouncedSearch.trim()),
       }
-    : copy;
+    : activeCategoryName
+      ? {
+          ...copy,
+          allProducts: activeCategoryName,
+          shopSubtitle: copy.shopSubtitle,
+        }
+      : copy;
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-[#f6f8fc]">
@@ -254,8 +361,8 @@ function ProductsPageContent() {
           labels={copy}
         />
 
-        <div className="flex gap-8">
-          <aside className="hidden w-[17.5rem] shrink-0 lg:block">
+        <div ref={productsLayoutRef} className="flex gap-8">
+          <aside className="hidden w-[17.5rem] shrink-0 self-start lg:block">
             <div className="sticky top-24 rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-[0_12px_40px_rgba(15,52,96,0.06)]">
               <ProductsFiltersPanel
                 locale={locale}
@@ -268,8 +375,9 @@ function ProductsPageContent() {
                 maxPrice={maxPrice}
                 onCategoryChange={setSelectedCategory}
                 onToggleVendor={toggleVendor}
-                onPriceChange={(max) => setPriceRange([0, max])}
+                onPriceChange={handlePriceChange}
                 labels={filterLabels}
+                formatPriceLabel={formatPriceLabel}
               />
             </div>
           </aside>
@@ -288,11 +396,15 @@ function ProductsPageContent() {
             onClose={() => setMobileFiltersOpen(false)}
             onCategoryChange={setSelectedCategory}
             onToggleVendor={toggleVendor}
-            onPriceChange={(max) => setPriceRange([0, max])}
+            onPriceChange={handlePriceChange}
             labels={filterLabels}
+            formatPriceLabel={formatPriceLabel}
           />
 
-          <section className="min-w-0 flex-1 pb-10">
+          <section
+            className="min-w-0 flex-1 pb-10 [overflow-anchor:none]"
+            style={{ overflowAnchor: "none" }}
+          >
             {catalogLoading ? (
               <ProductsGridSkeleton />
             ) : sortedProducts.length > 0 ? (
@@ -301,9 +413,8 @@ function ProductsPageContent() {
                   <motion.div
                     key={product.id}
                     className="min-w-0"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, delay: Math.min(index * 0.03, 0.24) }}
+                    initial={false}
+                    animate={{ opacity: 1 }}
                   >
                     <ProductCard
                       product={product}

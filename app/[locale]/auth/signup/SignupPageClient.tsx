@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 
 import { PasswordRequirements } from "@/components/vendor/onboarding/PasswordRequirements";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { getPasswordValidationMessage } from "@/components/vendor/onboarding/validation";
 import { resolvePostAuthRedirect } from "@/lib/auth/client-auth-routing";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -279,8 +280,7 @@ export function SignupPageClient() {
               <label className="mb-1 block text-sm font-semibold text-neutral-700">
                 Password
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
@@ -296,8 +296,7 @@ export function SignupPageClient() {
               <label className="mb-1 block text-sm font-semibold text-neutral-700">
                 Confirm password
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 autoComplete="new-password"

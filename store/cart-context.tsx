@@ -9,12 +9,24 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
+<<<<<<< HEAD
 import { fetchPublicCatalogProduct } from "@/lib/products/public-catalog";
+=======
+import { convertMajorUnits } from "@/lib/currency/convert";
+import {
+  fetchPublicCatalogProduct,
+  resolveDefaultCatalogVariant,
+  resolveProductUnitPriceMinor,
+} from "@/lib/products/public-catalog";
+import { assertSufficientStock } from "@/lib/products/product-stock";
+>>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
 import { useCurrency } from "@/store/currency-context";
 
 type CartItem = {
   id: string;
   productId: string;
+  variantId?: string;
+  variantName?: string;
   quantity: number;
   productName: string;
   productDescription: string;
@@ -32,13 +44,18 @@ type Cart = {
   items: CartItem[];
 };
 
+type AddCartItemOptions = {
+  variantId?: string;
+  variantName?: string;
+};
+
 type CartContextType = {
   cart: Cart;
   isLoading: boolean;
   itemCount: number;
   total: number;
   displayTotal: number;
-  addItem: (productId: string, quantity: number) => Promise<void>;
+  addItem: (productId: string, quantity: number, options?: AddCartItemOptions) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
   refreshCart: () => void;
@@ -48,6 +65,7 @@ const CART_STORAGE_KEY = "onlinemandawee-cart";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+<<<<<<< HEAD
 const resolveProductDetails = async (productId: string) => {
   const catalogProduct = await fetchPublicCatalogProduct(productId);
   return {
@@ -63,6 +81,11 @@ const resolveProductDetails = async (productId: string) => {
     isVendorProduct: catalogProduct.isVendorProduct,
   };
 };
+=======
+function cartLineKey(productId: string, variantId?: string) {
+  return `${productId}:${variantId ?? ""}`;
+}
+>>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
 
 function normalizeCartItem(item: CartItem): CartItem {
   return {
@@ -123,29 +146,66 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const addItem = async (productId: string, quantity: number) => {
+  const addItem = async (
+    productId: string,
+    quantity: number,
+    options?: AddCartItemOptions
+  ) => {
     setIsLoading(true);
 
     try {
-      const product = await resolveProductDetails(productId);
+      const catalogProduct = await fetchPublicCatalogProduct(productId);
+      const activeVariants = catalogProduct.variants?.filter((variant) => variant.isActive) ?? [];
+      const variantId =
+        options?.variantId ??
+        (activeVariants.length === 1 ? activeVariants[0]?.id : undefined);
+      const selectedVariant = variantId
+        ? activeVariants.find((variant) => variant.id === variantId)
+        : resolveDefaultCatalogVariant(catalogProduct.variants);
+
+      if (activeVariants.length > 1 && !variantId) {
+        throw new Error("Choose a product option before adding to cart.");
+      }
+
+      const lineKey = cartLineKey(productId, variantId);
+      const existingItem = cart.items.find(
+        (item) => cartLineKey(item.productId, item.variantId) === lineKey
+      );
+      const nextQuantity = (existingItem?.quantity ?? 0) + quantity;
+      const stockCheck = assertSufficientStock(catalogProduct, nextQuantity, variantId);
+
+      if (!stockCheck.ok) {
+        throw new Error(stockCheck.message);
+      }
+
+      const unitPriceMinor = resolveProductUnitPriceMinor(
+        catalogProduct.basePriceAmount,
+        catalogProduct.variants,
+        variantId
+      );
 
       setCart((prev) => {
-        const existingItem = prev.items.find((item) => item.productId === productId);
+        const existing = prev.items.find(
+          (item) => cartLineKey(item.productId, item.variantId) === lineKey
+        );
 
-        let newCart;
-        if (existingItem) {
+        let newCart: Cart;
+        if (existing) {
           newCart = {
             items: prev.items.map((item) =>
-              item.productId === productId
-                ? { ...item, quantity: item.quantity + quantity }
+              cartLineKey(item.productId, item.variantId) === lineKey
+                ? { ...item, quantity: nextQuantity }
                 : item
             ),
           };
         } else {
           const newItem: CartItem = {
-            id: `${productId}-${Date.now()}`,
+            id: `${lineKey}-${Date.now()}`,
             productId,
+            variantId,
+            variantName: options?.variantName ?? selectedVariant?.name,
             quantity,
+<<<<<<< HEAD
             productName: product.name,
             productDescription: product.description,
             productPrice: product.price,
@@ -156,6 +216,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
             vendorProfileId: product.vendorProfileId,
             sellerType: product.sellerType,
             isVendorProduct: product.isVendorProduct,
+=======
+            productName: catalogProduct.name.en,
+            productDescription: catalogProduct.description.en,
+            productPrice: unitPriceMinor / 100,
+            productCurrency: catalogProduct.currency || "USD",
+            productImage: catalogProduct.image,
+            vendor: catalogProduct.vendor,
+            delivery: catalogProduct.delivery,
+            vendorProfileId: catalogProduct.vendorProfileId,
+            isVendorProduct: catalogProduct.isVendorProduct,
+>>>>>>> 8b6af75 (Add storefront checkout, stock variants, Baby Care category, and Stripe fixes.)
           };
           newCart = {
             items: [...prev.items, newItem],
@@ -183,6 +254,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const updateQuantity = async (itemId: string, quantity: number) => {
     if (quantity <= 0) {
       return removeItem(itemId);
+    }
+
+    const targetItem = cart.items.find((item) => item.id === itemId);
+    if (!targetItem) return;
+
+    const catalogProduct = await fetchPublicCatalogProduct(targetItem.productId);
+    const stockCheck = assertSufficientStock(
+      catalogProduct,
+      quantity,
+      targetItem.variantId
+    );
+    if (!stockCheck.ok) {
+      throw new Error(stockCheck.message);
     }
 
     setCart((prev) => {

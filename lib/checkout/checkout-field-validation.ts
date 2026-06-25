@@ -1,5 +1,6 @@
-const LETTERS_ONLY_REGEX = /^[A-Za-z\s]+$/;
+const LETTERS_WITH_PUNCT_REGEX = /^[A-Za-z\s'-]+$/;
 const DIGITS_ONLY_REGEX = /^\d+$/;
+const POSTAL_CODE_REGEX = /^[A-Za-z0-9\s-]+$/;
 
 export type CheckoutContactFields = {
   guestName: string;
@@ -23,18 +24,18 @@ export function sanitizePhoneInput(value: string) {
 }
 
 export function sanitizePostalCodeInput(value: string) {
-  return value.replace(/\D/g, "");
+  return value.replace(/[^A-Za-z0-9\s-]/g, "").toUpperCase();
 }
 
 export function sanitizeCityCountryInput(value: string) {
-  return value.replace(/[^A-Za-z\s]/g, "");
+  return value.replace(/[^A-Za-z\s'-]/g, "");
 }
 
 export function validateGuestName(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return "Full name is required.";
   if (trimmed.length < 2) return "Full name must be at least 2 characters.";
-  if (!LETTERS_ONLY_REGEX.test(trimmed)) {
+  if (!LETTERS_WITH_PUNCT_REGEX.test(trimmed)) {
     return "Name must contain letters only.";
   }
   return null;
@@ -69,7 +70,7 @@ export function validateAddressLine(value: string): string | null {
 export function validateCity(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return "City is required.";
-  if (!LETTERS_ONLY_REGEX.test(trimmed)) {
+  if (!LETTERS_WITH_PUNCT_REGEX.test(trimmed)) {
     return "City must contain letters only.";
   }
   return null;
@@ -78,7 +79,7 @@ export function validateCity(value: string): string | null {
 export function validateCountry(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return "Country is required.";
-  if (!LETTERS_ONLY_REGEX.test(trimmed)) {
+  if (!LETTERS_WITH_PUNCT_REGEX.test(trimmed)) {
     return "Country must contain letters only.";
   }
   return null;
@@ -87,8 +88,8 @@ export function validateCountry(value: string): string | null {
 export function validatePostalCode(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
-  if (!DIGITS_ONLY_REGEX.test(trimmed)) {
-    return "Postal code must contain numbers only.";
+  if (!POSTAL_CODE_REGEX.test(trimmed)) {
+    return "Postal code format is invalid.";
   }
   return null;
 }

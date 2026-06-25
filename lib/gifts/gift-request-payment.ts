@@ -29,7 +29,7 @@ export async function createGiftRequestPaymentIntent(input: {
     return await stripe.paymentIntents.create({
       amount: input.quoteAmountMinor,
       currency: currency.toLowerCase(),
-      automatic_payment_methods: { enabled: true },
+      payment_method_types: ["card"],
       metadata: {
         source: "gift_request",
         giftRequestId: input.giftRequestId,

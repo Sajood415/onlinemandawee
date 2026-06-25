@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import type { CategoryOption } from "@/components/products/types";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { localizeVendor } from "@/lib/localization/product-vendor";
@@ -22,8 +23,104 @@ type ProductsFiltersPanelProps = {
     brand: string;
     maxPrice: string;
   };
+  formatPriceLabel: (amount: number) => string;
   className?: string;
 };
+
+function PriceRangeSlider({
+  value,
+  max,
+  onCommit,
+  priceLabel,
+  maxPriceLabel,
+  formatPriceLabel,
+}: {
+  value: number;
+  max: number;
+  onCommit: (max: number) => void;
+  priceLabel: string;
+  maxPriceLabel: string;
+  formatPriceLabel: (amount: number) => string;
+}) {
+  const [localValue, setLocalValue] = useState(value);
+  const isDraggingRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      setLocalValue(value);
+    }
+  }, [value]);
+
+  const commitValue = (next: number) => {
+    const clamped = Math.max(0, Math.min(next, max));
+    isDraggingRef.current = false;
+    setLocalValue(clamped);
+    inputRef.current?.blur();
+    if (clamped !== value) {
+      onCommit(clamped);
+    }
+  };
+
+  const releasePointer = (target: HTMLInputElement, pointerId: number) => {
+    if (target.hasPointerCapture(pointerId)) {
+      target.releasePointerCapture(pointerId);
+    }
+  };
+
+  return (
+    <div className="rounded-xl bg-neutral-50 p-4">
+      <input
+        ref={inputRef}
+        type="range"
+        min={0}
+        max={max}
+        step={1}
+        value={localValue}
+        onPointerDown={(event) => {
+          isDraggingRef.current = true;
+          event.currentTarget.setPointerCapture(event.pointerId);
+          event.currentTarget.focus({ preventScroll: true });
+        }}
+        onPointerUp={(event) => {
+          releasePointer(event.currentTarget, event.pointerId);
+          event.preventDefault();
+          commitValue(parseInt(event.currentTarget.value, 10));
+        }}
+        onLostPointerCapture={(event) => {
+          if (!isDraggingRef.current) return;
+          commitValue(parseInt(event.currentTarget.value, 10));
+        }}
+        onPointerCancel={(event) => {
+          releasePointer(event.currentTarget, event.pointerId);
+          isDraggingRef.current = false;
+          setLocalValue(value);
+        }}
+        onInput={(event) =>
+          setLocalValue(
+            Math.max(0, Math.min(parseInt(event.currentTarget.value, 10), max))
+          )
+        }
+        onKeyUp={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            commitValue(parseInt(event.currentTarget.value, 10));
+          }
+        }}
+        className="h-1.5 w-full cursor-pointer touch-none appearance-none rounded-full bg-neutral-200 accent-primary"
+        aria-label={priceLabel}
+        aria-valuemin={0}
+        aria-valuemax={max}
+        aria-valuenow={localValue}
+      />
+      <div className="mt-3 flex items-center justify-between text-sm">
+        <span className="font-medium text-neutral-600">{formatPriceLabel(0)}</span>
+        <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#0f3460] shadow-sm">
+          {maxPriceLabel} {formatPriceLabel(localValue)}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export function ProductsFiltersPanel({
   locale,
@@ -38,6 +135,7 @@ export function ProductsFiltersPanel({
   onToggleVendor,
   onPriceChange,
   labels,
+  formatPriceLabel,
   className = "",
 }: ProductsFiltersPanelProps) {
   return (
@@ -83,23 +181,14 @@ export function ProductsFiltersPanel({
         <h3 className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
           {labels.price}
         </h3>
-        <div className="rounded-xl bg-neutral-50 p-4">
-          <input
-            type="range"
-            min={0}
-            max={maxPrice}
-            value={priceRange[1]}
-            onChange={(event) => onPriceChange(parseInt(event.target.value, 10))}
-            className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-neutral-200 accent-primary"
-            aria-label={labels.price}
-          />
-          <div className="mt-3 flex items-center justify-between text-sm">
-            <span className="font-medium text-neutral-600">$0</span>
-            <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#0f3460] shadow-sm">
-              {labels.maxPrice} ${priceRange[1]}
-            </span>
-          </div>
-        </div>
+        <PriceRangeSlider
+          value={priceRange[1]}
+          max={maxPrice}
+          onCommit={onPriceChange}
+          priceLabel={labels.price}
+          maxPriceLabel={labels.maxPrice}
+          formatPriceLabel={formatPriceLabel}
+        />
       </section>
 
       <section className="border-t border-neutral-100 pt-6">

@@ -17,7 +17,6 @@ import {
   Menu,
   X,
   Cookie,
-  Zap,
   ArrowRight,
   Croissant,
   ShoppingBag,
@@ -88,7 +87,7 @@ type NavLinkSize = "mobile" | "tablet" | "desktop";
 function isNavLinkActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   if (href === "/products") {
-    return pathname.startsWith("/products") || pathname.startsWith("/category/");
+    return pathname === "/products" || pathname.startsWith("/products/");
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -671,15 +670,8 @@ export default function Header() {
                 {copy.new}
               </span>
             </HeaderNavLink>
-            <HeaderNavLink href="/baby-packages" pathname={pathname} size="desktop">
+            <HeaderNavLink href="/category/baby-care" pathname={pathname} size="desktop">
               {copy.babyCare}
-            </HeaderNavLink>
-            <HeaderNavLink href="/deals" pathname={pathname} size="desktop" className="gap-1.5">
-              <Zap
-                size={15}
-                style={{ color: "var(--yellow)", fill: "var(--yellow)" }}
-              />
-              {copy.dailyDeals}
             </HeaderNavLink>
             <HeaderNavLink href="/contact" pathname={pathname} size="desktop">
               {copy.support}

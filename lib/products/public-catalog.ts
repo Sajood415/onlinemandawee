@@ -1,5 +1,9 @@
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
+import {
+  getProductStockStatusLabel,
+  isProductInStock,
+} from "@/lib/products/product-stock";
 
 const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80";
@@ -133,9 +137,7 @@ export function resolveProductInStock(product: {
   stockQty: number;
   variants?: CatalogVariant[];
 }) {
-  const activeVariants = getActiveCatalogVariants(product.variants);
-  if (activeVariants.length === 0) return product.stockQty > 0;
-  return activeVariants.some((variant) => variant.stockQty > 0);
+  return isProductInStock(product);
 }
 
 export function mapApiProductToCatalog(product: ApiCatalogProduct): PublicCatalogProduct {
@@ -143,7 +145,7 @@ export function mapApiProductToCatalog(product: ApiCatalogProduct): PublicCatalo
   const price = priceAmountMinor / 100;
   const currency = product.currency || "USD";
   const inStock = resolveProductInStock(product);
-  const stockLabel = inStock ? "In Stock" : "Out of Stock";
+  const stockLabel = getProductStockStatusLabel(product);
 
   return {
     id: product.id,

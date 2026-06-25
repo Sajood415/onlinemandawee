@@ -7,6 +7,7 @@ import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-status";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
+import { formatVendorStockSummary } from "@/lib/products/product-stock";
 import { toast } from "@/lib/utils/toast";
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
@@ -29,6 +30,7 @@ type VendorProduct = {
   rejectionReason: string | null;
   isActive: boolean;
   createdAt: string;
+  variants?: ProductVariant[];
 };
 
 type ImageSlot =
@@ -714,7 +716,27 @@ export default function VendorProductsPage() {
                           currency: product.currency || "USD",
                         })}
                       </td>
-                      <td className="px-3 py-3 tabular-nums">{product.stockQty}</td>
+                      <td className="px-3 py-3">
+                        {(() => {
+                          const stock = formatVendorStockSummary({
+                            stockQty: product.stockQty,
+                            variants: product.variants,
+                          });
+                          return (
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${
+                                stock.tone === "danger"
+                                  ? "bg-red-50 text-red-700 ring-red-200"
+                                  : stock.tone === "warn"
+                                    ? "bg-amber-50 text-amber-800 ring-amber-200"
+                                    : "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                              }`}
+                            >
+                              {stock.label}
+                            </span>
+                          );
+                        })()}
+                      </td>
                       <td className="px-3 py-3">{product.images.length}</td>
                       <td className="px-3 py-3">
                         <span

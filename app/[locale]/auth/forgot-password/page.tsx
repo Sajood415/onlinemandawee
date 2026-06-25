@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 
 import { PasswordRequirements } from "@/components/vendor/onboarding/PasswordRequirements";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { usePasswordRules } from "@/lib/i18n/use-password-rules";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
@@ -184,8 +185,7 @@ export default function ForgotPasswordPage() {
               <label className="mb-1 block text-sm font-semibold text-neutral-700">
                 {t("newPassword")}
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
@@ -201,8 +201,7 @@ export default function ForgotPasswordPage() {
               <label className="mb-1 block text-sm font-semibold text-neutral-700">
                 {t("confirmPassword")}
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required

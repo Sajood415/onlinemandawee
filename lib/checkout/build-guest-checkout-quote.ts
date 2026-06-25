@@ -4,10 +4,18 @@ import {
   normalizeGuestCheckoutCoupons,
   type GuestCheckoutCouponEntry,
 } from "@/lib/checkout/coupon-entry";
+import { GuestCheckoutQuoteError } from "@/lib/checkout/guest-checkout-quote-error";
 import { getCouponEligibleSubtotal } from "@/lib/vendor-coupon/product-scope";
 import { applyQuoteCurrency } from "@/lib/currency/apply-quote-currency";
 import { convertMinorUnits } from "@/lib/currency/convert";
-import { GuestCheckoutQuoteError } from "@/lib/checkout/guest-checkout-quote-error";
+import {
+  assertSufficientStock,
+  getActiveStockVariants,
+  usesVariantStock,
+} from "@/lib/products/product-stock";
+import {
+  resolveProductUnitPriceMinor,
+} from "@/lib/products/public-catalog";
 import {
   calculateGuestDelivery,
   type GuestCheckoutDeliveryBreakdown,
@@ -22,10 +30,13 @@ import { DeliveryPricingService } from "@/services/delivery-pricing.service";
 export type GuestCheckoutCartItem = {
   productId: string;
   quantity: number;
+  variantId?: string;
 };
 
 export type GuestCheckoutLineItem = {
   productId: string;
+  variantId?: string | null;
+  variantName?: string | null;
   productName: string;
   productImage: string | null;
   productSku: string | null;
@@ -80,6 +91,10 @@ export { GuestCheckoutQuoteError };
 const productInclude = {
   vendorProfile: true,
   category: true,
+  variants: {
+    where: { isActive: true },
+    orderBy: { createdAt: "asc" as const },
+  },
 } as const;
 
 async function resolveCheckoutProduct(productId: string) {
@@ -146,18 +161,47 @@ export async function buildGuestCheckoutQuote(input: {
     );
   }
 
+  for (const { item, product } of products) {
+    const activeVariants = getActiveStockVariants(product!);
+    const variantId =
+      item.variantId ??
+      (activeVariants.length === 1 ? activeVariants[0]?.id : undefined);
+
+    if (usesVariantStock(product!) && activeVariants.length > 1 && !variantId) {
+      throw new GuestCheckoutQuoteError(
+        "VARIANT_REQUIRED",
+        `${product!.name} has multiple options. Open the product page and choose a variant before checkout.`
+      );
+    }
+
+    const stockCheck = assertSufficientStock(product!, item.quantity, variantId);
+    if (!stockCheck.ok) {
+      throw new GuestCheckoutQuoteError("INSUFFICIENT_STOCK", `${product!.name}: ${stockCheck.message}`);
+    }
+  }
+
   const lineItems: GuestCheckoutLineItem[] = products.map(({ item, product }) => {
+    const activeVariants = getActiveStockVariants(product!);
+    const variantId =
+      item.variantId ??
+      (activeVariants.length === 1 ? activeVariants[0]?.id : undefined);
+    const selectedVariant = variantId
+      ? product!.variants.find((variant) => variant.id === variantId) ?? null
+      : null;
     const nativeCurrency = product!.currency || "USD";
-    const unitPriceAmount = convertMinorUnits(
+    const nativeUnitPrice = resolveProductUnitPriceMinor(
       product!.priceAmount,
-      nativeCurrency,
-      currency
+      product!.variants,
+      variantId
     );
+    const unitPriceAmount = convertMinorUnits(nativeUnitPrice, nativeCurrency, currency);
     return {
       productId: product!.id,
+      variantId: selectedVariant?.id ?? null,
+      variantName: selectedVariant?.name ?? null,
       productName: product!.name,
       productImage: product!.images[0] ?? null,
-      productSku: product!.sku ?? null,
+      productSku: selectedVariant?.sku ?? product!.sku ?? null,
       vendorProfileId: product!.vendorProfileId,
       sellerType: product!.vendorProfile.sellerType,
       categoryId: product!.categoryId,

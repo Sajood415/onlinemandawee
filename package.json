@@ -12,6 +12,9 @@
     "prisma:push": "dotenv -e .env.local -- prisma db push",
     "prisma:studio": "dotenv -e .env.local -- prisma studio",
     "seed:admin": "node --import tsx scripts/seed-admin.ts",
+    "seed:categories": "dotenv -e .env.local -- node --import tsx scripts/seed-storefront-categories.ts",
+    "seed:baby-care": "dotenv -e .env.local -- node --import tsx scripts/seed-baby-care-products.ts",
+    "categories:consolidate-baby-care": "dotenv -e .env.local -- node --import tsx scripts/consolidate-baby-care-category.ts",
     "realtime:dev": "npm run dev --prefix realtime",
     "realtime:build": "npm run build --prefix realtime"
   },

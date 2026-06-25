@@ -1,7 +1,7 @@
 "use client";
 
 import { CardElement, Elements, useElements, useStripe } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
+import { getStripePromise } from "@/lib/stripe/client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Building2,
@@ -79,9 +79,7 @@ type SetupIntentResponse = {
   publishableKey: string | null;
 };
 
-const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-  : null;
+const stripePromise = getStripePromise();
 
 /* ─── style constants ────────────────────────────────────────────────── */
 

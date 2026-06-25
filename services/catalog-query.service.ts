@@ -1,3 +1,4 @@
+import { getDepartmentImage } from "@/lib/categories/storefront-departments";
 import {
   listPublicCouponsForProduct,
   listPublicStorefrontOffers,
@@ -21,13 +22,61 @@ export class CatalogQueryService {
     return this.categoryRepository.listActive();
   }
 
-  listProducts(filters: {
+  async getCategoryBySlug(slug: string) {
+    const resolvedSlug = slug === "baby" ? "baby-care" : slug;
+    const category = await this.categoryRepository.findActiveBySlug(resolvedSlug);
+
+    if (!category) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Category not found",
+        statusCode: 404,
+      });
+    }
+
+    return {
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      sortOrder: category.sortOrder,
+      image: getDepartmentImage(category.slug),
+      parent: category.parent
+        ? {
+            id: category.parent.id,
+            name: category.parent.name,
+            slug: category.parent.slug,
+          }
+        : null,
+      children: category.children.map((child) => ({
+        id: child.id,
+        name: child.name,
+        slug: child.slug,
+        sortOrder: child.sortOrder,
+        image: getDepartmentImage(child.slug),
+      })),
+    };
+  }
+
+  async listProducts(filters: {
     category?: string;
     vendor?: string;
     search?: string;
   }) {
+    let categoryIds: string[] | undefined;
+
+    if (filters.category) {
+      const normalizedCategory = filters.category === "baby" ? "baby-care" : filters.category;
+      const category = await this.categoryRepository.findBySlug(normalizedCategory);
+
+      if (!category || !category.isActive) {
+        return [];
+      }
+
+      categoryIds = await this.categoryRepository.listActiveDescendantIds(category.id);
+    }
+
     return this.productRepository.listPublic({
-      categorySlug: filters.category,
+      categoryIds,
       vendorStoreSlug: filters.vendor,
       search: filters.search,
     });

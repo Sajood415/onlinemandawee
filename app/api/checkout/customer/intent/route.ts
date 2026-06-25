@@ -9,6 +9,7 @@ import {
   createCheckoutPaymentIntent,
   StripeCheckoutPaymentError,
 } from "@/lib/stripe/checkout-payment";
+import { getStripeKeyMode } from "@/lib/stripe/checkout-client";
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { withRbac } from "@/middlewares/with-rbac";
 import { sha256, generateOpaqueToken } from "@/lib/utils/crypto";
@@ -78,6 +79,27 @@ export const POST = withErrorHandling(
         );
       }
       throw error;
+    }
+
+    const publishableKeyMode = getStripeKeyMode(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+    const secretKeyMode = getStripeKeyMode(process.env.STRIPE_SECRET_KEY);
+
+    if (
+      !process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
+      publishableKeyMode === "unknown" ||
+      secretKeyMode === "unknown" ||
+      publishableKeyMode !== secretKeyMode
+    ) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "CONFIG_ERROR",
+            message:
+              "Stripe keys are misconfigured. NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY and STRIPE_SECRET_KEY must be from the same Stripe account and both use test or live mode.",
+          },
+        },
+        { status: 503 }
+      );
     }
 
     try {

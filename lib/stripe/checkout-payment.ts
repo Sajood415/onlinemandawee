@@ -64,7 +64,7 @@ export async function createCheckoutPaymentIntent(input: CreateCheckoutPaymentIn
     const paymentIntent = await stripe.paymentIntents.create({
       amount: input.quote.grandTotalAmount,
       currency: currency.toLowerCase(),
-      automatic_payment_methods: { enabled: true },
+      payment_method_types: ["card"],
       metadata: {
         checkoutCurrency: currency,
         grandTotalAmount: String(input.quote.grandTotalAmount),

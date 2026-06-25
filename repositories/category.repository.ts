@@ -52,7 +52,42 @@ export class CategoryRepository {
   findBySlug(slug: string) {
     return prisma.category.findUnique({
       where: { slug },
+      include: {
+        parent: true,
+        children: true,
+      },
     });
+  }
+
+  findActiveBySlug(slug: string) {
+    return prisma.category.findFirst({
+      where: { slug, isActive: true },
+      include: {
+        parent: true,
+        children: {
+          where: { isActive: true },
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        },
+      },
+    });
+  }
+
+  async listActiveDescendantIds(categoryId: string) {
+    const categories = await prisma.category.findMany({
+      where: { isActive: true },
+      select: { id: true, parentId: true },
+    });
+
+    const ids = new Set<string>();
+    const visit = (id: string) => {
+      ids.add(id);
+      for (const category of categories) {
+        if (category.parentId === id) visit(category.id);
+      }
+    };
+
+    visit(categoryId);
+    return Array.from(ids);
   }
 
   listAll() {
@@ -69,6 +104,7 @@ export class CategoryRepository {
     return prisma.category.findMany({
       where: {
         isActive: true,
+        parentId: null,
       },
       include: {
         parent: true,
