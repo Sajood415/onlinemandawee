@@ -22,6 +22,8 @@ import { buildGuestOrderTrackingUrl } from "@/lib/orders/build-order-tracking-ur
 import { resolveDistanceDeliveryQuote } from "@/lib/delivery/resolve-distance-delivery";
 import { getRefundEligibility } from "@/lib/refunds/refund-eligibility";
 import { StandardConsolidationService } from "@/services/standard-consolidation.service";
+import { PayoutReleaseService } from "@/services/payout-release.service";
+import { mergeLineItemsByProduct } from "@/lib/orders/aggregate-order-line-items";
 
 type QuoteLine = {
   cartItemId: string;
@@ -90,7 +92,8 @@ export class OrderService {
     private readonly orderRepository = new OrderRepository(),
     private readonly vendorProfileRepository = new VendorProfileRepository(),
     private readonly auditLogRepository = new AuditLogRepository(),
-    private readonly standardConsolidationService = new StandardConsolidationService()
+    private readonly standardConsolidationService = new StandardConsolidationService(),
+    private readonly payoutReleaseService = new PayoutReleaseService()
   ) {}
 
   async createOrder(
@@ -129,17 +132,30 @@ export class OrderService {
         deliveryAmount: vendorGroup.deliveryAmount,
         discountAmount: 0,
         grandTotalAmount: vendorGroup.subtotalCurrent + vendorGroup.deliveryAmount,
-        items: vendorGroup.items.map((item) => ({
+        items: mergeLineItemsByProduct(
+          vendorGroup.items.map((item) => ({
+            productId: item.productId,
+            variantId: null,
+            productName: item.productName,
+            quantity: item.quantity,
+            unitPriceAmount: item.currentUnitPrice,
+            lineTotalAmount: item.currentLineTotal,
+            productImage: item.productImage,
+            productSku: item.productSku,
+            vendorProfileId: item.vendorProfileId,
+            categoryId: item.categoryId,
+          }))
+        ).map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
           currency: quote.currency,
-          unitPriceAmount: item.currentUnitPrice,
-          lineTotalAmount: item.currentLineTotal,
+          unitPriceAmount: item.unitPriceAmount,
+          lineTotalAmount: item.lineTotalAmount,
           productName: item.productName,
-          productImage: item.productImage,
+          productImage: item.productImage as string | null,
           productSku: item.productSku,
-          vendorProfileId: item.vendorProfileId,
-          categoryId: item.categoryId,
+          vendorProfileId: item.vendorProfileId as string,
+          categoryId: item.categoryId as string,
         })),
       })),
     });
@@ -181,6 +197,7 @@ export class OrderService {
       vendorGroups: order.vendorOrders.map((vendorOrder) => ({
         vendorProfileId: vendorOrder.vendorProfileId,
         grandTotalAmount: vendorOrder.grandTotalAmount,
+        deliveryMethod: vendorOrder.deliveryMethod,
         items: vendorOrder.items.map((item) => ({
           productName: item.productName,
           quantity: item.quantity,
@@ -325,6 +342,13 @@ export class OrderService {
           : {}),
       },
     });
+
+    if (status === "DELIVERED" && updatedVendorOrder.deliveredAt) {
+      await this.payoutReleaseService.syncExpressHoldOnDelivery({
+        orderVendorId: updatedVendorOrder.id,
+        deliveredAt: updatedVendorOrder.deliveredAt,
+      });
+    }
 
     // Send email notification to customer on key status changes
     if (status === "SHIPPED" || status === "DELIVERED" || status === "CANCELLED") {

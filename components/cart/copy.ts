@@ -28,6 +28,3 @@ export function getCartCopy() {
     loading: "Loading your cart...",
   };
 }
-
-export const STANDARD_SHIPPING_FEE = 5.99;
-export const ESTIMATED_TAX_RATE = 0.08;

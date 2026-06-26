@@ -109,9 +109,9 @@ export default function Footer() {
       className="bg-footer-bg text-slate-700 border-t border-slate-200"
     >
       {/* ── MAIN GRID ──────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div
-          className={`grid gap-12 lg:grid-cols-[2fr_1fr_1fr_1fr] ${
+          className={`grid gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-[2fr_1fr_1fr_1fr] lg:gap-12 ${
             isRtl ? "text-right" : "text-left"
           }`}
         >

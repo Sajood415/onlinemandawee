@@ -3,6 +3,7 @@ import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { prisma } from "@/lib/db/prisma";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
+import { sendStandardDeliveryCustomerNotification } from "@/lib/mail/send-standard-delivery-customer-notifications";
 
 type StandardVendorOrder = {
   id: string;
@@ -200,6 +201,95 @@ export class StandardConsolidationService {
     };
   }
 
+  /** Admin records that a vendor shipment is on its way to the warehouse (with optional tracking). */
+  async markInboundShipmentShippedAsAdmin(
+    auth: AuthenticatedUser,
+    shipmentId: string,
+    input: { trackingRef?: string }
+  ) {
+    const shipment = await prisma.vendorInboundShipment.findUnique({
+      where: { id: shipmentId },
+      include: {
+        orderVendor: {
+          include: {
+            vendorProfile: {
+              select: {
+                sellerType: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!shipment) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Inbound shipment not found",
+        statusCode: 404,
+      });
+    }
+
+    if (
+      shipment.orderVendor.deliveryMethod !== "STANDARD" ||
+      shipment.orderVendor.vendorProfile.sellerType !== "THIRD_PARTY"
+    ) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Only third-party standard inbound shipments can be updated",
+        statusCode: 400,
+      });
+    }
+
+    if (shipment.status !== "PENDING_SHIPMENT") {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: `Inbound shipment is already ${shipment.status}`,
+        statusCode: 400,
+      });
+    }
+
+    const now = new Date();
+    const updatedShipment = await prisma.vendorInboundShipment.update({
+      where: { id: shipment.id },
+      data: {
+        status: "INBOUND_SHIPPED",
+        trackingRef: input.trackingRef ?? undefined,
+        shippedAt: now,
+      },
+    });
+
+    await prisma.orderVendor.update({
+      where: { id: shipment.orderVendorId },
+      data: {
+        status: "INBOUND_SHIPPED",
+      },
+    });
+
+    await this.recalculateOrderStatus(shipment.orderId);
+
+    await this.auditLogRepository.create({
+      actorUserId: auth.id,
+      actorRole: auth.role,
+      action: "admin.inbound_shipped",
+      entityType: "VendorInboundShipment",
+      entityId: updatedShipment.id,
+      metadata: {
+        orderId: shipment.orderId,
+        vendorOrderId: shipment.orderVendorId,
+        trackingRef: updatedShipment.trackingRef ?? null,
+      },
+    });
+
+    return {
+      shipmentId: updatedShipment.id,
+      vendorOrderId: shipment.orderVendorId,
+      status: updatedShipment.status,
+      shippedAt: updatedShipment.shippedAt?.toISOString() ?? null,
+      trackingRef: updatedShipment.trackingRef ?? null,
+    };
+  }
+
   async markInboundShipmentReceived(auth: AuthenticatedUser, shipmentId: string) {
     const shipment = await prisma.vendorInboundShipment.findUnique({
       where: { id: shipmentId },
@@ -247,6 +337,9 @@ export class StandardConsolidationService {
       });
     }
 
+    const wasAlreadyReceived = shipment.status === "RECEIVED";
+    const previousBatchStatus = shipment.consolidationBatch.status;
+
     const now = new Date();
     const updatedShipment = await prisma.vendorInboundShipment.update({
       where: { id: shipment.id },
@@ -279,6 +372,26 @@ export class StandardConsolidationService {
         consolidationBatchStatus: batch.status,
       },
     });
+
+    if (!wasAlreadyReceived) {
+      if (batch.status === "READY_TO_CONSOLIDATE") {
+        void sendStandardDeliveryCustomerNotification({
+          orderId: shipment.orderId,
+          stage: "ALL_AT_WAREHOUSE",
+        });
+      } else if (
+        batch.status === "PARTIALLY_RECEIVED" &&
+        previousBatchStatus !== "PARTIALLY_RECEIVED" &&
+        batch.expectedVendorCount > 1
+      ) {
+        void sendStandardDeliveryCustomerNotification({
+          orderId: shipment.orderId,
+          stage: "PARTIAL_WAREHOUSE_RECEIPT",
+          receivedVendorCount: batch.receivedVendorCount,
+          expectedVendorCount: batch.expectedVendorCount,
+        });
+      }
+    }
 
     return {
       shipmentId: updatedShipment.id,
@@ -399,6 +512,8 @@ export class StandardConsolidationService {
       });
     }
 
+    const wasAlreadyShipped = outboundShipment.status === "OUTBOUND_SHIPPED";
+
     const now = new Date();
     const updatedOutboundShipment = await prisma.consolidatedOutboundShipment.update({
       where: { id: outboundShipment.id },
@@ -427,6 +542,14 @@ export class StandardConsolidationService {
         consolidationBatchId: outboundShipment.consolidationBatchId,
       },
     });
+
+    if (!wasAlreadyShipped) {
+      void sendStandardDeliveryCustomerNotification({
+        orderId: outboundShipment.orderId,
+        stage: "OUTBOUND_SHIPPED",
+        trackingRef: updatedOutboundShipment.trackingRef,
+      });
+    }
 
     return {
       outboundShipmentId: updatedOutboundShipment.id,
@@ -473,6 +596,8 @@ export class StandardConsolidationService {
       });
     }
 
+    const wasAlreadyDelivered = outboundShipment.status === "DELIVERED";
+
     const vendorOrderIds = outboundShipment.consolidationBatch.inboundShipments.map(
       (shipment) => shipment.orderVendorId
     );
@@ -518,6 +643,13 @@ export class StandardConsolidationService {
         deliveredVendorOrdersCount: vendorOrderIds.length,
       },
     });
+
+    if (!wasAlreadyDelivered) {
+      void sendStandardDeliveryCustomerNotification({
+        orderId: outboundShipment.orderId,
+        stage: "DELIVERED",
+      });
+    }
 
     return {
       outboundShipmentId: outboundShipment.id,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -8,11 +8,7 @@ import { useLocale } from "next-intl";
 
 import { CartEmptyState } from "@/components/cart/CartEmptyState";
 import { CartLineItem } from "@/components/cart/CartLineItem";
-import {
-  CartOrderSummary,
-  ESTIMATED_TAX_RATE,
-  STANDARD_SHIPPING_FEE,
-} from "@/components/cart/CartOrderSummary";
+import { CartOrderSummary } from "@/components/cart/CartOrderSummary";
 import { CartPageHeader } from "@/components/cart/CartPageHeader";
 import { CartPageSkeleton } from "@/components/cart/CartPageSkeleton";
 import { CartRecommendedProducts } from "@/components/cart/CartRecommendedProducts";
@@ -21,16 +17,14 @@ import type { CatalogRow } from "@/components/products/types";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { fetchPublicCatalogProducts } from "@/lib/products/public-catalog";
 import { useCart } from "@/store/cart-context";
-import { useCurrency } from "@/store/currency-context";
 
 export default function CartPage() {
   const locale = useLocale() as SupportedLocale;
   const isRtl = locale !== "en";
   const copy = useCartCopy();
 
-  const { cart, itemCount, displayTotal, removeItem, updateQuantity, isLoading } =
+  const { cart, itemCount, displayTotal, removeItem, updateQuantity, isLoading, refreshCartPrices } =
     useCart();
-  const { convertPrice } = useCurrency();
 
   const [hydrated, setHydrated] = useState(false);
   const [lineBusyId, setLineBusyId] = useState<string | null>(null);
@@ -38,7 +32,8 @@ export default function CartPage() {
 
   useEffect(() => {
     setHydrated(true);
-  }, []);
+    void refreshCartPrices();
+  }, [refreshCartPrices]);
 
   useEffect(() => {
     let mounted = true;
@@ -54,15 +49,6 @@ export default function CartPage() {
     };
   }, []);
 
-  const totals = useMemo(() => {
-    const shippingFee = convertPrice(STANDARD_SHIPPING_FEE, "USD");
-    const taxAmount = displayTotal * ESTIMATED_TAX_RATE;
-    return {
-      shippingFee,
-      taxAmount,
-      total: displayTotal + shippingFee + taxAmount,
-    };
-  }, [displayTotal, convertPrice]);
 
   const handleUpdateQuantity = useCallback(
     async (itemId: string, quantity: number) => {
@@ -115,7 +101,7 @@ export default function CartPage() {
               </Link>
             </div>
 
-            <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_min(100%,380px)]">
               <div className="space-y-4">
                 <AnimatePresence mode="popLayout">
                   {cart.items.map((item) => (
@@ -132,13 +118,7 @@ export default function CartPage() {
                 </AnimatePresence>
               </div>
 
-              <CartOrderSummary
-                subtotal={displayTotal}
-                itemCount={itemCount}
-                shippingFee={totals.shippingFee}
-                taxAmount={totals.taxAmount}
-                total={totals.total}
-              />
+              <CartOrderSummary subtotal={displayTotal} itemCount={itemCount} />
             </div>
 
             <CartRecommendedProducts

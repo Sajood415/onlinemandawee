@@ -101,7 +101,11 @@ type CustomerOrder = {
   status: string;
   paymentStatus: string;
   currency: string;
+  subtotalAmount: number;
+  deliveryAmount: number;
+  discountAmount: number;
   grandTotalAmount: number;
+  deliveryMethod: "PICKUP" | "EXPRESS" | "STANDARD" | null;
   createdAt: string;
   updatedAt: string;
   shippingAddress: {
@@ -278,6 +282,35 @@ function OrderCard({
                 ? `, ${order.shippingAddress.postalCode}`
                 : ""}
             </p>
+          </div>
+
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 space-y-1.5 text-sm">
+            <div className="flex justify-between text-neutral-600">
+              <span>{t("orders.subtotal")}</span>
+              <span>{formatMoney(order.subtotalAmount, order.currency, locale)}</span>
+            </div>
+            {order.deliveryAmount > 0 ? (
+              <div className="flex justify-between text-neutral-600">
+                <span>
+                  {order.deliveryMethod === "EXPRESS"
+                    ? t("orders.expressDelivery")
+                    : order.deliveryMethod === "STANDARD"
+                      ? t("orders.standardDelivery")
+                      : t("orders.delivery")}
+                </span>
+                <span>{formatMoney(order.deliveryAmount, order.currency, locale)}</span>
+              </div>
+            ) : null}
+            {order.discountAmount > 0 ? (
+              <div className="flex justify-between text-green-700">
+                <span>{t("orders.discount")}</span>
+                <span>-{formatMoney(order.discountAmount, order.currency, locale)}</span>
+              </div>
+            ) : null}
+            <div className="flex justify-between border-t border-neutral-200 pt-2 font-semibold text-neutral-900">
+              <span>{t("orders.total")}</span>
+              <span>{formatMoney(order.grandTotalAmount, order.currency, locale)}</span>
+            </div>
           </div>
 
           {order.vendorOrders.map((vendorOrder) => (

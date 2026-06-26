@@ -8,6 +8,7 @@ import {
   type SalesSummaryGranularity,
 } from "@/lib/reports/period-bucket";
 import { formatFlatTransactionFeeLabel } from "@/lib/platform/transaction-fee";
+import { payoutHoldLabel } from "@/lib/payout/payout-hold";
 import { CommissionLedgerRepository } from "@/repositories/commission-ledger.repository";
 import { MembershipInvoiceRepository } from "@/repositories/membership-invoice.repository";
 import { OrderRepository } from "@/repositories/order.repository";
@@ -324,6 +325,9 @@ export class VendorReportService {
         {
           orderId: vendorOrder.orderId,
           orderNumber: vendorOrder.order.orderNumber,
+          deliveryMethod: vendorOrder.deliveryMethod,
+          status: vendorOrder.status,
+          deliveredAt: vendorOrder.deliveredAt,
         },
       ])
     );
@@ -344,6 +348,15 @@ export class VendorReportService {
         currency: payout.currency,
         status: payout.status,
         holdUntil: payout.holdUntil.toISOString(),
+        holdLabel: orderRef
+          ? payoutHoldLabel({
+              deliveryMethod: orderRef.deliveryMethod,
+              vendorOrderStatus: orderRef.status,
+              deliveredAt: orderRef.deliveredAt,
+              holdUntil: payout.holdUntil,
+              status: payout.status,
+            })
+          : null,
         releasedAt: payout.releasedAt?.toISOString() ?? null,
         sentAt: payout.sentAt?.toISOString() ?? null,
         failureReason: payout.failureReason,

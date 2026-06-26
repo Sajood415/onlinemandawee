@@ -205,6 +205,21 @@ export class GiftRequestRepository {
       select: giftRequestSelect,
     });
   }
+
+  listPaidForReporting() {
+    return prisma.giftRequest.findMany({
+      where: {
+        paidAt: { not: null },
+        paidAmountMinor: { not: null },
+      },
+      select: {
+        paidAt: true,
+        paidAmountMinor: true,
+        quoteCurrency: true,
+      },
+      orderBy: { paidAt: "desc" },
+    });
+  }
 }
 
 export type GiftRequestRecord = NonNullable<Awaited<ReturnType<GiftRequestRepository["findById"]>>>;

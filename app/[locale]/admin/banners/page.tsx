@@ -464,7 +464,7 @@ export default function AdminBannersPage() {
         ) : banners.length === 0 ? (
           <p className="text-sm text-neutral-500">No banners yet. Create one for Ramadan or Eid.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="responsive-table-shell overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-neutral-100 text-xs font-semibold uppercase tracking-wider text-neutral-400">

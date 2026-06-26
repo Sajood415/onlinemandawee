@@ -5,6 +5,7 @@ import {
   AlertCircle,
   Building2,
   DollarSign,
+  Gift,
   RefreshCw,
   ShoppingBag,
   UserCheck,
@@ -27,6 +28,9 @@ type AdminDashboardOverview = {
   grossMerchandiseValue: number;
   totalCommissionAmount: number;
   totalSubscriptionRevenue: number;
+  totalGiftRequestRevenue: number;
+  paidGiftRequestsCount: number;
+  netRevenueAmount: number;
   pendingVendorsCount: number;
 };
 
@@ -266,9 +270,33 @@ export default function AdminDashboardPage() {
                 <SkeletonCard />
                 <SkeletonCard />
                 <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
               </>
             ) : (
               <>
+                <div className="relative overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 shadow-sm sm:col-span-2 xl:col-span-3">
+                  <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-emerald-500 opacity-10" />
+                  <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white">
+                        <DollarSign className="h-5 w-5" />
+                      </div>
+                      <p className="mt-4 text-sm font-medium text-emerald-800/80">
+                        Net platform revenue
+                      </p>
+                      <p className="mt-1 text-3xl font-bold tracking-tight text-emerald-950 sm:text-4xl">
+                        {formatCurrency(overview.netRevenueAmount)}
+                      </p>
+                      <p className="mt-2 max-w-2xl text-xs leading-relaxed text-emerald-800/70">
+                        Order commissions ({formatCurrency(overview.totalCommissionAmount)}) +
+                        vendor subscriptions ({formatCurrency(overview.totalSubscriptionRevenue)}) +
+                        gift requests ({formatCurrency(overview.totalGiftRequestRevenue)}) in{" "}
+                        {signupPeriodLabel.toLowerCase()}.
+                      </p>
+                    </div>
+                  </div>
+                </div>
                 <MetricCard
                   label="Recent orders (30 days)"
                   value={overview.recentOrdersCount.toLocaleString()}
@@ -280,7 +308,7 @@ export default function AdminDashboardPage() {
                   value={formatCurrency(overview.grossMerchandiseValue)}
                   icon={<DollarSign className="h-5 w-5" />}
                   accent="bg-indigo-500"
-                  sub="Gross merchandise value in selected period"
+                  sub="Gross merchandise value — customer order totals, not platform revenue"
                 />
                 <MetricCard
                   label="Transaction fees collected"
@@ -294,7 +322,16 @@ export default function AdminDashboardPage() {
                   value={formatCurrency(overview.totalSubscriptionRevenue)}
                   icon={<DollarSign className="h-5 w-5" />}
                   accent="bg-amber-500"
-                  sub="Paid membership invoices in selected period"
+                  sub="Paid vendor membership invoices in selected period"
+                />
+                <MetricCard
+                  label="Gift request revenue"
+                  value={formatCurrency(overview.totalGiftRequestRevenue)}
+                  icon={<Gift className="h-5 w-5" />}
+                  accent="bg-fuchsia-500"
+                  sub={`${overview.paidGiftRequestsCount.toLocaleString()} paid gift request${
+                    overview.paidGiftRequestsCount === 1 ? "" : "s"
+                  } in selected period`}
                 />
                 <MetricCard
                   label="Pending vendor applications"

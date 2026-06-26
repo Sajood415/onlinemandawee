@@ -9,6 +9,7 @@ import type {
   DeliveryPriceModel,
   DeliveryRuleScope,
 } from "@/domain/delivery/delivery-types";
+import { FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR } from "@/lib/platform/transaction-fee";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 
@@ -22,6 +23,8 @@ type DeliveryRuleRecord = {
   countryCode: string | null;
   priceModel: DeliveryPriceModel;
   baseFeeAmount: number;
+  transactionFeeAmountMinor: number | null;
+  commissionRateBps: number | null;
   perKmRateAmount: number | null;
   freeAboveAmount: number | null;
   etaMinDays: number;
@@ -44,12 +47,16 @@ type RuleFormState = {
   countryCode: string;
   priceModel: DeliveryPriceModel;
   baseFeeAmount: number;
+  deliveryFeeAmount: number | "";
+  transactionFeeAmount: number | "";
   perKmRateAmount: number | "";
   freeAboveAmount: number | "";
   etaMinDays: number;
   etaMaxDays: number;
   isActive: boolean;
 };
+
+const FIXED_TRANSACTION_FEE_MAJOR = FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR / 100;
 
 const defaultFormState: RuleFormState = {
   method: "STANDARD",
@@ -58,12 +65,33 @@ const defaultFormState: RuleFormState = {
   countryCode: "",
   priceModel: "FLAT",
   baseFeeAmount: 0,
+  deliveryFeeAmount: 0,
+  transactionFeeAmount: FIXED_TRANSACTION_FEE_MAJOR,
   perKmRateAmount: "",
   freeAboveAmount: "",
   etaMinDays: 1,
   etaMaxDays: 3,
   isActive: true,
 };
+
+const ALL_VENDORS_VALUE = "__ALL_VENDORS__";
+
+function usesTransactionFee(method: DeliveryMethod) {
+  return method === "STANDARD" || method === "EXPRESS";
+}
+
+function isPickupMethod(method: DeliveryMethod) {
+  return method === "PICKUP";
+}
+
+function minorToMajorDisplay(amountMinor: number | null | undefined) {
+  if (amountMinor == null) return "";
+  return Number((amountMinor / 100).toFixed(2));
+}
+
+function majorToMinor(amountMajor: number) {
+  return Math.round(amountMajor * 100);
+}
 
 function displayDate(iso: string) {
   const date = new Date(iso);
@@ -86,6 +114,15 @@ function computeRuleName(rule: DeliveryRuleRecord) {
 }
 
 function computeRuleValue(rule: DeliveryRuleRecord) {
+  if (isPickupMethod(rule.method)) {
+    return "No delivery charge";
+  }
+
+  if (usesTransactionFee(rule.method)) {
+    const deliveryLabel = `$${formatMoney(rule.baseFeeAmount)} delivery`;
+    return `${deliveryLabel} · $${FIXED_TRANSACTION_FEE_MAJOR.toFixed(2)} commission / order (fixed)`;
+  }
+
   if (rule.priceModel === "FLAT") {
     return `Flat ${formatMoney(rule.baseFeeAmount)}`;
   }
@@ -167,6 +204,10 @@ export default function AdminDeliveryRulesPage() {
       countryCode: rule.countryCode ?? "",
       priceModel: rule.priceModel,
       baseFeeAmount: rule.baseFeeAmount,
+      deliveryFeeAmount: minorToMajorDisplay(rule.baseFeeAmount),
+      transactionFeeAmount: usesTransactionFee(rule.method)
+        ? FIXED_TRANSACTION_FEE_MAJOR
+        : minorToMajorDisplay(rule.transactionFeeAmountMinor),
       perKmRateAmount: rule.perKmRateAmount ?? "",
       freeAboveAmount: rule.freeAboveAmount ?? "",
       etaMinDays: rule.etaMinDays,
@@ -181,24 +222,113 @@ export default function AdminDeliveryRulesPage() {
     setDetailOpen(true);
   };
 
+  const buildRulePayload = (vendorProfileId?: string) => {
+    const transactionFeeBased = usesTransactionFee(form.method);
+    const pickupBased = isPickupMethod(form.method);
+    return {
+      method: form.method,
+      scope: form.scope,
+      vendorProfileId: form.scope === "VENDOR" ? vendorProfileId : undefined,
+      countryCode: form.scope === "COUNTRY" ? form.countryCode : undefined,
+      priceModel: transactionFeeBased || pickupBased ? ("FLAT" as const) : form.priceModel,
+      baseFeeAmount: transactionFeeBased
+        ? majorToMinor(Number(form.deliveryFeeAmount) || 0)
+        : pickupBased
+          ? 0
+          : form.baseFeeAmount,
+      transactionFeeAmountMinor: transactionFeeBased
+        ? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
+        : undefined,
+      perKmRateAmount:
+        !transactionFeeBased && !pickupBased && form.priceModel === "PER_KM"
+          ? Number(form.perKmRateAmount)
+          : undefined,
+      freeAboveAmount:
+        !transactionFeeBased && !pickupBased && form.priceModel === "FREE_ABOVE"
+          ? Number(form.freeAboveAmount)
+          : undefined,
+      etaMinDays: form.etaMinDays,
+      etaMaxDays: form.etaMaxDays,
+      isActive: form.isActive,
+    };
+  };
+
   const submitForm = async () => {
     setSubmitting(true);
     setError(null);
     try {
-      const payload = {
-        method: form.method,
-        scope: form.scope,
-        vendorProfileId: form.scope === "VENDOR" ? form.vendorProfileId : undefined,
-        countryCode: form.scope === "COUNTRY" ? form.countryCode : undefined,
-        priceModel: form.priceModel,
-        baseFeeAmount: form.baseFeeAmount,
-        perKmRateAmount: form.priceModel === "PER_KM" ? Number(form.perKmRateAmount) : undefined,
-        freeAboveAmount:
-          form.priceModel === "FREE_ABOVE" ? Number(form.freeAboveAmount) : undefined,
-        etaMinDays: form.etaMinDays,
-        etaMaxDays: form.etaMaxDays,
-        isActive: form.isActive,
-      };
+      if (
+        !editingRule &&
+        form.scope === "VENDOR" &&
+        form.vendorProfileId === ALL_VENDORS_VALUE
+      ) {
+        const vendorsWithoutRule = vendors.filter(
+          (vendor) =>
+            !rules.some(
+              (rule) =>
+                rule.scope === "VENDOR" &&
+                rule.method === form.method &&
+                rule.vendorProfileId === vendor.id
+            )
+        );
+
+        if (vendorsWithoutRule.length === 0) {
+          throw new Error(
+            `Every vendor already has a ${form.method} vendor-scoped delivery rule.`
+          );
+        }
+
+        let createdCount = 0;
+        const failures: string[] = [];
+
+        for (const vendor of vendorsWithoutRule) {
+          try {
+            const response = await fetchWithAuth("/api/admin/delivery-rules", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(buildRulePayload(vendor.id)),
+            });
+            await parseApiResponse(response);
+            createdCount += 1;
+          } catch (createError) {
+            const label = vendor.storeName ?? vendor.storeSlug ?? vendor.id;
+            failures.push(
+              createError instanceof Error ? createError.message : `${label}: failed`
+            );
+          }
+        }
+
+        if (createdCount === 0) {
+          throw new Error(failures[0] ?? "Could not create delivery rules for vendors.");
+        }
+
+        setFormOpen(false);
+        setEditingRule(null);
+        setForm(defaultFormState);
+        await loadRules();
+
+        if (failures.length > 0) {
+          setError(
+            `Created ${createdCount} rule(s). ${failures.length} vendor(s) failed: ${failures.slice(0, 3).join("; ")}`
+          );
+        }
+        return;
+      }
+
+      if (form.scope === "VENDOR" && !form.vendorProfileId) {
+        throw new Error("Select a vendor or choose All vendors.");
+      }
+
+      if (usesTransactionFee(form.method)) {
+        const deliveryFee = Number(form.deliveryFeeAmount);
+        if (!Number.isFinite(deliveryFee) || deliveryFee < 0) {
+          throw new Error("Delivery fee must be zero or greater.");
+        }
+      }
+
+      const payload = buildRulePayload(
+        form.scope === "VENDOR" ? form.vendorProfileId : undefined
+      );
 
       const endpoint = editingRule
         ? `/api/admin/delivery-rules/${editingRule.id}`
@@ -235,6 +365,9 @@ export default function AdminDeliveryRulesPage() {
           countryCode: rule.countryCode ?? undefined,
           priceModel: rule.priceModel,
           baseFeeAmount: rule.baseFeeAmount,
+          transactionFeeAmountMinor: usesTransactionFee(rule.method)
+            ? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
+            : rule.transactionFeeAmountMinor ?? undefined,
           perKmRateAmount: rule.perKmRateAmount ?? undefined,
           freeAboveAmount: rule.freeAboveAmount ?? undefined,
           etaMinDays: rule.etaMinDays,
@@ -345,7 +478,7 @@ export default function AdminDeliveryRulesPage() {
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
+          <div className="responsive-table-shell overflow-x-auto">
             <table className="w-full min-w-[1200px] border-collapse text-sm">
               <thead className="bg-neutral-50">
                 <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-600">
@@ -382,7 +515,13 @@ export default function AdminDeliveryRulesPage() {
                           {rule.isActive ? "ACTIVE" : "INACTIVE"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-neutral-700">{rule.priceModel}</td>
+                      <td className="px-4 py-3 text-neutral-700">
+                        {usesTransactionFee(rule.method)
+                          ? "FLAT"
+                          : isPickupMethod(rule.method)
+                            ? "NONE"
+                            : rule.priceModel}
+                      </td>
                       <td className="px-4 py-3 text-neutral-700">{computeRuleValue(rule)}</td>
                       <td className="px-4 py-3 text-neutral-700">
                         {rule.scope === "GLOBAL"
@@ -447,12 +586,21 @@ export default function AdminDeliveryRulesPage() {
                 <select
                   className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
                   value={form.method}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    const method = event.target.value as DeliveryMethod;
                     setForm((current) => ({
                       ...current,
-                      method: event.target.value as DeliveryMethod,
-                    }))
-                  }
+                      method,
+                      transactionFeeAmount: usesTransactionFee(method)
+                        ? FIXED_TRANSACTION_FEE_MAJOR
+                        : "",
+                      deliveryFeeAmount: usesTransactionFee(method)
+                        ? current.deliveryFeeAmount === ""
+                          ? 0
+                          : current.deliveryFeeAmount
+                        : "",
+                    }));
+                  }}
                 >
                   <option value="PICKUP">PICKUP</option>
                   <option value="EXPRESS">EXPRESS</option>
@@ -492,12 +640,20 @@ export default function AdminDeliveryRulesPage() {
                     }
                   >
                     <option value="">Select vendor</option>
+                    {!editingRule ? (
+                      <option value={ALL_VENDORS_VALUE}>All vendors</option>
+                    ) : null}
                     {vendors.map((vendor) => (
                       <option key={vendor.id} value={vendor.id}>
                         {vendor.storeName ?? vendor.storeSlug ?? vendor.id}
                       </option>
                     ))}
                   </select>
+                  {!editingRule && form.vendorProfileId === ALL_VENDORS_VALUE ? (
+                    <span className="mt-1 block text-xs text-neutral-500">
+                      Creates one {form.method} rule for each vendor that does not already have one.
+                    </span>
+                  ) : null}
                 </label>
               ) : null}
               {form.scope === "COUNTRY" ? (
@@ -516,43 +672,95 @@ export default function AdminDeliveryRulesPage() {
                   />
                 </label>
               ) : null}
-              <label className="text-sm text-neutral-700">
-                Pricing Type
-                <select
-                  className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
-                  value={form.priceModel}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      priceModel: event.target.value as DeliveryPriceModel,
-                      perKmRateAmount:
-                        event.target.value === "PER_KM" ? current.perKmRateAmount : "",
-                      freeAboveAmount:
-                        event.target.value === "FREE_ABOVE" ? current.freeAboveAmount : "",
-                    }))
-                  }
-                >
-                  <option value="FLAT">FLAT</option>
-                  <option value="PER_KM">PER_KM</option>
-                  <option value="FREE_ABOVE">FREE_ABOVE</option>
-                </select>
-              </label>
-              <label className="text-sm text-neutral-700">
-                Base Fee (minor units)
-                <input
-                  type="number"
-                  min={0}
-                  className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
-                  value={form.baseFeeAmount}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      baseFeeAmount: Number(event.target.value || 0),
-                    }))
-                  }
-                />
-              </label>
-              {form.priceModel === "PER_KM" ? (
+              {usesTransactionFee(form.method) ? (
+                <>
+                  <label className="text-sm text-neutral-700 sm:col-span-2">
+                    Delivery fee (USD)
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="text-sm text-neutral-500">$</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                        value={form.deliveryFeeAmount}
+                        onChange={(event) =>
+                          setForm((current) => ({
+                            ...current,
+                            deliveryFeeAmount:
+                              event.target.value === "" ? "" : Number(event.target.value),
+                          }))
+                        }
+                      />
+                    </div>
+                    <span className="mt-1 block text-xs text-neutral-500">
+                      Customer delivery charge added to each order
+                      {form.method === "EXPRESS"
+                        ? " (per vendor on multi-vendor express orders)."
+                        : " (one fee per order on standard delivery)."}
+                    </span>
+                  </label>
+                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 sm:col-span-2">
+                    <p className="text-sm font-semibold text-neutral-900">
+                      Platform commission (fixed)
+                    </p>
+                    <p className="mt-1 text-sm text-neutral-700">
+                      ${FIXED_TRANSACTION_FEE_MAJOR.toFixed(2)} per order for {form.method} delivery
+                    </p>
+                    <p className="mt-2 text-xs text-neutral-500">
+                      This commission is fixed at $3.99 and cannot be changed. It is deducted
+                      from vendor payouts and split proportionally on multi-vendor orders.
+                    </p>
+                  </div>
+                </>
+              ) : isPickupMethod(form.method) ? (
+                <p className="text-sm text-neutral-600 sm:col-span-2">
+                  Pickup has no delivery charge. Configure scope and estimated pickup window
+                  below.
+                </p>
+              ) : (
+                <>
+                  <label className="text-sm text-neutral-700">
+                    Pricing Type
+                    <select
+                      className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
+                      value={form.priceModel}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          priceModel: event.target.value as DeliveryPriceModel,
+                          perKmRateAmount:
+                            event.target.value === "PER_KM" ? current.perKmRateAmount : "",
+                          freeAboveAmount:
+                            event.target.value === "FREE_ABOVE" ? current.freeAboveAmount : "",
+                        }))
+                      }
+                    >
+                      <option value="FLAT">FLAT</option>
+                      <option value="PER_KM">PER_KM</option>
+                      <option value="FREE_ABOVE">FREE_ABOVE</option>
+                    </select>
+                  </label>
+                  <label className="text-sm text-neutral-700">
+                    Base Fee (minor units)
+                    <input
+                      type="number"
+                      min={0}
+                      className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                      value={form.baseFeeAmount}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          baseFeeAmount: Number(event.target.value || 0),
+                        }))
+                      }
+                    />
+                  </label>
+                </>
+              )}
+              {!usesTransactionFee(form.method) &&
+              !isPickupMethod(form.method) &&
+              form.priceModel === "PER_KM" ? (
                 <label className="text-sm text-neutral-700">
                   Per Km Rate (minor units)
                   <input
@@ -569,7 +777,9 @@ export default function AdminDeliveryRulesPage() {
                   />
                 </label>
               ) : null}
-              {form.priceModel === "FREE_ABOVE" ? (
+              {!usesTransactionFee(form.method) &&
+              !isPickupMethod(form.method) &&
+              form.priceModel === "FREE_ABOVE" ? (
                 <label className="text-sm text-neutral-700">
                   Free Above Amount (minor units)
                   <input
@@ -677,10 +887,34 @@ export default function AdminDeliveryRulesPage() {
                 <dt className="text-neutral-500">Scope</dt>
                 <dd className="font-medium text-neutral-900">{selectedRule.scope}</dd>
               </div>
-              <div className="sm:col-span-2">
-                <dt className="text-neutral-500">Pricing Configuration</dt>
-                <dd className="font-medium text-neutral-900">{computeRuleValue(selectedRule)}</dd>
-              </div>
+              {usesTransactionFee(selectedRule.method) ? (
+                <>
+                  <div>
+                    <dt className="text-neutral-500">Delivery fee</dt>
+                    <dd className="font-medium text-neutral-900">
+                      ${formatMoney(selectedRule.baseFeeAmount)} per order
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-neutral-500">Platform commission</dt>
+                    <dd className="font-medium text-neutral-900">
+                      ${FIXED_TRANSACTION_FEE_MAJOR.toFixed(2)} per order (fixed)
+                    </dd>
+                  </div>
+                </>
+              ) : null}
+              {!usesTransactionFee(selectedRule.method) ? (
+                <div>
+                  <dt className="text-neutral-500">Delivery charge</dt>
+                  <dd className="font-medium text-neutral-900">{computeRuleValue(selectedRule)}</dd>
+                </div>
+              ) : null}
+              {!isPickupMethod(selectedRule.method) && !usesTransactionFee(selectedRule.method) ? (
+                <div className="sm:col-span-2">
+                  <dt className="text-neutral-500">Pricing Type</dt>
+                  <dd className="font-medium text-neutral-900">{selectedRule.priceModel}</dd>
+                </div>
+              ) : null}
               <div>
                 <dt className="text-neutral-500">ETA</dt>
                 <dd className="font-medium text-neutral-900">

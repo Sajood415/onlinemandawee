@@ -1,7 +1,10 @@
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
-import { formatFlatTransactionFeeLabel } from "@/lib/platform/transaction-fee";
+import {
+  FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR,
+  formatFlatTransactionFeeLabel,
+} from "@/lib/platform/transaction-fee";
 import {
   normalizeAvailableCurrencies,
   normalizeAvailableLocales,
@@ -35,8 +38,10 @@ export class PlatformSettingsService {
       });
     }
 
+    const { transactionFeeAmountMinor: _ignored, ...mutableInput } = input;
+
     const updated = await this.platformSettingsRepository.update({
-      ...input,
+      ...mutableInput,
       updatedByUserId: auth.id,
     });
 
@@ -47,7 +52,6 @@ export class PlatformSettingsService {
       entityType: "PlatformSettings",
       entityId: updated.id,
       metadata: {
-        transactionFeeAmountMinor: updated.transactionFeeAmountMinor,
         availableLocales: updated.availableLocales,
         availableCurrencies: updated.availableCurrencies,
       },
@@ -61,10 +65,11 @@ export class PlatformSettingsService {
   ) {
     return {
       id: settings.id,
-      transactionFeeAmountMinor: settings.transactionFeeAmountMinor,
+      transactionFeeAmountMinor: FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR,
       transactionFeeLabel: formatFlatTransactionFeeLabel(
-        settings.transactionFeeAmountMinor
+        FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
       ),
+      transactionFeeIsFixed: true,
       availableLocales: normalizeAvailableLocales(settings.availableLocales),
       availableCurrencies: normalizeAvailableCurrencies(
         settings.availableCurrencies

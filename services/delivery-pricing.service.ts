@@ -1,6 +1,12 @@
 import type { DeliveryMethod } from "@/domain/delivery/delivery-types";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import {
+  findBestMatchingDeliveryRule,
+  hasMatchingDeliveryRule,
+} from "@/lib/delivery/match-delivery-rule";
+import { normalizeDeliveryCountryCode } from "@/lib/geo/shipping-locations";
+import { convertDeliveryRuleAmountMinor } from "@/lib/delivery/delivery-rule-currency";
 import { DeliveryRuleRepository } from "@/repositories/delivery-rule.repository";
 
 type DeliveryQuoteItem = {
@@ -13,10 +19,6 @@ type DeliveryQuoteVendorGroup = {
   vendorProfileId: string;
   subtotalCurrent: number;
 };
-
-type DeliveryRuleEntry = Awaited<
-  ReturnType<DeliveryRuleRepository["listActiveByMethod"]>
->[number];
 
 export class DeliveryPricingService {
   constructor(
@@ -48,19 +50,26 @@ export class DeliveryPricingService {
       0
     );
 
+    const countryCode = normalizeDeliveryCountryCode(input.countryCode);
+    const vendorProfileIds = input.vendorGroups.map(
+      (vendorGroup) => vendorGroup.vendorProfileId
+    );
+
     if (input.method === "EXPRESS") {
       const vendorGroups = input.vendorGroups.map((vendorGroup) => {
         const rule = this.pickBestRule(activeRules, {
           vendorProfileId: vendorGroup.vendorProfileId,
-          countryCode: input.countryCode,
+          countryCode,
+        });
+
+        const amountUsdMinor = this.calculateAmount(rule, {
+          subtotalAmount: vendorGroup.subtotalCurrent,
+          distanceKm: input.distanceKm,
         });
 
         return {
           vendorProfileId: vendorGroup.vendorProfileId,
-          amount: this.calculateAmount(rule, {
-            subtotalAmount: vendorGroup.subtotalCurrent,
-            distanceKm: input.distanceKm,
-          }),
+          amount: convertDeliveryRuleAmountMinor(amountUsdMinor, input.currency),
           etaMinDays: rule.etaMinDays,
           etaMaxDays: rule.etaMaxDays,
           ruleId: rule.id,
@@ -90,12 +99,17 @@ export class DeliveryPricingService {
     }
 
     const rule = this.pickBestRule(activeRules, {
-      countryCode: input.countryCode,
+      countryCode,
+      vendorProfileIds,
     });
-    const totalAmount = this.calculateAmount(rule, {
+    const totalAmountUsdMinor = this.calculateAmount(rule, {
       subtotalAmount: subtotalCurrent,
       distanceKm: input.distanceKm,
     });
+    const totalAmount = convertDeliveryRuleAmountMinor(
+      totalAmountUsdMinor,
+      input.currency
+    );
 
     return {
       method: input.method,
@@ -118,6 +132,7 @@ export class DeliveryPricingService {
     countryCode?: string;
     vendorProfileIds: string[];
   }) {
+    const countryCode = normalizeDeliveryCountryCode(input.countryCode);
     const methods: DeliveryMethod[] = ["PICKUP", "EXPRESS", "STANDARD"];
     const results = await Promise.all(
       methods.map(async (method) => {
@@ -125,13 +140,14 @@ export class DeliveryPricingService {
 
         const available = method === "EXPRESS"
           ? input.vendorProfileIds.every((vendorProfileId) =>
-              this.hasMatchingRule(rules, {
+              hasMatchingDeliveryRule(rules, {
                 vendorProfileId,
-                countryCode: input.countryCode,
+                countryCode,
               })
             )
-          : this.hasMatchingRule(rules, {
-              countryCode: input.countryCode,
+          : hasMatchingDeliveryRule(rules, {
+              countryCode,
+              vendorProfileIds: input.vendorProfileIds,
             });
 
         return {
@@ -144,68 +160,17 @@ export class DeliveryPricingService {
     return results.filter((entry) => entry.available);
   }
 
-  private hasMatchingRule(
-    rules: Awaited<ReturnType<DeliveryRuleRepository["listActiveByMethod"]>>,
-    target: {
-      vendorProfileId?: string;
-      countryCode?: string;
-    }
-  ) {
-    return rules.some((rule: DeliveryRuleEntry) => {
-      if (rule.scope === "VENDOR") {
-        return rule.vendorProfileId === target.vendorProfileId;
-      }
-
-      if (rule.scope === "COUNTRY") {
-        return (
-          !!target.countryCode &&
-          rule.countryCode?.toUpperCase() === target.countryCode.toUpperCase()
-        );
-      }
-
-      return rule.scope === "GLOBAL";
-    });
-  }
-
   private pickBestRule(
     rules: Awaited<ReturnType<DeliveryRuleRepository["listActiveByMethod"]>>,
     target: {
       vendorProfileId?: string;
+      vendorProfileIds?: string[];
       countryCode?: string;
     }
   ) {
-    const vendorRule =
-      target.vendorProfileId
-        ? rules.find(
-            (rule: DeliveryRuleEntry) =>
-              rule.scope === "VENDOR" &&
-              rule.vendorProfileId === target.vendorProfileId
-          )
-        : null;
+    const rule = findBestMatchingDeliveryRule(rules, target);
 
-    if (vendorRule) {
-      return vendorRule;
-    }
-
-    const countryRule =
-      target.countryCode
-        ? rules.find(
-            (rule: DeliveryRuleEntry) =>
-              rule.scope === "COUNTRY" &&
-              rule.countryCode?.toUpperCase() ===
-                target.countryCode?.toUpperCase()
-          )
-        : null;
-
-    if (countryRule) {
-      return countryRule;
-    }
-
-    const globalRule = rules.find(
-      (rule: DeliveryRuleEntry) => rule.scope === "GLOBAL"
-    );
-
-    if (!globalRule) {
+    if (!rule) {
       throw new AppError({
         code: ERROR_CODE.BAD_REQUEST,
         message: "No matching delivery rule found for this destination",
@@ -213,7 +178,7 @@ export class DeliveryPricingService {
       });
     }
 
-    return globalRule;
+    return rule;
   }
 
   private calculateAmount(
@@ -223,6 +188,10 @@ export class DeliveryPricingService {
       distanceKm?: number;
     }
   ) {
+    if (rule.method === "PICKUP") {
+      return 0;
+    }
+
     if (rule.priceModel === "FLAT") {
       return rule.baseFeeAmount;
     }

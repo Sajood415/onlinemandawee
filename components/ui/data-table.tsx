@@ -53,9 +53,12 @@ export function DataTable<TData>({
   const pageNumber = table.getState().pagination.pageIndex + 1;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[820px] border-collapse">
+      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+      <p className="border-b border-neutral-100 px-4 py-2 text-xs text-neutral-500 sm:hidden">
+        Swipe horizontally to see all columns
+      </p>
+      <div className="responsive-table-shell">
+        <table className="w-full min-w-[720px] border-collapse sm:min-w-[820px]">
           <thead className="bg-neutral-50">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-neutral-200">

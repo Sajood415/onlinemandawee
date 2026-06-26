@@ -10,6 +10,7 @@ import { sendTransactionalEmail } from "@/lib/mail/send-transactional-email";
 type VendorGroupInput = {
   vendorProfileId: string;
   grandTotalAmount: number;
+  deliveryMethod?: "PICKUP" | "EXPRESS" | "STANDARD" | null;
   items: Array<{
     productName: string;
     quantity: number;
@@ -56,6 +57,7 @@ export async function sendVendorOrderNotifications(input: {
           paymentMethod: input.paymentMethod,
           paymentStatus: input.paymentStatus,
           shippingAddress: input.shippingAddress,
+          deliveryMethod: group.deliveryMethod,
         });
 
         await sendTransactionalEmail({ to: vendor.user.email, ...email });

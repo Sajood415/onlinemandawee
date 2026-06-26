@@ -281,6 +281,12 @@
         "emptyDescriptionLong": "هنوز سفارشی ندارید. سفارش‌های مهمان با ایمیل شما پس از ثبت‌نام یا ورود اینجا نمایش داده می‌شوند.",
         "vendor": "فروشنده",
         "qty": "تعداد",
+        "subtotal": "جمع فرعی",
+        "delivery": "تحویل",
+        "expressDelivery": "تحویل سریع",
+        "standardDelivery": "تحویل استاندارد",
+        "discount": "تخفیف",
+        "total": "مجموع",
         "refundPeriodExpired": "مهلت درخواست بازپرداخت به پایان رسیده است.",
         "refundAvailableAfterDelivery": "بازپرداخت پس از تحویل امکان‌پذیر است."
       },

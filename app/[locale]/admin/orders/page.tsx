@@ -59,6 +59,7 @@ type AdminOrderListItem = {
       amount: number | null;
       currency: string | null;
       holdUntil: string | null;
+      holdLabel: string | null;
       releasedAt: string | null;
       sentAt: string | null;
     };
@@ -122,6 +123,7 @@ type AdminOrderDetail = {
       amount: number | null;
       currency: string | null;
       holdUntil: string | null;
+      holdLabel: string | null;
       releasedAt: string | null;
       sentAt: string | null;
     };
@@ -137,6 +139,7 @@ type AdminOrderDetail = {
     items: Array<{
       id: string;
       productName: string;
+      variantName?: string | null;
       productSku: string | null;
       quantity: number;
       currency: string;
@@ -171,6 +174,11 @@ type AdminOrderDetail = {
       receivedAt: string | null;
       createdAt: string;
       updatedAt: string;
+      totalQuantity: number;
+      products: Array<{
+        productName: string;
+        quantity: number;
+      }>;
     }>;
     batch: {
       id: string;
@@ -655,7 +663,7 @@ export default function AdminOrdersPage() {
       ) : (
         <>
           <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div className="overflow-x-auto">
+            <div className="responsive-table-shell overflow-x-auto">
               <table className="w-full min-w-[1180px] border-collapse">
                 <thead className="bg-neutral-50">
                   <tr className="border-b border-neutral-200 text-left text-xs font-semibold uppercase tracking-wider text-neutral-600">
@@ -868,7 +876,8 @@ export default function AdminOrdersPage() {
                                 {detail.warehouse.batch.status}
                               </span>
                               <p className="mt-2 text-xs text-neutral-600">
-                                Received {detail.warehouse.batch.receivedVendorCount}/
+                                Vendor shipments received{" "}
+                                {detail.warehouse.batch.receivedVendorCount}/
                                 {detail.warehouse.batch.expectedVendorCount}
                               </p>
                             </>
@@ -920,7 +929,9 @@ export default function AdminOrdersPage() {
                         <table className="w-full min-w-[760px] border-collapse text-sm">
                           <thead>
                             <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500">
-                              <th className="px-2 py-2">Vendor split</th>
+                              <th className="px-2 py-2">Vendor</th>
+                              <th className="px-2 py-2">Products</th>
+                              <th className="px-2 py-2">Qty</th>
                               <th className="px-2 py-2">Inbound status</th>
                               <th className="px-2 py-2">Tracking</th>
                               <th className="px-2 py-2">Inbound shipped</th>
@@ -930,7 +941,7 @@ export default function AdminOrdersPage() {
                           <tbody>
                             {detail.warehouse.inboundShipments.length === 0 ? (
                               <tr>
-                                <td className="px-2 py-3 text-neutral-500" colSpan={5}>
+                                <td className="px-2 py-3 text-neutral-500" colSpan={7}>
                                   No inbound shipments for this order.
                                 </td>
                               </tr>
@@ -938,9 +949,20 @@ export default function AdminOrdersPage() {
                               detail.warehouse.inboundShipments.map((shipment) => (
                                 <tr key={shipment.id} className="border-b border-neutral-100">
                                   <td className="px-2 py-2 text-neutral-900">
-                                    {shipment.vendorStoreName ?? shipment.vendorStoreSlug ?? "Vendor"} ·{" "}
-                                    <span className="text-xs text-neutral-500">{shipment.orderVendorId}</span>
+                                    {shipment.vendorStoreName ?? shipment.vendorStoreSlug ?? "Vendor"}
                                   </td>
+                                  <td className="px-2 py-2 text-neutral-700">
+                                    {shipment.products.length === 0 ? (
+                                      "—"
+                                    ) : (
+                                      <ul className="space-y-1">
+                                        {shipment.products.map((product) => (
+                                          <li key={product.productName}>{product.productName}</li>
+                                        ))}
+                                      </ul>
+                                    )}
+                                  </td>
+                                  <td className="px-2 py-2 text-neutral-900">{shipment.totalQuantity}</td>
                                   <td className="px-2 py-2">
                                     <span
                                       className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${warehouseStatusClass(shipment.status)}`}
@@ -1117,7 +1139,11 @@ export default function AdminOrdersPage() {
                               </span>
                             </p>
                           ) : null}
-                          {vendorOrder.payout.holdUntil ? (
+                          {vendorOrder.payout.holdLabel ? (
+                            <p className="text-xs text-neutral-500">
+                              Hold {vendorOrder.payout.holdLabel.toLowerCase()}
+                            </p>
+                          ) : vendorOrder.payout.holdUntil ? (
                             <p className="text-xs text-neutral-500">
                               Hold until {displayDate(vendorOrder.payout.holdUntil)}
                             </p>
@@ -1150,6 +1176,11 @@ export default function AdminOrdersPage() {
                               <tr key={item.id} className="border-b border-neutral-100">
                                 <td className="px-2 py-2 text-neutral-900">
                                   {item.productName}
+                                  {item.variantName ? (
+                                    <span className="block text-xs text-neutral-500">
+                                      {item.variantName}
+                                    </span>
+                                  ) : null}
                                   {item.productSku ? (
                                     <span className="block text-xs text-neutral-500">
                                       SKU {item.productSku}

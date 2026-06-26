@@ -1,5 +1,6 @@
 import { env } from "@/config/env";
 import { CommissionLedgerRepository } from "@/repositories/commission-ledger.repository";
+import { GiftRequestRepository } from "@/repositories/gift-request.repository";
 import { MembershipInvoiceRepository } from "@/repositories/membership-invoice.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { PayoutRepository } from "@/repositories/payout.repository";
@@ -20,7 +21,8 @@ export class AdminReportService {
     private readonly commissionLedgerRepository = new CommissionLedgerRepository(),
     private readonly payoutRepository = new PayoutRepository(),
     private readonly membershipInvoiceRepository = new MembershipInvoiceRepository(),
-    private readonly refundCaseRepository = new RefundCaseRepository()
+    private readonly refundCaseRepository = new RefundCaseRepository(),
+    private readonly giftRequestRepository = new GiftRequestRepository()
   ) {}
 
   async overview(range: ReportRange) {
@@ -56,9 +58,26 @@ export class AdminReportService {
     const refundCases = (await this.refundCaseRepository.listAll()).filter((refundCase) =>
       this.isWithinRange(refundCase.createdAt, range)
     );
+    const paidGiftRequests = (await this.giftRequestRepository.listPaidForReporting()).filter(
+      (giftRequest) => giftRequest.paidAt && this.isWithinRange(giftRequest.paidAt, range)
+    );
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const recentOrdersCount = orders.filter((order) => order.createdAt >= thirtyDaysAgo).length;
+
+    const totalCommissionAmount = commissions.reduce(
+      (sum, entry) => sum + entry.commissionAmount,
+      0
+    );
+    const totalSubscriptionRevenue = membershipInvoices
+      .filter((invoice) => invoice.status === "PAID")
+      .reduce((sum, invoice) => sum + invoice.amount, 0);
+    const totalGiftRequestRevenue = paidGiftRequests.reduce(
+      (sum, giftRequest) => sum + (giftRequest.paidAmountMinor ?? 0),
+      0
+    );
+    const netRevenueAmount =
+      totalCommissionAmount + totalSubscriptionRevenue + totalGiftRequestRevenue;
 
     return {
       customersCount,
@@ -74,19 +93,17 @@ export class AdminReportService {
         (sum, order) => sum + order.grandTotalAmount,
         0
       ),
-      totalCommissionAmount: commissions.reduce(
-        (sum, entry) => sum + entry.commissionAmount,
-        0
-      ),
+      totalCommissionAmount,
+      totalSubscriptionRevenue,
+      totalGiftRequestRevenue,
+      paidGiftRequestsCount: paidGiftRequests.length,
+      netRevenueAmount,
       payoutsOnHoldAmount: payouts
         .filter((payout) => payout.status === "ON_HOLD")
         .reduce((sum, payout) => sum + payout.amount, 0),
       payoutsSentAmount: payouts
         .filter((payout) => payout.status === "SENT")
         .reduce((sum, payout) => sum + payout.amount, 0),
-      totalSubscriptionRevenue: membershipInvoices
-        .filter((invoice) => invoice.status === "PAID")
-        .reduce((sum, invoice) => sum + invoice.amount, 0),
       recentOrdersCount,
       openRefundCasesCount: refundCases.filter(
         (refundCase) => refundCase.status !== "RESOLVED"

@@ -105,6 +105,29 @@ export function findCountryIsoByName(name: string) {
   return SHIPPING_COUNTRIES.find((country) => country.name.toLowerCase() === normalized)?.iso;
 }
 
+/** Normalize checkout country (full name or ISO) for delivery rule matching. */
+export function normalizeDeliveryCountryCode(country?: string | null) {
+  if (!country?.trim()) return undefined;
+  const trimmed = country.trim();
+  const iso = findCountryIsoByName(trimmed);
+  if (iso) return iso.toUpperCase();
+  if (trimmed.length <= 3) return trimmed.toUpperCase();
+  return trimmed;
+}
+
+export function countryCodesMatch(ruleCountryCode: string, targetCountry?: string) {
+  if (!targetCountry?.trim()) return false;
+  const normalizedTarget = normalizeDeliveryCountryCode(targetCountry);
+  if (!normalizedTarget) return false;
+  if (ruleCountryCode.toUpperCase() === normalizedTarget.toUpperCase()) {
+    return true;
+  }
+  const targetName = SHIPPING_COUNTRIES.find(
+    (country) => country.iso.toUpperCase() === normalizedTarget.toUpperCase()
+  )?.name;
+  return targetName?.toLowerCase() === ruleCountryCode.trim().toLowerCase();
+}
+
 export function getCitiesForCountryName(countryName: string): ShippingCityOption[] {
   const iso = findCountryIsoByName(countryName);
   if (!iso) return [];
@@ -121,4 +144,35 @@ export function getPostalCodesForCity(countryName: string, cityName: string): st
     (entry) => entry.name.toLowerCase() === cityName.trim().toLowerCase()
   );
   return city?.postalCodes ?? [];
+}
+
+export function normalizeCountryName(countryName: string) {
+  const normalized = countryName.trim().toLowerCase();
+  if (!normalized) return "";
+  return (
+    SHIPPING_COUNTRIES.find((country) => country.name.toLowerCase() === normalized)?.name ??
+    countryName.trim()
+  );
+}
+
+export function normalizeCityNameForCountry(countryName: string, cityName: string) {
+  const normalized = cityName.trim().toLowerCase();
+  if (!normalized) return "";
+  const match = getCitiesForCountryName(countryName).find(
+    (city) => city.name.toLowerCase() === normalized
+  );
+  return match?.name ?? cityName.trim();
+}
+
+export function normalizePostalCodeForCity(
+  countryName: string,
+  cityName: string,
+  postalCode: string
+) {
+  const normalized = postalCode.trim().toUpperCase();
+  if (!normalized) return "";
+  const match = getPostalCodesForCity(countryName, cityName).find(
+    (code) => code.toUpperCase() === normalized
+  );
+  return match ?? normalized;
 }

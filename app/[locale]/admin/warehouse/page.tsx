@@ -26,6 +26,11 @@ type InboundShipment = {
   shippedAt: string | null;
   receivedAt: string | null;
   updatedAt: string;
+  totalQuantity: number;
+  products: Array<{
+    productName: string;
+    quantity: number;
+  }>;
   order: { id: string; orderNumber: string };
   vendorOrder: {
     id: string;
@@ -202,6 +207,16 @@ export default function AdminWarehousePage() {
         </button>
       </div>
 
+      <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+        <p className="font-semibold">Standard delivery tracking flow</p>
+        <ol className="mt-2 list-decimal space-y-1 pl-5 text-blue-800">
+          <li>Each inbound row is one vendor shipment (not one unit). Qty shows total units in that shipment.</li>
+          <li>Vendor ships items to the warehouse and submits tracking (Vendor Orders → Send to warehouse).</li>
+          <li>Admin records inbound tracking here if the vendor has not, then marks each vendor shipment received.</li>
+          <li>When all vendor shipments are received, consolidate the batch and ship outbound to the customer.</li>
+        </ol>
+      </div>
+
       {error ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {error}
@@ -230,12 +245,14 @@ export default function AdminWarehousePage() {
             <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="responsive-table-shell overflow-x-auto">
             <table className="w-full min-w-[900px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500">
                   <th className="px-2 py-2">Order</th>
                   <th className="px-2 py-2">Vendor</th>
+                  <th className="px-2 py-2">Products</th>
+                  <th className="px-2 py-2">Qty</th>
                   <th className="px-2 py-2">Inbound status</th>
                   <th className="px-2 py-2">Batch</th>
                   <th className="px-2 py-2">Tracking</th>
@@ -251,6 +268,18 @@ export default function AdminWarehousePage() {
                     <td className="px-2 py-2 text-neutral-700">
                       {row.vendorOrder.vendorStoreName ?? row.vendorOrder.vendorStoreSlug ?? "Vendor"}
                     </td>
+                    <td className="px-2 py-2 text-neutral-700">
+                      {row.products.length === 0 ? (
+                        "—"
+                      ) : (
+                        <ul className="space-y-1">
+                          {row.products.map((product) => (
+                            <li key={product.productName}>{product.productName}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </td>
+                    <td className="px-2 py-2 font-medium text-neutral-900">{row.totalQuantity}</td>
                     <td className="px-2 py-2">
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${badgeClass(row.status)}`}
@@ -269,19 +298,49 @@ export default function AdminWarehousePage() {
                     <td className="px-2 py-2 text-neutral-700">{displayDate(row.shippedAt)}</td>
                     <td className="px-2 py-2 text-neutral-700">{displayDate(row.receivedAt)}</td>
                     <td className="px-2 py-2">
-                      <button
-                        type="button"
-                        disabled={row.status !== "INBOUND_SHIPPED" || actionLoadingKey === row.id}
-                        onClick={() =>
-                          void runAction(
-                            row.id,
-                            `/api/admin/warehouse/inbound-shipments/${row.id}/receive`
-                          )
-                        }
-                        className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
-                      >
-                        Mark received
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        {row.status === "PENDING_SHIPMENT" ? (
+                          <button
+                            type="button"
+                            disabled={actionLoadingKey === `${row.id}:ship`}
+                            onClick={() => {
+                              const trackingRef = window.prompt(
+                                "Inbound tracking / AWB from vendor (optional):",
+                                row.trackingRef ?? ""
+                              );
+                              if (trackingRef === null) return;
+                              void runAction(
+                                `${row.id}:ship`,
+                                `/api/admin/warehouse/inbound-shipments/${row.id}/ship`,
+                                { trackingRef: trackingRef.trim() || undefined }
+                              );
+                            }}
+                            className="rounded-lg border border-cyan-300 bg-cyan-50 px-2.5 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-100 disabled:opacity-50"
+                          >
+                            Record inbound ship
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          disabled={row.status !== "INBOUND_SHIPPED" || actionLoadingKey === row.id}
+                          title={
+                            row.status === "PENDING_SHIPMENT"
+                              ? "Waiting for vendor inbound shipment or use Record inbound ship"
+                              : row.status === "RECEIVED"
+                                ? "Already received"
+                                : undefined
+                          }
+                          onClick={() =>
+                            void runAction(
+                              row.id,
+                              `/api/admin/warehouse/inbound-shipments/${row.id}/receive`
+                            )
+                          }
+                          className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+                        >
+                          Mark received
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -316,7 +375,7 @@ export default function AdminWarehousePage() {
             <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="responsive-table-shell overflow-x-auto">
             <table className="w-full min-w-[860px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500">
@@ -340,7 +399,7 @@ export default function AdminWarehousePage() {
                       </span>
                     </td>
                     <td className="px-2 py-2 text-neutral-700">
-                      {row.receivedVendorCount}/{row.expectedVendorCount}
+                      {row.receivedVendorCount}/{row.expectedVendorCount} vendors
                     </td>
                     <td className="px-2 py-2 text-neutral-700">{displayDate(row.readyToConsolidateAt)}</td>
                     <td className="px-2 py-2 text-neutral-700">
@@ -394,7 +453,7 @@ export default function AdminWarehousePage() {
             <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="responsive-table-shell overflow-x-auto">
             <table className="w-full min-w-[980px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500">

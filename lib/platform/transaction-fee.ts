@@ -1,6 +1,20 @@
 export const PLATFORM_SETTINGS_ID = "default";
 
-export const DEFAULT_TRANSACTION_FEE_AMOUNT_MINOR = 399;
+/** Fixed platform commission per order (USD minor units). Not editable via admin UI. */
+export const FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR = 399;
+
+export const DEFAULT_TRANSACTION_FEE_AMOUNT_MINOR =
+  FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR;
+
+export function usesFixedTransactionFeeDeliveryMethod(
+  method: "PICKUP" | "EXPRESS" | "STANDARD" | null | undefined
+) {
+  return method === "STANDARD" || method === "EXPRESS";
+}
+
+export function getFixedTransactionFeeAmountMinor() {
+  return FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR;
+}
 
 export function allocateFlatFeeToVendorSplit(input: {
   vendorSubtotalAmount: number;

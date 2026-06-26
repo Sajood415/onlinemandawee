@@ -8,6 +8,10 @@ import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-st
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { formatVendorStockSummary } from "@/lib/products/product-stock";
+import {
+  formatProductPriceRangeMinor,
+  resolveProductPriceRangeMinor,
+} from "@/lib/products/resolve-checkout-variant";
 import { toast } from "@/lib/utils/toast";
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
@@ -666,7 +670,7 @@ export default function VendorProductsPage() {
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="responsive-table-shell overflow-x-auto">
               <table className="min-w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-neutral-100 text-xs font-semibold uppercase tracking-wider text-neutral-400">
@@ -711,10 +715,13 @@ export default function VendorProductsPage() {
                       </td>
                       <td className="px-3 py-3">{product.category?.name ?? "—"}</td>
                       <td className="px-3 py-3 tabular-nums">
-                        {(product.priceAmount / 100).toLocaleString(undefined, {
-                          style: "currency",
-                          currency: product.currency || "USD",
-                        })}
+                        {(() => {
+                          const range = resolveProductPriceRangeMinor({
+                            basePriceAmount: product.priceAmount,
+                            variants: product.variants,
+                          });
+                          return formatProductPriceRangeMinor(range, product.currency || "USD");
+                        })()}
                       </td>
                       <td className="px-3 py-3">
                         {(() => {

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { finalizePaidCheckoutOrder } from "@/lib/checkout/finalize-paid-checkout-order";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { withRbac } from "@/middlewares/with-rbac";
-import { CheckoutFinalizationService } from "@/services/checkout-finalization.service";
 import {
   checkoutDeliveryMethodSchema,
   checkoutCurrencySchema,
@@ -25,8 +25,6 @@ const confirmBodySchema = z
   .merge(checkoutShippingContactSchema)
   .merge(checkoutShippingAddressSchema.partial())
   .merge(guestCheckoutCouponsSchema);
-
-const checkoutFinalizationService = new CheckoutFinalizationService();
 
 export const POST = withErrorHandling(
   withRbac(["CUSTOMER"], async (request, context) => {
@@ -70,7 +68,7 @@ export const POST = withErrorHandling(
     }
 
     try {
-      const order = await checkoutFinalizationService.finalizeFromPaidIntent({
+      const order = await finalizePaidCheckoutOrder({
         paymentIntent,
         source: "customer_checkout",
         checkoutContextToken: input.checkoutContextToken,

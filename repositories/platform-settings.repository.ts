@@ -7,6 +7,7 @@ import {
   DEFAULT_AVAILABLE_CURRENCIES,
   DEFAULT_AVAILABLE_LOCALES,
 } from "@/lib/platform/storefront-options";
+import { FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR } from "@/lib/platform/transaction-fee";
 
 type PlatformSettingsRecord = {
   id: string;
@@ -33,8 +34,7 @@ function normalizeRecord(
 ): PlatformSettingsRecord {
   return {
     id: record.id,
-    transactionFeeAmountMinor:
-      record.transactionFeeAmountMinor ?? DEFAULT_TRANSACTION_FEE_AMOUNT_MINOR,
+    transactionFeeAmountMinor: FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR,
     availableLocales:
       record.availableLocales && record.availableLocales.length > 0
         ? record.availableLocales
@@ -79,9 +79,6 @@ export class PlatformSettingsRepository {
     if (!("platformSettings" in prisma) || !prisma.platformSettings) {
       return {
         ...current,
-        ...(input.transactionFeeAmountMinor !== undefined
-          ? { transactionFeeAmountMinor: input.transactionFeeAmountMinor }
-          : {}),
         ...(input.availableLocales !== undefined
           ? { availableLocales: input.availableLocales }
           : {}),
@@ -96,17 +93,13 @@ export class PlatformSettingsRepository {
       where: { id: PLATFORM_SETTINGS_ID },
       create: {
         id: PLATFORM_SETTINGS_ID,
-        transactionFeeAmountMinor:
-          input.transactionFeeAmountMinor ?? DEFAULT_TRANSACTION_FEE_AMOUNT_MINOR,
+        transactionFeeAmountMinor: FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR,
         availableLocales: input.availableLocales ?? [...DEFAULT_AVAILABLE_LOCALES],
         availableCurrencies:
           input.availableCurrencies ?? [...DEFAULT_AVAILABLE_CURRENCIES],
         updatedByUserId: input.updatedByUserId ?? null,
       },
       update: {
-        ...(input.transactionFeeAmountMinor !== undefined
-          ? { transactionFeeAmountMinor: input.transactionFeeAmountMinor }
-          : {}),
         ...(input.availableLocales !== undefined
           ? { availableLocales: input.availableLocales }
           : {}),

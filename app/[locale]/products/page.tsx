@@ -408,7 +408,7 @@ function ProductsPageContent() {
             {catalogLoading ? (
               <ProductsGridSkeleton />
             ) : sortedProducts.length > 0 ? (
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-2 xl:grid-cols-3 xl:gap-5 2xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4">
                 {sortedProducts.map((product, index) => (
                   <motion.div
                     key={product.id}

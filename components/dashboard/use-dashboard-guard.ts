@@ -70,7 +70,7 @@ export function useDashboardGuard(expectedRole: DashboardRole) {
           routerRef.current.replace(roleHomePath("VENDOR"));
           return;
         }
-        routerRef.current.replace("/");
+        routerRef.current.replace(roleHomePath("CUSTOMER"));
         return;
       }
 

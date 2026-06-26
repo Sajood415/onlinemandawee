@@ -63,6 +63,46 @@ body {
   scrollbar-width: none;
 }
 
+@layer utilities {
+  .responsive-table-shell {
+    margin-inline: -1rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding-inline: 1rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  @media (min-width: 640px) {
+    .responsive-table-shell {
+      margin-inline: 0;
+      padding-inline: 0;
+    }
+  }
+
+  .page-shell {
+    margin-inline: auto;
+    width: 100%;
+    min-width: 0;
+    max-width: 80rem;
+    padding-inline: max(1rem, env(safe-area-inset-left, 0px))
+      max(1rem, env(safe-area-inset-right, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .page-shell {
+      padding-inline: max(1.5rem, env(safe-area-inset-left, 0px))
+        max(1.5rem, env(safe-area-inset-right, 0px));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .page-shell {
+      padding-inline: max(2rem, env(safe-area-inset-left, 0px))
+        max(2rem, env(safe-area-inset-right, 0px));
+    }
+  }
+}
+
 .menu-link {
   display: flex;
   align-items: center;

@@ -23,6 +23,7 @@ type PayoutEntry = {
   currency: string;
   status: PayoutStatus;
   holdUntil: string;
+  holdLabel: string | null;
   releasedAt: string | null;
   sentAt: string | null;
   failureReason: string | null;
@@ -52,25 +53,31 @@ function formatCurrency(amount: number, currency: string) {
   }).format(amount / 100);
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
+function formatDate(iso: string | null | undefined) {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
 }
 
-function getPayoutDateLabel(entry: PayoutEntry) {
+function getPayoutDateDisplay(entry: PayoutEntry) {
   if (entry.status === "SENT" && entry.sentAt) {
-    return { label: "Sent", date: entry.sentAt };
+    return { primary: formatDate(entry.sentAt), secondary: "Sent" };
   }
   if (entry.status === "READY" && entry.releasedAt) {
-    return { label: "Released", date: entry.releasedAt };
+    return { primary: formatDate(entry.releasedAt), secondary: "Released" };
   }
   if (entry.status === "ON_HOLD") {
-    return { label: "Hold until", date: entry.holdUntil };
+    if (entry.holdLabel) {
+      return { primary: entry.holdLabel, secondary: "On hold" };
+    }
+    return { primary: formatDate(entry.holdUntil), secondary: "Hold until" };
   }
-  return { label: "Created", date: entry.createdAt };
+  return { primary: formatDate(entry.createdAt), secondary: "Created" };
 }
 
 function getDefaultRange() {
@@ -252,7 +259,7 @@ export function PayoutHistorySection() {
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
                   {filteredPayouts.map((entry) => {
-                    const dateInfo = getPayoutDateLabel(entry);
+                    const dateInfo = getPayoutDateDisplay(entry);
                     return (
                       <tr key={entry.id} className="hover:bg-neutral-50/80">
                         <td className="px-5 py-3">
@@ -278,8 +285,8 @@ export function PayoutHistorySection() {
                           ) : null}
                         </td>
                         <td className="px-5 py-3 text-neutral-700">
-                          <p>{formatDate(dateInfo.date)}</p>
-                          <p className="text-xs text-neutral-500">{dateInfo.label}</p>
+                          <p>{dateInfo.primary}</p>
+                          <p className="text-xs text-neutral-500">{dateInfo.secondary}</p>
                         </td>
                         <td className="px-5 py-3 text-right font-semibold text-emerald-700">
                           {formatCurrency(entry.amount, entry.currency)}

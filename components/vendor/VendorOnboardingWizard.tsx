@@ -18,6 +18,19 @@ import type { OnboardingStatusPayload } from "@/components/vendor/onboarding/typ
 import { PasswordRequirements } from "@/components/vendor/onboarding/PasswordRequirements";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { PhoneNumberField } from "@/components/vendor/onboarding/PhoneNumberField";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import {
+  sanitizeCityCountryInput,
+  sanitizePostalCodeInput,
+} from "@/lib/checkout/checkout-field-validation";
+import {
+  getCitiesForCountryName,
+  getPostalCodesForCity,
+  normalizeCityNameForCountry,
+  normalizeCountryName,
+  normalizePostalCodeForCity,
+  SHIPPING_COUNTRIES,
+} from "@/lib/geo/shipping-locations";
 import {
   EMAIL_REGEX,
   getPasswordValidationMessage,
@@ -124,6 +137,33 @@ export function VendorOnboardingWizard() {
   const [proofOfAddressUrl, setProofOfAddressUrl] = useState("");
   const [proofOfAddressFile, setProofOfAddressFile] = useState<File | null>(null);
 
+  const countryOptions = useMemo(
+    () =>
+      SHIPPING_COUNTRIES.map((entry) => ({
+        value: entry.name,
+        label: `${entry.flag} ${entry.name}`,
+      })),
+    []
+  );
+
+  const cityOptions = useMemo(
+    () =>
+      getCitiesForCountryName(country).map((entry) => ({
+        value: entry.name,
+        label: entry.name,
+      })),
+    [country]
+  );
+
+  const postalOptions = useMemo(
+    () =>
+      getPostalCodesForCity(country, city).map((code) => ({
+        value: code,
+        label: code,
+      })),
+    [country, city]
+  );
+
   const [payoutMethod, setPayoutMethod] = useState<PayoutMethodType>("BANK");
   const [accountName, setAccountName] = useState("");
   const [accountNumberOrIban, setAccountNumberOrIban] = useState("");
@@ -202,10 +242,20 @@ export function VendorOnboardingWizard() {
           setSelfieWithIdUrl(draft.kyc.selfieWithIdUrl);
         }
         if (draft.address) {
+          const normalizedCountry = normalizeCountryName(draft.address.country);
+          const normalizedCity = normalizeCityNameForCountry(
+            normalizedCountry,
+            draft.address.city
+          );
+          const normalizedPostal = normalizePostalCodeForCity(
+            normalizedCountry,
+            normalizedCity,
+            draft.address.postalCode
+          );
           setAddressLine1(draft.address.addressLine1);
-          setCity(draft.address.city);
-          setCountry(draft.address.country);
-          setPostalCode(draft.address.postalCode);
+          setCity(normalizedCity);
+          setCountry(normalizedCountry);
+          setPostalCode(normalizedPostal);
           setProofOfAddressUrl(draft.address.proofOfAddressUrl);
         }
         if (draft.payout) {
@@ -1067,25 +1117,56 @@ export function VendorOnboardingWizard() {
                 </label>
                 <input className={CONTROL} value={addressLine1} onChange={(e) => setAddressLine1(e.target.value)} />
               </div>
+              <SearchableSelect
+                label="Country"
+                required
+                value={country}
+                options={countryOptions}
+                placeholder="Select country"
+                searchPlaceholder="Search countries…"
+                onChange={(value) => {
+                  setCountry(value);
+                  setCity("");
+                  setPostalCode("");
+                }}
+                emptyMessage="No countries match your search"
+              />
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div className={FIELD}>
-                  <label className={LABEL}>City
-                    <RequiredMark />
-                  </label>
-                  <input className={CONTROL} value={city} onChange={(e) => setCity(e.target.value)} />
-                </div>
-                <div className={FIELD}>
-                  <label className={LABEL}>Country
-                    <RequiredMark />
-                  </label>
-                  <input className={CONTROL} value={country} onChange={(e) => setCountry(e.target.value)} />
-                </div>
-              </div>
-              <div className={FIELD}>
-                <label className={LABEL}>Postal code
-                  <RequiredMark />
-                </label>
-                <input className={CONTROL} value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
+                <SearchableSelect
+                  label="City"
+                  required
+                  value={city}
+                  options={cityOptions}
+                  placeholder={country ? "Select or search city" : "Select a country first"}
+                  searchPlaceholder="Search cities…"
+                  disabled={!country}
+                  allowCustom
+                  onChange={(value) => {
+                    setCity(sanitizeCityCountryInput(value));
+                    setPostalCode("");
+                  }}
+                  emptyMessage={
+                    country
+                      ? "No cities match — type to use a custom city"
+                      : "Choose a country first"
+                  }
+                />
+                <SearchableSelect
+                  label="Postal code"
+                  required
+                  value={postalCode}
+                  options={postalOptions}
+                  placeholder={city ? "Select or search postal code" : "Select a city first"}
+                  searchPlaceholder="Search postal codes…"
+                  disabled={!city}
+                  allowCustom
+                  onChange={(value) => setPostalCode(sanitizePostalCodeInput(value))}
+                  emptyMessage={
+                    city
+                      ? "No postal codes match — type to enter manually"
+                      : "Choose a city first"
+                  }
+                />
               </div>
               <FileAttachmentField
                 label="Proof of address (optional)"

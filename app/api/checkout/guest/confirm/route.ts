@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { finalizePaidCheckoutOrder } from "@/lib/checkout/finalize-paid-checkout-order";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { withErrorHandling } from "@/middlewares/with-error-handling";
-import { CheckoutFinalizationService } from "@/services/checkout-finalization.service";
 import {
   checkoutDeliveryMethodSchema,
   checkoutCurrencySchema,
@@ -24,8 +24,6 @@ const confirmBodySchema = z
   .merge(checkoutShippingContactSchema)
   .merge(checkoutShippingAddressSchema.partial())
   .merge(guestCheckoutCouponsSchema);
-
-const checkoutFinalizationService = new CheckoutFinalizationService();
 
 export const POST = withErrorHandling(async (request) => {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -68,7 +66,7 @@ export const POST = withErrorHandling(async (request) => {
   }
 
   try {
-    const order = await checkoutFinalizationService.finalizeFromPaidIntent({
+    const order = await finalizePaidCheckoutOrder({
       paymentIntent,
       source: "guest_checkout",
       checkoutContextToken: input.checkoutContextToken,

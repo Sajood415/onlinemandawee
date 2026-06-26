@@ -70,4 +70,14 @@ export class CheckoutSnapshotRepository {
       data: { orderId: input.orderId },
     });
   }
+
+  /** Returns true when this caller is the first to link an order to the snapshot. */
+  assignOrderIdIfAbsent(input: { paymentIntentId: string; orderId: string }) {
+    return prisma.checkoutSnapshot
+      .updateMany({
+        where: { paymentIntentId: input.paymentIntentId, orderId: null },
+        data: { orderId: input.orderId },
+      })
+      .then((result) => result.count === 1);
+  }
 }

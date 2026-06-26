@@ -27,3 +27,7 @@ export const adminConsolidateBatchSchema = z.object({
 export const adminOutboundShipSchema = z.object({
   trackingRef: z.string().trim().min(1).max(120).optional(),
 });
+
+export const adminInboundShipSchema = z.object({
+  trackingRef: z.string().trim().min(1).max(120).optional(),
+});

@@ -10,12 +10,12 @@ import { applyQuoteCurrency } from "@/lib/currency/apply-quote-currency";
 import { convertMinorUnits } from "@/lib/currency/convert";
 import {
   assertSufficientStock,
-  getActiveStockVariants,
-  usesVariantStock,
 } from "@/lib/products/product-stock";
 import {
-  resolveProductUnitPriceMinor,
-} from "@/lib/products/public-catalog";
+  CheckoutVariantResolutionError,
+  resolveCheckoutUnitPriceMinor,
+  resolveCheckoutVariantSelection,
+} from "@/lib/products/resolve-checkout-variant";
 import {
   calculateGuestDelivery,
   type GuestCheckoutDeliveryBreakdown,
@@ -26,6 +26,10 @@ import type { PostalAddress } from "@/lib/maps/google-maps";
 import type { DeliveryMethod } from "@/domain/delivery/delivery-types";
 import type { SellerType } from "@/domain/vendor/vendor-types";
 import { DeliveryPricingService } from "@/services/delivery-pricing.service";
+import {
+  mergeGuestCheckoutCartItems,
+  mergeLineItemsByProduct,
+} from "@/lib/orders/aggregate-order-line-items";
 
 export type GuestCheckoutCartItem = {
   productId: string;
@@ -132,6 +136,7 @@ export async function buildGuestCheckoutQuote(input: {
   deliveryMethod?: DeliveryMethod;
 }): Promise<GuestCheckoutQuote> {
   const currency = input.currency ?? "USD";
+  const cartItems = mergeGuestCheckoutCartItems(input.items);
   const couponEntries = normalizeGuestCheckoutCoupons({
     vendorCoupons: input.vendorCoupons,
     couponCodes: input.couponCodes,
@@ -140,7 +145,7 @@ export async function buildGuestCheckoutQuote(input: {
   const selectedThirdPartyMethod: DeliveryMethod = input.deliveryMethod ?? "STANDARD";
 
   const products = await Promise.all(
-    input.items.map(async (item) => {
+    cartItems.map(async (item) => {
       const product = await resolveCheckoutProduct(item.productId);
       return { item, product };
     })
@@ -162,38 +167,40 @@ export async function buildGuestCheckoutQuote(input: {
   }
 
   for (const { item, product } of products) {
-    const activeVariants = getActiveStockVariants(product!);
-    const variantId =
-      item.variantId ??
-      (activeVariants.length === 1 ? activeVariants[0]?.id : undefined);
-
-    if (usesVariantStock(product!) && activeVariants.length > 1 && !variantId) {
-      throw new GuestCheckoutQuoteError(
-        "VARIANT_REQUIRED",
-        `${product!.name} has multiple options. Open the product page and choose a variant before checkout.`
-      );
+    let variantId: string | null;
+    try {
+      variantId = resolveCheckoutVariantSelection({
+        variants: product!.variants,
+        requestedVariantId: item.variantId,
+        productName: product!.name,
+      }).variantId;
+    } catch (error) {
+      if (error instanceof CheckoutVariantResolutionError) {
+        throw new GuestCheckoutQuoteError("VARIANT_REQUIRED", error.message);
+      }
+      throw error;
     }
 
-    const stockCheck = assertSufficientStock(product!, item.quantity, variantId);
+    const stockCheck = assertSufficientStock(product!, item.quantity, variantId ?? undefined);
     if (!stockCheck.ok) {
       throw new GuestCheckoutQuoteError("INSUFFICIENT_STOCK", `${product!.name}: ${stockCheck.message}`);
     }
   }
 
-  const lineItems: GuestCheckoutLineItem[] = products.map(({ item, product }) => {
-    const activeVariants = getActiveStockVariants(product!);
-    const variantId =
-      item.variantId ??
-      (activeVariants.length === 1 ? activeVariants[0]?.id : undefined);
-    const selectedVariant = variantId
-      ? product!.variants.find((variant) => variant.id === variantId) ?? null
-      : null;
+  const lineItems = mergeLineItemsByProduct(
+    products.map(({ item, product }) => {
+    const { variant: selectedVariant, variantId } = resolveCheckoutVariantSelection({
+      variants: product!.variants,
+      requestedVariantId: item.variantId,
+      productName: product!.name,
+    });
     const nativeCurrency = product!.currency || "USD";
-    const nativeUnitPrice = resolveProductUnitPriceMinor(
-      product!.priceAmount,
-      product!.variants,
-      variantId
-    );
+    const nativeUnitPrice = resolveCheckoutUnitPriceMinor({
+      basePriceAmount: product!.priceAmount,
+      variants: product!.variants,
+      variantId,
+      productName: product!.name,
+    });
     const unitPriceAmount = convertMinorUnits(nativeUnitPrice, nativeCurrency, currency);
     return {
       productId: product!.id,
@@ -210,7 +217,8 @@ export async function buildGuestCheckoutQuote(input: {
       lineTotalAmount: unitPriceAmount * item.quantity,
       currency,
     };
-  });
+  })
+  );
 
   const subtotalAmount = lineItems.reduce((sum, item) => sum + item.lineTotalAmount, 0);
 
@@ -218,8 +226,7 @@ export async function buildGuestCheckoutQuote(input: {
   const hasThirdPartyItems = lineItems.some(
     (item) => item.sellerType === "THIRD_PARTY"
   );
-  const requiresDeliveryAddress =
-    hasPlatformItems || selectedThirdPartyMethod !== "PICKUP";
+  const requiresDeliveryAddress = selectedThirdPartyMethod !== "PICKUP";
 
   if (requiresDeliveryAddress && !input.deliveryAddress) {
     throw new GuestCheckoutQuoteError(

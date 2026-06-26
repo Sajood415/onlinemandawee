@@ -168,11 +168,11 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
 
           <div className="mt-auto flex flex-col gap-3 pt-4">
             {!hasVariants ? (
-              <div className="flex min-w-0 flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
                 <span className="shrink-0 text-xs font-semibold text-neutral-600">
                   {copy.quantity}
                 </span>
-                <div className="flex min-w-0 w-full justify-center xl:w-auto xl:justify-end">
+                <div className="flex min-w-0 w-full justify-center lg:w-auto lg:justify-end">
                   <QuantitySelector
                     compact
                     quantity={quantity}

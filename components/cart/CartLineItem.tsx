@@ -22,6 +22,7 @@ export type CartLineItemData = {
   productImage: string;
   vendor: string;
   delivery?: string;
+  variantName?: string;
 };
 
 type CartLineItemProps = {
@@ -81,6 +82,11 @@ export function CartLineItem({
               {item.productDescription ? (
                 <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-neutral-500">
                   {item.productDescription}
+                </p>
+              ) : null}
+              {item.variantName ? (
+                <p className="mt-1 text-xs font-medium text-neutral-600">
+                  SKU: {item.variantName}
                 </p>
               ) : null}
               <p className="mt-2 text-sm text-neutral-500">

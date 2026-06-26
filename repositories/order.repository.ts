@@ -30,6 +30,7 @@ const orderAdminInclude = {
           orderVendor: {
             include: {
               vendorProfile: true,
+              items: true,
             },
           },
         },
@@ -374,8 +375,9 @@ export class OrderRepository {
   }
 
   findByStripePaymentIntentId(stripePaymentIntentId: string) {
-    return prisma.order.findUnique({
+    return prisma.order.findFirst({
       where: { stripePaymentIntentId },
+      orderBy: { createdAt: "asc" },
       include: {
         vendorOrders: {
           include: {

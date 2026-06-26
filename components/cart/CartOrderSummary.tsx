@@ -3,30 +3,15 @@
 import Link from "next/link";
 import { ArrowRight, Lock, Truck } from "lucide-react";
 
-import {
-  ESTIMATED_TAX_RATE,
-  STANDARD_SHIPPING_FEE,
-} from "@/components/cart/copy";
 import { useCartCopy } from "@/lib/i18n/use-cart-copy";
 import { useCurrency } from "@/store/currency-context";
-
-export { ESTIMATED_TAX_RATE, STANDARD_SHIPPING_FEE };
 
 type CartOrderSummaryProps = {
   subtotal: number;
   itemCount: number;
-  shippingFee: number;
-  taxAmount: number;
-  total: number;
 };
 
-export function CartOrderSummary({
-  subtotal,
-  itemCount,
-  shippingFee,
-  taxAmount,
-  total,
-}: CartOrderSummaryProps) {
+export function CartOrderSummary({ subtotal, itemCount }: CartOrderSummaryProps) {
   const copy = useCartCopy();
   const { currency, formatPrice } = useCurrency();
   const fmt = (amount: number) => formatPrice(amount, currency);
@@ -48,23 +33,14 @@ export function CartOrderSummary({
             <span>{copy.subtotal}</span>
             <span className="font-semibold text-neutral-900">{fmt(subtotal)}</span>
           </div>
-          <div className="flex items-center justify-between text-neutral-600">
-            <span>{copy.shipping}</span>
-            <span className="font-semibold text-neutral-900">
-              {shippingFee <= 0 ? copy.shippingFree : fmt(shippingFee)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-neutral-600">
-            <span>{copy.tax}</span>
-            <span className="font-semibold text-neutral-900">{fmt(taxAmount)}</span>
-          </div>
+          <p className="text-xs text-neutral-500">{copy.shippingCalculated}</p>
         </div>
 
         <div className="border-t border-neutral-100 px-5 py-4">
           <div className="flex items-end justify-between">
             <span className="text-sm font-semibold text-neutral-700">{copy.total}</span>
             <span className="text-2xl font-bold tracking-tight text-[#0f3460]">
-              {fmt(total)}
+              {fmt(subtotal)}
             </span>
           </div>
         </div>
@@ -101,12 +77,4 @@ export function CartOrderSummary({
       </div>
     </aside>
   );
-}
-
-export function calculateCartTotals(subtotal: number) {
-  const shippingFee = STANDARD_SHIPPING_FEE;
-  const taxAmount = subtotal * ESTIMATED_TAX_RATE;
-  const total = subtotal + shippingFee + taxAmount;
-
-  return { shippingFee, taxAmount, total };
 }

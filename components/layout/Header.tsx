@@ -74,6 +74,21 @@ const sheetVariants: Variants = {
   },
 };
 
+function getCartSheetVariants(isRtl: boolean): Variants {
+  if (!isRtl) return sheetVariants;
+  return {
+    hidden: { x: "-100%" },
+    visible: {
+      x: 0,
+      transition: { type: "spring", damping: 30, stiffness: 300 },
+    },
+    exit: {
+      x: "-100%",
+      transition: { type: "spring", damping: 30, stiffness: 300 },
+    },
+  };
+}
+
 const localizeProductName = (
   _productId: string,
   fallbackName: string,
@@ -175,6 +190,8 @@ export default function Header() {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
+
+  const cartSheetVariants = useMemo(() => getCartSheetVariants(isRtl), [isRtl]);
 
   // Refresh cart when drawer opens
   useEffect(() => {
@@ -305,7 +322,7 @@ export default function Header() {
       <div className="sticky top-0 z-[9998] shrink-0">
       <header
         dir={isRtl ? "rtl" : "ltr"}
-        className={`relative z-[9999] overflow-x-visible overflow-y-visible border-b border-white/15 shadow-[0_4px_20px_rgba(15,52,96,0.35)] ${HEADER_BAR_CLASS}`}
+        className={`relative z-[9999] overflow-x-clip overflow-y-visible border-b border-white/15 shadow-[0_4px_20px_rgba(15,52,96,0.35)] ${HEADER_BAR_CLASS}`}
       >
         <div className="mx-auto w-full min-w-0 max-w-7xl py-2 sm:py-3 ps-[max(0.375rem,env(safe-area-inset-left,0px))] pe-[max(0.375rem,env(safe-area-inset-right,0px))] sm:ps-[max(1rem,env(safe-area-inset-left,0px))] sm:pe-[max(1rem,env(safe-area-inset-right,0px))]">
           <div className="flex min-w-0 flex-nowrap items-center justify-between gap-2 sm:gap-3 md:max-lg:gap-2 lg:gap-4">
@@ -374,7 +391,7 @@ export default function Header() {
               </IconButton>
 
               {/* Language + currency selectors */}
-              <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+              <div className="hidden min-[380px]:flex shrink-0 items-center gap-1 sm:gap-1.5">
                 {languageOptions.length > 1 ? (
                   <LanguageSelector
                     locale={locale}
@@ -679,8 +696,8 @@ export default function Header() {
           </div>
 
           {/* Tablet - Limited Links */}
-          <div className="hidden md:flex lg:hidden flex-1 min-w-0 items-stretch overflow-visible px-1">
-            <div className="flex w-full min-w-max items-stretch gap-0 whitespace-nowrap text-gray-900">
+          <div className="hidden md:flex lg:hidden min-w-0 flex-1 items-stretch overflow-x-auto no-scrollbar px-1">
+            <div className="flex min-w-max items-stretch gap-0 whitespace-nowrap text-gray-900">
               <HeaderNavLink href="/" pathname={pathname} size="tablet">
                 {copy.home}
               </HeaderNavLink>
@@ -761,12 +778,13 @@ export default function Header() {
             />
             {/* Sheet Side Panel */}
             <motion.div
-              variants={sheetVariants}
+              variants={cartSheetVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="h-screen w-full max-w-[440px] bg-white shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.25)] flex flex-col"
-              style={{ position: "fixed", top: 0, right: 0, zIndex: 1000000 }}
+              className={`fixed top-0 z-[1000000] flex h-screen w-full max-w-[min(100vw,440px)] flex-col bg-white shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.25)] ${
+                isRtl ? "left-0 shadow-[20px_0_60px_-15px_rgba(0,0,0,0.25)]" : "right-0"
+              }`}
             >
               {/* Header */}
               <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-white to-gray-50/50 sticky top-0 z-10">

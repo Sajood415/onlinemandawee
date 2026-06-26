@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 import { Link, useRouter } from "@/i18n/navigation";
+import { confirmCheckoutOrderWithRetry } from "@/lib/checkout/client-checkout-confirmation";
 import { getStripePromise } from "@/lib/stripe/client";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 
@@ -57,26 +58,35 @@ function clearPendingConfirmation(paymentIntentId: string) {
   window.sessionStorage.setItem(CHECKOUT_PENDING_STORAGE_KEY, JSON.stringify(records));
 }
 
+async function postCheckout(
+  path: string,
+  body: unknown,
+  useAuth: boolean
+) {
+  if (useAuth) {
+    return fetchWithAuth(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
+  return fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
 async function postCheckoutConfirm(
   pending: PendingCheckoutConfirmation
 ): Promise<{ orderNumber: string; guestTrackingToken?: string | null }> {
-  const path = `${pending.checkoutApiBase}/confirm`;
-  const requestInit: RequestInit = {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(pending.payload),
-  };
-
-  const response = pending.useAuthCheckout
-    ? await fetchWithAuth(path, requestInit)
-    : await fetch(path, requestInit);
-  const body = await response.json();
-
-  if (!response.ok) {
-    throw new Error(body?.error?.message ?? "Could not finalize your order.");
-  }
-
-  return body.data as { orderNumber: string; guestTrackingToken?: string | null };
+  return confirmCheckoutOrderWithRetry({
+    confirmPath: `${pending.checkoutApiBase}/confirm`,
+    payload: pending.payload,
+    useAuthCheckout: pending.useAuthCheckout,
+    postCheckout,
+  });
 }
 
 export default function CheckoutCompletePage() {

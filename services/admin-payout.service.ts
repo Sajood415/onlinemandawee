@@ -1,6 +1,8 @@
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import { isPayoutEligibleForRelease, payoutHoldLabel } from "@/lib/payout/payout-hold";
+import { sendVendorPayoutNotification } from "@/lib/mail/send-vendor-payout-notifications";
 import { PayoutRepository } from "@/repositories/payout.repository";
 import { PayoutReleaseService } from "@/services/payout-release.service";
 
@@ -67,6 +69,9 @@ export class AdminPayoutService {
     for (const payout of payouts) {
       const updated = await this.payoutReleaseService.releaseToAvailable(payout.id, admin);
       released.push(updated);
+      if (updated.status === "READY") {
+        await sendVendorPayoutNotification({ payoutId: updated.id, type: "RELEASED" });
+      }
     }
 
     return {
@@ -75,31 +80,105 @@ export class AdminPayoutService {
     };
   }
 
-  async markSent(input: { payoutId: string }, admin: AuthenticatedUser) {
-    const payout = await this.payoutReleaseService.markSent(input.payoutId, admin);
-    return { payout };
+  async markSent(
+    input: { payoutId: string; sentVia?: "BANK" },
+    admin: AuthenticatedUser
+  ) {
+    const payout = await this.payoutReleaseService.markSent(input.payoutId, admin, {
+      sentVia: input.sentVia ?? "BANK",
+    });
+    if (payout.status === "SENT") {
+      await sendVendorPayoutNotification({
+        payoutId: payout.id,
+        type: "SENT",
+        sentVia: input.sentVia ?? "BANK",
+      });
+    }
+    return { payout, sentVia: input.sentVia ?? "BANK" };
+  }
+
+  async getDetail(payoutId: string) {
+    const payout = await this.payoutRepository.findByIdForAdmin(payoutId);
+
+    if (!payout) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Payout not found",
+        statusCode: 404,
+      });
+    }
+
+    const now = new Date();
+    const orderVendor = payout.orderVendor;
+
+    return {
+      ...this.serializePayout(
+        {
+          ...payout,
+          orderVendor,
+          vendorProfile: payout.vendorProfile,
+        },
+        now
+      ),
+      vendorOrder: {
+        status: orderVendor.status,
+        deliveryMethod: orderVendor.deliveryMethod,
+        deliveredAt: orderVendor.deliveredAt?.toISOString() ?? null,
+        subtotalAmount: orderVendor.subtotalAmount,
+        deliveryAmount: orderVendor.deliveryAmount,
+        discountAmount: orderVendor.discountAmount ?? 0,
+        grandTotalAmount: orderVendor.grandTotalAmount,
+        currency: orderVendor.currency,
+      },
+      lineItems: orderVendor.items.map((item) => ({
+        productName: item.productName,
+        productSku: item.productSku,
+        variantName: item.variantName,
+        quantity: item.quantity,
+        unitPriceAmount: item.unitPriceAmount,
+        lineTotalAmount: item.lineTotalAmount,
+        currency: item.currency,
+      })),
+      commission: payout.commission
+        ? {
+            rateBps: payout.commission.rateBps,
+            baseAmount: payout.commission.baseAmount,
+            commissionAmount: payout.commission.commissionAmount,
+            currency: payout.commission.currency,
+          }
+        : null,
+      sendMethod: "BANK" as const,
+      bankDetails: payout.payoutMethod
+        ? {
+            method: payout.payoutMethod.method,
+            accountName: payout.payoutMethod.accountName,
+            accountNumberOrIban: payout.payoutMethod.accountNumberOrIban,
+            bankName: payout.payoutMethod.bankName,
+            stripeEmail: payout.payoutMethod.stripeEmail,
+          }
+        : null,
+    };
   }
 
   async queues() {
     const now = new Date();
-    const [hold, ready, released] = await Promise.all([
+    const [allOnHold, released] = await Promise.all([
       this.payoutRepository.listForAdmin({
         statuses: ["ON_HOLD"],
-        holdUntilGt: now,
-      }),
-      this.payoutRepository.listForAdmin({
-        statuses: ["ON_HOLD"],
-        holdUntilLte: now,
       }),
       this.payoutRepository.listForAdmin({
         statuses: ["READY", "SENT"],
       }),
     ]);
 
+    const serializedOnHold = allOnHold.map((payout) => this.serializePayout(payout, now));
+    const hold = serializedOnHold.filter((payout) => !payout.eligibleForRelease);
+    const ready = serializedOnHold.filter((payout) => payout.eligibleForRelease);
+
     return {
       now: now.toISOString(),
-      hold: hold.map((payout) => this.serializePayout(payout, now)),
-      ready: ready.map((payout) => this.serializePayout(payout, now)),
+      hold,
+      ready,
       released: released.map((payout) => this.serializePayout(payout, now)),
     };
   }
@@ -109,12 +188,20 @@ export class AdminPayoutService {
     now: Date
   ) {
     const vendorLabel = payout.vendorProfile.storeName ?? payout.vendorProfile.storeSlug ?? "Vendor";
+    const orderVendor = payout.orderVendor;
     return {
       id: payout.id,
       status: payout.status,
       amount: payout.amount,
       currency: payout.currency,
       holdUntil: payout.holdUntil.toISOString(),
+      holdLabel: payoutHoldLabel({
+        deliveryMethod: orderVendor.deliveryMethod,
+        vendorOrderStatus: orderVendor.status,
+        deliveredAt: orderVendor.deliveredAt,
+        holdUntil: payout.holdUntil,
+        status: payout.status,
+      }),
       releasedAt: payout.releasedAt?.toISOString() ?? null,
       sentAt: payout.sentAt?.toISOString() ?? null,
       createdAt: payout.createdAt.toISOString(),
@@ -125,11 +212,19 @@ export class AdminPayoutService {
         label: vendorLabel,
       },
       order: {
-        orderVendorId: payout.orderVendor.id,
-        orderId: payout.orderVendor.orderId,
-        orderNumber: payout.orderVendor.order.orderNumber,
+        orderVendorId: orderVendor.id,
+        orderId: orderVendor.orderId,
+        orderNumber: orderVendor.order.orderNumber,
       },
-      eligibleForRelease: payout.status === "ON_HOLD" && payout.holdUntil <= now,
+      eligibleForRelease:
+        payout.status === "ON_HOLD" &&
+        isPayoutEligibleForRelease({
+          deliveryMethod: orderVendor.deliveryMethod,
+          vendorOrderStatus: orderVendor.status,
+          deliveredAt: orderVendor.deliveredAt,
+          holdUntil: payout.holdUntil,
+          now,
+        }),
     };
   }
 }

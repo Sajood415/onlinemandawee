@@ -4,6 +4,10 @@ import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { DeliveryRuleRepository } from "@/repositories/delivery-rule.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
+import {
+  FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR,
+  usesFixedTransactionFeeDeliveryMethod,
+} from "@/lib/platform/transaction-fee";
 
 export class AdminDeliveryService {
   constructor(
@@ -25,6 +29,7 @@ export class AdminDeliveryService {
       countryCode?: string;
       priceModel: "FLAT" | "PER_KM" | "FREE_ABOVE";
       baseFeeAmount: number;
+      transactionFeeAmountMinor?: number;
       perKmRateAmount?: number;
       freeAboveAmount?: number;
       etaMinDays: number;
@@ -39,7 +44,9 @@ export class AdminDeliveryService {
       scope: input.scope,
       isActive: input.isActive ?? true,
     });
-    const rule = await this.deliveryRuleRepository.create(input);
+    const rule = await this.deliveryRuleRepository.create(
+      this.normalizeRuleInput(input)
+    );
 
     await this.auditLogRepository.create({
       actorUserId: auth.id,
@@ -65,6 +72,7 @@ export class AdminDeliveryService {
       countryCode?: string;
       priceModel: "FLAT" | "PER_KM" | "FREE_ABOVE";
       baseFeeAmount: number;
+      transactionFeeAmountMinor?: number;
       perKmRateAmount?: number;
       freeAboveAmount?: number;
       etaMinDays: number;
@@ -92,7 +100,7 @@ export class AdminDeliveryService {
     });
     const rule = await this.deliveryRuleRepository.update({
       id: ruleId,
-      ...input,
+      ...this.normalizeRuleInput(input),
     });
 
     await this.auditLogRepository.create({
@@ -190,6 +198,29 @@ export class AdminDeliveryService {
     }
   }
 
+  private normalizeRuleInput(input: {
+    method: "PICKUP" | "EXPRESS" | "STANDARD";
+    scope: "GLOBAL" | "COUNTRY" | "VENDOR";
+    vendorProfileId?: string;
+    countryCode?: string;
+    priceModel: "FLAT" | "PER_KM" | "FREE_ABOVE";
+    baseFeeAmount: number;
+    transactionFeeAmountMinor?: number;
+    perKmRateAmount?: number;
+    freeAboveAmount?: number;
+    etaMinDays: number;
+    etaMaxDays: number;
+    isActive?: boolean;
+  }) {
+    return {
+      ...input,
+      transactionFeeAmountMinor: usesFixedTransactionFeeDeliveryMethod(input.method)
+        ? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
+        : null,
+      commissionRateBps: null,
+    };
+  }
+
   private serializeRule(
     rule: Awaited<ReturnType<DeliveryRuleRepository["findById"]>> extends infer T
       ? NonNullable<T>
@@ -205,6 +236,10 @@ export class AdminDeliveryService {
       countryCode: rule.countryCode,
       priceModel: rule.priceModel,
       baseFeeAmount: rule.baseFeeAmount,
+      transactionFeeAmountMinor: usesFixedTransactionFeeDeliveryMethod(rule.method)
+        ? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
+        : rule.transactionFeeAmountMinor,
+      commissionRateBps: null,
       perKmRateAmount: rule.perKmRateAmount,
       freeAboveAmount: rule.freeAboveAmount,
       etaMinDays: rule.etaMinDays,

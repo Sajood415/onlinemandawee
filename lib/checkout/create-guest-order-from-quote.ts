@@ -14,6 +14,7 @@ import { generateUniqueGuestTrackingToken } from "@/lib/orders/generate-guest-tr
 import { generateOpaqueToken } from "@/lib/utils/crypto";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 import { StandardConsolidationService } from "@/services/standard-consolidation.service";
+import { mergeLineItemsByProduct } from "@/lib/orders/aggregate-order-line-items";
 
 async function generateUniqueOrderNumber() {
   for (let i = 0; i < 20; i++) {
@@ -22,6 +23,111 @@ async function generateUniqueOrderNumber() {
     if (!existing) return candidate;
   }
   throw new Error("Could not generate unique order number");
+}
+
+function groupLineItemsByVendor(quote: GuestCheckoutQuote) {
+  const lineItemsByVendor = quote.lineItems.reduce<
+    Record<string, typeof quote.lineItems>
+  >((acc, item) => {
+    if (!acc[item.vendorProfileId]) acc[item.vendorProfileId] = [];
+    acc[item.vendorProfileId].push(item);
+    return acc;
+  }, {});
+
+  for (const vendorProfileId of Object.keys(lineItemsByVendor)) {
+    lineItemsByVendor[vendorProfileId] = mergeLineItemsByProduct(
+      lineItemsByVendor[vendorProfileId] ?? []
+    );
+  }
+
+  return lineItemsByVendor;
+}
+
+export async function sendGuestCheckoutOrderNotifications(input: {
+  orderId: string;
+  quote: GuestCheckoutQuote;
+  orderNumber: string;
+  guestTrackingToken: string;
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  addressLine1?: string;
+  city?: string;
+  country?: string;
+  postalCode?: string;
+  paymentStatus: "PAID";
+  deliveryMethod?: "PICKUP" | "EXPRESS" | "STANDARD";
+}) {
+  const order = await prisma.order.findUnique({
+    where: { id: input.orderId },
+    include: {
+      vendorOrders: {
+        include: { items: true },
+      },
+    },
+  });
+  if (!order) {
+    return;
+  }
+
+  const guestEmail = normalizeEmailForAuth(input.guestEmail);
+  const paymentMethod = "card";
+  const customerLineItems = order.vendorOrders.flatMap((vendorOrder) =>
+    vendorOrder.items.map((item) => ({
+      productName: item.productName,
+      quantity: item.quantity,
+      unitPriceAmount: item.unitPriceAmount,
+      currency: item.currency,
+    }))
+  );
+
+  await sendGuestOrderConfirmationEmail({
+    to: guestEmail,
+    customerName: input.guestName,
+    orderNumber: input.orderNumber,
+    trackingUrl: buildGuestOrderTrackingUrl(input.guestTrackingToken),
+    currency: order.currency,
+    grandTotalAmount: order.grandTotalAmount,
+    paymentMethod,
+    deliveryMethod:
+      input.deliveryMethod ?? order.deliveryMethod ?? input.quote.deliveryMethod ?? "STANDARD",
+    shippingAddress: {
+      addressLine1: input.addressLine1 ?? "",
+      city: input.city ?? "",
+      country: input.country ?? "",
+      postalCode: (input.postalCode ?? "") || undefined,
+      phone: input.guestPhone,
+    },
+    lineItems: customerLineItems,
+  });
+
+  await sendVendorOrderNotifications({
+    orderNumber: input.orderNumber,
+    customerName: input.guestName,
+    customerEmail: guestEmail,
+    customerPhone: input.guestPhone,
+    currency: order.currency,
+    paymentMethod,
+    paymentStatus: input.paymentStatus,
+    shippingAddress: {
+      addressLine1: input.addressLine1 ?? "",
+      city: input.city ?? "",
+      country: input.country ?? "",
+      postalCode: (input.postalCode ?? "") || undefined,
+      phone: input.guestPhone,
+    },
+    vendorGroups: order.vendorOrders.map((vendorOrder) => ({
+      vendorProfileId: vendorOrder.vendorProfileId,
+      grandTotalAmount: vendorOrder.grandTotalAmount,
+      deliveryMethod: vendorOrder.deliveryMethod,
+      items: vendorOrder.items.map((item) => ({
+        productName: item.productName,
+        quantity: item.quantity,
+        unitPriceAmount: item.unitPriceAmount,
+        currency: item.currency,
+      })),
+    })),
+  });
 }
 
 export async function createGuestOrderFromQuote(input: {
@@ -37,18 +143,14 @@ export async function createGuestOrderFromQuote(input: {
   deliveryMethod?: "PICKUP" | "EXPRESS" | "STANDARD";
   stripePaymentIntentId?: string;
   userId?: string;
+  sendNotifications?: boolean;
 }) {
+  const sendNotifications = input.sendNotifications !== false;
   const orderNumber = await generateUniqueOrderNumber();
   const guestEmail = normalizeEmailForAuth(input.guestEmail);
   const guestTrackingToken = await generateUniqueGuestTrackingToken();
 
-  const lineItemsByVendor = input.quote.lineItems.reduce<
-    Record<string, typeof input.quote.lineItems>
-  >((acc, item) => {
-    if (!acc[item.vendorProfileId]) acc[item.vendorProfileId] = [];
-    acc[item.vendorProfileId].push(item);
-    return acc;
-  }, {});
+  const lineItemsByVendor = groupLineItemsByVendor(input.quote);
 
   await decrementStockForOrderItems(
     input.quote.lineItems.map((item) => ({
@@ -64,7 +166,7 @@ export async function createGuestOrderFromQuote(input: {
       userId: input.userId,
       guestEmail,
       guestTrackingToken,
-      stripePaymentIntentId: input.stripePaymentIntentId,
+      stripePaymentIntentId: input.stripePaymentIntentId ?? undefined,
       orderNumber,
       status: "CREATED",
       paymentStatus: input.paymentStatus,
@@ -117,51 +219,24 @@ export async function createGuestOrderFromQuote(input: {
 
   await incrementCouponUsage(input.quote.appliedCoupons.map((coupon) => coupon.couponId));
 
-  const paymentMethod = "card";
+  if (!sendNotifications) {
+    return order;
+  }
 
-  await sendGuestOrderConfirmationEmail({
-    to: guestEmail,
-    customerName: input.guestName,
+  await sendGuestCheckoutOrderNotifications({
+    orderId: order.id,
+    quote: input.quote,
     orderNumber: order.orderNumber,
-    trackingUrl: buildGuestOrderTrackingUrl(guestTrackingToken),
-    currency: input.quote.currency,
-    grandTotalAmount: input.quote.grandTotalAmount,
-    paymentMethod,
-    shippingAddress: {
-      addressLine1: input.addressLine1 ?? "",
-      city: input.city ?? "",
-      country: input.country ?? "",
-      postalCode: (input.postalCode ?? "") || undefined,
-      phone: input.guestPhone,
-    },
-    lineItems: input.quote.lineItems,
-  });
-
-  await sendVendorOrderNotifications({
-    orderNumber: order.orderNumber,
-    customerName: input.guestName,
-    customerEmail: guestEmail,
-    customerPhone: input.guestPhone,
-    currency: input.quote.currency,
-    paymentMethod,
+    guestTrackingToken,
+    guestName: input.guestName,
+    guestEmail: input.guestEmail,
+    guestPhone: input.guestPhone,
+    addressLine1: input.addressLine1,
+    city: input.city,
+    country: input.country,
+    postalCode: input.postalCode,
     paymentStatus: input.paymentStatus,
-    shippingAddress: {
-      addressLine1: input.addressLine1 ?? "",
-      city: input.city ?? "",
-      country: input.country ?? "",
-      postalCode: (input.postalCode ?? "") || undefined,
-      phone: input.guestPhone,
-    },
-    vendorGroups: input.quote.vendorSummaries.map((summary) => ({
-      vendorProfileId: summary.vendorProfileId,
-      grandTotalAmount: summary.grandTotalAmount,
-      items: (lineItemsByVendor[summary.vendorProfileId] ?? []).map((item) => ({
-        productName: item.productName,
-        quantity: item.quantity,
-        unitPriceAmount: item.unitPriceAmount,
-        currency: item.currency,
-      })),
-    })),
+    deliveryMethod: input.deliveryMethod,
   });
 
   return order;

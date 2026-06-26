@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Loader2, RefreshCw } from "lucide-react";
+import { Building2, CheckCircle2, Loader2, RefreshCw, X } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
@@ -13,6 +13,7 @@ type AdminPayoutItem = {
   amount: number;
   currency: string;
   holdUntil: string;
+  holdLabel: string | null;
   releasedAt: string | null;
   sentAt: string | null;
   createdAt: string;
@@ -25,9 +26,45 @@ type AdminPayoutItem = {
   };
   order: {
     orderVendorId: string;
-    orderId: string;
+    orderId: string | null;
     orderNumber: string;
   };
+};
+
+type AdminPayoutDetail = AdminPayoutItem & {
+  sendMethod: "BANK";
+  lineItems: Array<{
+    productName: string;
+    productSku: string | null;
+    variantName: string | null;
+    quantity: number;
+    unitPriceAmount: number;
+    lineTotalAmount: number;
+    currency: string;
+  }>;
+  vendorOrder: {
+    status: string;
+    deliveryMethod: string | null;
+    deliveredAt: string | null;
+    subtotalAmount: number;
+    deliveryAmount: number;
+    discountAmount: number;
+    grandTotalAmount: number;
+    currency: string;
+  };
+  commission: {
+    rateBps: number;
+    baseAmount: number;
+    commissionAmount: number;
+    currency: string;
+  } | null;
+  bankDetails: {
+    method: string;
+    accountName: string | null;
+    accountNumberOrIban: string | null;
+    bankName: string | null;
+    stripeEmail: string | null;
+  } | null;
 };
 
 type AdminPayoutQueuesResponse = {
@@ -50,6 +87,10 @@ function formatMoney(amount: number, currency: string) {
   }
 }
 
+function formatHoldUntil(payout: Pick<AdminPayoutItem, "holdUntil" | "holdLabel">) {
+  return payout.holdLabel ?? formatDate(payout.holdUntil);
+}
+
 function formatDate(value: string | null) {
   if (!value) return "—";
   const date = new Date(value);
@@ -64,6 +105,11 @@ function payoutStatusClass(status: AdminPayoutItem["status"]) {
   return "bg-rose-50 text-rose-700";
 }
 
+function payoutStatusLabel(status: AdminPayoutItem["status"]) {
+  if (status === "READY") return "RELEASED";
+  return status.replace("_", " ");
+}
+
 export default function AdminPayoutsPage() {
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
 
@@ -71,7 +117,9 @@ export default function AdminPayoutsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detail, setDetail] = useState<AdminPayoutDetail | null>(null);
 
   const loadPayouts = useCallback(async () => {
     setLoading(true);
@@ -80,22 +128,41 @@ export default function AdminPayoutsPage() {
       const response = await fetchWithAuth("/api/admin/payouts");
       const payload = await parseApiResponse<AdminPayoutQueuesResponse>(response);
       setData(payload);
-      if (!selectedId && payload.hold[0]) {
-        setSelectedId(payload.hold[0].id);
-      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Failed to load payouts.");
       setData(null);
     } finally {
       setLoading(false);
     }
-  }, [selectedId]);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && user) {
       void loadPayouts();
     }
   }, [authLoading, user, loadPayouts]);
+
+  const openDetail = useCallback(async (payoutId: string) => {
+    setDetailOpen(true);
+    setDetailLoading(true);
+    setDetail(null);
+    setError(null);
+    try {
+      const response = await fetchWithAuth(`/api/admin/payouts/${payoutId}`);
+      const payload = await parseApiResponse<AdminPayoutDetail>(response);
+      setDetail(payload);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Failed to load payout details.");
+      setDetailOpen(false);
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
+
+  const closeDetail = useCallback(() => {
+    setDetailOpen(false);
+    setDetail(null);
+  }, []);
 
   const runAction = useCallback(
     async (payoutId: string, type: "release" | "sent") => {
@@ -104,28 +171,47 @@ export default function AdminPayoutsPage() {
       setError(null);
       try {
         const endpoint = type === "release" ? "/api/admin/payouts/release" : "/api/admin/payouts/sent";
+        const body =
+          type === "release"
+            ? { payoutId }
+            : { payoutId, sentVia: "BANK" as const };
         const res = await fetchWithAuth(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ payoutId }),
+          body: JSON.stringify(body),
         });
         await parseApiResponse(res);
         await loadPayouts();
+        if (detailOpen && detail?.id === payoutId) {
+          await openDetail(payoutId);
+        }
       } catch (actionError) {
         setError(actionError instanceof Error ? actionError.message : "Payout action failed.");
       } finally {
         setActiveActionId(null);
       }
     },
-    [activeActionId, loadPayouts]
+    [activeActionId, detail?.id, detailOpen, loadPayouts, openDetail]
   );
 
-  const allPayouts = useMemo(() => {
-    if (!data) return [];
-    return [...data.hold, ...data.ready, ...data.released];
+  const queueCounts = useMemo(() => {
+    if (!data) return { hold: 0, ready: 0, released: 0 };
+    return {
+      hold: data.hold.length,
+      ready: data.ready.length,
+      released: data.released.length,
+    };
   }, [data]);
 
-  const selected = allPayouts.find((item) => item.id === selectedId) ?? null;
+  const renderViewDetailsButton = (payoutId: string) => (
+    <button
+      type="button"
+      onClick={() => void openDetail(payoutId)}
+      className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+    >
+      View details
+    </button>
+  );
 
   if (authLoading || !user) {
     return (
@@ -141,7 +227,7 @@ export default function AdminPayoutsPage() {
         <div>
           <h1 className="text-2xl font-bold text-[#0f3460]">Payout Operations</h1>
           <p className="mt-1 text-sm text-neutral-600">
-            Operational release workflow for held vendor payouts.
+            Release held vendor earnings and send payouts via bank transfer from this screen.
           </p>
         </div>
         <button
@@ -166,28 +252,49 @@ export default function AdminPayoutsPage() {
         </div>
       ) : !data ? null : (
         <>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">On hold</p>
+              <p className="mt-1 text-2xl font-bold text-amber-900">{queueCounts.hold}</p>
+            </div>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+                Ready to release
+              </p>
+              <p className="mt-1 text-2xl font-bold text-emerald-900">{queueCounts.ready}</p>
+            </div>
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-800">
+                Released / sent
+              </p>
+              <p className="mt-1 text-2xl font-bold text-blue-900">{queueCounts.released}</p>
+            </div>
+          </div>
+
           <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div className="border-b border-neutral-200 px-4 py-3">
               <h2 className="text-sm font-semibold text-neutral-900">Hold queue</h2>
+              <p className="mt-0.5 text-xs text-neutral-500">
+                Waiting for delivery or hold period. Express orders move to Ready once delivered.
+              </p>
             </div>
-            <div className="overflow-x-auto">
+            <div className="responsive-table-shell overflow-x-auto">
               <table className="w-full min-w-[860px] border-collapse text-sm">
                 <thead className="bg-neutral-50">
                   <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-600">
                     <th className="px-4 py-2">Vendor</th>
                     <th className="px-4 py-2">Order</th>
-                    <th className="px-4 py-2">Amount</th>
+                    <th className="px-4 py-2">Net payout</th>
                     <th className="px-4 py-2">Created</th>
                     <th className="px-4 py-2">Hold until</th>
-                    <th className="px-4 py-2">Eligible</th>
                     <th className="px-4 py-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.hold.length === 0 ? (
                     <tr>
-                      <td className="px-4 py-6 text-neutral-500" colSpan={7}>
-                        No payouts in hold queue.
+                      <td className="px-4 py-6 text-neutral-500" colSpan={6}>
+                        No payouts waiting on hold conditions.
                       </td>
                     </tr>
                   ) : (
@@ -199,28 +306,8 @@ export default function AdminPayoutsPage() {
                           {formatMoney(payout.amount, payout.currency)}
                         </td>
                         <td className="px-4 py-3 text-neutral-700">{formatDate(payout.createdAt)}</td>
-                        <td className="px-4 py-3 text-neutral-700">{formatDate(payout.holdUntil)}</td>
-                        <td className="px-4 py-3">
-                          {payout.eligibleForRelease ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                              Ready
-                            </span>
-                          ) : (
-                            <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                              Waiting
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedId(payout.id)}
-                            className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
-                          >
-                            View details
-                          </button>
-                        </td>
+                        <td className="px-4 py-3 text-neutral-700">{formatHoldUntil(payout)}</td>
+                        <td className="px-4 py-3">{renderViewDetailsButton(payout.id)}</td>
                       </tr>
                     ))
                   )}
@@ -232,16 +319,19 @@ export default function AdminPayoutsPage() {
           <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div className="border-b border-neutral-200 px-4 py-3">
               <h2 className="text-sm font-semibold text-neutral-900">Ready queue</h2>
+              <p className="mt-0.5 text-xs text-neutral-500">
+                Eligible for release — includes delivered express orders.
+              </p>
             </div>
-            <div className="overflow-x-auto">
+            <div className="responsive-table-shell overflow-x-auto">
               <table className="w-full min-w-[860px] border-collapse text-sm">
                 <thead className="bg-neutral-50">
                   <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-600">
                     <th className="px-4 py-2">Vendor</th>
                     <th className="px-4 py-2">Order</th>
-                    <th className="px-4 py-2">Amount</th>
-                    <th className="px-4 py-2">Hold until</th>
-                    <th className="px-4 py-2">Action</th>
+                    <th className="px-4 py-2">Net payout</th>
+                    <th className="px-4 py-2">Hold status</th>
+                    <th className="px-4 py-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -256,19 +346,27 @@ export default function AdminPayoutsPage() {
                       <tr key={payout.id} className="border-b border-neutral-100">
                         <td className="px-4 py-3 text-neutral-900">{payout.vendor.label}</td>
                         <td className="px-4 py-3 text-neutral-700">{payout.order.orderNumber}</td>
-                        <td className="px-4 py-3 text-neutral-900">
+                        <td className="px-4 py-3 font-medium text-neutral-900">
                           {formatMoney(payout.amount, payout.currency)}
                         </td>
-                        <td className="px-4 py-3 text-neutral-700">{formatDate(payout.holdUntil)}</td>
                         <td className="px-4 py-3">
-                          <button
-                            type="button"
-                            onClick={() => void runAction(payout.id, "release")}
-                            disabled={activeActionId === payout.id}
-                            className="rounded-lg bg-[#0f3460] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
-                          >
-                            {activeActionId === payout.id ? "Releasing..." : "Release payout"}
-                          </button>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            {payout.holdLabel ?? "Ready"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-2">
+                            {renderViewDetailsButton(payout.id)}
+                            <button
+                              type="button"
+                              onClick={() => void runAction(payout.id, "release")}
+                              disabled={activeActionId === payout.id}
+                              className="rounded-lg bg-[#0f3460] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+                            >
+                              {activeActionId === payout.id ? "Releasing..." : "Release payout"}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -282,17 +380,17 @@ export default function AdminPayoutsPage() {
             <div className="border-b border-neutral-200 px-4 py-3">
               <h2 className="text-sm font-semibold text-neutral-900">Released queue</h2>
             </div>
-            <div className="overflow-x-auto">
+            <div className="responsive-table-shell overflow-x-auto">
               <table className="w-full min-w-[980px] border-collapse text-sm">
                 <thead className="bg-neutral-50">
                   <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-600">
                     <th className="px-4 py-2">Vendor</th>
                     <th className="px-4 py-2">Order</th>
                     <th className="px-4 py-2">Status</th>
-                    <th className="px-4 py-2">Amount</th>
+                    <th className="px-4 py-2">Net payout</th>
                     <th className="px-4 py-2">Released at</th>
                     <th className="px-4 py-2">Sent at</th>
-                    <th className="px-4 py-2">Action</th>
+                    <th className="px-4 py-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -313,7 +411,7 @@ export default function AdminPayoutsPage() {
                               payout.status
                             )}`}
                           >
-                            {payout.status === "READY" ? "RELEASED" : payout.status}
+                            {payoutStatusLabel(payout.status)}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-neutral-900">
@@ -322,18 +420,19 @@ export default function AdminPayoutsPage() {
                         <td className="px-4 py-3 text-neutral-700">{formatDate(payout.releasedAt)}</td>
                         <td className="px-4 py-3 text-neutral-700">{formatDate(payout.sentAt)}</td>
                         <td className="px-4 py-3">
-                          {payout.status === "READY" ? (
-                            <button
-                              type="button"
-                              onClick={() => void runAction(payout.id, "sent")}
-                              disabled={activeActionId === payout.id}
-                              className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
-                            >
-                              {activeActionId === payout.id ? "Marking..." : "Mark sent"}
-                            </button>
-                          ) : (
-                            <span className="text-xs text-neutral-500">Sent</span>
-                          )}
+                          <div className="flex flex-wrap gap-2">
+                            {renderViewDetailsButton(payout.id)}
+                            {payout.status === "READY" ? (
+                              <button
+                                type="button"
+                                onClick={() => void runAction(payout.id, "sent")}
+                                disabled={activeActionId === payout.id}
+                                className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
+                              >
+                                {activeActionId === payout.id ? "Marking..." : "Mark sent (bank)"}
+                              </button>
+                            ) : null}
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -342,52 +441,214 @@ export default function AdminPayoutsPage() {
               </table>
             </div>
           </section>
-
-          <section className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-neutral-900">Payout details</h2>
-            {!selected ? (
-              <p className="mt-2 text-sm text-neutral-500">Select a payout to inspect details.</p>
-            ) : (
-              <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
-                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                  <dt className="text-xs uppercase tracking-wide text-neutral-500">Vendor</dt>
-                  <dd className="mt-1 font-medium text-neutral-900">{selected.vendor.label}</dd>
-                </div>
-                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                  <dt className="text-xs uppercase tracking-wide text-neutral-500">Order</dt>
-                  <dd className="mt-1 font-medium text-neutral-900">{selected.order.orderNumber}</dd>
-                </div>
-                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                  <dt className="text-xs uppercase tracking-wide text-neutral-500">Payout amount</dt>
-                  <dd className="mt-1 font-medium text-neutral-900">
-                    {formatMoney(selected.amount, selected.currency)}
-                  </dd>
-                </div>
-                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                  <dt className="text-xs uppercase tracking-wide text-neutral-500">Status</dt>
-                  <dd className="mt-1 font-medium text-neutral-900">
-                    {selected.status === "READY" ? "RELEASED" : selected.status}
-                  </dd>
-                </div>
-                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                  <dt className="text-xs uppercase tracking-wide text-neutral-500">Hold until</dt>
-                  <dd className="mt-1 font-medium text-neutral-900">{formatDate(selected.holdUntil)}</dd>
-                </div>
-                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                  <dt className="text-xs uppercase tracking-wide text-neutral-500">Released at</dt>
-                  <dd className="mt-1 font-medium text-neutral-900">
-                    {formatDate(selected.releasedAt)}
-                  </dd>
-                </div>
-                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 sm:col-span-2">
-                  <dt className="text-xs uppercase tracking-wide text-neutral-500">Sent at</dt>
-                  <dd className="mt-1 font-medium text-neutral-900">{formatDate(selected.sentAt)}</dd>
-                </div>
-              </dl>
-            )}
-          </section>
         </>
       )}
+
+      {detailOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-neutral-200 bg-white shadow-xl">
+            <div className="flex items-start justify-between border-b border-neutral-200 px-5 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-neutral-900">Payout details</h2>
+                <p className="mt-1 text-sm text-neutral-600">
+                  Review vendor bank details and complete the bank transfer from this screen.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeDetail}
+                className="rounded-lg p-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {detailLoading || !detail ? (
+              <div className="flex min-h-[200px] items-center justify-center px-5 py-10">
+                <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+              </div>
+            ) : (
+              <div className="space-y-5 px-5 py-5">
+                <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                  <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                    <dt className="text-xs uppercase tracking-wide text-neutral-500">Vendor</dt>
+                    <dd className="mt-1 font-medium text-neutral-900">{detail.vendor.label}</dd>
+                  </div>
+                  <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                    <dt className="text-xs uppercase tracking-wide text-neutral-500">Order</dt>
+                    <dd className="mt-1 font-medium text-neutral-900">{detail.order.orderNumber}</dd>
+                  </div>
+                  <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                    <dt className="text-xs uppercase tracking-wide text-neutral-500">Items subtotal</dt>
+                    <dd className="mt-1 font-medium text-neutral-900">
+                      {formatMoney(detail.vendorOrder.subtotalAmount, detail.vendorOrder.currency)}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                    <dt className="text-xs uppercase tracking-wide text-neutral-500">Net payout to vendor</dt>
+                    <dd className="mt-1 text-lg font-bold text-[#0f3460]">
+                      {formatMoney(detail.amount, detail.currency)}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                    <dt className="text-xs uppercase tracking-wide text-neutral-500">Status</dt>
+                    <dd className="mt-1 font-medium text-neutral-900">
+                      {payoutStatusLabel(detail.status)}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                    <dt className="text-xs uppercase tracking-wide text-neutral-500">Vendor order total</dt>
+                    <dd className="mt-1 font-medium text-neutral-900">
+                      {formatMoney(detail.vendorOrder.grandTotalAmount, detail.vendorOrder.currency)}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                    <dt className="text-xs uppercase tracking-wide text-neutral-500">Transaction fee</dt>
+                    <dd className="mt-1 font-medium text-neutral-900">
+                      {detail.commission
+                        ? formatMoney(detail.commission.commissionAmount, detail.commission.currency)
+                        : "—"}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                    <dt className="text-xs uppercase tracking-wide text-neutral-500">Delivery method</dt>
+                    <dd className="mt-1 font-medium text-neutral-900">
+                      {detail.vendorOrder.deliveryMethod ?? "—"}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                    <dt className="text-xs uppercase tracking-wide text-neutral-500">Order status</dt>
+                    <dd className="mt-1 font-medium text-neutral-900">{detail.vendorOrder.status}</dd>
+                  </div>
+                  <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 sm:col-span-2">
+                    <dt className="text-xs uppercase tracking-wide text-neutral-500">Hold until</dt>
+                    <dd className="mt-1 font-medium text-neutral-900">{formatHoldUntil(detail)}</dd>
+                  </div>
+                </dl>
+
+                {detail.lineItems.length > 0 ? (
+                  <section className="rounded-xl border border-neutral-200 bg-white">
+                    <div className="border-b border-neutral-200 px-4 py-3">
+                      <h3 className="text-sm font-semibold text-neutral-900">Order line items</h3>
+                      <p className="mt-0.5 text-xs text-neutral-500">
+                        SKU-level prices captured when the order was placed.
+                      </p>
+                    </div>
+                    <div className="responsive-table-shell overflow-x-auto">
+                      <table className="w-full min-w-[520px] border-collapse text-sm">
+                        <thead className="bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-600">
+                          <tr>
+                            <th className="px-4 py-2">Product</th>
+                            <th className="px-4 py-2">SKU / variant</th>
+                            <th className="px-4 py-2">Qty</th>
+                            <th className="px-4 py-2">Unit</th>
+                            <th className="px-4 py-2">Line total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detail.lineItems.map((item, index) => (
+                            <tr key={`${item.productSku ?? item.productName}-${index}`} className="border-t border-neutral-100">
+                              <td className="px-4 py-2 text-neutral-900">{item.productName}</td>
+                              <td className="px-4 py-2 text-neutral-600">
+                                {[item.productSku, item.variantName].filter(Boolean).join(" · ") || "—"}
+                              </td>
+                              <td className="px-4 py-2 text-neutral-700">{item.quantity}</td>
+                              <td className="px-4 py-2 text-neutral-700">
+                                {formatMoney(item.unitPriceAmount, item.currency)}
+                              </td>
+                              <td className="px-4 py-2 font-medium text-neutral-900">
+                                {formatMoney(item.lineTotalAmount, item.currency)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                ) : null}
+
+                <section className="rounded-xl border border-[#0f3460]/20 bg-[#0f3460]/5 p-4">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-[#0f3460]" />
+                    <h3 className="text-sm font-semibold text-[#0f3460]">Send via bank transfer</h3>
+                  </div>
+                  <p className="mt-2 text-sm text-neutral-600">
+                    Transfer the payout amount to the vendor&apos;s bank account below, then mark the
+                    payout as sent.
+                  </p>
+
+                  {detail.bankDetails?.accountName ||
+                  detail.bankDetails?.accountNumberOrIban ||
+                  detail.bankDetails?.bankName ? (
+                    <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                      <div>
+                        <dt className="text-xs uppercase tracking-wide text-neutral-500">
+                          Account name
+                        </dt>
+                        <dd className="mt-1 font-medium text-neutral-900">
+                          {detail.bankDetails.accountName ?? "—"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs uppercase tracking-wide text-neutral-500">Bank name</dt>
+                        <dd className="mt-1 font-medium text-neutral-900">
+                          {detail.bankDetails.bankName ?? "—"}
+                        </dd>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <dt className="text-xs uppercase tracking-wide text-neutral-500">
+                          Account / IBAN
+                        </dt>
+                        <dd className="mt-1 break-all font-mono text-sm font-medium text-neutral-900">
+                          {detail.bankDetails.accountNumberOrIban ?? "—"}
+                        </dd>
+                      </div>
+                    </dl>
+                  ) : (
+                    <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                      This vendor has not submitted bank details yet. Ask them to complete payout
+                      information in vendor settings before sending funds.
+                    </p>
+                  )}
+                </section>
+
+                <div className="flex flex-wrap justify-end gap-2 border-t border-neutral-200 pt-4">
+                  <button
+                    type="button"
+                    onClick={closeDetail}
+                    className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+                  >
+                    Close
+                  </button>
+                  {detail.status === "ON_HOLD" && detail.eligibleForRelease ? (
+                    <button
+                      type="button"
+                      onClick={() => void runAction(detail.id, "release")}
+                      disabled={activeActionId === detail.id}
+                      className="rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+                    >
+                      {activeActionId === detail.id ? "Releasing..." : "Release payout"}
+                    </button>
+                  ) : null}
+                  {detail.status === "READY" ? (
+                    <button
+                      type="button"
+                      onClick={() => void runAction(detail.id, "sent")}
+                      disabled={activeActionId === detail.id}
+                      className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                    >
+                      {activeActionId === detail.id
+                        ? "Marking..."
+                        : "Mark sent via bank transfer"}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

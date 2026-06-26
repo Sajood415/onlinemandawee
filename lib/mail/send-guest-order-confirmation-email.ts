@@ -21,6 +21,7 @@ export async function sendGuestOrderConfirmationEmail(input: {
   currency: string;
   grandTotalAmount: number;
   paymentMethod: "card";
+  deliveryMethod?: "PICKUP" | "EXPRESS" | "STANDARD" | null;
   shippingAddress: OrderEmailContext["shippingAddress"];
   lineItems: GuestOrderLineItem[];
 }) {
@@ -40,7 +41,10 @@ export async function sendGuestOrderConfirmationEmail(input: {
       })),
     };
 
-    const email = buildOrderPlacedEmail(ctx, { paymentMethod: input.paymentMethod });
+    const email = buildOrderPlacedEmail(ctx, {
+      paymentMethod: input.paymentMethod,
+      deliveryMethod: input.deliveryMethod,
+    });
     await sendTransactionalEmail({ to: input.to, ...email });
   } catch {
     // Order is already saved; do not fail the request if mail fails.

@@ -44,6 +44,91 @@ export class PayoutRepository {
     });
   }
 
+  async findByIdForAdmin(id: string) {
+    const payout = await prisma.payout.findUnique({
+      where: { id },
+    });
+
+    if (!payout) {
+      return null;
+    }
+
+    const [vendorProfile, orderVendor, payoutMethod, commission] = await Promise.all([
+      prisma.vendorProfile.findUnique({
+        where: { id: payout.vendorProfileId },
+        select: {
+          id: true,
+          storeName: true,
+          storeSlug: true,
+        },
+      }),
+      prisma.orderVendor.findUnique({
+        where: { id: payout.orderVendorId },
+        select: {
+          id: true,
+          orderId: true,
+          status: true,
+          deliveryMethod: true,
+          deliveredAt: true,
+          currency: true,
+          subtotalAmount: true,
+          deliveryAmount: true,
+          discountAmount: true,
+          grandTotalAmount: true,
+          order: {
+            select: {
+              orderNumber: true,
+            },
+          },
+          items: {
+            select: {
+              id: true,
+              productName: true,
+              productSku: true,
+              variantName: true,
+              quantity: true,
+              unitPriceAmount: true,
+              lineTotalAmount: true,
+              currency: true,
+            },
+            orderBy: { createdAt: "asc" },
+          },
+        },
+      }),
+      prisma.vendorPayoutMethod.findUnique({
+        where: { vendorProfileId: payout.vendorProfileId },
+      }),
+      prisma.commissionLedger.findUnique({
+        where: { orderVendorId: payout.orderVendorId },
+      }),
+    ]);
+
+    return {
+      ...payout,
+      vendorProfile: vendorProfile ?? {
+        id: payout.vendorProfileId,
+        storeName: null,
+        storeSlug: null,
+      },
+      orderVendor: orderVendor ?? {
+        id: payout.orderVendorId,
+        orderId: null,
+        status: "NEW",
+        deliveryMethod: null,
+        deliveredAt: null,
+        currency: payout.currency,
+        subtotalAmount: 0,
+        deliveryAmount: 0,
+        discountAmount: 0,
+        grandTotalAmount: 0,
+        order: { orderNumber: "—" },
+        items: [],
+      },
+      payoutMethod,
+      commission,
+    };
+  }
+
   listByVendorProfileId(vendorProfileId: string) {
     return prisma.payout.findMany({
       where: { vendorProfileId },
@@ -107,6 +192,9 @@ export class PayoutRepository {
             select: {
               id: true,
               orderId: true,
+              deliveryMethod: true,
+              status: true,
+              deliveredAt: true,
               order: {
                 select: {
                   orderNumber: true,
@@ -131,6 +219,9 @@ export class PayoutRepository {
           orderVendor: orderVendorById.get(payout.orderVendorId) ?? {
             id: payout.orderVendorId,
             orderId: null,
+            deliveryMethod: null,
+            status: "NEW",
+            deliveredAt: null,
             order: {
               orderNumber: "—",
             },

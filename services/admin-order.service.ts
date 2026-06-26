@@ -1,5 +1,7 @@
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import type { DeliveryMethod } from "@/domain/delivery/delivery-types";
+import { payoutHoldLabel } from "@/lib/payout/payout-hold";
 import { CommissionLedgerRepository } from "@/repositories/commission-ledger.repository";
 import {
   OrderRepository,
@@ -9,6 +11,11 @@ import {
 import { PayoutRepository } from "@/repositories/payout.repository";
 import { RefundCaseRepository } from "@/repositories/refund-case.repository";
 import { VendorLedgerEntryRepository } from "@/repositories/vendor-ledger-entry.repository";
+import {
+  aggregateOrderLineItemsByProduct,
+  formatAggregatedProductLabel,
+  sumOrderLineItemQuantities,
+} from "@/lib/orders/aggregate-order-line-items";
 
 type CommissionRow = Awaited<
   ReturnType<CommissionLedgerRepository["findByOrderVendorIds"]>
@@ -157,7 +164,12 @@ export class AdminOrderService {
 
   private serializePayout(
     vendorOrderId: string,
-    payoutByOrderVendorId: Map<string, PayoutRow>
+    payoutByOrderVendorId: Map<string, PayoutRow>,
+    vendorOrder?: {
+      deliveryMethod: DeliveryMethod | null;
+      status: string;
+      deliveredAt: Date | null;
+    }
   ) {
     const row = payoutByOrderVendorId.get(vendorOrderId);
     if (!row) {
@@ -166,6 +178,7 @@ export class AdminOrderService {
         amount: null,
         currency: null,
         holdUntil: null,
+        holdLabel: null,
         releasedAt: null,
         sentAt: null,
       };
@@ -176,6 +189,15 @@ export class AdminOrderService {
       amount: row.amount,
       currency: row.currency,
       holdUntil: row.holdUntil.toISOString(),
+      holdLabel: vendorOrder
+        ? payoutHoldLabel({
+            deliveryMethod: vendorOrder.deliveryMethod,
+            vendorOrderStatus: vendorOrder.status,
+            deliveredAt: vendorOrder.deliveredAt,
+            holdUntil: row.holdUntil,
+            status: row.status,
+          })
+        : null,
       releasedAt: row.releasedAt?.toISOString() ?? null,
       sentAt: row.sentAt?.toISOString() ?? null,
     };
@@ -196,7 +218,7 @@ export class AdminOrderService {
       currency: vendorOrder.currency,
       commissionAmount:
         commissionByOrderVendorId.get(vendorOrder.id)?.commissionAmount ?? null,
-      payout: this.serializePayout(vendorOrder.id, payoutByOrderVendorId),
+      payout: this.serializePayout(vendorOrder.id, payoutByOrderVendorId, vendorOrder),
       items: vendorOrder.items.map((item) => ({
         id: item.id,
         productName: item.productName,
@@ -255,7 +277,11 @@ export class AdminOrderService {
         vendorOrder.id,
         commissionByOrderVendorId
       );
-      const payout = this.serializePayout(vendorOrder.id, payoutByOrderVendorId);
+      const payout = this.serializePayout(
+        vendorOrder.id,
+        payoutByOrderVendorId,
+        vendorOrder
+      );
 
       return {
         id: vendorOrder.id,
@@ -263,6 +289,7 @@ export class AdminOrderService {
         vendorStoreSlug: vendorOrder.vendorProfile.storeSlug,
         vendorStoreName: vendorOrder.vendorProfile.storeName,
         status: vendorOrder.status,
+        deliveryMethod: vendorOrder.deliveryMethod,
         deliveredAt: vendorOrder.deliveredAt?.toISOString() ?? null,
         currency: vendorOrder.currency,
         subtotalAmount: vendorOrder.subtotalAmount,
@@ -283,17 +310,27 @@ export class AdminOrderService {
             createdAt: entry.createdAt.toISOString(),
           })
         ),
-        items: vendorOrder.items.map((item) => ({
-          id: item.id,
-          productId: item.productId,
-          productName: item.productName,
-          productImage: item.productImage,
-          productSku: item.productSku,
-          quantity: item.quantity,
-          currency: item.currency,
-          unitPriceAmount: item.unitPriceAmount,
-          lineTotalAmount: item.lineTotalAmount,
-        })),
+        items: aggregateOrderLineItemsByProduct(vendorOrder.items).map((item) => {
+          const sourceItem =
+            vendorOrder.items.find(
+              (row) =>
+                row.productId === item.productId &&
+                (row.variantId ?? null) === item.variantId
+            ) ?? vendorOrder.items[0]!;
+
+          return {
+            id: sourceItem.id,
+            productId: item.productId,
+            productName: item.productName,
+            variantName: item.variantName,
+            productImage: sourceItem.productImage,
+            productSku: item.productSku,
+            quantity: item.quantity,
+            currency: vendorOrder.currency,
+            unitPriceAmount: item.unitPriceAmount,
+            lineTotalAmount: item.lineTotalAmount,
+          };
+        }),
       };
     });
 
@@ -335,19 +372,27 @@ export class AdminOrderService {
       totalCommissionAmount,
       warehouse: {
         inboundShipments:
-          order.consolidationBatch?.inboundShipments.map((shipment) => ({
-            id: shipment.id,
-            orderVendorId: shipment.orderVendorId,
-            vendorProfileId: shipment.orderVendor.vendorProfileId,
-            vendorStoreName: shipment.orderVendor.vendorProfile.storeName,
-            vendorStoreSlug: shipment.orderVendor.vendorProfile.storeSlug,
-            status: shipment.status,
-            trackingRef: shipment.trackingRef,
-            shippedAt: shipment.shippedAt?.toISOString() ?? null,
-            receivedAt: shipment.receivedAt?.toISOString() ?? null,
-            createdAt: shipment.createdAt.toISOString(),
-            updatedAt: shipment.updatedAt.toISOString(),
-          })) ?? [],
+          order.consolidationBatch?.inboundShipments.map((shipment) => {
+            const products = aggregateOrderLineItemsByProduct(shipment.orderVendor.items);
+            return {
+              id: shipment.id,
+              orderVendorId: shipment.orderVendorId,
+              vendorProfileId: shipment.orderVendor.vendorProfileId,
+              vendorStoreName: shipment.orderVendor.vendorProfile.storeName,
+              vendorStoreSlug: shipment.orderVendor.vendorProfile.storeSlug,
+              status: shipment.status,
+              trackingRef: shipment.trackingRef,
+              shippedAt: shipment.shippedAt?.toISOString() ?? null,
+              receivedAt: shipment.receivedAt?.toISOString() ?? null,
+              createdAt: shipment.createdAt.toISOString(),
+              updatedAt: shipment.updatedAt.toISOString(),
+              totalQuantity: sumOrderLineItemQuantities(products),
+              products: products.map((item) => ({
+                productName: formatAggregatedProductLabel(item),
+                quantity: item.quantity,
+              })),
+            };
+          }) ?? [],
         batch: order.consolidationBatch
           ? {
               id: order.consolidationBatch.id,

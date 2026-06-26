@@ -1,4 +1,9 @@
 import { prisma } from "@/lib/db/prisma";
+import {
+  aggregateOrderLineItemsByProduct,
+  formatAggregatedProductLabel,
+  sumOrderLineItemQuantities,
+} from "@/lib/orders/aggregate-order-line-items";
 
 type PagingInput = {
   page: number;
@@ -46,6 +51,18 @@ export class AdminWarehouseService {
                   storeSlug: true,
                 },
               },
+              items: {
+                select: {
+                  productId: true,
+                  variantId: true,
+                  variantName: true,
+                  productName: true,
+                  productSku: true,
+                  quantity: true,
+                  unitPriceAmount: true,
+                  lineTotalAmount: true,
+                },
+              },
             },
           },
           consolidationBatch: {
@@ -62,30 +79,38 @@ export class AdminWarehouseService {
     ]);
 
     return buildPagination(
-      rows.map((row) => ({
-        id: row.id,
-        status: row.status,
-        trackingRef: row.trackingRef,
-        shippedAt: row.shippedAt?.toISOString() ?? null,
-        receivedAt: row.receivedAt?.toISOString() ?? null,
-        createdAt: row.createdAt.toISOString(),
-        updatedAt: row.updatedAt.toISOString(),
-        order: {
-          id: row.order.id,
-          orderNumber: row.order.orderNumber,
-        },
-        vendorOrder: {
-          id: row.orderVendor.id,
-          status: row.orderVendor.status,
-          vendorProfileId: row.orderVendor.vendorProfileId,
-          vendorStoreName: row.orderVendor.vendorProfile.storeName,
-          vendorStoreSlug: row.orderVendor.vendorProfile.storeSlug,
-        },
-        consolidationBatch: {
-          id: row.consolidationBatch.id,
-          status: row.consolidationBatch.status,
-        },
-      })),
+      rows.map((row) => {
+        const products = aggregateOrderLineItemsByProduct(row.orderVendor.items);
+        return {
+          id: row.id,
+          status: row.status,
+          trackingRef: row.trackingRef,
+          shippedAt: row.shippedAt?.toISOString() ?? null,
+          receivedAt: row.receivedAt?.toISOString() ?? null,
+          createdAt: row.createdAt.toISOString(),
+          updatedAt: row.updatedAt.toISOString(),
+          totalQuantity: sumOrderLineItemQuantities(products),
+          products: products.map((item) => ({
+            productName: formatAggregatedProductLabel(item),
+            quantity: item.quantity,
+          })),
+          order: {
+            id: row.order.id,
+            orderNumber: row.order.orderNumber,
+          },
+          vendorOrder: {
+            id: row.orderVendor.id,
+            status: row.orderVendor.status,
+            vendorProfileId: row.orderVendor.vendorProfileId,
+            vendorStoreName: row.orderVendor.vendorProfile.storeName,
+            vendorStoreSlug: row.orderVendor.vendorProfile.storeSlug,
+          },
+          consolidationBatch: {
+            id: row.consolidationBatch.id,
+            status: row.consolidationBatch.status,
+          },
+        };
+      }),
       total,
       input.page,
       input.pageSize

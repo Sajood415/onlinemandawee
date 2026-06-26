@@ -2,6 +2,11 @@ import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { prisma } from "@/lib/db/prisma";
+import {
+  computeExpressPayoutHoldUntilAfterDelivery,
+  isExpressPendingDeliveryHold,
+  isPayoutEligibleForRelease,
+} from "@/lib/payout/payout-hold";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { PayoutRepository } from "@/repositories/payout.repository";
@@ -69,7 +74,19 @@ export class PayoutReleaseService {
       return { transferred: false, reason: "not_on_hold" as const };
     }
 
-    if (payout.holdUntil > new Date()) {
+    const vendorOrder = await this.orderRepository.findVendorOrderById(
+      payout.orderVendorId
+    );
+
+    if (
+      !vendorOrder ||
+      !isPayoutEligibleForRelease({
+        deliveryMethod: vendorOrder.deliveryMethod,
+        vendorOrderStatus: vendorOrder.status,
+        deliveredAt: vendorOrder.deliveredAt,
+        holdUntil: payout.holdUntil,
+      })
+    ) {
       return { transferred: false, reason: "hold_not_elapsed" as const };
     }
 
@@ -89,7 +106,8 @@ export class PayoutReleaseService {
 
   async markSent(
     payoutId: string,
-    actor?: Pick<AuthenticatedUser, "id" | "role">
+    actor?: Pick<AuthenticatedUser, "id" | "role">,
+    options?: { sentVia?: "BANK" }
   ) {
     const payout = await this.payoutRepository.findById(payoutId);
     if (!payout) {
@@ -159,6 +177,9 @@ export class PayoutReleaseService {
         action: "admin.payout_marked_sent",
         entityType: "Payout",
         entityId: updated.id,
+        metadata: {
+          sentVia: options?.sentVia ?? "BANK",
+        },
       });
     }
 
@@ -167,6 +188,31 @@ export class PayoutReleaseService {
 
   async assertAdminCanRelease(payoutId: string) {
     await this.requireReleasablePayout(payoutId);
+  }
+
+  /** Express payouts stay on hold until the vendor marks the order delivered. */
+  async syncExpressHoldOnDelivery(input: {
+    orderVendorId: string;
+    deliveredAt: Date;
+  }) {
+    const [payout, vendorOrder] = await Promise.all([
+      this.payoutRepository.findByOrderVendorId(input.orderVendorId),
+      this.orderRepository.findVendorOrderById(input.orderVendorId),
+    ]);
+
+    if (
+      !payout ||
+      payout.status !== "ON_HOLD" ||
+      !vendorOrder ||
+      vendorOrder.deliveryMethod !== "EXPRESS"
+    ) {
+      return { updated: false as const };
+    }
+
+    const holdUntil = computeExpressPayoutHoldUntilAfterDelivery(input.deliveredAt);
+    await this.payoutRepository.updateHoldUntil(payout.id, holdUntil);
+
+    return { updated: true as const, holdUntil };
   }
 
   private async requireReleasablePayout(payoutId: string) {
@@ -181,15 +227,6 @@ export class PayoutReleaseService {
     }
 
     const now = new Date();
-
-    if (payout.status !== "ON_HOLD" || payout.holdUntil > now) {
-      throw new AppError({
-        code: ERROR_CODE.BAD_REQUEST,
-        message: "Payout is not ready for release",
-        statusCode: 400,
-      });
-    }
-
     const vendorOrder = await this.orderRepository.findVendorOrderById(
       payout.orderVendorId
     );
@@ -199,6 +236,46 @@ export class PayoutReleaseService {
         code: ERROR_CODE.NOT_FOUND,
         message: "Order not found for payout",
         statusCode: 404,
+      });
+    }
+
+    let effectiveHoldUntil = payout.holdUntil;
+    if (
+      vendorOrder.deliveryMethod === "EXPRESS" &&
+      vendorOrder.status === "DELIVERED" &&
+      vendorOrder.deliveredAt &&
+      isExpressPendingDeliveryHold(payout.holdUntil)
+    ) {
+      effectiveHoldUntil = computeExpressPayoutHoldUntilAfterDelivery(
+        vendorOrder.deliveredAt
+      );
+      await this.payoutRepository.updateHoldUntil(payout.id, effectiveHoldUntil);
+    }
+
+    if (payout.status !== "ON_HOLD") {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Payout is not ready for release",
+        statusCode: 400,
+      });
+    }
+
+    if (
+      !isPayoutEligibleForRelease({
+        deliveryMethod: vendorOrder.deliveryMethod,
+        vendorOrderStatus: vendorOrder.status,
+        deliveredAt: vendorOrder.deliveredAt,
+        holdUntil: effectiveHoldUntil,
+        now,
+      })
+    ) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message:
+          vendorOrder.deliveryMethod === "EXPRESS"
+            ? "Express payout cannot be released until the order is delivered"
+            : "Payout is not ready for release",
+        statusCode: 400,
       });
     }
 

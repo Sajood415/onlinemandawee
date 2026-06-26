@@ -3,7 +3,45 @@ import type {
   DeliveryPriceModel,
   DeliveryRuleScope,
 } from "@/domain/delivery/delivery-types";
+import { pickBestDeliveryRule } from "@/lib/delivery/resolve-delivery-rule";
+import {
+  FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR,
+  usesFixedTransactionFeeDeliveryMethod,
+} from "@/lib/platform/transaction-fee";
 import { prisma } from "@/lib/db/prisma";
+import type { Prisma } from "@prisma/client";
+
+function buildVendorProfileCreateRelation(
+  vendorProfileId?: string
+): Pick<Prisma.DeliveryRuleCreateInput, "vendorProfile"> {
+  if (!vendorProfileId) {
+    return {};
+  }
+
+  return {
+    vendorProfile: {
+      connect: { id: vendorProfileId },
+    },
+  };
+}
+
+function buildVendorProfileUpdateRelation(
+  vendorProfileId?: string
+): Pick<Prisma.DeliveryRuleUpdateInput, "vendorProfile"> {
+  if (vendorProfileId) {
+    return {
+      vendorProfile: {
+        connect: { id: vendorProfileId },
+      },
+    };
+  }
+
+  return {
+    vendorProfile: {
+      disconnect: true,
+    },
+  };
+}
 
 export class DeliveryRuleRepository {
   create(input: {
@@ -13,25 +51,33 @@ export class DeliveryRuleRepository {
     countryCode?: string;
     priceModel: DeliveryPriceModel;
     baseFeeAmount: number;
+    transactionFeeAmountMinor?: number | null;
+    commissionRateBps?: number | null;
     perKmRateAmount?: number;
     freeAboveAmount?: number;
     etaMinDays: number;
     etaMaxDays: number;
     isActive?: boolean;
   }) {
+    const transactionFeeAmountMinor = usesFixedTransactionFeeDeliveryMethod(input.method)
+      ? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
+      : (input.transactionFeeAmountMinor ?? null);
+
     return prisma.deliveryRule.create({
       data: {
         method: input.method,
         scope: input.scope,
-        vendorProfileId: input.vendorProfileId ?? null,
         countryCode: input.countryCode ?? null,
         priceModel: input.priceModel,
         baseFeeAmount: input.baseFeeAmount,
+        transactionFeeAmountMinor,
+        commissionRateBps: null,
         perKmRateAmount: input.perKmRateAmount ?? null,
         freeAboveAmount: input.freeAboveAmount ?? null,
         etaMinDays: input.etaMinDays,
         etaMaxDays: input.etaMaxDays,
         isActive: input.isActive ?? true,
+        ...buildVendorProfileCreateRelation(input.vendorProfileId),
       },
       include: {
         vendorProfile: true,
@@ -47,26 +93,34 @@ export class DeliveryRuleRepository {
     countryCode?: string;
     priceModel: DeliveryPriceModel;
     baseFeeAmount: number;
+    transactionFeeAmountMinor?: number | null;
+    commissionRateBps?: number | null;
     perKmRateAmount?: number;
     freeAboveAmount?: number;
     etaMinDays: number;
     etaMaxDays: number;
     isActive?: boolean;
   }) {
+    const transactionFeeAmountMinor = usesFixedTransactionFeeDeliveryMethod(input.method)
+      ? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
+      : (input.transactionFeeAmountMinor ?? null);
+
     return prisma.deliveryRule.update({
       where: { id: input.id },
       data: {
         method: input.method,
         scope: input.scope,
-        vendorProfileId: input.vendorProfileId ?? null,
         countryCode: input.countryCode ?? null,
         priceModel: input.priceModel,
         baseFeeAmount: input.baseFeeAmount,
+        transactionFeeAmountMinor,
+        commissionRateBps: null,
         perKmRateAmount: input.perKmRateAmount ?? null,
         freeAboveAmount: input.freeAboveAmount ?? null,
         etaMinDays: input.etaMinDays,
         etaMaxDays: input.etaMaxDays,
         isActive: input.isActive ?? true,
+        ...buildVendorProfileUpdateRelation(input.vendorProfileId),
       },
       include: {
         vendorProfile: true,
@@ -103,6 +157,15 @@ export class DeliveryRuleRepository {
       },
       orderBy: [{ scope: "asc" }, { createdAt: "desc" }],
     });
+  }
+
+  async findBestActiveRule(input: {
+    method: DeliveryMethod;
+    vendorProfileId?: string;
+    countryCode?: string;
+  }) {
+    const rules = await this.listActiveByMethod(input.method);
+    return pickBestDeliveryRule(rules, input);
   }
 
   findFirstActiveByMethodAndScope(input: {

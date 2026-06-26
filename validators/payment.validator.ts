@@ -29,4 +29,9 @@ export const releasePayoutSchema = z
 
 export const markPayoutSentSchema = z.object({
   payoutId: z.string().min(1),
+  sentVia: z.enum(["BANK"]).optional(),
+});
+
+export const payoutIdParamsSchema = z.object({
+  id: z.string().min(1),
 });

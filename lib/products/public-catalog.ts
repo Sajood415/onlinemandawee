@@ -126,11 +126,19 @@ export function resolveProductUnitPriceMinor(
   const activeVariants = getActiveCatalogVariants(variants);
   if (activeVariants.length === 0) return basePriceAmount;
 
-  const selected = variantId
-    ? activeVariants.find((variant) => variant.id === variantId)
-    : activeVariants[0];
+  if (variantId) {
+    const selected = activeVariants.find((variant) => variant.id === variantId);
+    if (selected) {
+      return resolveVariantUnitPriceMinor(basePriceAmount, selected);
+    }
+    return basePriceAmount;
+  }
 
-  return resolveVariantUnitPriceMinor(basePriceAmount, selected);
+  if (activeVariants.length === 1) {
+    return resolveVariantUnitPriceMinor(basePriceAmount, activeVariants[0]);
+  }
+
+  return resolveVariantUnitPriceMinor(basePriceAmount, activeVariants[0]);
 }
 
 export function resolveProductInStock(product: {

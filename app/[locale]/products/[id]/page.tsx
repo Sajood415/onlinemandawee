@@ -33,9 +33,9 @@ import {
   fetchPublicCatalogProduct,
   getActiveCatalogVariants,
   resolveDefaultCatalogVariant,
-  resolveProductUnitPriceMinor,
   type PublicCatalogProduct,
 } from "@/lib/products/public-catalog";
+import { resolveCheckoutUnitPriceMinor } from "@/lib/products/resolve-checkout-variant";
 import {
   resolveAvailableStockQty,
 } from "@/lib/products/product-stock";
@@ -241,13 +241,25 @@ export default function ProductDetailPage() {
 
   const displayPrice = useMemo(() => {
     if (!product) return "";
-    const unitPriceMinor = resolveProductUnitPriceMinor(
-      product.basePriceAmount,
-      product.variants,
-      activeVariant?.id
-    );
+    const unitPriceMinor = resolveCheckoutUnitPriceMinor({
+      basePriceAmount: product.basePriceAmount,
+      variants: product.variants,
+      variantId: activeVariant?.id,
+      productName: product.name[locale],
+    });
     return formatPrice(unitPriceMinor / 100, productCurrency);
-  }, [product, activeVariant?.id, formatPrice, productCurrency]);
+  }, [product, activeVariant?.id, formatPrice, productCurrency, locale]);
+
+  const selectedLineTotal = useMemo(() => {
+    if (!product || quantity <= 1) return null;
+    const unitPriceMinor = resolveCheckoutUnitPriceMinor({
+      basePriceAmount: product.basePriceAmount,
+      variants: product.variants,
+      variantId: activeVariant?.id,
+      productName: product.name[locale],
+    });
+    return formatPrice((unitPriceMinor * quantity) / 100, productCurrency);
+  }, [product, activeVariant?.id, formatPrice, productCurrency, locale, quantity]);
 
   const compareAtPrice = useMemo(() => {
     if (!product || product.price <= 50 || activeVariant) return null;
@@ -359,7 +371,7 @@ export default function ProductDetailPage() {
                   : "محصولات"}
             </Link>
             <ChevronRight className={`h-4 w-4 text-gray-400 ${isRtl ? "rotate-180" : ""}`} />
-            <span className="text-gray-900 font-medium truncate max-w-36 sm:max-w-xs">
+            <span className="text-gray-900 font-medium truncate max-w-[8rem] sm:max-w-sm md:max-w-md">
               {product.name[locale]}
             </span>
           </div>
@@ -466,7 +478,7 @@ export default function ProductDetailPage() {
             </h1>
 
             {/* Rating */}
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-4">
               <div className="flex items-center gap-0.5">
                 {[...Array(5)].map((_, i) => (
                   <Star
@@ -487,7 +499,7 @@ export default function ProductDetailPage() {
                     : "نقد"}
                 )
               </span>
-              <span className={`text-sm text-green-600 font-medium ${isRtl ? "mr-2" : "ml-2"}`}>
+              <span className="text-sm text-green-600 font-medium">
                 {inStock
                   ? locale === "en"
                     ? `In stock (${availableStock})`
@@ -515,6 +527,15 @@ export default function ProductDetailPage() {
                   </span>
                 ) : null}
               </div>
+              {selectedLineTotal ? (
+                <p className="mt-2 text-sm font-medium text-gray-700">
+                  {locale === "en"
+                    ? `${quantity} items: ${selectedLineTotal}`
+                    : locale === "ps"
+                      ? `${quantity} توکي: ${selectedLineTotal}`
+                      : `${quantity} مورد: ${selectedLineTotal}`}
+                </p>
+              ) : null}
             </div>
 
             {product.description[locale] ? (
@@ -650,7 +671,7 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Action Buttons - Walmart Style */}
-            <div className="flex flex-wrap sm:flex-nowrap gap-3 mb-6">
+            <div className="flex flex-wrap gap-3 mb-6">
               <button
                 onClick={handleAddToCart}
                 disabled={isAdding || !inStock}

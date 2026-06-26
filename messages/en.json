@@ -281,6 +281,12 @@
         "emptyDescriptionLong": "You have no orders yet. Guest orders placed with your email will appear here after you sign up or sign in.",
         "vendor": "Vendor",
         "qty": "Qty",
+        "subtotal": "Subtotal",
+        "delivery": "Delivery",
+        "expressDelivery": "Express delivery",
+        "standardDelivery": "Standard delivery",
+        "discount": "Discount",
+        "total": "Total",
         "refundPeriodExpired": "Refund period has expired.",
         "refundAvailableAfterDelivery": "Refund available after delivery."
       },

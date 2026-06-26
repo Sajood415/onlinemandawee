@@ -30,9 +30,19 @@ import {
 } from "lucide-react";
 
 import { PageLoader } from "@/components/ui/PageLoader";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import {
+  getCitiesForCountryName,
+  getPostalCodesForCity,
+  SHIPPING_COUNTRIES,
+} from "@/lib/geo/shipping-locations";
 import { convertMajorUnits } from "@/lib/currency/convert";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
+import {
+  confirmCheckoutOrderWithRetry,
+  waitForSucceededPaymentIntent,
+} from "@/lib/checkout/client-checkout-confirmation";
 import {
   sanitizeCityCountryInput,
   sanitizeNameInput,
@@ -354,7 +364,7 @@ function CouponSection({
           ))}
         </div>
       ) : null}
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
         <input
           value={couponInput}
           onChange={(event) => onCouponInputChange(event.target.value.toUpperCase())}
@@ -369,7 +379,7 @@ function CouponSection({
           type="button"
           onClick={onApply}
           disabled={applying || !couponInput.trim()}
-          className="rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-50"
+          className="w-full shrink-0 rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-50 sm:w-auto"
         >
           {applying ? "Applying…" : "Apply"}
         </button>
@@ -441,6 +451,33 @@ function ShippingAddressStep({
 }) {
   const [fieldErrors, setFieldErrors] = useState<ShippingFieldErrors>({});
 
+  const countryOptions = useMemo(
+    () =>
+      SHIPPING_COUNTRIES.map((country) => ({
+        value: country.name,
+        label: `${country.flag} ${country.name}`,
+      })),
+    []
+  );
+
+  const cityOptions = useMemo(
+    () =>
+      getCitiesForCountryName(address.country).map((city) => ({
+        value: city.name,
+        label: city.name,
+      })),
+    [address.country]
+  );
+
+  const postalOptions = useMemo(
+    () =>
+      getPostalCodesForCity(address.country, address.city).map((postal) => ({
+        value: postal,
+        label: postal,
+      })),
+    [address.country, address.city]
+  );
+
   const clearFieldError = (field: keyof ShippingFieldErrors) => {
     setFieldErrors((current) => {
       if (!current[field]) return current;
@@ -492,7 +529,7 @@ function ShippingAddressStep({
         </div>
       ) : null}
 
-      {savedAddresses.length > 0 ? (
+      {addressRequired && savedAddresses.length > 0 ? (
         <div className="space-y-3">
           <p className="text-sm font-semibold text-gray-700">Saved addresses</p>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -575,88 +612,113 @@ function ShippingAddressStep({
         />
       </div>
 
-      <div className="space-y-4 border-t border-gray-100 pt-6">
-        <p className="text-sm font-semibold text-gray-700">
-          {addressRequired ? "Shipping address" : "Pickup details"}
-        </p>
-        {!addressRequired ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Pickup orders do not require a delivery address.
-            {hasThirdPartyProducts && deliveryMethod === "PICKUP"
-              ? " You can continue with contact details only."
-              : ""}
-          </div>
-        ) : null}
-        <InputField
-          label="Street Address"
-          required={addressRequired}
-          type="text"
-          placeholder="123 Main Street, Apt 4"
-          value={address.addressLine1}
-          error={fieldErrors.addressLine1}
-          onChange={(e) => {
-            onAddressChange({ addressLine1: e.target.value });
-            clearFieldError("addressLine1");
-          }}
-          onBlur={() => {
-            if (!addressRequired) return;
-            const error = validateAddressLine(address.addressLine1);
-            if (error) setFieldErrors((current) => ({ ...current, addressLine1: error }));
-          }}
-        />
-        <div className="grid grid-cols-2 gap-4">
+      {addressRequired ? (
+        <div className="space-y-4 border-t border-gray-100 pt-6">
+          <p className="text-sm font-semibold text-gray-700">Shipping address</p>
           <InputField
-            label="City"
-            required={addressRequired}
+            label="Street Address"
+            required
             type="text"
-            placeholder="Kabul"
-            value={address.city}
-            error={fieldErrors.city}
+            placeholder="123 Main Street, Apt 4"
+            value={address.addressLine1}
+            error={fieldErrors.addressLine1}
             onChange={(e) => {
-              onAddressChange({ city: sanitizeCityCountryInput(e.target.value) });
-              clearFieldError("city");
+              onAddressChange({ addressLine1: e.target.value });
+              clearFieldError("addressLine1");
             }}
             onBlur={() => {
-              if (!addressRequired) return;
+              const error = validateAddressLine(address.addressLine1);
+              if (error) setFieldErrors((current) => ({ ...current, addressLine1: error }));
+            }}
+          />
+          <SearchableSelect
+            label="Country"
+            required
+            value={address.country}
+            options={countryOptions}
+            placeholder="Select country"
+            searchPlaceholder="Search countries…"
+            error={fieldErrors.country}
+            onChange={(value) => {
+              onAddressChange({ country: value, city: "", postalCode: "" });
+              setFieldErrors((current) => {
+                const next = { ...current };
+                const countryError = validateCountry(value);
+                if (countryError) next.country = countryError;
+                else delete next.country;
+                delete next.city;
+                delete next.postalCode;
+                return next;
+              });
+            }}
+            onBlur={() => {
+              const error = validateCountry(address.country);
+              if (error) setFieldErrors((current) => ({ ...current, country: error }));
+            }}
+            emptyMessage="No countries match your search"
+          />
+          <SearchableSelect
+            label="City"
+            required
+            value={address.city}
+            options={cityOptions}
+            placeholder={address.country ? "Select or search city" : "Select a country first"}
+            searchPlaceholder="Search cities…"
+            error={fieldErrors.city}
+            disabled={!address.country}
+            allowCustom
+            onChange={(value) => {
+              const city = sanitizeCityCountryInput(value);
+              onAddressChange({ city, postalCode: "" });
+              setFieldErrors((current) => {
+                const next = { ...current };
+                const cityError = validateCity(city);
+                if (cityError) next.city = cityError;
+                else delete next.city;
+                delete next.postalCode;
+                return next;
+              });
+            }}
+            onBlur={() => {
               const error = validateCity(address.city);
               if (error) setFieldErrors((current) => ({ ...current, city: error }));
             }}
+            emptyMessage={
+              address.country
+                ? "No cities match — type to use a custom city"
+                : "Choose a country first"
+            }
           />
-          <InputField
+          <SearchableSelect
             label="Postal Code"
-            type="text"
-            inputMode="numeric"
-            placeholder="1001"
             value={address.postalCode}
+            options={postalOptions}
+            placeholder={address.city ? "Select or search postal code" : "Select a city first"}
+            searchPlaceholder="Search postal codes…"
             error={fieldErrors.postalCode}
-            onChange={(e) => {
-              onAddressChange({ postalCode: sanitizePostalCodeInput(e.target.value) });
+            disabled={!address.city}
+            allowCustom
+            onChange={(value) => {
+              const postalCode = sanitizePostalCodeInput(value);
+              onAddressChange({ postalCode });
               clearFieldError("postalCode");
             }}
             onBlur={() => {
               const error = validatePostalCode(address.postalCode);
               if (error) setFieldErrors((current) => ({ ...current, postalCode: error }));
             }}
+            emptyMessage={
+              address.city
+                ? "No postal codes match — type to enter manually"
+                : "Choose a city first"
+            }
           />
         </div>
-        <InputField
-          label="Country"
-          required={addressRequired}
-          type="text"
-          placeholder="Afghanistan"
-          value={address.country}
-          error={fieldErrors.country}
-          onChange={(e) => {
-            onAddressChange({ country: sanitizeCityCountryInput(e.target.value) });
-            clearFieldError("country");
-          }}
-          onBlur={() => {
-            if (!addressRequired) return;
-            const error = validateCountry(address.country);
-            if (error) setFieldErrors((current) => ({ ...current, country: error }));
-          }}
-        />
-      </div>
+      ) : (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Pickup selected — no delivery address is needed. Continue with your contact details only.
+        </div>
+      )}
 
       <button
         type="submit"
@@ -851,6 +913,7 @@ function PaymentMethodStep({
   onRetryQuote,
   onBack,
   onSuccess,
+  onPaymentElementReady,
 }: {
   stripeAvailable: boolean;
   quoteLoading: boolean;
@@ -888,6 +951,7 @@ function PaymentMethodStep({
   onRetryQuote: () => void;
   onBack: () => void;
   onSuccess: (orderNumber: string) => void;
+  onPaymentElementReady?: () => void;
 }) {
   return (
     <div className="space-y-6">
@@ -960,6 +1024,7 @@ function PaymentMethodStep({
             locale={locale}
             onBack={onBack}
             onSuccess={onSuccess}
+            onPaymentElementReady={onPaymentElementReady}
           />
         </Elements>
       ) : null}
@@ -1029,6 +1094,7 @@ function StripePayForm({
   locale,
   onBack,
   onSuccess,
+  onPaymentElementReady,
 }: {
   quote: QuoteSummary;
   contact: ContactForm;
@@ -1042,6 +1108,7 @@ function StripePayForm({
   locale: string;
   onBack: () => void;
   onSuccess: (orderNumber: string) => void;
+  onPaymentElementReady?: () => void;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -1100,27 +1167,31 @@ function StripePayForm({
         redirect: "if_required",
       });
 
-      if (error) {
-        toast.error(error.message ?? "Payment failed. Please try again.");
+      const succeededPaymentIntent = await waitForSucceededPaymentIntent(
+        stripe,
+        quote.paymentIntentId,
+        paymentIntent
+      );
+
+      if (!succeededPaymentIntent) {
+        toast.error(error?.message ?? "Payment failed. Please try again.");
         return;
       }
 
-      if (paymentIntent?.status === "succeeded") {
-        const res = await postCheckout(
-          `${checkoutApiBase}/confirm`,
-          confirmPayload,
-          useAuthCheckout
-        );
-        const data = await res.json();
-        if (!res.ok) {
-          toast.error(data?.error?.message ?? "Order could not be recorded. Please contact support.");
-          return;
-        }
-        clearPendingCheckoutConfirmation(paymentIntent.id);
-        onSuccess(data.data.orderNumber);
-      }
-    } catch {
-      toast.error("Something went wrong. Please try again.");
+      const confirmed = await confirmCheckoutOrderWithRetry({
+        confirmPath: `${checkoutApiBase}/confirm`,
+        payload: confirmPayload,
+        useAuthCheckout,
+        postCheckout,
+      });
+      clearPendingCheckoutConfirmation(succeededPaymentIntent.id);
+      onSuccess(confirmed.orderNumber);
+    } catch (confirmError) {
+      toast.error(
+        confirmError instanceof Error
+          ? confirmError.message
+          : "Something went wrong. Please try again."
+      );
     } finally {
       setPaying(false);
     }
@@ -1130,6 +1201,7 @@ function StripePayForm({
     <form onSubmit={handlePay} className="space-y-5">
       <div className="rounded-xl border border-gray-200 p-4">
         <PaymentElement
+          onReady={onPaymentElementReady}
           options={{
             layout: "tabs",
             wallets: { applePay: "never", googlePay: "never" },
@@ -1293,17 +1365,33 @@ function SuccessScreen({
   const router = useRouter();
   const { isAuthenticated } = useAuth();
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
   const signupHref = `/auth/signup?redirect=${encodeURIComponent("/account")}${guestEmail ? `&email=${encodeURIComponent(guestEmail)}` : ""}`;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="checkout-success-title"
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-gray-50/95 p-4 backdrop-blur-sm"
+    >
       <div className="bg-white rounded-3xl shadow-xl p-10 max-w-md w-full text-center space-y-6">
         <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto">
           <CheckCircle size={40} className="text-green-500" />
         </div>
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-green-600">Confirmation</p>
-          <h1 className="text-2xl font-bold text-gray-900 mt-1">Order Placed!</h1>
+          <h1 id="checkout-success-title" className="text-2xl font-bold text-gray-900 mt-1">
+            Order Placed!
+          </h1>
           <p className="text-gray-500 mt-2 text-sm">
             Your payment was successful and the vendor has been notified.
           </p>
@@ -1355,13 +1443,13 @@ function SuccessScreen({
 
 export default function CheckoutPage() {
   const locale = useLocale();
-  const { cart, removeItem } = useCart();
+  const { cart, removeItem, refreshCartPrices } = useCart();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { currency } = useCurrency();
 
   const [step, setStep] = useState(0);
-  const checkoutTopRef = useRef<HTMLDivElement>(null);
+  const stepPanelRef = useRef<HTMLDivElement>(null);
   const stripeAvailable = isStripeCheckoutConfigured();
   const [contact, setContact] = useState<ContactForm>({ guestName: "", guestEmail: "", guestPhone: "" });
   const [address, setAddress] = useState<AddressForm>({ addressLine1: "", city: "", country: "", postalCode: "" });
@@ -1399,7 +1487,14 @@ export default function CheckoutPage() {
     () => cartItems.some((item) => (item.sellerType ?? "THIRD_PARTY") === "THIRD_PARTY"),
     [cartItems]
   );
-  const addressRequired = hasPlatformProducts || deliveryMethod !== "PICKUP";
+  const addressRequired = deliveryMethod !== "PICKUP";
+
+  const handleDeliveryMethodChange = useCallback((method: DeliveryMethod) => {
+    setDeliveryMethod(method);
+    if (method === "PICKUP") {
+      setAddress({ addressLine1: "", city: "", country: "", postalCode: "" });
+    }
+  }, []);
   const cartItemsPayload = useMemo(
     () =>
       cartItems.map((item) => ({
@@ -1422,14 +1517,30 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
+    void refreshCartPrices();
+  }, [refreshCartPrices]);
+
+  useEffect(() => {
     if (cartItems.length === 0 && !successOrderNumber) {
       router.replace("/");
     }
   }, [cartItems.length, router, successOrderNumber]);
 
+  const scrollToCheckoutStep = useCallback(() => {
+    stepPanelRef.current?.scrollIntoView({ behavior: "instant", block: "start" });
+  }, []);
+
   useEffect(() => {
-    checkoutTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [step]);
+    scrollToCheckoutStep();
+  }, [step, scrollToCheckoutStep]);
+
+  useEffect(() => {
+    if (step !== 2 || quoteLoading || !quote) return;
+
+    scrollToCheckoutStep();
+    const timeoutId = window.setTimeout(scrollToCheckoutStep, 150);
+    return () => window.clearTimeout(timeoutId);
+  }, [step, quoteLoading, quote?.paymentIntentId, scrollToCheckoutStep]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -1644,6 +1755,7 @@ export default function CheckoutPage() {
 
   const handleSuccess = useCallback(
     (orderNumber: string) => {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
       localStorage.removeItem("onlinemandawee-cart");
       cart.items.forEach((item) => removeItem(item.id));
       setSuccessEmail(contact.guestEmail);
@@ -1809,7 +1921,7 @@ export default function CheckoutPage() {
   ];
 
   return (
-    <div ref={checkoutTopRef} className="min-h-screen scroll-mt-28 bg-gray-50 sm:scroll-mt-32">
+    <div className="min-h-screen bg-gray-50">
       {/* Top bar */}
       <div className="bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
@@ -1822,32 +1934,40 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_min(100%,360px)] gap-6 lg:gap-8">
         {/* Left: steps */}
-        <div className="space-y-6">
+        <div className="space-y-6 min-w-0">
           {/* Step indicators */}
-          <div className="flex items-center gap-0">
+          <div className="overflow-x-auto no-scrollbar -mx-1 px-1 sm:mx-0 sm:px-0">
+            <div className="flex min-w-max items-center gap-0 sm:min-w-0 sm:w-full">
             {STEP_LABELS.map((label, idx) => (
-              <div key={label} className="flex items-center flex-1 last:flex-none">
-                <div className="flex items-center gap-2">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+              <div key={label} className="flex items-center flex-1 last:flex-none min-w-[4.5rem] sm:min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-sm font-bold transition-colors shrink-0 ${
                     idx < step ? "bg-green-500 text-white" : idx === step ? "bg-[#0f3460] text-white" : "bg-gray-100 text-gray-400"
                   }`}>
                     {idx < step ? <CheckCircle size={18} /> : stepIcons[idx]}
                   </div>
-                  <span className={`text-sm font-medium hidden sm:block ${idx === step ? "text-[#0f3460]" : "text-gray-400"}`}>
+                  <span className={`text-xs sm:text-sm font-medium hidden sm:block ${idx === step ? "text-[#0f3460]" : "text-gray-400"}`}>
                     {label}
                   </span>
                 </div>
                 {idx < STEP_LABELS.length - 1 && (
-                  <div className={`h-px flex-1 mx-3 ${idx < step ? "bg-green-300" : "bg-gray-200"}`} />
+                  <div className={`h-px flex-1 mx-1.5 sm:mx-3 ${idx < step ? "bg-green-300" : "bg-gray-200"}`} />
                 )}
               </div>
             ))}
+            </div>
           </div>
+          <p className="text-sm font-medium text-[#0f3460] sm:hidden">
+            Step {step + 1} of {STEP_LABELS.length}: {STEP_LABELS[step]}
+          </p>
 
           {/* Step card */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div
+            ref={stepPanelRef}
+            className="scroll-mt-28 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 sm:scroll-mt-32"
+          >
             <h2 className="text-lg font-bold text-[#0f3460] mb-6">
               {STEP_LABELS[step]}
               <span className="ml-2 text-sm font-normal text-gray-400">
@@ -1862,7 +1982,7 @@ export default function CheckoutPage() {
                 addressRequired={addressRequired}
                 hasThirdPartyProducts={hasThirdPartyProducts}
                 deliveryMethod={deliveryMethod}
-                onDeliveryMethodChange={setDeliveryMethod}
+                onDeliveryMethodChange={handleDeliveryMethodChange}
                 savedAddresses={savedAddresses}
                 onContactChange={(f) => setContact((prev) => ({ ...prev, ...f }))}
                 onAddressChange={(f) => setAddress((prev) => ({ ...prev, ...f }))}
@@ -1877,7 +1997,7 @@ export default function CheckoutPage() {
                 hasThirdPartyProducts={hasThirdPartyProducts}
                 deliveryMethod={deliveryMethod}
                 onDeliveryMethodChange={(method) => {
-                  setDeliveryMethod(method);
+                  handleDeliveryMethodChange(method);
                   setPriceSummary(null);
                   setQuote(null);
                   setQuoteError(null);
@@ -1932,6 +2052,7 @@ export default function CheckoutPage() {
                 onRetryQuote={() => void refreshPricing(vendorCoupons)}
                 onBack={() => setStep(1)}
                 onSuccess={handleSuccess}
+                onPaymentElementReady={scrollToCheckoutStep}
               />
             )}
           </div>
@@ -1939,7 +2060,7 @@ export default function CheckoutPage() {
         </div>
 
         {/* Right: order summary */}
-        <div className="lg:sticky lg:top-8 self-start">
+        <div className="lg:sticky lg:top-8 self-start min-w-0">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <OrderSummary
               summary={displaySummary}

@@ -48,22 +48,6 @@ export const deliveryRuleSchema = z
         message: "countryCode is required for country-scoped rules",
       });
     }
-
-    if (value.priceModel === "PER_KM" && value.perKmRateAmount === undefined) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["perKmRateAmount"],
-        message: "perKmRateAmount is required for PER_KM rules",
-      });
-    }
-
-    if (value.priceModel === "FREE_ABOVE" && value.freeAboveAmount === undefined) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["freeAboveAmount"],
-        message: "freeAboveAmount is required for FREE_ABOVE rules",
-      });
-    }
   });
 
 export const deliveryQuoteSchema = z.object({

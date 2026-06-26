@@ -1,6 +1,6 @@
-export type AppRole = "CUSTOMER" | "VENDOR" | "ADMIN";
+import { isVendorPublicRoute } from "@/lib/routing/vendor-public-routes";
 
-const CUSTOMER_ONLY_PREFIXES = ["/account"];
+export type AppRole = "CUSTOMER" | "VENDOR" | "ADMIN";
 
 const ROLE_HOME_PATHS: Record<AppRole, string> = {
   ADMIN: "/admin/dashboard",
@@ -9,6 +9,9 @@ const ROLE_HOME_PATHS: Record<AppRole, string> = {
 };
 
 const NEUTRAL_POST_AUTH_PATHS = new Set(["/", "/auth/login", "/auth/signup"]);
+
+/** Storefront paths a customer may return to after login (e.g. checkout). */
+const CUSTOMER_POST_AUTH_STOREFRONT_PREFIXES = ["/checkout"] as const;
 
 export const roleHomePath = (role: AppRole) => ROLE_HOME_PATHS[role];
 
@@ -26,11 +29,47 @@ export const isNeutralPostAuthPath = (path: string | null | undefined) => {
   return false;
 };
 
+function pathMatchesPrefix(path: string, prefix: string) {
+  return path === prefix || path.startsWith(`${prefix}/`);
+}
+
+function isRolePortalPath(role: AppRole, path: string) {
+  if (role === "ADMIN") {
+    return pathMatchesPrefix(path, "/admin");
+  }
+
+  if (role === "VENDOR") {
+    if (isVendorPublicRoute(path)) return false;
+    return pathMatchesPrefix(path, "/vendor");
+  }
+
+  return pathMatchesPrefix(path, "/account");
+}
+
+function isAllowedPostAuthRedirect(role: AppRole, path: string) {
+  if (isRolePortalPath(role, path)) {
+    return true;
+  }
+
+  if (role === "CUSTOMER") {
+    return CUSTOMER_POST_AUTH_STOREFRONT_PREFIXES.some((prefix) =>
+      pathMatchesPrefix(path, prefix)
+    );
+  }
+
+  return false;
+}
+
 export const buildLoginRedirectPath = (pathname: string) => {
   if (isNeutralPostAuthPath(pathname)) {
     return "/auth/login";
   }
-  return `/auth/login?redirect=${encodeURIComponent(pathname)}`;
+
+  if (isPortalPathname(pathname) || pathMatchesPrefix(pathname, "/checkout")) {
+    return `/auth/login?redirect=${encodeURIComponent(pathname)}`;
+  }
+
+  return "/auth/login";
 };
 
 export const resolvePostAuthRedirect = (input: {
@@ -39,17 +78,22 @@ export const resolvePostAuthRedirect = (input: {
 }) => {
   const redirectPath = sanitizeRedirectPath(input.redirect);
 
-  if (isNeutralPostAuthPath(redirectPath)) {
+  if (!redirectPath || isNeutralPostAuthPath(redirectPath)) {
     return roleHomePath(input.role);
   }
 
-  const isCustomerOnlyDestination = CUSTOMER_ONLY_PREFIXES.some(
-    (prefix) => redirectPath === prefix || redirectPath!.startsWith(`${prefix}/`)
-  );
-
-  if (isCustomerOnlyDestination && input.role !== "CUSTOMER") {
-    return roleHomePath(input.role);
+  if (isAllowedPostAuthRedirect(input.role, redirectPath)) {
+    return redirectPath;
   }
 
-  return redirectPath!;
+  return roleHomePath(input.role);
 };
+
+export function isPortalPathname(pathname: string) {
+  if (pathMatchesPrefix(pathname, "/account")) return true;
+  if (pathMatchesPrefix(pathname, "/admin")) return true;
+  if (pathMatchesPrefix(pathname, "/vendor") && !isVendorPublicRoute(pathname)) {
+    return true;
+  }
+  return false;
+}

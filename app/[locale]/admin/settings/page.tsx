@@ -17,8 +17,6 @@ import { toast } from "@/lib/utils/toast";
 
 type PlatformSettings = {
   id: string;
-  transactionFeeAmountMinor: number;
-  transactionFeeLabel: string;
   availableLocales: StorefrontLocale[];
   availableCurrencies: SupportedCurrency[];
   updatedAt: string;
@@ -34,7 +32,6 @@ export default function AdminSettingsPage() {
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
 
   const [settings, setSettings] = useState<PlatformSettings | null>(null);
-  const [feeAmount, setFeeAmount] = useState("3.99");
   const [availableLocales, setAvailableLocales] = useState<StorefrontLocale[]>([
     ...ALL_STOREFRONT_LOCALES,
   ]);
@@ -52,7 +49,6 @@ export default function AdminSettingsPage() {
       const res = await fetchWithAuth("/api/admin/platform-settings");
       const data = await parseApiResponse<PlatformSettings>(res);
       setSettings(data);
-      setFeeAmount((data.transactionFeeAmountMinor / 100).toFixed(2));
       setAvailableLocales(data.availableLocales);
       setAvailableCurrencies(data.availableCurrencies);
     } catch (e) {
@@ -93,28 +89,18 @@ export default function AdminSettingsPage() {
   };
 
   const onSave = async () => {
-    const parsed = Number(feeAmount);
-    if (!Number.isFinite(parsed) || parsed < 0) {
-      toast.error("Invalid amount", "Enter a valid fee amount.");
-      return;
-    }
-
-    const transactionFeeAmountMinor = Math.round(parsed * 100);
-
     setSaving(true);
     try {
       const res = await fetchWithAuth("/api/admin/platform-settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          transactionFeeAmountMinor,
           availableLocales,
           availableCurrencies,
         }),
       });
       const data = await parseApiResponse<PlatformSettings>(res);
       setSettings(data);
-      setFeeAmount((data.transactionFeeAmountMinor / 100).toFixed(2));
       setAvailableLocales(data.availableLocales);
       setAvailableCurrencies(data.availableCurrencies);
       toast.success("Settings saved", "Platform settings updated for the storefront.");
@@ -138,7 +124,7 @@ export default function AdminSettingsPage() {
       <div>
         <h1 className="text-2xl font-bold text-[#0f3460]">Platform settings</h1>
         <p className="mt-1 text-sm text-neutral-600">
-          Configure marketplace-wide fees and which languages and currencies customers can use.
+          Configure which languages and currencies customers can use on the storefront.
         </p>
       </div>
 
@@ -147,56 +133,6 @@ export default function AdminSettingsPage() {
           {error}
         </div>
       ) : null}
-
-      <section className="max-w-2xl rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-        <div className="flex items-start gap-3">
-          <div className="rounded-lg bg-[#0f3460]/10 p-2">
-            <DollarSign className="h-5 w-5 text-[#0f3460]" />
-          </div>
-          <div className="flex-1">
-            <h2 className="text-base font-semibold text-neutral-900">
-              Per-order transaction fee
-            </h2>
-            <p className="mt-1 text-sm text-neutral-600">
-              Flat fee charged once per customer order. On multi-vendor orders, the fee is
-              split proportionally across vendor subtotals.
-            </p>
-
-            {loading ? (
-              <div className="mt-4 flex items-center gap-2 text-sm text-neutral-500">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading…
-              </div>
-            ) : (
-              <div className="mt-4">
-                <label
-                  htmlFor="transaction-fee"
-                  className="block text-sm font-medium text-neutral-700"
-                >
-                  Fee amount (USD)
-                </label>
-                <div className="mt-1 flex items-center gap-2">
-                  <span className="text-sm text-neutral-500">$</span>
-                  <input
-                    id="transaction-fee"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className={INPUT}
-                    value={feeAmount}
-                    onChange={(e) => setFeeAmount(e.target.value)}
-                  />
-                </div>
-                {settings ? (
-                  <p className="mt-2 text-xs text-neutral-500">
-                    Current: {settings.transactionFeeLabel}
-                  </p>
-                ) : null}
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
 
       <section className="max-w-2xl rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
         <div className="flex items-start gap-3">

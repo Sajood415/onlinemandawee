@@ -132,15 +132,28 @@ function trackingTextLine(trackingUrl?: string) {
 
 export function buildOrderPlacedEmail(
   ctx: OrderEmailContext,
-  options: { paymentMethod: "card" }
+  options: { paymentMethod: "card"; deliveryMethod?: "PICKUP" | "EXPRESS" | "STANDARD" | null }
 ) {
   const paymentNote =
     "Payment: <strong>Paid by card</strong>. Your payment was processed successfully.";
 
+  const standardDeliveryNote =
+    options.deliveryMethod === "STANDARD"
+      ? `<p style="margin-top:16px;padding:14px 16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;font-size:13px;color:#334155;line-height:1.6">
+      <strong>Standard delivery:</strong> sellers ship to our warehouse first. We'll email you when items arrive,
+      when your order is packed, when it ships to you, and when it's delivered.
+    </p>`
+      : "";
+
+  const followUpLine =
+    options.deliveryMethod === "STANDARD"
+      ? "We'll email you as your order moves through our warehouse and out for delivery."
+      : "We will email you again when it ships.";
+
   const body = `
     <span class="badge">✅ Order Confirmed</span>
     <h2>Thank you, ${ctx.customerName}!</h2>
-    <p>We have received your order and will email you again when it ships.</p>
+    <p>We have received your order and ${followUpLine.toLowerCase()}</p>
 
     <div class="order-box">
       <div class="label">Order Number</div>
@@ -153,6 +166,7 @@ export function buildOrderPlacedEmail(
     ${addressBlock(ctx)}
 
     <p style="margin-top:20px">${paymentNote}</p>
+    ${standardDeliveryNote}
     ${trackingCta(ctx.trackingUrl)}
   `;
 
@@ -168,7 +182,7 @@ export function buildOrderPlacedEmail(
       `Total: ${formatCurrency(ctx.grandTotalAmount, ctx.currency)}.`,
       paymentText,
       "",
-      "We will email you again when your order ships.",
+      followUpLine,
       trackingTextLine(ctx.trackingUrl),
     ].join("\n"),
   };
@@ -187,6 +201,7 @@ export type VendorOrderEmailContext = {
   paymentMethod: "card";
   paymentStatus: "PAID" | "UNPAID";
   shippingAddress: OrderEmailContext["shippingAddress"];
+  deliveryMethod?: "PICKUP" | "EXPRESS" | "STANDARD" | null;
 };
 
 export function buildVendorNewOrderEmail(ctx: VendorOrderEmailContext) {
@@ -233,6 +248,18 @@ export function buildVendorNewOrderEmail(ctx: VendorOrderEmailContext) {
     ${addressBlock(itemsCtx)}
 
     <p style="margin-top:20px">${paymentNote}</p>
+    ${
+      ctx.deliveryMethod === "STANDARD"
+        ? `<div style="margin-top:20px;padding:16px 18px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px">
+      <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#1d4ed8">Standard delivery — ship to warehouse</p>
+      <p style="margin:0;font-size:13px;color:#334155;line-height:1.6">
+        This is a <strong>standard consolidated</strong> order. Pack the items and use
+        <strong>Send to warehouse</strong> in your vendor orders page with a tracking / AWB reference.
+        Admin will receive the goods, consolidate with other vendors, then ship to the customer.
+      </p>
+    </div>`
+        : ""
+    }
     <p style="margin-top:12px">Sign in to your vendor dashboard to accept and fulfil this order.</p>
   `;
 
@@ -252,16 +279,107 @@ export function buildVendorNewOrderEmail(ctx: VendorOrderEmailContext) {
       `Your total: ${formatCurrency(ctx.vendorTotalAmount, ctx.currency)}.`,
       paymentText,
       "",
+      ctx.deliveryMethod === "STANDARD"
+        ? "Standard delivery: ship items to the platform warehouse from Vendor Orders → Send to warehouse (include tracking/AWB)."
+        : "",
+      "",
       "Sign in to your vendor dashboard to accept and fulfil this order.",
     ].join("\n"),
   };
 }
 
-export function buildOrderShippedEmail(ctx: OrderEmailContext) {
+export function buildOrderShippedEmail(
+  ctx: OrderEmailContext,
+  options?: { trackingRef?: string | null; standardDelivery?: boolean }
+) {
+  const trackingRefBlock = options?.trackingRef
+    ? `<p style="margin-top:16px">Tracking reference: <strong>${options.trackingRef}</strong></p>`
+    : "";
+
+  const intro = options?.standardDelivery
+    ? "Your consolidated standard-delivery order has left our warehouse and is <strong>on its way to you</strong>."
+    : "Your order has been <strong>shipped</strong> and is on its way to you. Keep an eye out for your delivery!";
+
   const body = `
     <span class="badge blue">🚚 Your order is on its way!</span>
     <h2>Great news, ${ctx.customerName}!</h2>
-    <p>Your order has been <strong>shipped</strong> and is on its way to you. Keep an eye out for your delivery!</p>
+    <p>${intro}</p>
+
+    <div class="order-box">
+      <div class="label">Order Number</div>
+      <div class="value">${ctx.orderNumber}</div>
+    </div>
+
+    ${trackingRefBlock}
+
+    ${itemsTable(ctx)}
+
+    <p style="margin-top:20px;font-size:13px;color:#64748b;font-weight:600">Delivering to:</p>
+    ${addressBlock(ctx)}
+
+    ${trackingCta(ctx.trackingUrl)}
+
+    <p style="margin-top:20px">Thank you for shopping with us. We hope you enjoy your order!</p>
+  `;
+
+  const trackingRefText = options?.trackingRef ? `\nTracking reference: ${options.trackingRef}\n` : "";
+
+  return {
+    subject: `Your order ${ctx.orderNumber} is on its way! 🚚`,
+    html: baseLayout(`Order Shipped — ${ctx.orderNumber}`, body),
+    text: `Hi ${ctx.customerName}, your order ${ctx.orderNumber} has been shipped and is on the way! Total: ${formatCurrency(ctx.grandTotalAmount, ctx.currency)}.${trackingRefText}${trackingTextLine(ctx.trackingUrl)}`,
+  };
+}
+
+export function buildStandardWarehousePartialEmail(
+  ctx: OrderEmailContext,
+  input: { receivedVendorCount: number; expectedVendorCount: number }
+) {
+  const body = `
+    <span class="badge blue">📦 Warehouse update</span>
+    <h2>Items arriving at our warehouse, ${ctx.customerName}</h2>
+    <p>
+      We've received items from one of the sellers on your standard-delivery order at the
+      <strong>Mandawee warehouse</strong>. We're waiting for the remaining seller shipments before packing your order.
+    </p>
+
+    <div class="order-box">
+      <div class="label">Order Number</div>
+      <div class="value">${ctx.orderNumber}</div>
+      <p style="margin:12px 0 0;font-size:13px;color:#64748b">
+        Seller shipments received: <strong>${input.receivedVendorCount} of ${input.expectedVendorCount}</strong>
+      </p>
+    </div>
+
+    ${itemsTable(ctx)}
+
+    ${trackingCta(ctx.trackingUrl)}
+
+    <p style="margin-top:20px">We'll email you again when all items are at the warehouse and when your order ships to you.</p>
+  `;
+
+  return {
+    subject: `Warehouse update — ${ctx.orderNumber}`,
+    html: baseLayout(`Warehouse Update — ${ctx.orderNumber}`, body),
+    text: [
+      `Hi ${ctx.customerName},`,
+      "",
+      `We've received part of your order ${ctx.orderNumber} at our warehouse.`,
+      `Seller shipments received: ${input.receivedVendorCount} of ${input.expectedVendorCount}.`,
+      "We'll notify you when everything is ready to ship.",
+      trackingTextLine(ctx.trackingUrl),
+    ].join("\n"),
+  };
+}
+
+export function buildStandardWarehouseReadyEmail(ctx: OrderEmailContext) {
+  const body = `
+    <span class="badge blue">📦 Ready to ship</span>
+    <h2>All items are at our warehouse, ${ctx.customerName}!</h2>
+    <p>
+      Every seller shipment for your standard-delivery order has arrived at the
+      <strong>Mandawee warehouse</strong>. We're now packing your order for delivery to you.
+    </p>
 
     <div class="order-box">
       <div class="label">Order Number</div>
@@ -275,12 +393,18 @@ export function buildOrderShippedEmail(ctx: OrderEmailContext) {
 
     ${trackingCta(ctx.trackingUrl)}
 
-    <p style="margin-top:20px">Thank you for shopping with us. We hope you enjoy your order!</p>
+    <p style="margin-top:20px">We'll send another email with tracking details when your package leaves our warehouse.</p>
   `;
+
   return {
-    subject: `Your order ${ctx.orderNumber} is on its way! 🚚`,
-    html: baseLayout(`Order Shipped — ${ctx.orderNumber}`, body),
-    text: `Hi ${ctx.customerName}, your order ${ctx.orderNumber} has been shipped and is on the way! Total: ${formatCurrency(ctx.grandTotalAmount, ctx.currency)}.${trackingTextLine(ctx.trackingUrl)}`,
+    subject: `Your order ${ctx.orderNumber} is being packed for delivery`,
+    html: baseLayout(`Order at Warehouse — ${ctx.orderNumber}`, body),
+    text: [
+      `Hi ${ctx.customerName},`,
+      "",
+      `All items for order ${ctx.orderNumber} are at our warehouse and being packed for delivery.`,
+      trackingTextLine(ctx.trackingUrl),
+    ].join("\n"),
   };
 }
 

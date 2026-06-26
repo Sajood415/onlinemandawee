@@ -281,6 +281,12 @@
         "emptyDescriptionLong": "تر اوسه هیڅ فرمایش نلرئ. د میلمانه فرمایشونه چې ستاسو بریښنالیک سره ثبت شوي وي، وروسته له نوم لیکنې یا ننوتلو دلته ښکاره کېږي.",
         "vendor": "پلورونکی",
         "qty": "شمېر",
+        "subtotal": "فرعي مجموعه",
+        "delivery": "تحویل",
+        "expressDelivery": "چټکه تحویل",
+        "standardDelivery": "معیاري تحویل",
+        "discount": "تخفیف",
+        "total": "ټولټال",
         "refundPeriodExpired": "د بیرته ورکولو موده پای ته رسېدلې.",
         "refundAvailableAfterDelivery": "بیرته ورکول د تحویل وروسته شتون لري."
       },

@@ -12,8 +12,8 @@ import {
 import {
   fetchPublicCatalogProduct,
   resolveDefaultCatalogVariant,
-  resolveProductUnitPriceMinor,
 } from "@/lib/products/public-catalog";
+import { resolveCheckoutUnitPriceMinor } from "@/lib/products/resolve-checkout-variant";
 import { assertSufficientStock } from "@/lib/products/product-stock";
 import { useCurrency } from "@/store/currency-context";
 
@@ -54,6 +54,7 @@ type CartContextType = {
   removeItem: (itemId: string) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
   refreshCart: () => void;
+  refreshCartPrices: () => Promise<void>;
 };
 
 const CART_STORAGE_KEY = "onlinemandawee-cart";
@@ -124,6 +125,71 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refreshCartPrices = useCallback(async () => {
+    const stored = localStorage.getItem(CART_STORAGE_KEY);
+    if (!stored) return;
+
+    let currentCart: Cart;
+    try {
+      currentCart = normalizeCart(JSON.parse(stored));
+    } catch {
+      return;
+    }
+
+    if (currentCart.items.length === 0) return;
+
+    setIsLoading(true);
+    try {
+      const productCache = new Map<string, Awaited<ReturnType<typeof fetchPublicCatalogProduct>>>();
+      const refreshedItems = await Promise.all(
+        currentCart.items.map(async (item) => {
+          let catalogProduct = productCache.get(item.productId);
+          if (!catalogProduct) {
+            catalogProduct = await fetchPublicCatalogProduct(item.productId);
+            productCache.set(item.productId, catalogProduct);
+          }
+
+          const activeVariants =
+            catalogProduct.variants?.filter((variant) => variant.isActive) ?? [];
+          const variantId =
+            item.variantId ??
+            (activeVariants.length === 1 ? activeVariants[0]?.id : undefined);
+          const selectedVariant = variantId
+            ? activeVariants.find((variant) => variant.id === variantId)
+            : resolveDefaultCatalogVariant(catalogProduct.variants);
+
+          let unitPriceMinor: number;
+          try {
+            unitPriceMinor = resolveCheckoutUnitPriceMinor({
+              basePriceAmount: catalogProduct.basePriceAmount,
+              variants: catalogProduct.variants,
+              variantId,
+              productName: catalogProduct.name.en,
+            });
+          } catch {
+            return item;
+          }
+
+          return {
+            ...item,
+            variantId,
+            variantName: item.variantName ?? selectedVariant?.name,
+            productPrice: unitPriceMinor / 100,
+            productCurrency: catalogProduct.currency || "USD",
+            productName: catalogProduct.name.en,
+            productImage: catalogProduct.image,
+          };
+        })
+      );
+
+      const newCart = { items: refreshedItems };
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newCart));
+      setCart(newCart);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const addItem = async (
     productId: string,
     quantity: number,
@@ -156,11 +222,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         throw new Error(stockCheck.message);
       }
 
-      const unitPriceMinor = resolveProductUnitPriceMinor(
-        catalogProduct.basePriceAmount,
-        catalogProduct.variants,
-        variantId
-      );
+      const unitPriceMinor = resolveCheckoutUnitPriceMinor({
+        basePriceAmount: catalogProduct.basePriceAmount,
+        variants: catalogProduct.variants,
+        variantId,
+        productName: catalogProduct.name.en,
+      });
 
       setCart((prev) => {
         const existing = prev.items.find(
@@ -258,6 +325,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeItem,
         updateQuantity,
         refreshCart,
+        refreshCartPrices,
       }}
     >
       {children}
