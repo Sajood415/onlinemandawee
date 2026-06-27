@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { ImagePlus, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
+import { DataTable } from "@/components/ui/data-table";
 import {
   HOME_BANNER_PLACEMENT_LABELS,
   homeBannerPlacements,
@@ -216,6 +218,92 @@ export default function AdminBannersPage() {
       toast.error(error instanceof Error ? error.message : "Could not delete banner");
     }
   };
+
+  const columns = useMemo<ColumnDef<HomeBanner>[]>(
+    () => [
+      {
+        header: "Preview",
+        id: "preview",
+        cell: ({ row }) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={row.original.imageUrl}
+            alt={row.original.title}
+            className="h-12 w-24 rounded object-cover"
+          />
+        ),
+      },
+      {
+        header: "Title",
+        id: "title",
+        cell: ({ row }) => (
+          <div>
+            <p className="font-medium text-neutral-900">{row.original.title}</p>
+            <p className="text-xs text-neutral-500">{row.original.href}</p>
+          </div>
+        ),
+      },
+      {
+        header: "Placement",
+        id: "placement",
+        cell: ({ row }) => HOME_BANNER_PLACEMENT_LABELS[row.original.placement],
+      },
+      {
+        header: "Schedule",
+        id: "schedule",
+        cell: ({ row }) => (
+          <span className="text-xs text-neutral-600">{formatSchedule(row.original)}</span>
+        ),
+      },
+      {
+        header: "Status",
+        id: "status",
+        cell: ({ row }) => (
+          <span
+            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+              row.original.isActive
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-neutral-100 text-neutral-600"
+            }`}
+          >
+            {row.original.isActive ? "Active" : "Inactive"}
+          </span>
+        ),
+      },
+      {
+        header: "Actions",
+        id: "actions",
+        cell: ({ row }) => {
+          const banner = row.original;
+          return (
+            <div
+              className="flex items-center gap-2"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => openEdit(banner)}
+                className="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => void onDelete(banner)}
+                className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </button>
+            </div>
+          );
+        },
+      },
+    ],
+    []
+  );
 
   if (authLoading || !user) {
     return (
@@ -461,78 +549,15 @@ export default function AdminBannersPage() {
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading banners…
           </div>
-        ) : banners.length === 0 ? (
-          <p className="text-sm text-neutral-500">No banners yet. Create one for Ramadan or Eid.</p>
         ) : (
-          <div className="responsive-table-shell overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-neutral-100 text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                  <th className="px-3 py-2">Preview</th>
-                  <th className="px-3 py-2">Title</th>
-                  <th className="px-3 py-2">Placement</th>
-                  <th className="px-3 py-2">Schedule</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {banners.map((banner) => (
-                  <tr key={banner.id} className="border-b border-neutral-100 hover:bg-neutral-50">
-                    <td className="px-3 py-3">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={banner.imageUrl}
-                        alt={banner.title}
-                        className="h-12 w-24 rounded object-cover"
-                      />
-                    </td>
-                    <td className="px-3 py-3">
-                      <p className="font-medium text-neutral-900">{banner.title}</p>
-                      <p className="text-xs text-neutral-500">{banner.href}</p>
-                    </td>
-                    <td className="px-3 py-3 text-neutral-600">
-                      {HOME_BANNER_PLACEMENT_LABELS[banner.placement]}
-                    </td>
-                    <td className="px-3 py-3 text-xs text-neutral-600">
-                      {formatSchedule(banner)}
-                    </td>
-                    <td className="px-3 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                          banner.isActive
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-neutral-100 text-neutral-600"
-                        }`}
-                      >
-                        {banner.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(banner)}
-                          className="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void onDelete(banner)}
-                          className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            data={banners}
+            columns={columns}
+            getRowId={(row) => row.id}
+            emptyMessage="No banners yet. Create one for Ramadan or Eid."
+            initialPageSize={10}
+            pageSizeOptions={[10, 20, 50]}
+          />
         )}
       </div>
       ) : null}

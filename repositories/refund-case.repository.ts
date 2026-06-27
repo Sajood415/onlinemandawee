@@ -303,17 +303,24 @@ export class RefundCaseRepository {
     finalDecisionAt?: Date | null;
     vendorResponseDueAt?: Date | null;
   }) {
+    const data: Prisma.RefundCaseUpdateInput = {
+      status: input.status,
+      vendorExplanation: input.vendorExplanation,
+      escalatedAt: input.escalatedAt,
+      finalDecisionAt: input.finalDecisionAt,
+      vendorResponseDueAt: input.vendorResponseDueAt,
+    };
+
+    if (input.status === "RESOLVED") {
+      // Unique index — never set null (only one null allowed). Use a per-case tombstone.
+      data.activeOrderItemKey = `resolved:${input.id}`;
+    } else if (input.activeOrderItemKey !== undefined) {
+      data.activeOrderItemKey = input.activeOrderItemKey;
+    }
+
     return refundCaseDelegate.update({
       where: { id: input.id },
-      data: {
-        status: input.status,
-        activeOrderItemKey:
-          input.status === "RESOLVED" ? null : input.activeOrderItemKey,
-        vendorExplanation: input.vendorExplanation,
-        escalatedAt: input.escalatedAt,
-        finalDecisionAt: input.finalDecisionAt,
-        vendorResponseDueAt: input.vendorResponseDueAt,
-      },
+      data,
       include: {
         order: true,
         orderItem: {

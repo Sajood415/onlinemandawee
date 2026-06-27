@@ -15,6 +15,8 @@ import {
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
+import { useClientPagination } from "@/hooks/use-client-pagination";
 
 type Granularity = "day" | "week" | "month";
 
@@ -139,6 +141,10 @@ export function SalesSummarySection() {
 
   const currency = report?.currency ?? "USD";
   const totals = report?.totals;
+  const periodsPagination = useClientPagination(report?.periods ?? [], {
+    initialPageSize: 10,
+    resetKey: `${granularity}-${report?.from ?? ""}-${report?.to ?? ""}`,
+  });
 
   return (
     <div className="space-y-6">
@@ -244,7 +250,7 @@ export function SalesSummarySection() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-100">
-                    {report.periods.map((period) => (
+                    {periodsPagination.paginatedItems.map((period) => (
                       <tr key={period.periodKey} className="hover:bg-neutral-50/80">
                         <td className="px-5 py-3 font-medium text-neutral-900">
                           {period.periodLabel}
@@ -282,6 +288,16 @@ export function SalesSummarySection() {
                 </table>
               </div>
             )}
+            {report.periods.length > 0 ? (
+              <PaginationFooter
+                pageIndex={periodsPagination.pageIndex}
+                pageCount={periodsPagination.pageCount}
+                pageSize={periodsPagination.pageSize}
+                pageSizeOptions={periodsPagination.pageSizeOptions}
+                onPageIndexChange={periodsPagination.setPageIndex}
+                onPageSizeChange={periodsPagination.setPageSize}
+              />
+            ) : null}
           </section>
         </>
       )}

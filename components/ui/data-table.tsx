@@ -8,15 +8,27 @@ import {
   type PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import {
+  DEFAULT_PAGE_SIZE_OPTIONS,
+  PaginationFooter,
+} from "@/components/ui/pagination-footer";
 
 type DataTableProps<TData> = {
   data: TData[];
   columns: ColumnDef<TData>[];
   getRowId?: (row: TData, index: number) => string;
   emptyMessage?: string;
-  pageSizeOptions?: number[];
+  pageSizeOptions?: readonly number[];
   initialPageSize?: number;
+  onRowClick?: (row: TData) => void;
+  /** Server-driven pagination — pass pageCount and control pagination state externally. */
+  manualPagination?: boolean;
+  pageCount?: number;
+  pagination?: PaginationState;
+  onPaginationChange?: (pagination: PaginationState) => void;
+  hidePagination?: boolean;
 };
 
 export function DataTable<TData>({
@@ -24,36 +36,59 @@ export function DataTable<TData>({
   columns,
   getRowId,
   emptyMessage = "No records found.",
-  pageSizeOptions = [10, 20, 50],
+  pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
   initialPageSize = 10,
+  onRowClick,
+  manualPagination = false,
+  pageCount: manualPageCount,
+  pagination: controlledPagination,
+  onPaginationChange,
+  hidePagination = false,
 }: DataTableProps<TData>) {
   const safeInitialPageSize = useMemo(() => {
     if (pageSizeOptions.includes(initialPageSize)) return initialPageSize;
     return pageSizeOptions[0] ?? 10;
   }, [initialPageSize, pageSizeOptions]);
 
-  const [pagination, setPagination] = useState<PaginationState>({
+  const [internalPagination, setInternalPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: safeInitialPageSize,
   });
+
+  const pagination = controlledPagination ?? internalPagination;
+  const setPagination = onPaginationChange ?? setInternalPagination;
+
+  useEffect(() => {
+    if (!manualPagination && !controlledPagination) {
+      setInternalPagination((current) => ({
+        ...current,
+        pageIndex: 0,
+      }));
+    }
+  }, [data.length, manualPagination, controlledPagination]);
 
   const table = useReactTable({
     data,
     columns,
     getRowId,
     state: { pagination },
-    onPaginationChange: setPagination,
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function" ? updater(pagination) : updater;
+      setPagination(next);
+    },
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    ...(manualPagination
+      ? { manualPagination: true, pageCount: manualPageCount ?? 1 }
+      : { getPaginationRowModel: getPaginationRowModel() }),
   });
 
-  const canGoPrev = table.getCanPreviousPage();
-  const canGoNext = table.getCanNextPage();
-  const pageCount = table.getPageCount();
-  const pageNumber = table.getState().pagination.pageIndex + 1;
+  const pageCount = manualPagination
+    ? Math.max(manualPageCount ?? 1, 1)
+    : Math.max(table.getPageCount(), 1);
 
   return (
-      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+    <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
       <p className="border-b border-neutral-100 px-4 py-2 text-xs text-neutral-500 sm:hidden">
         Swipe horizontally to see all columns
       </p>
@@ -83,7 +118,10 @@ export function DataTable<TData>({
               table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="border-b border-neutral-100 transition-colors hover:bg-neutral-50"
+                  onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                  className={`border-b border-neutral-100 transition-colors hover:bg-neutral-50${
+                    onRowClick ? " cursor-pointer" : ""
+                  }`}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-4 py-3 align-top text-sm text-neutral-700">
@@ -106,41 +144,20 @@ export function DataTable<TData>({
         </table>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-neutral-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm text-neutral-600">
-          Page {Math.max(pageNumber, 1)} of {Math.max(pageCount, 1)}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={table.getState().pagination.pageSize}
-            onChange={(event) => table.setPageSize(Number(event.target.value))}
-            className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-            aria-label="Rows per page"
-          >
-            {pageSizeOptions.map((size) => (
-              <option key={size} value={size}>
-                {size} / page
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={() => table.previousPage()}
-            disabled={!canGoPrev}
-            className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <button
-            type="button"
-            onClick={() => table.nextPage()}
-            disabled={!canGoNext}
-            className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      </div>
+      {!hidePagination && (manualPagination ? pageCount > 0 : data.length > 0) ? (
+        <PaginationFooter
+          pageIndex={pagination.pageIndex}
+          pageCount={pageCount}
+          pageSize={pagination.pageSize}
+          pageSizeOptions={pageSizeOptions}
+          onPageIndexChange={(nextPageIndex) =>
+            setPagination({ ...pagination, pageIndex: nextPageIndex })
+          }
+          onPageSizeChange={(nextPageSize) =>
+            setPagination({ pageIndex: 0, pageSize: nextPageSize })
+          }
+        />
+      ) : null}
     </div>
   );
 }

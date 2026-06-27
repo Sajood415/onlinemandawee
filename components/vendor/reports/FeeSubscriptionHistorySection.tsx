@@ -12,6 +12,8 @@ import {
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
+import { useClientPagination } from "@/hooks/use-client-pagination";
 
 type OrderFeeEntry = {
   id: string;
@@ -142,6 +144,15 @@ export function FeeSubscriptionHistorySection() {
     ? `${formatCurrency(report.rates.membershipFeeAmount, report.rates.membershipCurrency)} / month`
     : "";
 
+  const orderFeesPagination = useClientPagination(report?.orderFees ?? [], {
+    initialPageSize: 10,
+    resetKey: report?.from ?? undefined,
+  });
+  const subscriptionPagination = useClientPagination(report?.subscriptionCharges ?? [], {
+    initialPageSize: 10,
+    resetKey: report?.from ?? undefined,
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -233,7 +244,7 @@ export function FeeSubscriptionHistorySection() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-100">
-                    {report.orderFees.map((entry) => (
+                    {orderFeesPagination.paginatedItems.map((entry) => (
                       <tr key={entry.id} className="hover:bg-neutral-50/80">
                         <td className="px-5 py-3 text-neutral-700">
                           {formatDate(entry.deductedAt)}
@@ -256,6 +267,16 @@ export function FeeSubscriptionHistorySection() {
                 </table>
               </div>
             )}
+            {report.orderFees.length > 0 ? (
+              <PaginationFooter
+                pageIndex={orderFeesPagination.pageIndex}
+                pageCount={orderFeesPagination.pageCount}
+                pageSize={orderFeesPagination.pageSize}
+                pageSizeOptions={orderFeesPagination.pageSizeOptions}
+                onPageIndexChange={orderFeesPagination.setPageIndex}
+                onPageSizeChange={orderFeesPagination.setPageSize}
+              />
+            ) : null}
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
@@ -284,7 +305,7 @@ export function FeeSubscriptionHistorySection() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-100">
-                    {report.subscriptionCharges.map((invoice) => (
+                    {subscriptionPagination.paginatedItems.map((invoice) => (
                       <tr key={invoice.id} className="hover:bg-neutral-50/80">
                         <td className="px-5 py-3 font-medium text-neutral-900">
                           {invoice.periodLabel}
@@ -344,6 +365,16 @@ export function FeeSubscriptionHistorySection() {
                 </table>
               </div>
             )}
+            {report.subscriptionCharges.length > 0 ? (
+              <PaginationFooter
+                pageIndex={subscriptionPagination.pageIndex}
+                pageCount={subscriptionPagination.pageCount}
+                pageSize={subscriptionPagination.pageSize}
+                pageSizeOptions={subscriptionPagination.pageSizeOptions}
+                onPageIndexChange={subscriptionPagination.setPageIndex}
+                onPageSizeChange={subscriptionPagination.setPageSize}
+              />
+            ) : null}
           </section>
         </>
       )}

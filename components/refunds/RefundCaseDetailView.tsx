@@ -3,7 +3,9 @@
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
+import { AdminRefundDecisionEditor } from "@/components/refunds/AdminRefundDecisionEditor";
 import { AdminRefundDecisionForm } from "@/components/refunds/AdminRefundDecisionForm";
+import { AdminRefundStatusEditor } from "@/components/refunds/AdminRefundStatusEditor";
 import { DisputeChatPanel } from "@/components/refunds/DisputeChatPanel";
 import { RefundEvidenceList } from "@/components/refunds/RefundEvidenceList";
 import { RefundStatusBadge } from "@/components/refunds/RefundStatusBadge";
@@ -38,8 +40,11 @@ export function RefundCaseDetailView({
   const [loading, setLoading] = useState(true);
   const [escalating, setEscalating] = useState(false);
 
-  const loadCase = useCallback(async () => {
-    setLoading(true);
+  const loadCase = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
+    if (!silent) {
+      setLoading(true);
+    }
     try {
       const response = await fetchWithAuth(`/api/refunds/${refundCaseId}`);
       const data = await parseApiResponse<RefundCaseDetail>(response);
@@ -47,7 +52,9 @@ export function RefundCaseDetailView({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load dispute");
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, [refundCaseId]);
 
@@ -88,6 +95,7 @@ export function RefundCaseDetailView({
   const showVendorForm = role === "VENDOR" && refundCase.status === "WAITING_VENDOR";
   const showAdminForm =
     role === "ADMIN" && refundCase.status !== "RESOLVED" && !refundCase.decision;
+  const showRecordedDecision = Boolean(refundCase.decision) && !showAdminForm;
 
   return (
     <div className="space-y-6">
@@ -110,7 +118,24 @@ export function RefundCaseDetailView({
             </h1>
             <p className="mt-1 text-sm text-neutral-600">{refundCase.reason}</p>
           </div>
-          <RefundStatusBadge status={refundCase.status} decision={refundCase.decision} />
+          {role === "ADMIN" ? (
+            <div className="flex flex-col items-end gap-3">
+              {refundCase.decision ? (
+                <AdminRefundDecisionEditor
+                  variant="inline"
+                  refundCase={refundCase}
+                  onSuccess={() => void loadCase({ silent: true })}
+                />
+              ) : null}
+              <AdminRefundStatusEditor
+                variant="inline"
+                refundCase={refundCase}
+                onSuccess={() => void loadCase({ silent: true })}
+              />
+            </div>
+          ) : (
+            <RefundStatusBadge status={refundCase.status} decision={refundCase.decision} />
+          )}
         </div>
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -231,10 +256,40 @@ export function RefundCaseDetailView({
         <AdminRefundDecisionForm refundCase={refundCase} onSuccess={() => void loadCase()} />
       ) : null}
 
+      {showRecordedDecision && role !== "ADMIN" ? (
+        <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-800">
+          <p className="font-semibold text-neutral-900">Final decision</p>
+          <p className="mt-2">
+            {REFUND_DECISION_LABELS[refundCase.decision!.decisionType]}
+            {refundCase.decision!.decisionType !== "REJECT" ? (
+              <>
+                {" "}
+                —{" "}
+                {formatRefundMoney(
+                  refundCase.decision!.approvedAmount,
+                  refundCase.order.currency,
+                  locale
+                )}
+              </>
+            ) : null}
+          </p>
+          {refundCase.decision!.reason ? (
+            <p className="mt-2 text-neutral-700 whitespace-pre-wrap">
+              {refundCase.decision!.reason}
+            </p>
+          ) : null}
+          {refundCase.finalDecisionAt ? (
+            <p className="mt-2 text-xs text-neutral-500">
+              Recorded {formatRefundDate(refundCase.finalDecisionAt, locale)}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       <DisputeChatPanel
         refundCaseId={refundCase.id}
         locale={locale}
-        onCaseUpdated={() => void loadCase()}
+        onCaseUpdated={() => void loadCase({ silent: true })}
       />
     </div>
   );

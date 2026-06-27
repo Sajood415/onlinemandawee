@@ -251,12 +251,14 @@ function buildGuestCheckoutRequestBody(
   };
 
   if (addressRequired && isDeliveryAddressComplete(address)) {
-    body.deliveryAddress = {
+    const trimmedAddress = {
       addressLine1: address.addressLine1.trim(),
       city: address.city.trim(),
       country: address.country.trim(),
       postalCode: address.postalCode.trim(),
     };
+    body.deliveryAddress = trimmedAddress;
+    Object.assign(body, trimmedAddress);
   }
 
   return body;
@@ -1169,7 +1171,7 @@ function StripePayForm({
 
       const succeededPaymentIntent = await waitForSucceededPaymentIntent(
         stripe,
-        quote.paymentIntentId,
+        quote.clientSecret,
         paymentIntent
       );
 

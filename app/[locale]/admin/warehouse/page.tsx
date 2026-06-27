@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
+import { useClientPagination } from "@/hooks/use-client-pagination";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 
@@ -180,6 +182,19 @@ export default function AdminWarehousePage() {
     [loadAll]
   );
 
+  const inboundPagination = useClientPagination(inboundData?.items ?? [], {
+    initialPageSize: 10,
+    resetKey: inboundStatusFilter,
+  });
+  const batchPagination = useClientPagination(batchData?.items ?? [], {
+    initialPageSize: 10,
+    resetKey: batchStatusFilter,
+  });
+  const outboundPagination = useClientPagination(outboundData?.items ?? [], {
+    initialPageSize: 10,
+    resetKey: outboundStatusFilter,
+  });
+
   if (authLoading || !user) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -262,7 +277,7 @@ export default function AdminWarehousePage() {
                 </tr>
               </thead>
               <tbody>
-                {(inboundData?.items ?? []).map((row) => (
+                {inboundPagination.paginatedItems.map((row) => (
                   <tr key={row.id} className="border-b border-neutral-100">
                     <td className="px-2 py-2 font-medium text-neutral-900">{row.order.orderNumber}</td>
                     <td className="px-2 py-2 text-neutral-700">
@@ -348,6 +363,16 @@ export default function AdminWarehousePage() {
             </table>
           </div>
         )}
+        {!loading && (inboundData?.items.length ?? 0) > 0 ? (
+          <PaginationFooter
+            pageIndex={inboundPagination.pageIndex}
+            pageCount={inboundPagination.pageCount}
+            pageSize={inboundPagination.pageSize}
+            pageSizeOptions={inboundPagination.pageSizeOptions}
+            onPageIndexChange={inboundPagination.setPageIndex}
+            onPageSizeChange={inboundPagination.setPageSize}
+          />
+        ) : null}
       </section>
 
       <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
@@ -388,7 +413,7 @@ export default function AdminWarehousePage() {
                 </tr>
               </thead>
               <tbody>
-                {(batchData?.items ?? []).map((row) => (
+                {batchPagination.paginatedItems.map((row) => (
                   <tr key={row.id} className="border-b border-neutral-100">
                     <td className="px-2 py-2 font-medium text-neutral-900">{row.order.orderNumber}</td>
                     <td className="px-2 py-2">
@@ -429,6 +454,16 @@ export default function AdminWarehousePage() {
             </table>
           </div>
         )}
+        {!loading && (batchData?.items.length ?? 0) > 0 ? (
+          <PaginationFooter
+            pageIndex={batchPagination.pageIndex}
+            pageCount={batchPagination.pageCount}
+            pageSize={batchPagination.pageSize}
+            pageSizeOptions={batchPagination.pageSizeOptions}
+            onPageIndexChange={batchPagination.setPageIndex}
+            onPageSizeChange={batchPagination.setPageSize}
+          />
+        ) : null}
       </section>
 
       <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
@@ -468,7 +503,7 @@ export default function AdminWarehousePage() {
                 </tr>
               </thead>
               <tbody>
-                {(outboundData?.items ?? []).map((row) => (
+                {outboundPagination.paginatedItems.map((row) => (
                   <tr key={row.id} className="border-b border-neutral-100">
                     <td className="px-2 py-2 font-medium text-neutral-900">{row.order.orderNumber}</td>
                     <td className="px-2 py-2">
@@ -528,6 +563,16 @@ export default function AdminWarehousePage() {
             </table>
           </div>
         )}
+        {!loading && (outboundData?.items.length ?? 0) > 0 ? (
+          <PaginationFooter
+            pageIndex={outboundPagination.pageIndex}
+            pageCount={outboundPagination.pageCount}
+            pageSize={outboundPagination.pageSize}
+            pageSizeOptions={outboundPagination.pageSizeOptions}
+            onPageIndexChange={outboundPagination.setPageIndex}
+            onPageSizeChange={outboundPagination.setPageSize}
+          />
+        ) : null}
       </section>
     </div>
   );

@@ -44,7 +44,7 @@ const envSchema = z.object({
   REALTIME_PUBLISH_URL: z.string().url().optional(),
   REALTIME_INTERNAL_SECRET: z.string().min(16).optional(),
   NEXT_PUBLIC_REALTIME_URL: z.string().url().optional(),
-  REFUND_WINDOW_DAYS: z.coerce.number().int().min(1).max(30).default(3),
+  REFUND_WINDOW_DAYS: z.coerce.number().int().min(1).max(30).default(7),
 }).superRefine((data, ctx) => {
   const isProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
   if (data.NODE_ENV === "production" && !data.APP_URL && !isProductionBuild) {

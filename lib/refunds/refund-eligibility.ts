@@ -25,9 +25,8 @@ export function getRefundEligibility(input: {
 
   const effectiveDeliveredAt = resolveDeliveredAt(input);
 
-  // Delivered without a recorded timestamp — allow refunds (legacy rows).
   if (!effectiveDeliveredAt) {
-    return "open";
+    return "expired";
   }
 
   const deadline = new Date(effectiveDeliveredAt);

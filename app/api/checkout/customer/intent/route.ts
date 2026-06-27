@@ -5,6 +5,7 @@ import {
   buildGuestCheckoutQuote,
   GuestCheckoutQuoteError,
 } from "@/lib/checkout/build-guest-checkout-quote";
+import { resolveCheckoutShippingAddress } from "@/lib/checkout/resolve-checkout-shipping-address";
 import {
   createCheckoutPaymentIntent,
   StripeCheckoutPaymentError,
@@ -116,6 +117,8 @@ export const POST = withErrorHandling(
         },
       });
 
+      const shippingAddress = resolveCheckoutShippingAddress(parsed.data);
+
       await checkoutSnapshotRepository.createIfAbsent({
         paymentIntentId: paymentIntent.id,
         source: "customer_checkout",
@@ -126,10 +129,10 @@ export const POST = withErrorHandling(
           guestName: parsed.data.guestName,
           guestEmail: parsed.data.guestEmail,
           guestPhone: parsed.data.guestPhone,
-          addressLine1: parsed.data.addressLine1 ?? null,
-          city: parsed.data.city ?? null,
-          country: parsed.data.country ?? null,
-          postalCode: parsed.data.postalCode ?? null,
+          addressLine1: shippingAddress.addressLine1,
+          city: shippingAddress.city,
+          country: shippingAddress.country,
+          postalCode: shippingAddress.postalCode,
           deliveryMethod: parsed.data.deliveryMethod ?? quote.deliveryMethod,
         },
       });
