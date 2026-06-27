@@ -130,7 +130,7 @@ export function getRefundOutcomeDisplay(input: {
   status: RefundCaseStatus;
   decision: { decisionType: RefundDecisionType } | null;
 }) {
-  if (input.decision) {
+  if (input.status === "RESOLVED" && input.decision) {
     return {
       label: REFUND_DECISION_LABELS[input.decision.decisionType],
       badgeClass: REFUND_DECISION_BADGE[input.decision.decisionType],

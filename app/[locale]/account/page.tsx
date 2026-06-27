@@ -16,13 +16,7 @@ import {
 
 import { PageLoader } from "@/components/ui/PageLoader";
 import { RequestRefundModal } from "@/components/refunds/RequestRefundModal";
-import { CancelOrderModal } from "@/components/orders/CancelOrderModal";
-import { formatPostalAddress } from "@/lib/address/format-postal-address";
 import { canCustomerRequestItemRefund } from "@/lib/refunds/refund-request-eligibility";
-import {
-  formatDeliveredOnDateTime,
-  resolveVendorOrderDeliveredAtIso,
-} from "@/lib/orders/resolve-vendor-order-delivered-at";
 import { useCustomerRouteGuard } from "@/components/customer/use-customer-route-guard";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -123,13 +117,6 @@ type CustomerOrder = {
     postalCode: string | null;
   };
   vendorOrders: CustomerVendorOrder[];
-  cancellation: {
-    canCancel: boolean;
-    isCancelledByCustomer: boolean;
-    cancelledAt: string | null;
-    cancellationReason: string | null;
-    cancelBlockReason: "ORDER_ALREADY_CANCELLED" | "ORDER_ALREADY_SHIPPED" | null;
-  };
 };
 
 const STATUS_COLORS: Record<VendorOrderStatus, string> = {
@@ -222,18 +209,14 @@ function overallOrderStatus(order: CustomerOrder) {
 function OrderCard({
   order,
   activeRefundItemIds,
-  onOrderCancelled,
 }: {
   order: CustomerOrder;
   activeRefundItemIds: Set<string>;
-  onOrderCancelled: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [refundItem, setRefundItem] = useState<CustomerOrderItem | null>(null);
-  const [showCancelModal, setShowCancelModal] = useState(false);
   const router = useRouter();
   const t = useTranslations("Account.overview");
-  const tOrders = useTranslations("Account.overview.orders");
   const locale = useLocale();
   const summaryStatus = overallOrderStatus(order);
   const isRefundablePayment =
@@ -293,9 +276,11 @@ function OrderCard({
               {order.shippingAddress.fullName} · {order.shippingAddress.phone}
             </p>
             <p className="text-sm text-neutral-700">
-              {formatPostalAddress(order.shippingAddress) || (
-                <span className="text-neutral-500">{t("orders.addressNotRecorded")}</span>
-              )}
+              {order.shippingAddress.addressLine1}, {order.shippingAddress.city},{" "}
+              {order.shippingAddress.country}
+              {order.shippingAddress.postalCode
+                ? `, ${order.shippingAddress.postalCode}`
+                : ""}
             </p>
           </div>
 
@@ -328,34 +313,6 @@ function OrderCard({
             </div>
           </div>
 
-          {order.cancellation.isCancelledByCustomer && order.cancellation.cancelledAt ? (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
-              <p className="font-semibold">{tOrders("cancelledByYou")}</p>
-              <p className="mt-1 text-rose-800">
-                {tOrders("cancelledOn", {
-                  date: new Date(order.cancellation.cancelledAt).toLocaleString(locale),
-                })}
-              </p>
-              {order.cancellation.cancellationReason ? (
-                <p className="mt-2 text-rose-800">
-                  {tOrders("cancellationReason")}: {order.cancellation.cancellationReason}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-
-          {order.cancellation.canCancel ? (
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowCancelModal(true)}
-                className="rounded-lg border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
-              >
-                {tOrders("cancelOrder")}
-              </button>
-            </div>
-          ) : null}
-
           {order.vendorOrders.map((vendorOrder) => (
             <div
               key={vendorOrder.id}
@@ -376,27 +333,6 @@ function OrderCard({
                   </span>
                 </div>
               </div>
-
-              {(() => {
-                const deliveredAt = resolveVendorOrderDeliveredAtIso({
-                  status: vendorOrder.status,
-                  deliveredAt: vendorOrder.deliveredAt,
-                  outboundDeliveredAt: vendorOrder.warehouse.outboundShipment?.deliveredAt,
-                });
-                if (vendorOrder.status !== "DELIVERED" && !deliveredAt) return null;
-
-                const deliveredLabel = deliveredAt
-                  ? formatDeliveredOnDateTime(deliveredAt, locale)
-                  : null;
-
-                return (
-                  <p className="mt-2 text-xs text-neutral-600">
-                    {deliveredLabel
-                      ? t("orders.deliveredOn", { date: deliveredLabel })
-                      : t("orders.deliveredOnNotRecorded")}
-                  </p>
-                );
-              })()}
 
               {vendorOrder.deliveryMethod === "STANDARD" ? (
                 <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/40 p-3">
@@ -504,15 +440,6 @@ function OrderCard({
             setRefundItem(null);
             router.push(`/account/disputes/${refundCaseId}`);
           }}
-        />
-      ) : null}
-
-      {showCancelModal ? (
-        <CancelOrderModal
-          open
-          order={{ id: order.id, orderNumber: order.orderNumber }}
-          onClose={() => setShowCancelModal(false)}
-          onSuccess={onOrderCancelled}
         />
       ) : null}
     </article>
@@ -929,12 +856,7 @@ export default function CustomerAccountPage() {
               ) : (
                 <div className="mt-4 space-y-3">
                   {orders.map((order) => (
-                    <OrderCard
-                      key={order.id}
-                      order={order}
-                      activeRefundItemIds={activeRefundItemIds}
-                      onOrderCancelled={() => void loadAccountData()}
-                    />
+                    <OrderCard key={order.id} order={order} activeRefundItemIds={activeRefundItemIds} />
                   ))}
                 </div>
               )}
@@ -1026,9 +948,11 @@ export default function CustomerAccountPage() {
                     {latestOrderAddress.fullName} · {latestOrderAddress.phone}
                   </p>
                   <p className="mt-1 text-sm text-neutral-700">
-                    {formatPostalAddress(latestOrderAddress) || (
-                      <span className="text-neutral-500">{t("orders.addressNotRecorded")}</span>
-                    )}
+                    {latestOrderAddress.addressLine1}, {latestOrderAddress.city},{" "}
+                    {latestOrderAddress.country}
+                    {latestOrderAddress.postalCode
+                      ? `, ${latestOrderAddress.postalCode}`
+                      : ""}
                   </p>
                   <button
                     type="button"
@@ -1138,7 +1062,8 @@ export default function CustomerAccountPage() {
                             </div>
                             <p className="mt-2 text-sm text-neutral-600">{address.phone}</p>
                             <p className="mt-1 text-sm leading-relaxed text-neutral-700">
-                              {formatPostalAddress(address)}
+                              {address.addressLine1}, {address.city}, {address.country}
+                              {address.postalCode ? `, ${address.postalCode}` : ""}
                             </p>
                           </div>
                           <button

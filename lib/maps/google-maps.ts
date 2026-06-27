@@ -2,17 +2,16 @@ import "server-only";
 
 import { env } from "@/config/env";
 
-import { formatPostalAddress, type PostalAddressParts } from "@/lib/address/format-postal-address";
-
 export type GeoCoordinates = {
   lat: number;
   lng: number;
 };
 
-export type PostalAddress = PostalAddressParts & {
+export type PostalAddress = {
   addressLine1: string;
   city: string;
   country: string;
+  postalCode?: string;
 };
 
 export class MapsApiError extends Error {
@@ -22,6 +21,12 @@ export class MapsApiError extends Error {
     super(message);
     this.code = code;
   }
+}
+
+export function formatPostalAddress(address: PostalAddress) {
+  return [address.addressLine1, address.city, address.postalCode, address.country]
+    .filter((part) => part && part.trim().length > 0)
+    .join(", ");
 }
 
 function normalizeCountryCode(country: string) {

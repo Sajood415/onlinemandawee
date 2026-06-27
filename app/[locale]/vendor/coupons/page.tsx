@@ -4,8 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2, Pencil, Plus, Tag, X } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
-import { PaginationFooter } from "@/components/ui/pagination-footer";
-import { useClientPagination } from "@/hooks/use-client-pagination";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
@@ -300,16 +298,6 @@ export default function VendorCouponsPage() {
     void loadVendorProducts();
   }, [guardLoading, loadCoupons, loadVendorProducts]);
 
-  const {
-    paginatedItems: paginatedCoupons,
-    pageIndex,
-    pageCount,
-    pageSize,
-    pageSizeOptions,
-    setPageIndex,
-    setPageSize,
-  } = useClientPagination(coupons, { initialPageSize: 10 });
-
   const openCreate = () => {
     setEditingId(null);
     setForm(emptyForm());
@@ -446,7 +434,7 @@ export default function VendorCouponsPage() {
         </section>
       ) : null}
 
-      <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+      <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
@@ -462,73 +450,63 @@ export default function VendorCouponsPage() {
             </p>
           </div>
         ) : (
-          <>
-            <div className="divide-y divide-neutral-200">
-              {paginatedCoupons.map((coupon) => (
-                <div
-                  key={coupon.id}
-                  className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-mono text-base font-bold text-[#0f3460]">{coupon.code}</p>
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                          coupon.isActive
-                            ? "bg-green-50 text-green-700 border border-green-200"
-                            : "bg-neutral-100 text-neutral-600 border border-neutral-200"
-                        }`}
-                      >
-                        {coupon.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-sm text-neutral-700">{formatDiscount(coupon)}</p>
-                    <p className="mt-1 text-xs text-neutral-600">
-                      {formatCouponScope(coupon)}
-                      {!coupon.appliesToAllProducts
-                        ? " · Shown on those product pages"
-                        : " · Shown on your store and checkout"}
-                    </p>
-                    <p className="mt-1 text-xs text-neutral-500">
-                      Used {coupon.usedCount}
-                      {coupon.maxUses != null ? ` / ${coupon.maxUses}` : ""}
-                      {coupon.expiresAt
-                        ? ` · Expires ${new Date(coupon.expiresAt).toLocaleDateString()}`
-                        : ""}
-                      {coupon.minOrderAmount != null
-                        ? ` · Min order $${(coupon.minOrderAmount / 100).toFixed(2)}`
-                        : ""}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(coupon)}
-                      className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+          <div className="divide-y divide-neutral-200">
+            {coupons.map((coupon) => (
+              <div
+                key={coupon.id}
+                className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-mono text-base font-bold text-[#0f3460]">{coupon.code}</p>
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                        coupon.isActive
+                          ? "bg-green-50 text-green-700 border border-green-200"
+                          : "bg-neutral-100 text-neutral-600 border border-neutral-200"
+                      }`}
                     >
-                      <Pencil className="h-4 w-4" />
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void toggleActive(coupon)}
-                      className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
-                    >
-                      {coupon.isActive ? "Deactivate" : "Activate"}
-                    </button>
+                      {coupon.isActive ? "Active" : "Inactive"}
+                    </span>
                   </div>
+                  <p className="mt-1 text-sm text-neutral-700">{formatDiscount(coupon)}</p>
+                  <p className="mt-1 text-xs text-neutral-600">
+                    {formatCouponScope(coupon)}
+                    {!coupon.appliesToAllProducts
+                      ? " · Shown on those product pages"
+                      : " · Shown on your store and checkout"}
+                  </p>
+                  <p className="mt-1 text-xs text-neutral-500">
+                    Used {coupon.usedCount}
+                    {coupon.maxUses != null ? ` / ${coupon.maxUses}` : ""}
+                    {coupon.expiresAt
+                      ? ` · Expires ${new Date(coupon.expiresAt).toLocaleDateString()}`
+                      : ""}
+                    {coupon.minOrderAmount != null
+                      ? ` · Min order $${(coupon.minOrderAmount / 100).toFixed(2)}`
+                      : ""}
+                  </p>
                 </div>
-              ))}
-            </div>
-            <PaginationFooter
-              pageIndex={pageIndex}
-              pageCount={pageCount}
-              pageSize={pageSize}
-              pageSizeOptions={pageSizeOptions}
-              onPageIndexChange={setPageIndex}
-              onPageSizeChange={setPageSize}
-            />
-          </>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(coupon)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void toggleActive(coupon)}
+                    className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+                  >
+                    {coupon.isActive ? "Deactivate" : "Activate"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </section>
     </div>

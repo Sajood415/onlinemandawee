@@ -11,16 +11,11 @@ import {
 
 import { AdminOrderDisputePanel } from "@/components/admin/AdminOrderDisputePanel";
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
-import { PaginationFooter } from "@/components/ui/pagination-footer";
 import type { OrderStatus, VendorOrderStatus } from "@/domain/order/order-status";
 import { adminOrderStatusFilters } from "@/domain/order/order-status";
 import type { PayoutStatus } from "@/domain/payment/payment-types";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
-import {
-  resolveOrderDeliveredAtIso,
-  resolveVendorOrderDeliveredAtIso,
-} from "@/lib/orders/resolve-vendor-order-delivered-at";
 import { Link } from "@/i18n/navigation";
 
 type VendorOption = {
@@ -56,7 +51,6 @@ type AdminOrderListItem = {
     vendorStoreName: string | null;
     vendorStoreSlug: string | null;
     status: VendorOrderStatus;
-    deliveredAt: string | null;
     grandTotalAmount: number;
     currency: string;
     commissionAmount: number | null;
@@ -93,10 +87,6 @@ type AdminOrderDetail = {
   discountAmount: number;
   grandTotalAmount: number;
   stripePaymentIntentId: string | null;
-  cancelledAt: string | null;
-  cancellationReason: string | null;
-  cancelledByRole: string | null;
-  isLockedByCustomerCancellation: boolean;
   createdAt: string;
   updatedAt: string;
   customer: AdminOrderListItem["customer"];
@@ -693,21 +683,7 @@ export default function AdminOrdersPage() {
                     <tr key={order.id} className="border-b border-neutral-100 hover:bg-neutral-50">
                       <td className="px-4 py-3 align-top text-sm">
                         <p className="font-semibold text-neutral-900">{order.orderNumber}</p>
-                        <p className="text-xs text-neutral-500">Placed {displayDate(order.createdAt)}</p>
-                        {(() => {
-                          const deliveredAt = resolveOrderDeliveredAtIso(
-                            order.vendors.map((vendor) => ({
-                              status: vendor.status,
-                              deliveredAt: vendor.deliveredAt,
-                            }))
-                          );
-                          if (!deliveredAt) return null;
-                          return (
-                            <p className="text-xs text-emerald-700">
-                              Delivered on {displayDate(deliveredAt)}
-                            </p>
-                          );
-                        })()}
+                        <p className="text-xs text-neutral-500">{displayDate(order.createdAt)}</p>
                         <span
                           className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${platformStatusClass(order.status)}`}
                         >
@@ -730,15 +706,6 @@ export default function AdminOrdersPage() {
                               >
                                 {vendor.status}
                               </span>
-                              {vendor.deliveredAt ? (
-                                <p className="mt-1 text-[11px] text-emerald-700">
-                                  Delivered on {displayDate(vendor.deliveredAt)}
-                                </p>
-                              ) : vendor.status === "DELIVERED" ? (
-                                <p className="mt-1 text-[11px] text-neutral-500">
-                                  Delivered — date not recorded
-                                </p>
-                              ) : null}
                             </div>
                           ))}
                         </div>
@@ -813,21 +780,52 @@ export default function AdminOrdersPage() {
                 </tbody>
               </table>
             </div>
-            <PaginationFooter
-              pageIndex={pagination.page - 1}
-              pageCount={pagination.totalPages}
-              pageSize={pagination.pageSize}
-              onPageIndexChange={(pageIndex) =>
-                setPagination((current) => ({ ...current, page: pageIndex + 1 }))
-              }
-              onPageSizeChange={(nextPageSize) =>
-                setPagination((current) => ({
-                  ...current,
-                  page: 1,
-                  pageSize: nextPageSize,
-                }))
-              }
-            />
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-neutral-600">
+              Showing page {pagination.page} of {pagination.totalPages} · {pagination.total}{" "}
+              total orders
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={pagination.pageSize}
+                onChange={(event) =>
+                  setPagination((current) => ({
+                    ...current,
+                    page: 1,
+                    pageSize: Number(event.target.value),
+                  }))
+                }
+                className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700"
+              >
+                {[10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size} / page
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={pagination.page <= 1}
+                onClick={() =>
+                  setPagination((current) => ({ ...current, page: current.page - 1 }))
+                }
+                className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() =>
+                  setPagination((current) => ({ ...current, page: current.page + 1 }))
+                }
+                className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </>
       )}
@@ -1005,41 +1003,9 @@ export default function AdminOrdersPage() {
                     <p className="mt-3 text-sm text-neutral-600">
                       Placed {displayDate(detail.createdAt)}
                     </p>
-                    {(() => {
-                      const deliveredAt = resolveOrderDeliveredAtIso(
-                        detail.vendorOrders.map((vendorOrder) => ({
-                          status: vendorOrder.status,
-                          deliveredAt: vendorOrder.deliveredAt,
-                          outboundDeliveredAt: detail.warehouse.outboundShipment?.deliveredAt,
-                        }))
-                      );
-                      if (!deliveredAt) return null;
-                      return (
-                        <p className="text-sm font-medium text-emerald-700">
-                          Delivered on {displayDate(deliveredAt)}
-                        </p>
-                      );
-                    })()}
                     <p className="text-sm text-neutral-600">
                       Updated {displayDate(detail.updatedAt)}
                     </p>
-                    {detail.isLockedByCustomerCancellation ? (
-                      <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
-                        <p className="font-semibold">Cancelled by customer</p>
-                        {detail.cancelledAt ? (
-                          <p className="mt-1">Cancelled on {displayDate(detail.cancelledAt)}</p>
-                        ) : null}
-                        {detail.cancellationReason ? (
-                          <p className="mt-1">
-                            Reason: {detail.cancellationReason}
-                          </p>
-                        ) : null}
-                        <p className="mt-2 text-xs text-rose-800">
-                          Order status is locked and cannot be changed through warehouse or vendor
-                          actions.
-                        </p>
-                      </div>
-                    ) : null}
                   </div>
 
                   <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
@@ -1128,19 +1094,11 @@ export default function AdminOrdersPage() {
                             </span>
                           </div>
                           {vendorOrder.status === "DELIVERED" || vendorOrder.deliveredAt ? (
-                            <p className="mt-2 text-xs text-emerald-700">
-                              Delivered on{" "}
-                              {(() => {
-                                const deliveredAt = resolveVendorOrderDeliveredAtIso({
-                                  status: vendorOrder.status,
-                                  deliveredAt: vendorOrder.deliveredAt,
-                                  outboundDeliveredAt:
-                                    detail.warehouse.outboundShipment?.deliveredAt,
-                                });
-                                return deliveredAt
-                                  ? displayDate(deliveredAt)
-                                  : "— date not recorded";
-                              })()}
+                            <p className="mt-2 text-xs text-neutral-600">
+                              Delivered{" "}
+                              {vendorOrder.deliveredAt
+                                ? displayDate(vendorOrder.deliveredAt)
+                                : "— not recorded"}
                             </p>
                           ) : null}
                         </div>

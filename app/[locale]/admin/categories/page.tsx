@@ -1,11 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ColumnDef } from "@tanstack/react-table";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Pencil, Plus, ToggleLeft, ToggleRight, X } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
-import { DataTable } from "@/components/ui/data-table";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
 
@@ -177,122 +175,6 @@ export default function AdminCategoriesPage() {
     }
   };
 
-  /* ── Filtered list ──────────────────────────────────────────────── */
-
-  const filtered = search.trim()
-    ? categories.filter((c) =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.slug.includes(search.toLowerCase())
-      )
-    : categories;
-
-  const topLevelSelectOptions = categories.filter((c) => !c.parentId);
-
-  const columns = useMemo<ColumnDef<Category>[]>(
-    () => [
-      {
-        header: "Name",
-        accessorKey: "name",
-        cell: ({ row }) => (
-          <span className="font-medium text-neutral-900">{row.original.name}</span>
-        ),
-      },
-      {
-        header: "Slug",
-        accessorKey: "slug",
-        cell: ({ row }) => (
-          <span className="font-mono text-xs text-neutral-500">{row.original.slug}</span>
-        ),
-      },
-      {
-        header: "Parent",
-        id: "parent",
-        cell: ({ row }) =>
-          row.original.parent?.name ?? <span className="text-neutral-300">—</span>,
-      },
-      {
-        header: "Sub-categories",
-        id: "children",
-        cell: ({ row }) =>
-          row.original.children?.length > 0 ? (
-            <span className="text-xs text-neutral-500">
-              {row.original.children.map((c) => c.name).join(", ")}
-            </span>
-          ) : (
-            <span className="text-neutral-300">—</span>
-          ),
-      },
-      {
-        header: "Sort",
-        accessorKey: "sortOrder",
-        cell: ({ row }) => (
-          <span className="tabular-nums text-neutral-600">{row.original.sortOrder}</span>
-        ),
-      },
-      {
-        header: "Status",
-        id: "status",
-        cell: ({ row }) => {
-          const cat = row.original;
-          return (
-            <span
-              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${
-                cat.isActive
-                  ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-                  : "bg-neutral-100 text-neutral-500 ring-neutral-200"
-              }`}
-            >
-              {cat.isActive ? "Active" : "Inactive"}
-            </span>
-          );
-        },
-      },
-      {
-        header: "Actions",
-        id: "actions",
-        cell: ({ row }) => {
-          const cat = row.original;
-          return (
-            <div
-              className="flex items-center gap-2"
-              onClick={(event) => event.stopPropagation()}
-              onKeyDown={(event) => event.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={() => startEdit(cat)}
-                className="inline-flex items-center gap-1 rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </button>
-              <button
-                type="button"
-                disabled={togglingId === cat.id}
-                onClick={() => void toggleActive(cat)}
-                className={`inline-flex items-center gap-1 rounded-md border bg-white px-2.5 py-1.5 text-xs font-medium transition disabled:opacity-60 ${
-                  cat.isActive
-                    ? "border-amber-200 text-amber-700 hover:bg-amber-50"
-                    : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                }`}
-              >
-                {togglingId === cat.id ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : cat.isActive ? (
-                  <ToggleRight className="h-3.5 w-3.5" />
-                ) : (
-                  <ToggleLeft className="h-3.5 w-3.5" />
-                )}
-                {cat.isActive ? "Deactivate" : "Activate"}
-              </button>
-            </div>
-          );
-        },
-      },
-    ],
-    [togglingId]
-  );
-
   /* ── Guard ──────────────────────────────────────────────────────── */
 
   if (authLoading || !user) {
@@ -302,6 +184,18 @@ export default function AdminCategoriesPage() {
       </div>
     );
   }
+
+  /* ── Filtered list ──────────────────────────────────────────────── */
+
+  const filtered = search.trim()
+    ? categories.filter((c) =>
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.slug.includes(search.toLowerCase())
+      )
+    : categories;
+
+  const topLevel = filtered.filter((c) => !c.parentId);
+  const topLevelSelectOptions = categories.filter((c) => !c.parentId);
 
   /* ── Render ─────────────────────────────────────────────────────── */
 
@@ -474,15 +368,101 @@ export default function AdminCategoriesPage() {
           <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
           </p>
+        ) : filtered.length === 0 ? (
+          <p className="text-sm text-neutral-500">No categories found.</p>
         ) : (
-          <DataTable
-            data={filtered}
-            columns={columns}
-            getRowId={(row) => row.id}
-            emptyMessage="No categories found."
-            initialPageSize={10}
-            pageSizeOptions={[10, 20, 50]}
-          />
+          <div className="responsive-table-shell overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-neutral-100 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                  <th className="px-3 py-2">Name</th>
+                  <th className="px-3 py-2">Slug</th>
+                  <th className="px-3 py-2">Parent</th>
+                  <th className="px-3 py-2">Sub-categories</th>
+                  <th className="px-3 py-2">Sort</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="sticky right-0 z-10 bg-white px-3 py-2 shadow-[-8px_0_12px_-8px_rgba(0,0,0,0.12)]">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((cat) => (
+                  <tr
+                    key={cat.id}
+                    className={`group border-b border-neutral-100 transition-colors ${
+                      editingId === cat.id ? "bg-primary/5" : "hover:bg-neutral-50"
+                    }`}
+                  >
+                    <td className="px-3 py-3 font-medium text-neutral-900">{cat.name}</td>
+                    <td className="px-3 py-3 font-mono text-xs text-neutral-500">{cat.slug}</td>
+                    <td className="px-3 py-3 text-neutral-600">
+                      {cat.parent?.name ?? <span className="text-neutral-300">—</span>}
+                    </td>
+                    <td className="px-3 py-3 text-neutral-600">
+                      {cat.children?.length > 0 ? (
+                        <span className="text-xs text-neutral-500">
+                          {cat.children.map((c) => c.name).join(", ")}
+                        </span>
+                      ) : (
+                        <span className="text-neutral-300">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-3 tabular-nums text-neutral-600">{cat.sortOrder}</td>
+                    <td className="px-3 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${
+                          cat.isActive
+                            ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                            : "bg-neutral-100 text-neutral-500 ring-neutral-200"
+                        }`}
+                      >
+                        {cat.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td
+                      className={`sticky right-0 z-10 px-3 py-3 shadow-[-8px_0_12px_-8px_rgba(0,0,0,0.12)] ${
+                        editingId === cat.id ? "bg-primary/5" : "bg-white group-hover:bg-neutral-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {/* Edit */}
+                        <button
+                          type="button"
+                          onClick={() => startEdit(cat)}
+                          className="relative z-10 inline-flex items-center gap-1 rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          Edit
+                        </button>
+
+                        {/* Toggle active */}
+                        <button
+                          type="button"
+                          disabled={togglingId === cat.id}
+                          onClick={() => void toggleActive(cat)}
+                          className={`relative z-10 inline-flex items-center gap-1 rounded-md border bg-white px-2.5 py-1.5 text-xs font-medium transition disabled:opacity-60 ${
+                            cat.isActive
+                              ? "border-amber-200 text-amber-700 hover:bg-amber-50"
+                              : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                          }`}
+                        >
+                          {togglingId === cat.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : cat.isActive ? (
+                            <ToggleRight className="h-3.5 w-3.5" />
+                          ) : (
+                            <ToggleLeft className="h-3.5 w-3.5" />
+                          )}
+                          {cat.isActive ? "Deactivate" : "Activate"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

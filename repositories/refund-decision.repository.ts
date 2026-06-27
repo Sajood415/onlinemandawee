@@ -39,22 +39,6 @@ export class RefundDecisionRepository {
     });
   }
 
-  updateDecision(input: {
-    refundCaseId: string;
-    decisionType: RefundDecisionType;
-    approvedAmount: number;
-    reason?: string | null;
-  }) {
-    return refundDecisionDelegate.update({
-      where: { refundCaseId: input.refundCaseId },
-      data: {
-        decisionType: input.decisionType,
-        approvedAmount: input.approvedAmount,
-        reason: input.reason ?? null,
-      },
-    });
-  }
-
   updateStripeMetadata(input: {
     refundCaseId: string;
     stripeRefundId?: string;

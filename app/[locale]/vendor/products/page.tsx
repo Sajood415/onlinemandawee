@@ -1,19 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ColumnDef } from "@tanstack/react-table";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ImageIcon, Loader2, Pencil, Plus, Search, SendHorizonal, Trash2, X } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
-import { DataTable } from "@/components/ui/data-table";
 import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-status";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
-import {
-  deriveProductFieldsFromVariantPrices,
-  getNamedVariantRows,
-  parseVariantPriceMinor,
-} from "@/lib/products/derive-variant-product-fields";
 import { formatVendorStockSummary } from "@/lib/products/product-stock";
 import {
   formatProductPriceRangeMinor,
@@ -137,13 +130,12 @@ function newVariantRow(): VariantFormRow {
   };
 }
 
-function variantToRow(v: ProductVariant, fallbackPriceMajor = ""): VariantFormRow {
+function variantToRow(v: ProductVariant): VariantFormRow {
   return {
     localId: v.id,
     id: v.id,
     name: v.name,
-    priceAmount:
-      v.priceAmount != null ? String(v.priceAmount / 100) : fallbackPriceMajor,
+    priceAmount: v.priceAmount != null ? String(v.priceAmount / 100) : "",
     stockQty: String(v.stockQty),
     sku: v.sku ?? "",
     isActive: v.isActive,
@@ -187,20 +179,6 @@ export default function VendorProductsPage() {
   const [filterStatus, setFilterStatus]   = useState<ProductApprovalStatus | "">("");
 
   const isEdit = Boolean(editingProductId);
-  const showBasePricingFields = variantRows.length === 0;
-
-  const addVariantRow = () => {
-    setVariantRows((rows) => {
-      if (rows.length === 0) {
-        const row = newVariantRow();
-        if (form.priceAmount.trim()) row.priceAmount = form.priceAmount;
-        if (form.stockQty.trim()) row.stockQty = form.stockQty;
-        if (form.sku.trim()) row.sku = form.sku;
-        return [row];
-      }
-      return [...rows, newVariantRow()];
-    });
-  };
 
   /* ── Fetch ──────────────────────────────────────────────────────── */
 
@@ -340,50 +318,12 @@ export default function VendorProductsPage() {
     if (form.name.trim().length < 2) { toast.error("Name too short", "At least 2 characters."); return; }
     if (form.description.trim().length < 10) { toast.error("Description too short", "At least 10 characters."); return; }
 
-    if (variantRows.length > 0 && getNamedVariantRows(variantRows).length === 0) {
-      toast.error("Variant incomplete", "Enter a variant name or remove the empty row.");
-      return;
-    }
+    const priceRaw = Number(form.priceAmount);
+    if (!Number.isFinite(priceRaw) || priceRaw <= 0) { toast.error("Invalid price", "Enter a price > 0."); return; }
+    const priceAmount = Math.round(priceRaw * 100);
 
-    const namedVariantRows = getNamedVariantRows(variantRows);
-    const hasVariants = namedVariantRows.length > 0;
-
-    let priceAmount: number;
-    let stockQty: number;
-
-    if (hasVariants) {
-      const variantPricesMinor: number[] = [];
-      for (const row of namedVariantRows) {
-        const variantPriceMinor = parseVariantPriceMinor(row.priceAmount);
-        if (variantPriceMinor == null) {
-          toast.error("Variant price required", `"${row.name.trim()}" needs a price greater than 0.`);
-          return;
-        }
-        const variantStock = Number(row.stockQty);
-        if (!Number.isInteger(variantStock) || variantStock < 0) {
-          toast.error("Invalid variant stock", `"${row.name.trim()}" stock must be 0 or more.`);
-          return;
-        }
-        variantPricesMinor.push(variantPriceMinor);
-      }
-
-      const derived = deriveProductFieldsFromVariantPrices(variantPricesMinor);
-      priceAmount = derived.priceAmount;
-      stockQty = derived.stockQty;
-    } else {
-      const priceRaw = Number(form.priceAmount);
-      if (!Number.isFinite(priceRaw) || priceRaw <= 0) {
-        toast.error("Invalid price", "Enter a price > 0.");
-        return;
-      }
-      priceAmount = Math.round(priceRaw * 100);
-
-      stockQty = Number(form.stockQty);
-      if (!Number.isInteger(stockQty) || stockQty < 0) {
-        toast.error("Invalid stock", "Must be 0 or more.");
-        return;
-      }
-    }
+    const stockQty = Number(form.stockQty);
+    if (!Number.isInteger(stockQty) || stockQty < 0) { toast.error("Invalid stock", "Must be 0 or more."); return; }
 
     setSaving(true);
     try {
@@ -407,7 +347,7 @@ export default function VendorProductsPage() {
         priceAmount,
         stockQty,
       };
-      if (!hasVariants && form.sku.trim()) payload.sku = form.sku.trim();
+      if (form.sku.trim()) payload.sku = form.sku.trim();
 
       const res = await fetch(
         isEdit ? `/api/vendor/products/${editingProductId}` : "/api/vendor/products",
@@ -438,10 +378,10 @@ export default function VendorProductsPage() {
 
       for (const row of variantRows) {
         if (!row.name.trim()) continue;
-        const variantPriceMinor = parseVariantPriceMinor(row.priceAmount);
+        const priceRaw = row.priceAmount.trim() ? Number(row.priceAmount) : null;
         const variantPayload = {
           name: row.name.trim(),
-          priceAmount: variantPriceMinor,
+          priceAmount: priceRaw != null && priceRaw > 0 ? Math.round(priceRaw * 100) : null,
           stockQty: Math.max(0, Number(row.stockQty) || 0),
           sku: row.sku.trim() || null,
           isActive: row.isActive,
@@ -542,15 +482,13 @@ export default function VendorProductsPage() {
     try {
       const res = await fetchWithAuth(`/api/vendor/products/${productId}/variants`);
       const data = await parseApiResponse<ProductVariant[]>(res);
-      const product = products.find((entry) => entry.id === productId);
-      const fallbackPriceMajor = product ? String(product.priceAmount / 100) : "";
-      setVariantRows(data.map((variant) => variantToRow(variant, fallbackPriceMajor)));
+      setVariantRows(data.map(variantToRow));
     } catch (e) {
       setVariantsError(e instanceof Error ? e.message : "Failed to load variants.");
     } finally {
       setVariantsLoading(false);
     }
-  }, [products]);
+  }, []);
 
   // load variants when modal opens for an existing product
   useEffect(() => {
@@ -591,6 +529,16 @@ export default function VendorProductsPage() {
     }
   };
 
+  /* ── Auth guard ─────────────────────────────────────────────────── */
+
+  if (authLoading || !user) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
   /* ── Filtered products ──────────────────────────────────────────── */
 
   const filtered = products.filter((p) => {
@@ -602,178 +550,6 @@ export default function VendorProductsPage() {
     const matchStatus = !filterStatus || p.approvalStatus === filterStatus;
     return matchText && matchCat && matchStatus;
   });
-
-  const filterResetKey = `${searchText}|${filterCategory}|${filterStatus}`;
-
-  const columns = useMemo<ColumnDef<VendorProduct>[]>(
-    () => [
-      {
-        header: "Product",
-        accessorKey: "name",
-        cell: ({ row }) => {
-          const product = row.original;
-          return (
-            <div className="flex items-center gap-3">
-              {product.images[0] ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={product.images[0]}
-                  alt={product.name}
-                  className="h-10 w-10 shrink-0 rounded-lg object-cover"
-                />
-              ) : (
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-100">
-                  <ImageIcon className="h-5 w-5 text-neutral-300" />
-                </div>
-              )}
-              <div>
-                <p className="max-w-[180px] truncate font-medium text-neutral-900">
-                  {product.name}
-                </p>
-                <p className="max-w-[180px] truncate text-xs text-neutral-400">
-                  {product.description}
-                </p>
-              </div>
-            </div>
-          );
-        },
-      },
-      {
-        header: "Category",
-        id: "category",
-        cell: ({ row }) => row.original.category?.name ?? "—",
-      },
-      {
-        header: "Price",
-        id: "price",
-        cell: ({ row }) => {
-          const product = row.original;
-          const range = resolveProductPriceRangeMinor({
-            basePriceAmount: product.priceAmount,
-            variants: product.variants,
-          });
-          return formatProductPriceRangeMinor(range, product.currency || "USD");
-        },
-      },
-      {
-        header: "Stock",
-        id: "stock",
-        cell: ({ row }) => {
-          const product = row.original;
-          const stock = formatVendorStockSummary({
-            stockQty: product.stockQty,
-            variants: product.variants,
-          });
-          return (
-            <span
-              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${
-                stock.tone === "danger"
-                  ? "bg-red-50 text-red-700 ring-red-200"
-                  : stock.tone === "warn"
-                    ? "bg-amber-50 text-amber-800 ring-amber-200"
-                    : "bg-emerald-50 text-emerald-700 ring-emerald-200"
-              }`}
-            >
-              {stock.label}
-            </span>
-          );
-        },
-      },
-      {
-        header: "Images",
-        id: "images",
-        cell: ({ row }) => row.original.images.length,
-      },
-      {
-        header: "Status",
-        id: "status",
-        cell: ({ row }) => {
-          const product = row.original;
-          return (
-            <div>
-              <span
-                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${approvalBadgeClass(product.approvalStatus)}`}
-              >
-                {product.approvalStatus === "PENDING_APPROVAL"
-                  ? "Under review"
-                  : product.approvalStatus.replaceAll("_", " ")}
-              </span>
-              {product.approvalStatus === "REJECTED" && product.rejectionReason ? (
-                <p
-                  className="mt-1 max-w-[160px] truncate text-xs text-red-500"
-                  title={product.rejectionReason}
-                >
-                  {product.rejectionReason}
-                </p>
-              ) : null}
-            </div>
-          );
-        },
-      },
-      {
-        header: "Actions",
-        id: "actions",
-        cell: ({ row }) => {
-          const product = row.original;
-          return (
-            <div
-              className="flex flex-wrap items-center gap-2"
-              onClick={(event) => event.stopPropagation()}
-              onKeyDown={(event) => event.stopPropagation()}
-            >
-              {(product.approvalStatus === "DRAFT" || product.approvalStatus === "REJECTED") && (
-                <button
-                  type="button"
-                  disabled={submittingId === product.id}
-                  onClick={() => void onSubmitForApproval(product.id)}
-                  className="inline-flex items-center gap-1 rounded-md border border-blue-200 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
-                >
-                  {submittingId === product.id ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <SendHorizonal className="h-3.5 w-3.5" />
-                  )}
-                  Submit
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => openEdit(product)}
-                className="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </button>
-              <button
-                type="button"
-                onClick={() => void onDelete(product.id)}
-                disabled={deletingId === product.id}
-                className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-              >
-                {deletingId === product.id ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Trash2 className="h-3.5 w-3.5" />
-                )}
-                Delete
-              </button>
-            </div>
-          );
-        },
-      },
-    ],
-    [submittingId, deletingId]
-  );
-
-  /* ── Auth guard ─────────────────────────────────────────────────── */
-
-  if (authLoading || !user) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
-      </div>
-    );
-  }
 
   /* ─── Render ────────────────────────────────────────────────────── */
 
@@ -863,47 +639,175 @@ export default function VendorProductsPage() {
           </button>
         </div>
 
-      </div>
-
-      {loading ? (
-        <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center text-sm text-neutral-600 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-          <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin text-neutral-400" />
-          Loading products…
-        </div>
-      ) : error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-700 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-          {error}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100">
-            <ImageIcon className="h-7 w-7 text-neutral-300" />
-          </div>
-          <p className="text-sm font-medium text-neutral-700">
-            {products.length === 0 ? "No products yet" : "No products match your filters"}
-          </p>
-          {products.length === 0 && (
-            <button
-              type="button"
-              onClick={openCreate}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
-            >
-              <Plus className="h-4 w-4" />
-              Add your first product
-            </button>
+        {/* table body */}
+        <div className="p-5 sm:p-6">
+          {loading ? (
+            <div className="flex items-center gap-2 text-sm text-neutral-500">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading…
+            </div>
+          ) : error ? (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </p>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100">
+                <ImageIcon className="h-7 w-7 text-neutral-300" />
+              </div>
+              <p className="text-sm font-medium text-neutral-700">
+                {products.length === 0 ? "No products yet" : "No products match your filters"}
+              </p>
+              {products.length === 0 && (
+                <button
+                  type="button"
+                  onClick={openCreate}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add your first product
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="responsive-table-shell overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-100 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                    <th className="px-3 py-2">Product</th>
+                    <th className="px-3 py-2">Category</th>
+                    <th className="px-3 py-2">Price</th>
+                    <th className="px-3 py-2">Stock</th>
+                    <th className="px-3 py-2">Images</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((product) => (
+                    <tr
+                      key={product.id}
+                      className="border-b border-neutral-100 transition-colors hover:bg-neutral-50"
+                    >
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-3">
+                          {product.images[0] ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={product.images[0]}
+                              alt={product.name}
+                              className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-100">
+                              <ImageIcon className="h-5 w-5 text-neutral-300" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="max-w-[180px] truncate font-medium text-neutral-900">
+                              {product.name}
+                            </p>
+                            <p className="max-w-[180px] truncate text-xs text-neutral-400">
+                              {product.description}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">{product.category?.name ?? "—"}</td>
+                      <td className="px-3 py-3 tabular-nums">
+                        {(() => {
+                          const range = resolveProductPriceRangeMinor({
+                            basePriceAmount: product.priceAmount,
+                            variants: product.variants,
+                          });
+                          return formatProductPriceRangeMinor(range, product.currency || "USD");
+                        })()}
+                      </td>
+                      <td className="px-3 py-3">
+                        {(() => {
+                          const stock = formatVendorStockSummary({
+                            stockQty: product.stockQty,
+                            variants: product.variants,
+                          });
+                          return (
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${
+                                stock.tone === "danger"
+                                  ? "bg-red-50 text-red-700 ring-red-200"
+                                  : stock.tone === "warn"
+                                    ? "bg-amber-50 text-amber-800 ring-amber-200"
+                                    : "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                              }`}
+                            >
+                              {stock.label}
+                            </span>
+                          );
+                        })()}
+                      </td>
+                      <td className="px-3 py-3">{product.images.length}</td>
+                      <td className="px-3 py-3">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${approvalBadgeClass(product.approvalStatus)}`}
+                        >
+                          {product.approvalStatus === "PENDING_APPROVAL"
+                            ? "Under review"
+                            : product.approvalStatus.replaceAll("_", " ")}
+                        </span>
+                        {product.approvalStatus === "REJECTED" && product.rejectionReason && (
+                          <p className="mt-1 max-w-[160px] truncate text-xs text-red-500" title={product.rejectionReason}>
+                            {product.rejectionReason}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Submit for approval — only for DRAFT or REJECTED */}
+                          {(product.approvalStatus === "DRAFT" || product.approvalStatus === "REJECTED") && (
+                            <button
+                              type="button"
+                              disabled={submittingId === product.id}
+                              onClick={() => void onSubmitForApproval(product.id)}
+                              className="inline-flex items-center gap-1 rounded-md border border-blue-200 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
+                            >
+                              {submittingId === product.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <SendHorizonal className="h-3.5 w-3.5" />
+                              )}
+                              Submit
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => openEdit(product)}
+                            className="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void onDelete(product.id)}
+                            disabled={deletingId === product.id}
+                            className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                          >
+                            {deletingId === product.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
-      ) : (
-        <DataTable
-          key={filterResetKey}
-          data={filtered}
-          columns={columns}
-          getRowId={(row) => row.id}
-          emptyMessage="No products match your filters."
-          initialPageSize={10}
-          pageSizeOptions={[10, 20, 50]}
-        />
-      )}
+      </div>
 
       {/* ── Modal ───────────────────────────────────────────────────── */}
       {modalOpen && (
@@ -959,29 +863,25 @@ export default function VendorProductsPage() {
                 </div>
 
                 {/* Price row */}
-                <div className={`grid gap-4 ${showBasePricingFields ? "sm:grid-cols-4" : "sm:grid-cols-1"}`}>
+                <div className="grid gap-4 sm:grid-cols-4">
                   <div className="flex flex-col gap-1.5">
                     <label className={LABEL}>Currency <span className="text-red-500">*</span></label>
                     <select className={INPUT} value={form.currency} onChange={(e) => updateField("currency", e.target.value)}>
                       {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
-                  {showBasePricingFields ? (
-                    <>
-                      <div className="flex flex-col gap-1.5">
-                        <label className={LABEL}>Price <span className="text-red-500">*</span></label>
-                        <input type="number" min="0.01" step="0.01" className={INPUT} value={form.priceAmount} onChange={(e) => updateField("priceAmount", e.target.value)} placeholder="0.00" />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className={LABEL}>Stock qty <span className="text-red-500">*</span></label>
-                        <input type="number" min="0" step="1" className={INPUT} value={form.stockQty} onChange={(e) => updateField("stockQty", e.target.value)} placeholder="0" />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className={LABEL}>SKU (optional)</label>
-                        <input className={INPUT} value={form.sku} onChange={(e) => updateField("sku", e.target.value)} maxLength={100} placeholder="SKU-001" />
-                      </div>
-                    </>
-                  ) : null}
+                  <div className="flex flex-col gap-1.5">
+                    <label className={LABEL}>Price <span className="text-red-500">*</span></label>
+                    <input type="number" min="0.01" step="0.01" className={INPUT} value={form.priceAmount} onChange={(e) => updateField("priceAmount", e.target.value)} placeholder="0.00" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className={LABEL}>Stock qty <span className="text-red-500">*</span></label>
+                    <input type="number" min="0" step="1" className={INPUT} value={form.stockQty} onChange={(e) => updateField("stockQty", e.target.value)} placeholder="0" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className={LABEL}>SKU (optional)</label>
+                    <input className={INPUT} value={form.sku} onChange={(e) => updateField("sku", e.target.value)} maxLength={100} placeholder="SKU-001" />
+                  </div>
                 </div>
 
                 {/* ── Variants ──────────────────────────────────────── */}
@@ -998,7 +898,7 @@ export default function VendorProductsPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={addVariantRow}
+                      onClick={() => setVariantRows((rows) => [...rows, newVariantRow()])}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
                     >
                       <Plus className="h-3.5 w-3.5" />
@@ -1024,13 +924,13 @@ export default function VendorProductsPage() {
                   ) : variantRows.length > 0 ? (
                     <div className="border-t border-neutral-200 px-4 pb-4 pt-3 space-y-2">
                       <p className="text-xs text-neutral-500 mb-3">
-                        Set price, stock, and SKU for each variant. Product-level price and stock are managed per variant. Variants are saved when you click <strong>Save product</strong>.
+                        Each variant can override the base price. Leave price blank to use the product price. Variants are saved when you click <strong>Save product</strong>.
                       </p>
                       {/* Column headers */}
                       <div className="grid grid-cols-[1fr_90px_72px_88px_44px_28px] items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
                         <span>Name <span className="text-red-400">*</span></span>
-                        <span>Price <span className="text-red-400">*</span></span>
-                        <span>Stock <span className="text-red-400">*</span></span>
+                        <span>Price</span>
+                        <span>Stock</span>
                         <span>SKU</span>
                         <span>Active</span>
                         <span />
@@ -1054,7 +954,7 @@ export default function VendorProductsPage() {
                             className="rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                             value={row.priceAmount}
                             onChange={(e) => updateRow(row.localId, { priceAmount: e.target.value })}
-                            placeholder="0.00"
+                            placeholder="Base"
                           />
                           <input
                             type="number"

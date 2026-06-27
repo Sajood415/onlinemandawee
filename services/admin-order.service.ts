@@ -16,7 +16,6 @@ import {
   formatAggregatedProductLabel,
   sumOrderLineItemQuantities,
 } from "@/lib/orders/aggregate-order-line-items";
-import { resolveVendorOrderDeliveredAtIso } from "@/lib/orders/resolve-vendor-order-delivered-at";
 
 type CommissionRow = Awaited<
   ReturnType<CommissionLedgerRepository["findByOrderVendorIds"]>
@@ -209,19 +208,12 @@ export class AdminOrderService {
     commissionByOrderVendorId: Map<string, CommissionRow>,
     payoutByOrderVendorId: Map<string, PayoutRow>
   ) {
-    const outboundDeliveredAt = order.outboundShipment?.deliveredAt ?? null;
     const vendorSummaries = order.vendorOrders.map((vendorOrder) => ({
       id: vendorOrder.id,
       vendorProfileId: vendorOrder.vendorProfileId,
       vendorStoreName: vendorOrder.vendorProfile.storeName,
       vendorStoreSlug: vendorOrder.vendorProfile.storeSlug,
       status: vendorOrder.status,
-      deliveredAt: resolveVendorOrderDeliveredAtIso({
-        status: vendorOrder.status,
-        deliveredAt: vendorOrder.deliveredAt,
-        outboundDeliveredAt,
-        statusChangedAt: vendorOrder.updatedAt,
-      }),
       grandTotalAmount: vendorOrder.grandTotalAmount,
       currency: vendorOrder.currency,
       commissionAmount:
@@ -258,10 +250,6 @@ export class AdminOrderService {
           }
         : null,
       guestEmail: order.guestEmail ?? null,
-      cancelledAt: order.cancelledAt?.toISOString() ?? null,
-      cancellationReason: order.cancellationReason ?? null,
-      cancelledByRole: order.cancelledByRole ?? null,
-      isLockedByCustomerCancellation: order.cancelledByRole === "CUSTOMER",
       shippingContact: {
         fullName: order.shippingFullName,
         phone: order.shippingPhone,
@@ -361,10 +349,6 @@ export class AdminOrderService {
       discountAmount: order.discountAmount,
       grandTotalAmount: order.grandTotalAmount,
       stripePaymentIntentId: order.stripePaymentIntentId,
-      cancelledAt: order.cancelledAt?.toISOString() ?? null,
-      cancellationReason: order.cancellationReason ?? null,
-      cancelledByRole: order.cancelledByRole ?? null,
-      isLockedByCustomerCancellation: order.cancelledByRole === "CUSTOMER",
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),
       customer: order.user

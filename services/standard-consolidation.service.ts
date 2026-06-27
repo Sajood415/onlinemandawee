@@ -4,7 +4,6 @@ import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { prisma } from "@/lib/db/prisma";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { sendStandardDeliveryCustomerNotification } from "@/lib/mail/send-standard-delivery-customer-notifications";
-import { isOrderLockedByCustomerCancellation } from "@/lib/orders/order-cancellation";
 
 type StandardVendorOrder = {
   id: string;
@@ -133,8 +132,6 @@ export class StandardConsolidationService {
 
     this.assertStandardVendorOrder(vendorOrder);
 
-    await this.assertOrderStatusMutable(vendorOrder.orderId);
-
     if (vendorOrder.status === "CANCELLED") {
       throw new AppError({
         code: ERROR_CODE.BAD_REQUEST,
@@ -233,8 +230,6 @@ export class StandardConsolidationService {
       });
     }
 
-    await this.assertOrderStatusMutable(shipment.orderId);
-
     if (
       shipment.orderVendor.deliveryMethod !== "STANDARD" ||
       shipment.orderVendor.vendorProfile.sellerType !== "THIRD_PARTY"
@@ -319,8 +314,6 @@ export class StandardConsolidationService {
         statusCode: 404,
       });
     }
-
-    await this.assertOrderStatusMutable(shipment.orderId);
 
     if (
       shipment.orderVendor.deliveryMethod !== "STANDARD" ||
@@ -432,8 +425,6 @@ export class StandardConsolidationService {
       });
     }
 
-    await this.assertOrderStatusMutable(batch.orderId);
-
     if (batch.status !== "READY_TO_CONSOLIDATE") {
       throw new AppError({
         code: ERROR_CODE.BAD_REQUEST,
@@ -509,8 +500,6 @@ export class StandardConsolidationService {
         statusCode: 404,
       });
     }
-
-    await this.assertOrderStatusMutable(outboundShipment.orderId);
 
     if (
       outboundShipment.status !== "CONSOLIDATED" &&
@@ -595,8 +584,6 @@ export class StandardConsolidationService {
         statusCode: 404,
       });
     }
-
-    await this.assertOrderStatusMutable(outboundShipment.orderId);
 
     if (
       outboundShipment.status !== "OUTBOUND_SHIPPED" &&
@@ -741,37 +728,6 @@ export class StandardConsolidationService {
           nextStatus === "READY_TO_CONSOLIDATE" ? batch.readyToConsolidateAt ?? new Date() : null,
       },
     });
-  }
-
-  private async assertOrderStatusMutable(orderId: string) {
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      select: { status: true, cancelledByRole: true },
-    });
-
-    if (!order) {
-      throw new AppError({
-        code: ERROR_CODE.NOT_FOUND,
-        message: "Order not found",
-        statusCode: 404,
-      });
-    }
-
-    if (isOrderLockedByCustomerCancellation(order.cancelledByRole)) {
-      throw new AppError({
-        code: ERROR_CODE.CONFLICT,
-        message: "This order was cancelled by the customer and can no longer be updated.",
-        statusCode: 409,
-      });
-    }
-
-    if (order.status === "CANCELLED") {
-      throw new AppError({
-        code: ERROR_CODE.CONFLICT,
-        message: "Cancelled orders cannot be updated.",
-        statusCode: 409,
-      });
-    }
   }
 
   private async recalculateOrderStatus(orderId: string) {

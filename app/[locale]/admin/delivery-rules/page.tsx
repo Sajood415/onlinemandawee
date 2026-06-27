@@ -1,11 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ColumnDef } from "@tanstack/react-table";
 import { Loader2, Plus, RefreshCw } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
-import { DataTable } from "@/components/ui/data-table";
 import type {
   DeliveryMethod,
   DeliveryPriceModel,
@@ -403,118 +401,6 @@ export default function AdminDeliveryRulesPage() {
     }
   };
 
-  const columns = useMemo<ColumnDef<DeliveryRuleRecord>[]>(
-    () => [
-      {
-        header: "Rule Name",
-        id: "ruleName",
-        cell: ({ row }) => (
-          <span className="text-neutral-900">{computeRuleName(row.original)}</span>
-        ),
-      },
-      {
-        header: "Method",
-        accessorKey: "method",
-        cell: ({ row }) => row.original.method,
-      },
-      {
-        header: "Active",
-        id: "active",
-        cell: ({ row }) => (
-          <span
-            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
-              row.original.isActive
-                ? "bg-emerald-50 text-emerald-700"
-                : "bg-neutral-100 text-neutral-600"
-            }`}
-          >
-            {row.original.isActive ? "ACTIVE" : "INACTIVE"}
-          </span>
-        ),
-      },
-      {
-        header: "Pricing Type",
-        id: "pricingType",
-        cell: ({ row }) => {
-          const rule = row.original;
-          return usesTransactionFee(rule.method)
-            ? "FLAT"
-            : isPickupMethod(rule.method)
-              ? "NONE"
-              : rule.priceModel;
-        },
-      },
-      {
-        header: "Value",
-        id: "value",
-        cell: ({ row }) => computeRuleValue(row.original),
-      },
-      {
-        header: "Vendor Scope",
-        id: "vendorScope",
-        cell: ({ row }) => {
-          const rule = row.original;
-          return rule.scope === "GLOBAL"
-            ? "Global"
-            : rule.scope === "COUNTRY"
-              ? `Country (${rule.countryCode ?? "—"})`
-              : rule.vendorStoreName ?? rule.vendorStoreSlug ?? "Vendor";
-        },
-      },
-      {
-        header: "Created Date",
-        id: "createdDate",
-        cell: ({ row }) => displayDate(row.original.createdAt),
-      },
-      {
-        header: "Actions",
-        id: "actions",
-        cell: ({ row }) => {
-          const rule = row.original;
-          return (
-            <div
-              className="flex flex-wrap gap-2"
-              onClick={(event) => event.stopPropagation()}
-              onKeyDown={(event) => event.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={() => openDetail(rule)}
-                className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
-              >
-                Details
-              </button>
-              <button
-                type="button"
-                onClick={() => openEdit(rule)}
-                className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                disabled={actionRuleId === rule.id}
-                onClick={() => void toggleActive(rule)}
-                className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
-              >
-                {rule.isActive ? "Deactivate" : "Activate"}
-              </button>
-              <button
-                type="button"
-                disabled={rule.isActive || actionRuleId === rule.id}
-                onClick={() => void deleteRule(rule)}
-                className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
-              >
-                Delete
-              </button>
-            </div>
-          );
-        },
-      },
-    ],
-    [actionRuleId]
-  );
-
   if (authLoading || !user) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -591,14 +477,101 @@ export default function AdminDeliveryRulesPage() {
           <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
         </div>
       ) : (
-        <DataTable
-          data={filteredRules}
-          columns={columns}
-          getRowId={(row) => row.id}
-          emptyMessage="No delivery rules match the selected filters."
-          initialPageSize={10}
-          pageSizeOptions={[10, 20, 50]}
-        />
+        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+          <div className="responsive-table-shell overflow-x-auto">
+            <table className="w-full min-w-[1200px] border-collapse text-sm">
+              <thead className="bg-neutral-50">
+                <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-600">
+                  <th className="px-4 py-2">Rule Name</th>
+                  <th className="px-4 py-2">Method</th>
+                  <th className="px-4 py-2">Active</th>
+                  <th className="px-4 py-2">Pricing Type</th>
+                  <th className="px-4 py-2">Value</th>
+                  <th className="px-4 py-2">Vendor Scope</th>
+                  <th className="px-4 py-2">Created Date</th>
+                  <th className="px-4 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRules.length === 0 ? (
+                  <tr>
+                    <td className="px-4 py-6 text-neutral-500" colSpan={8}>
+                      No delivery rules match the selected filters.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRules.map((rule) => (
+                    <tr key={rule.id} className="border-b border-neutral-100">
+                      <td className="px-4 py-3 text-neutral-900">{computeRuleName(rule)}</td>
+                      <td className="px-4 py-3 text-neutral-700">{rule.method}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
+                            rule.isActive
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "bg-neutral-100 text-neutral-600"
+                          }`}
+                        >
+                          {rule.isActive ? "ACTIVE" : "INACTIVE"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-neutral-700">
+                        {usesTransactionFee(rule.method)
+                          ? "FLAT"
+                          : isPickupMethod(rule.method)
+                            ? "NONE"
+                            : rule.priceModel}
+                      </td>
+                      <td className="px-4 py-3 text-neutral-700">{computeRuleValue(rule)}</td>
+                      <td className="px-4 py-3 text-neutral-700">
+                        {rule.scope === "GLOBAL"
+                          ? "Global"
+                          : rule.scope === "COUNTRY"
+                            ? `Country (${rule.countryCode ?? "—"})`
+                            : rule.vendorStoreName ?? rule.vendorStoreSlug ?? "Vendor"}
+                      </td>
+                      <td className="px-4 py-3 text-neutral-700">{displayDate(rule.createdAt)}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openDetail(rule)}
+                            className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                          >
+                            Details
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openEdit(rule)}
+                            className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            disabled={actionRuleId === rule.id}
+                            onClick={() => void toggleActive(rule)}
+                            className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
+                          >
+                            {rule.isActive ? "Deactivate" : "Activate"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={rule.isActive || actionRuleId === rule.id}
+                            onClick={() => void deleteRule(rule)}
+                            className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {formOpen ? (

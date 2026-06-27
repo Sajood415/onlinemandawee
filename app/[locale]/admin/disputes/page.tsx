@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
-import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { RefundStatusBadge } from "@/components/refunds/RefundStatusBadge";
 import type { RefundCaseListItem, RefundCaseStatus, RefundListResponse } from "@/components/refunds/refund-types";
 import { formatRefundDate, formatRefundMoney } from "@/components/refunds/format-refund-money";
@@ -31,13 +30,12 @@ export default function AdminDisputesPage() {
   const [loading, setLoading] = useState(true);
   const [escalating, setEscalating] = useState(false);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const [pagination, setPagination] = useState<RefundListResponse["pagination"] | null>(null);
 
   const loadDisputes = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+      const params = new URLSearchParams({ page: String(page), pageSize: "20" });
       if (statusFilter !== "ALL") params.set("status", statusFilter);
       if (searchQuery.trim()) params.set("search", searchQuery.trim());
       if (overdueOnly) params.set("overdueOnly", "true");
@@ -50,7 +48,7 @@ export default function AdminDisputesPage() {
     } finally {
       setLoading(false);
     }
-  }, [overdueOnly, page, pageSize, searchQuery, statusFilter]);
+  }, [overdueOnly, page, searchQuery, statusFilter]);
 
   useEffect(() => {
     if (!authLoading) void loadDisputes();
@@ -185,17 +183,28 @@ export default function AdminDisputesPage() {
           </div>
         )}
 
-        {pagination ? (
-          <PaginationFooter
-            pageIndex={pagination.page - 1}
-            pageCount={pagination.totalPages}
-            pageSize={pagination.pageSize}
-            onPageIndexChange={(pageIndex) => setPage(pageIndex + 1)}
-            onPageSizeChange={(nextPageSize) => {
-              setPage(1);
-              setPageSize(nextPageSize);
-            }}
-          />
+        {pagination && pagination.totalPages > 1 ? (
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="text-sm text-neutral-600">
+              Page {pagination.page} of {pagination.totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage((current) => current + 1)}
+              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         ) : null}
     </div>
   );

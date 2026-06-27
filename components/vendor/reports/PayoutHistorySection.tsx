@@ -11,8 +11,6 @@ import {
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
-import { PaginationFooter } from "@/components/ui/pagination-footer";
-import { useClientPagination } from "@/hooks/use-client-pagination";
 
 type PayoutStatus = "ON_HOLD" | "READY" | "SENT" | "FAILED";
 
@@ -143,11 +141,6 @@ export function PayoutHistorySection() {
     return report.payouts.filter((payout) => payout.status === statusFilter);
   }, [report, statusFilter]);
 
-  const payoutsPagination = useClientPagination(filteredPayouts, {
-    initialPageSize: 10,
-    resetKey: `${report?.totals.totalPayouts ?? 0}-${statusFilter}`,
-  });
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -265,7 +258,7 @@ export function PayoutHistorySection() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
-                  {payoutsPagination.paginatedItems.map((entry) => {
+                  {filteredPayouts.map((entry) => {
                     const dateInfo = getPayoutDateDisplay(entry);
                     return (
                       <tr key={entry.id} className="hover:bg-neutral-50/80">
@@ -305,16 +298,6 @@ export function PayoutHistorySection() {
               </table>
             </div>
           )}
-          {filteredPayouts.length > 0 ? (
-            <PaginationFooter
-              pageIndex={payoutsPagination.pageIndex}
-              pageCount={payoutsPagination.pageCount}
-              pageSize={payoutsPagination.pageSize}
-              pageSizeOptions={payoutsPagination.pageSizeOptions}
-              onPageIndexChange={payoutsPagination.setPageIndex}
-              onPageSizeChange={payoutsPagination.setPageSize}
-            />
-          ) : null}
         </section>
       )}
     </div>

@@ -3,9 +3,6 @@
 import Link from "next/link";
 import { CreditCard, Receipt, TrendingDown, Wallet } from "lucide-react";
 
-import { PaginationFooter } from "@/components/ui/pagination-footer";
-import { useClientPagination } from "@/hooks/use-client-pagination";
-
 type FeeEarningsOrder = {
   id: string;
   orderNumber: string;
@@ -59,7 +56,6 @@ function formatDate(iso: string) {
 
 export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
   const feeLabel = data.transactionFeeLabel;
-  const ordersPagination = useClientPagination(data.orders, { initialPageSize: 10 });
 
   return (
     <section className="mt-10 space-y-6">
@@ -172,7 +168,7 @@ export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
-                {ordersPagination.paginatedItems.map((order) => (
+                {data.orders.map((order) => (
                   <tr key={order.id} className="hover:bg-neutral-50/80">
                     <td className="px-5 py-3">
                       <p className="font-medium text-neutral-900">{order.orderNumber}</p>
@@ -226,16 +222,6 @@ export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
             </table>
           </div>
         )}
-        {data.orders.length > 0 ? (
-          <PaginationFooter
-            pageIndex={ordersPagination.pageIndex}
-            pageCount={ordersPagination.pageCount}
-            pageSize={ordersPagination.pageSize}
-            pageSizeOptions={ordersPagination.pageSizeOptions}
-            onPageIndexChange={ordersPagination.setPageIndex}
-            onPageSizeChange={ordersPagination.setPageSize}
-          />
-        ) : null}
       </div>
     </section>
   );

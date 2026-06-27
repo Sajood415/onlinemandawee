@@ -37,7 +37,7 @@ export function AdminRefundDecisionForm({ refundCase, onSuccess }: AdminRefundDe
           ? "APPROVE"
           : decisionType;
 
-      const response = await fetchWithAuth(`/api/refunds/${refundCase.id}/admin-decision`, {
+      await fetchWithAuth(`/api/refunds/${refundCase.id}/admin-decision`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -46,7 +46,6 @@ export function AdminRefundDecisionForm({ refundCase, onSuccess }: AdminRefundDe
           reason: reason.trim() || undefined,
         }),
       });
-      await parseApiResponse(response);
       toast.success("Decision recorded");
       onSuccess();
     } catch (error) {
