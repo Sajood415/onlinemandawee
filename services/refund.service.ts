@@ -112,7 +112,7 @@ export class RefundService {
     if (refundEligibility === "not_yet_delivered") {
       throw new AppError({
         code: ERROR_CODE.BAD_REQUEST,
-        message: `Refunds are only allowed within ${env.REFUND_WINDOW_DAYS} days after an order is marked delivered`,
+        message: "Refunds are only available after the order is marked delivered.",
         statusCode: 400,
       });
     }
@@ -120,7 +120,7 @@ export class RefundService {
     if (refundEligibility === "expired") {
       throw new AppError({
         code: ERROR_CODE.BAD_REQUEST,
-        message: "Refund period has expired.",
+        message: `Refund period has expired. Refunds must be requested within ${env.REFUND_WINDOW_DAYS} days of delivery.`,
         statusCode: 400,
       });
     }
@@ -475,6 +475,185 @@ export class RefundService {
     return serialized;
   }
 
+  async adminUpdateStatus(
+    auth: AuthenticatedUser,
+    refundCaseId: string,
+    status: "REQUESTED" | "WAITING_VENDOR" | "ESCALATED_ADMIN" | "RESOLVED"
+  ) {
+    if (auth.role !== "ADMIN") {
+      throw new AppError({
+        code: ERROR_CODE.FORBIDDEN,
+        message: "Only admins can update dispute status",
+        statusCode: 403,
+      });
+    }
+
+    const refundCase = await this.refundCaseRepository.findById(refundCaseId);
+
+    if (!refundCase) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Refund case not found",
+        statusCode: 404,
+      });
+    }
+
+    if (refundCase.status === status) {
+      return this.serializeRefundCase(refundCase);
+    }
+
+    const now = new Date();
+    const update: Parameters<RefundCaseRepository["update"]>[0] = {
+      id: refundCaseId,
+      status,
+    };
+
+    const reopeningFromResolved = refundCase.status === "RESOLVED" && status !== "RESOLVED";
+
+    if (status === "REQUESTED") {
+      update.vendorResponseDueAt = null;
+      update.escalatedAt = null;
+      update.finalDecisionAt = null;
+      if (reopeningFromResolved) {
+        update.activeOrderItemKey = refundCase.orderItemId;
+      }
+    } else if (status === "WAITING_VENDOR") {
+      update.vendorResponseDueAt =
+        refundCase.vendorResponseDueAt ?? new Date(now.getTime() + 48 * 60 * 60 * 1000);
+      update.escalatedAt = null;
+      update.finalDecisionAt = null;
+      if (reopeningFromResolved) {
+        update.activeOrderItemKey = refundCase.orderItemId;
+      }
+    } else if (status === "ESCALATED_ADMIN") {
+      update.escalatedAt = refundCase.escalatedAt ?? now;
+      update.vendorResponseDueAt = null;
+      update.finalDecisionAt = null;
+      if (reopeningFromResolved) {
+        update.activeOrderItemKey = refundCase.orderItemId;
+      }
+    } else {
+      update.finalDecisionAt = refundCase.finalDecisionAt ?? now;
+      update.vendorResponseDueAt = null;
+    }
+
+    const updated = await this.refundCaseRepository.update(update);
+
+    await this.auditLogRepository.create({
+      actorUserId: auth.id,
+      actorRole: auth.role,
+      action: "refund.admin_status_updated",
+      entityType: "RefundCase",
+      entityId: refundCaseId,
+      metadata: {
+        fromStatus: refundCase.status,
+        toStatus: status,
+      },
+    });
+
+    void emitDisputeUpdated({
+      refundCaseId: updated.id,
+      status: updated.status,
+      updatedAt: updated.updatedAt,
+    });
+
+    return this.serializeRefundCase(updated);
+  }
+
+  async adminUpdateDecision(
+    auth: AuthenticatedUser,
+    refundCaseId: string,
+    input: {
+      decisionType: "APPROVE" | "REJECT" | "PARTIAL";
+      approvedAmount: number;
+      reason?: string;
+    }
+  ) {
+    if (auth.role !== "ADMIN") {
+      throw new AppError({
+        code: ERROR_CODE.FORBIDDEN,
+        message: "Only admins can update dispute decisions",
+        statusCode: 403,
+      });
+    }
+
+    const refundCase = await this.refundCaseRepository.findById(refundCaseId);
+
+    if (!refundCase) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Refund case not found",
+        statusCode: 404,
+      });
+    }
+
+    if (!refundCase.decision) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Refund case has no decision to update",
+        statusCode: 400,
+      });
+    }
+
+    if (input.approvedAmount > refundCase.requestedAmount) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Approved amount exceeds requested amount",
+        statusCode: 400,
+      });
+    }
+
+    const decisionType =
+      input.decisionType === "PARTIAL" &&
+      input.approvedAmount >= refundCase.requestedAmount
+        ? "APPROVE"
+        : input.decisionType;
+
+    const approvedAmount =
+      decisionType === "REJECT"
+        ? 0
+        : decisionType === "APPROVE"
+          ? refundCase.requestedAmount
+          : input.approvedAmount;
+
+    await this.refundDecisionRepository.updateDecision({
+      refundCaseId,
+      decisionType,
+      approvedAmount,
+      reason: input.reason?.trim() || refundCase.decision.reason,
+    });
+
+    const updated = await this.refundCaseRepository.findById(refundCaseId);
+    if (!updated) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Refund case not found",
+        statusCode: 404,
+      });
+    }
+
+    await this.auditLogRepository.create({
+      actorUserId: auth.id,
+      actorRole: auth.role,
+      action: "refund.admin_decision_updated",
+      entityType: "RefundCase",
+      entityId: refundCaseId,
+      metadata: {
+        fromDecisionType: refundCase.decision.decisionType,
+        toDecisionType: decisionType,
+        approvedAmount,
+      },
+    });
+
+    void emitDisputeUpdated({
+      refundCaseId: updated.id,
+      status: updated.status,
+      updatedAt: updated.updatedAt,
+    });
+
+    return this.serializeRefundCase(updated);
+  }
+
   async adminDecision(
     auth: AuthenticatedUser,
     refundCaseId: string,
@@ -494,10 +673,23 @@ export class RefundService {
       });
     }
 
-    if (refundCase.status === "RESOLVED" || refundCase.decision) {
+    if (refundCase.status === "RESOLVED") {
       throw new AppError({
         code: ERROR_CODE.BAD_REQUEST,
         message: "Refund case is already resolved",
+        statusCode: 400,
+      });
+    }
+
+    if (refundCase.decision) {
+      if (refundCase.status === "ESCALATED_ADMIN") {
+        const repaired = await this.repairStuckRefundCaseIfNeeded(refundCase);
+        return this.serializeRefundCase(repaired);
+      }
+
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Refund case already has a decision",
         statusCode: 400,
       });
     }
@@ -540,6 +732,7 @@ export class RefundService {
 
     const requiresStripeRefund =
       decisionType === "APPROVE" || decisionType === "PARTIAL";
+
     if (requiresStripeRefund) {
       let stripeRefund: StripeRefundMetadata;
       try {
@@ -562,12 +755,20 @@ export class RefundService {
       });
     }
 
-    const updated = await this.refundCaseRepository.update({
-      id: refundCaseId,
-      status: "RESOLVED",
-      finalDecisionAt: new Date(),
-      vendorResponseDueAt: null,
-    });
+    let updated;
+    try {
+      updated = await this.refundCaseRepository.update({
+        id: refundCaseId,
+        status: "RESOLVED",
+        finalDecisionAt: new Date(),
+        vendorResponseDueAt: null,
+      });
+    } catch (error) {
+      if (!requiresStripeRefund) {
+        await this.refundDecisionRepository.deleteByRefundCaseId(refundCaseId);
+      }
+      throw error;
+    }
 
     if (requiresStripeRefund) {
       await this.applyRefundFinancials(
@@ -986,6 +1187,44 @@ export class RefundService {
     }
 
     return refundCase;
+  }
+
+  private async repairStuckRefundCaseIfNeeded(
+    refundCase: NonNullable<Awaited<ReturnType<RefundCaseRepository["findById"]>>>
+  ) {
+    // Only repair the legacy stuck state: decision saved while status stayed ESCALATED_ADMIN.
+    if (refundCase.status !== "ESCALATED_ADMIN" || !refundCase.decision) {
+      return refundCase;
+    }
+
+    const updated = await this.refundCaseRepository.update({
+      id: refundCase.id,
+      status: "RESOLVED",
+      finalDecisionAt: refundCase.finalDecisionAt ?? refundCase.decision.createdAt,
+      vendorResponseDueAt: null,
+    });
+
+    const decisionType = refundCase.decision.decisionType;
+    if (decisionType === "APPROVE" || decisionType === "PARTIAL") {
+      await this.applyRefundFinancials(
+        refundCase.id,
+        updated.orderId,
+        updated.orderItem.orderVendorId,
+        updated.vendorProfileId,
+        refundCase.decision.approvedAmount,
+        updated.order.currency
+      );
+    }
+
+    await this.syncOrderPaymentStatus(updated.orderId);
+
+    void emitDisputeUpdated({
+      refundCaseId: updated.id,
+      status: updated.status,
+      updatedAt: updated.updatedAt,
+    });
+
+    return updated;
   }
 
   private async executeStripeRefund(input: {

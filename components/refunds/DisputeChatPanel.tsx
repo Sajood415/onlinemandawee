@@ -28,8 +28,23 @@ export function DisputeChatPanel({
   const [draft, setDraft] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const shouldStickToBottomRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const scrollChatToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    container.scrollTo({ top: container.scrollHeight, behavior });
+  }, []);
+
+  const handleChatScroll = () => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    shouldStickToBottomRef.current = distanceFromBottom < 80;
+  };
 
   const loadMessages = useCallback(async () => {
     setLoading(true);
@@ -49,12 +64,20 @@ export function DisputeChatPanel({
   }, [loadMessages]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (loading || !shouldStickToBottomRef.current) return;
+    scrollChatToBottom();
+  }, [loading, messages, scrollChatToBottom]);
 
   useDisputeSocket({
     refundCaseId,
     onMessage: (payload) => {
+      const container = scrollContainerRef.current;
+      if (container) {
+        const distanceFromBottom =
+          container.scrollHeight - container.scrollTop - container.clientHeight;
+        shouldStickToBottomRef.current = distanceFromBottom < 80;
+      }
+
       setMessages((current) => {
         if (current.some((message) => message.id === payload.id)) {
           return current;
@@ -106,6 +129,8 @@ export function DisputeChatPanel({
       setMessages((current) =>
         current.some((item) => item.id === created.id) ? current : [...current, created]
       );
+      shouldStickToBottomRef.current = true;
+      scrollChatToBottom();
       setDraft("");
       setAttachmentUrl(null);
     } catch (error) {
@@ -124,7 +149,11 @@ export function DisputeChatPanel({
         </span>
       </div>
 
-      <div className="max-h-80 overflow-y-auto px-4 py-3 space-y-3">
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleChatScroll}
+        className="max-h-80 overflow-y-auto px-4 py-3 space-y-3"
+      >
         {loading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
@@ -157,7 +186,6 @@ export function DisputeChatPanel({
             </div>
           ))
         )}
-        <div ref={bottomRef} />
       </div>
 
       <div className="border-t border-neutral-200 px-4 py-3 space-y-2">

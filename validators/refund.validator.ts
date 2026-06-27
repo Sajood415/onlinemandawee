@@ -59,6 +59,10 @@ export const refundMessageSchema = z.object({
   attachmentUrl: z.url().max(2048).optional(),
 });
 
+export const adminRefundStatusSchema = z.object({
+  status: z.enum(refundCaseStatuses),
+});
+
 export const adminRefundDecisionSchema = z
   .object({
     decisionType: z.enum(["APPROVE", "REJECT", "PARTIAL"]),
@@ -90,6 +94,8 @@ export const adminRefundDecisionSchema = z
       });
     }
   });
+
+export const adminUpdateRefundDecisionSchema = adminRefundDecisionSchema;
 
 export const adminOrderRefundSchema = z
   .object({
