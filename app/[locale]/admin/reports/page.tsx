@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Loader2, RefreshCw } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
+import { DataTable } from "@/components/ui/data-table";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
@@ -185,6 +187,136 @@ export default function AdminReportsPage() {
     }
   }, [authLoading, user, loadReport]);
 
+  const invoiceColumns = useMemo<ColumnDef<MembershipInvoiceItem>[]>(
+    () => [
+      {
+        header: "Vendor",
+        id: "vendor",
+        cell: ({ row }) => (
+          <div>
+            <p className="font-medium text-neutral-900">
+              {row.original.vendorStoreName ?? "Untitled store"}
+            </p>
+            <p className="text-xs text-neutral-500">{row.original.vendorSubscriptionStatus}</p>
+          </div>
+        ),
+      },
+      {
+        header: "Period",
+        id: "period",
+        cell: ({ row }) => (
+          <>
+            {new Date(row.original.periodStart).toLocaleDateString()} –{" "}
+            {new Date(row.original.periodEnd).toLocaleDateString()}
+          </>
+        ),
+      },
+      {
+        header: "Amount",
+        id: "amount",
+        cell: ({ row }) => formatMoney(row.original.amount, row.original.currency),
+      },
+      {
+        header: "Status",
+        accessorKey: "status",
+      },
+      {
+        header: "Due",
+        id: "due",
+        cell: ({ row }) => formatDate(row.original.dueAt),
+      },
+      {
+        header: "Attempted",
+        id: "attempted",
+        cell: ({ row }) => formatDate(row.original.attemptedAt),
+      },
+      {
+        header: "Paid",
+        id: "paid",
+        cell: ({ row }) => formatDate(row.original.paidAt),
+      },
+      {
+        header: "Stripe refs",
+        id: "stripeRefs",
+        cell: ({ row }) => (
+          <div className="text-xs text-neutral-600">
+            <p>
+              Inv:{" "}
+              <span className="font-mono">{row.original.stripeInvoiceId ?? "—"}</span>
+            </p>
+            <p className="mt-1">
+              Pay:{" "}
+              <span className="font-mono">{row.original.stripePaymentId ?? "—"}</span>
+            </p>
+          </div>
+        ),
+      },
+      {
+        header: "Failure",
+        id: "failure",
+        cell: ({ row }) =>
+          row.original.failureReason ? (
+            <div className="text-xs text-neutral-600">
+              <p>{row.original.failureReason}</p>
+              {row.original.failureCode ? (
+                <p className="mt-1 font-mono">{row.original.failureCode}</p>
+              ) : null}
+            </div>
+          ) : (
+            "—"
+          ),
+      },
+      {
+        header: "Actions",
+        id: "actions",
+        cell: ({ row }) => {
+          const invoice = row.original;
+          return (
+            <div
+              className="flex flex-wrap gap-2"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+            >
+              {invoice.status === "PENDING" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void markInvoicePaid(invoice.id)}
+                    disabled={actingInvoiceId === invoice.id}
+                    className="rounded-md bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                  >
+                    {actingInvoiceId === invoice.id ? "Saving..." : "Mark paid"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void waiveInvoice(invoice.id)}
+                    disabled={actingInvoiceId === invoice.id}
+                    className="rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 disabled:opacity-60"
+                  >
+                    Waive month
+                  </button>
+                </>
+              ) : null}
+              {invoice.vendorSubscriptionStatus === "SUSPENDED" ? (
+                <button
+                  type="button"
+                  onClick={() => void reactivateVendor(invoice.vendorProfileId)}
+                  disabled={reactivatingVendorId === invoice.vendorProfileId}
+                  className="rounded-md bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                >
+                  {reactivatingVendorId === invoice.vendorProfileId
+                    ? "Reactivating..."
+                    : "Reactivate vendor"}
+                </button>
+              ) : null}
+            </div>
+          );
+        },
+      },
+    ],
+    [actingInvoiceId, reactivatingVendorId, markInvoicePaid, waiveInvoice, reactivateVendor]
+  );
+
   if (authLoading || !user) {
     return (
       <div className="flex min-h-[45vh] items-center justify-center">
@@ -258,106 +390,15 @@ export default function AdminReportsPage() {
             <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
               Recent Membership Invoices
             </h2>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[1180px] border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wider text-neutral-500">
-                    <th className="px-3 py-2">Vendor</th>
-                    <th className="px-3 py-2">Period</th>
-                    <th className="px-3 py-2">Amount</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Due</th>
-                    <th className="px-3 py-2">Attempted</th>
-                    <th className="px-3 py-2">Paid</th>
-                    <th className="px-3 py-2">Stripe refs</th>
-                    <th className="px-3 py-2">Failure</th>
-                    <th className="px-3 py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.recentInvoices.map((invoice) => (
-                    <tr key={invoice.id} className="border-b border-neutral-100">
-                      <td className="px-3 py-3">
-                        <p className="font-medium text-neutral-900">
-                          {invoice.vendorStoreName ?? "Untitled store"}
-                        </p>
-                        <p className="text-xs text-neutral-500">
-                          {invoice.vendorSubscriptionStatus}
-                        </p>
-                      </td>
-                      <td className="px-3 py-3 text-neutral-700">
-                        {new Date(invoice.periodStart).toLocaleDateString()} –{" "}
-                        {new Date(invoice.periodEnd).toLocaleDateString()}
-                      </td>
-                      <td className="px-3 py-3 text-neutral-700">
-                        {formatMoney(invoice.amount, invoice.currency)}
-                      </td>
-                      <td className="px-3 py-3 text-neutral-700">{invoice.status}</td>
-                      <td className="px-3 py-3 text-neutral-700">{formatDate(invoice.dueAt)}</td>
-                      <td className="px-3 py-3 text-neutral-700">
-                        {formatDate(invoice.attemptedAt)}
-                      </td>
-                      <td className="px-3 py-3 text-neutral-700">{formatDate(invoice.paidAt)}</td>
-                      <td className="px-3 py-3 text-xs text-neutral-600">
-                        <p>
-                          Inv: <span className="font-mono">{invoice.stripeInvoiceId ?? "—"}</span>
-                        </p>
-                        <p className="mt-1">
-                          Pay: <span className="font-mono">{invoice.stripePaymentId ?? "—"}</span>
-                        </p>
-                      </td>
-                      <td className="px-3 py-3 text-xs text-neutral-600">
-                        {invoice.failureReason ? (
-                          <>
-                            <p>{invoice.failureReason}</p>
-                            {invoice.failureCode ? (
-                              <p className="mt-1 font-mono">{invoice.failureCode}</p>
-                            ) : null}
-                          </>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="flex flex-wrap gap-2">
-                          {invoice.status === "PENDING" ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => void markInvoicePaid(invoice.id)}
-                                disabled={actingInvoiceId === invoice.id}
-                                className="rounded-md bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
-                              >
-                                {actingInvoiceId === invoice.id ? "Saving..." : "Mark paid"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => void waiveInvoice(invoice.id)}
-                                disabled={actingInvoiceId === invoice.id}
-                                className="rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 disabled:opacity-60"
-                              >
-                                Waive month
-                              </button>
-                            </>
-                          ) : null}
-                          {invoice.vendorSubscriptionStatus === "SUSPENDED" ? (
-                            <button
-                              type="button"
-                              onClick={() => void reactivateVendor(invoice.vendorProfileId)}
-                              disabled={reactivatingVendorId === invoice.vendorProfileId}
-                              className="rounded-md bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
-                            >
-                              {reactivatingVendorId === invoice.vendorProfileId
-                                ? "Reactivating..."
-                                : "Reactivate vendor"}
-                            </button>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="mt-4">
+              <DataTable
+                data={report.recentInvoices}
+                columns={invoiceColumns}
+                getRowId={(row) => row.id}
+                emptyMessage="No recent membership invoices."
+                initialPageSize={10}
+                pageSizeOptions={[10, 20, 50]}
+              />
             </div>
           </section>
         </>

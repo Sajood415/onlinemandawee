@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
 import {
   CheckCircle2,
   ImageIcon,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { AdminProductEditPanel } from "@/components/admin/AdminProductEditPanel";
+import { DataTable } from "@/components/ui/data-table";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-status";
@@ -261,6 +263,149 @@ export default function AdminProductsPage() {
     }
   };
 
+  const columns = useMemo<ColumnDef<AdminProduct>[]>(
+    () => [
+      {
+        header: "Product",
+        accessorKey: "name",
+        cell: ({ row }) => {
+          const product = row.original;
+          return (
+            <div className="flex items-center gap-3">
+              {product.images[0] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={product.images[0]}
+                  alt={product.name}
+                  className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                />
+              ) : (
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-100">
+                  <ImageIcon className="h-5 w-5 text-neutral-300" />
+                </div>
+              )}
+              <div>
+                <p className="max-w-[160px] truncate font-medium text-neutral-900">
+                  {product.name}
+                </p>
+                <p className="max-w-[160px] truncate text-xs text-neutral-400">
+                  {product.description}
+                </p>
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        header: "Vendor",
+        id: "vendor",
+        cell: ({ row }) => (
+          <div>
+            <p className="font-medium text-neutral-800">
+              {row.original.vendorProfile.storeName ?? row.original.vendorProfile.user.fullName}
+            </p>
+            <p className="text-xs text-neutral-400">{row.original.vendorProfile.user.email}</p>
+          </div>
+        ),
+      },
+      {
+        header: "Category",
+        accessorKey: "category.name",
+        cell: ({ row }) => row.original.category.name,
+      },
+      {
+        header: "Price",
+        id: "price",
+        cell: ({ row }) =>
+          (row.original.priceAmount / 100).toLocaleString(undefined, {
+            style: "currency",
+            currency: row.original.currency || "USD",
+          }),
+      },
+      {
+        header: "Stock",
+        accessorKey: "stockQty",
+      },
+      {
+        header: "Status",
+        id: "status",
+        cell: ({ row }) => {
+          const product = row.original;
+          return (
+            <div>
+              <span
+                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${badgeClass(product.approvalStatus)}`}
+              >
+                {product.approvalStatus.replaceAll("_", " ")}
+              </span>
+              {product.rejectionReason ? (
+                <p
+                  className="mt-1 max-w-[160px] truncate text-xs text-red-500"
+                  title={product.rejectionReason}
+                >
+                  {product.rejectionReason}
+                </p>
+              ) : null}
+            </div>
+          );
+        },
+      },
+      {
+        header: "Actions",
+        id: "actions",
+        cell: ({ row }) => {
+          const product = row.original;
+          return (
+            <div
+              className="flex items-center gap-2"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+            >
+              {product.approvalStatus === "PENDING_APPROVAL" ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={actionId === product.id}
+                    onClick={() => void onApprove(product)}
+                    className="inline-flex items-center gap-1 rounded-md border border-emerald-200 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
+                  >
+                    {actionId === product.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    )}
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    disabled={actionId === product.id}
+                    onClick={() => openReject(product)}
+                    className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                    Reject
+                  </button>
+                </>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => {
+                  setDrawerEditing(true);
+                  setDetailProduct(product);
+                }}
+                className="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </button>
+            </div>
+          );
+        },
+      },
+    ],
+    [actionId]
+  );
+
   /* ── Guard ──────────────────────────────────────────────────────── */
 
   if (authLoading || !user) {
@@ -311,11 +456,9 @@ export default function AdminProductsPage() {
         ))}
       </div>
 
-      {/* Products card */}
-      <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
-
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-3 border-b border-neutral-100 px-5 py-4 sm:px-6">
+      {/* Filters */}
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="relative min-w-0 flex-1 sm:max-w-xs">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
             <input
@@ -350,151 +493,27 @@ export default function AdminProductsPage() {
             {loading ? "Loading…" : `${products.length} product${products.length !== 1 ? "s" : ""}`}
           </p>
         </div>
-
-        {/* Body */}
-        <div className="p-5 sm:p-6">
-          {loading ? (
-            <div className="flex items-center gap-2 text-sm text-neutral-500">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading…
-            </div>
-          ) : error ? (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
-          ) : products.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-12 text-center">
-              <CheckCircle2 className="h-10 w-10 text-neutral-200" />
-              <p className="text-sm text-neutral-500">No products match your filters.</p>
-            </div>
-          ) : (
-            <div className="responsive-table-shell overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-neutral-100 text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                    <th className="px-3 py-2">Product</th>
-                    <th className="px-3 py-2">Vendor</th>
-                    <th className="px-3 py-2">Category</th>
-                    <th className="px-3 py-2">Price</th>
-                    <th className="px-3 py-2">Stock</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map((product) => (
-                    <tr
-                      key={product.id}
-                      onClick={() => openDetail(product)}
-                      className="cursor-pointer border-b border-neutral-100 transition-colors hover:bg-primary/5"
-                    >
-                      {/* Product */}
-                      <td className="px-3 py-3">
-                        <div className="flex items-center gap-3">
-                          {product.images[0] ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={product.images[0]}
-                              alt={product.name}
-                              className="h-10 w-10 shrink-0 rounded-lg object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-100">
-                              <ImageIcon className="h-5 w-5 text-neutral-300" />
-                            </div>
-                          )}
-                          <div>
-                            <p className="max-w-[160px] truncate font-medium text-neutral-900">
-                              {product.name}
-                            </p>
-                            <p className="max-w-[160px] truncate text-xs text-neutral-400">
-                              {product.description}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Vendor */}
-                      <td className="px-3 py-3">
-                        <p className="font-medium text-neutral-800">
-                          {product.vendorProfile.storeName ?? product.vendorProfile.user.fullName}
-                        </p>
-                        <p className="text-xs text-neutral-400">{product.vendorProfile.user.email}</p>
-                      </td>
-
-                      {/* Category */}
-                      <td className="px-3 py-3 text-neutral-600">{product.category.name}</td>
-
-                      {/* Price */}
-                      <td className="px-3 py-3 tabular-nums">
-                        {(product.priceAmount / 100).toLocaleString(undefined, {
-                          style: "currency",
-                          currency: product.currency || "USD",
-                        })}
-                      </td>
-
-                      {/* Stock */}
-                      <td className="px-3 py-3 tabular-nums">{product.stockQty}</td>
-
-                      {/* Status */}
-                      <td className="px-3 py-3">
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${badgeClass(product.approvalStatus)}`}>
-                          {product.approvalStatus.replaceAll("_", " ")}
-                        </span>
-                        {product.rejectionReason && (
-                          <p className="mt-1 max-w-[160px] truncate text-xs text-red-500" title={product.rejectionReason}>
-                            {product.rejectionReason}
-                          </p>
-                        )}
-                      </td>
-
-                      {/* Actions — stop propagation so row click doesn't fire */}
-                      <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-2">
-                          {product.approvalStatus === "PENDING_APPROVAL" && (
-                            <>
-                              <button
-                                type="button"
-                                disabled={actionId === product.id}
-                                onClick={() => void onApprove(product)}
-                                className="inline-flex items-center gap-1 rounded-md border border-emerald-200 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
-                              >
-                                {actionId === product.id ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  <CheckCircle2 className="h-3.5 w-3.5" />
-                                )}
-                                Approve
-                              </button>
-                              <button
-                                type="button"
-                                disabled={actionId === product.id}
-                                onClick={() => openReject(product)}
-                                className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-                              >
-                                <XCircle className="h-3.5 w-3.5" />
-                                Reject
-                              </button>
-                            </>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDrawerEditing(true);
-                              setDetailProduct(product);
-                            }}
-                            className="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                            Edit
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
       </div>
+
+      {loading ? (
+        <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center text-sm text-neutral-600 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+          Loading products…
+        </div>
+      ) : error ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-700 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+          {error}
+        </div>
+      ) : (
+        <DataTable
+          data={products}
+          columns={columns}
+          getRowId={(row) => row.id}
+          onRowClick={openDetail}
+          emptyMessage="No products match your filters."
+          initialPageSize={10}
+          pageSizeOptions={[10, 20, 50]}
+        />
+      )}
 
       {/* ── Product detail drawer ─────────────────────────────────── */}
       {detailProduct && (

@@ -4,7 +4,9 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
 import type { SellerType } from "@/domain/vendor/vendor-types";
+import { useClientPagination } from "@/hooks/use-client-pagination";
 import type { VendorStatus } from "@/domain/vendor/vendor-status";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -219,6 +221,19 @@ export default function AdminVendorDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [markingInvoiceId, setMarkingInvoiceId] = useState<string | null>(null);
   const [waivingInvoiceId, setWaivingInvoiceId] = useState<string | null>(null);
+
+  const productsPagination = useClientPagination(vendor?.products ?? [], {
+    initialPageSize: 10,
+    resetKey: vendor?.id,
+  });
+  const ordersPagination = useClientPagination(vendor?.orders ?? [], {
+    initialPageSize: 10,
+    resetKey: vendor?.id,
+  });
+  const subscriptionPagination = useClientPagination(vendor?.subscriptionHistory ?? [], {
+    initialPageSize: 10,
+    resetKey: vendor?.id,
+  });
 
   const loadVendor = useCallback(async (opts?: { silent?: boolean }) => {
     if (!vendorId) return;
@@ -759,6 +774,7 @@ export default function AdminVendorDetailPage() {
           Products ({vendor.products.length})
         </h3>
         {vendor.products.length ? (
+          <>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[640px] border-collapse text-sm">
               <thead>
@@ -771,7 +787,7 @@ export default function AdminVendorDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {vendor.products.map((product) => (
+                {productsPagination.paginatedItems.map((product) => (
                   <tr key={product.id} className="border-b border-neutral-100">
                     <td className="px-3 py-3">
                       <p className="font-medium text-neutral-900">{product.name}</p>
@@ -794,6 +810,15 @@ export default function AdminVendorDetailPage() {
               </tbody>
             </table>
           </div>
+          <PaginationFooter
+            pageIndex={productsPagination.pageIndex}
+            pageCount={productsPagination.pageCount}
+            pageSize={productsPagination.pageSize}
+            pageSizeOptions={productsPagination.pageSizeOptions}
+            onPageIndexChange={productsPagination.setPageIndex}
+            onPageSizeChange={productsPagination.setPageSize}
+          />
+          </>
         ) : (
           <p className="mt-3 text-sm text-neutral-500">No products yet.</p>
         )}
@@ -804,6 +829,7 @@ export default function AdminVendorDetailPage() {
           Orders ({vendor.orders.length})
         </h3>
         {vendor.orders.length ? (
+          <>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-sm">
               <thead>
@@ -817,7 +843,7 @@ export default function AdminVendorDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {vendor.orders.map((order) => (
+                {ordersPagination.paginatedItems.map((order) => (
                   <tr key={order.id} className="border-b border-neutral-100">
                     <td className="px-3 py-3 font-medium text-neutral-900">{order.orderNumber}</td>
                     <td className="px-3 py-3 text-neutral-700">{displayDate(order.createdAt)}</td>
@@ -840,6 +866,15 @@ export default function AdminVendorDetailPage() {
               </tbody>
             </table>
           </div>
+          <PaginationFooter
+            pageIndex={ordersPagination.pageIndex}
+            pageCount={ordersPagination.pageCount}
+            pageSize={ordersPagination.pageSize}
+            pageSizeOptions={ordersPagination.pageSizeOptions}
+            onPageIndexChange={ordersPagination.setPageIndex}
+            onPageSizeChange={ordersPagination.setPageSize}
+          />
+          </>
         ) : (
           <p className="mt-3 text-sm text-neutral-500">No orders yet.</p>
         )}
@@ -850,6 +885,7 @@ export default function AdminVendorDetailPage() {
           Subscription Payment History
         </h3>
         {vendor.subscriptionHistory.length ? (
+          <>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[1080px] border-collapse text-sm">
               <thead>
@@ -866,7 +902,7 @@ export default function AdminVendorDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {vendor.subscriptionHistory.map((invoice) => (
+                {subscriptionPagination.paginatedItems.map((invoice) => (
                   <tr key={invoice.id} className="border-b border-neutral-100">
                     <td className="px-3 py-3 text-neutral-700">
                       {new Date(invoice.periodStart).toLocaleDateString()} –{" "}
@@ -938,6 +974,15 @@ export default function AdminVendorDetailPage() {
               </tbody>
             </table>
           </div>
+          <PaginationFooter
+            pageIndex={subscriptionPagination.pageIndex}
+            pageCount={subscriptionPagination.pageCount}
+            pageSize={subscriptionPagination.pageSize}
+            pageSizeOptions={subscriptionPagination.pageSizeOptions}
+            onPageIndexChange={subscriptionPagination.setPageIndex}
+            onPageSizeChange={subscriptionPagination.setPageSize}
+          />
+          </>
         ) : (
           <p className="mt-3 text-sm text-neutral-500">No subscription invoices yet.</p>
         )}

@@ -129,6 +129,13 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum OrderCancelledByRole {
+  CUSTOMER
+  VENDOR
+  ADMIN
+  SYSTEM
+}
+
 enum VendorOrderStatus {
   NEW
   PREPARING
@@ -633,7 +640,11 @@ model Order {
   /// Unique when set — enforced via sparse MongoDB index (see scripts/fix-order-stripe-payment-intent-index.ts).
   /// Prisma @unique is not used because many orders omit this field and MongoDB non-sparse unique indexes only allow one missing value.
   stripePaymentIntentId String?
-  createdAt             DateTime      @default(now())
+  cancelledAt           DateTime?
+  cancellationReason    String?
+  cancelledByRole       OrderCancelledByRole?
+  cancelledByUserId     String?               @db.ObjectId
+  createdAt             DateTime              @default(now())
   updatedAt             DateTime      @updatedAt
   user                  User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   vendorOrders          OrderVendor[]

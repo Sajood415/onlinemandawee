@@ -232,7 +232,7 @@ export const termsPage: ContentPageDefinition = {
       id: "refunds-disputes",
       title: "Refunds and disputes",
       paragraphs: [
-        "Refund requests are handled through our dispute-based refund process. Customers may request a refund within 3 days after an order is marked delivered, subject to eligibility rules and review.",
+        "Refund requests are handled through our dispute-based refund process. Customers may request a refund within 7 days after an order is marked delivered, subject to eligibility rules and review.",
         "See our Refund Policy for full details on timelines, vendor response, and platform review.",
       ],
     },
@@ -321,7 +321,7 @@ export const refundsPage: ContentPageDefinition = {
       id: "eligibility",
       title: "Refund eligibility window",
       paragraphs: [
-        "You may request a refund for an eligible order item within 3 days after the order (or vendor portion of the order) is marked as delivered.",
+        "You may request a refund for an eligible order item within 7 days after the order (or vendor portion of the order) is marked as delivered.",
         "After this window closes, the refund request option is no longer available in your account for that item, except where required by law or at our discretion in exceptional circumstances.",
       ],
     },
@@ -474,7 +474,7 @@ export const vendorTermsPage: ContentPageDefinition = {
       id: "refunds-disputes",
       title: "Refunds and disputes",
       paragraphs: [
-        "Customers may request refunds within 3 days after an order is marked delivered, subject to platform eligibility rules.",
+        "Customers may request refunds within 7 days after an order is marked delivered, subject to platform eligibility rules.",
         "When a refund case is opened, you must review and respond in good faith within the platform workflow.",
         "If a case is escalated, Online Mandawee may make a final decision on disputed refunds. By selling on the platform, you agree that Online Mandawee has final decision authority on escalated disputes and refunds.",
       ],
@@ -636,7 +636,7 @@ export const howItWorksPage: ContentPageDefinition = {
       id: "refunds",
       title: "6. Refunds if needed",
       paragraphs: [
-        "If something is wrong with your order, you may request a refund within 3 days after delivery through our dispute process. See the Refund Policy for details.",
+        "If something is wrong with your order, you may request a refund within 7 days after delivery through our dispute process. See the Refund Policy for details.",
       ],
     },
   ],
@@ -736,7 +736,7 @@ export const helpPage: ContentPageDefinition = {
         {
           title: "When can I request a refund?",
           paragraphs: [
-            "You may request a refund within 3 days after an order is marked delivered, subject to eligibility rules. Submit the request from your account.",
+            "You may request a refund within 7 days after an order is marked delivered, subject to eligibility rules. Submit the request from your account.",
           ],
         },
         {

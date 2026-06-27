@@ -24,6 +24,12 @@ import { getRefundEligibility } from "@/lib/refunds/refund-eligibility";
 import { StandardConsolidationService } from "@/services/standard-consolidation.service";
 import { PayoutReleaseService } from "@/services/payout-release.service";
 import { mergeLineItemsByProduct } from "@/lib/orders/aggregate-order-line-items";
+import {
+  canCustomerCancelBeforeShipping,
+  getCustomerCancellationState,
+  isOrderLockedByCustomerCancellation,
+} from "@/lib/orders/order-cancellation";
+import { executeOrderCancellation } from "@/lib/orders/execute-order-cancellation";
 
 type QuoteLine = {
   cartItemId: string;
@@ -235,6 +241,71 @@ export class OrderService {
     return this.serializeOrder(order);
   }
 
+  async cancelMyOrder(
+    auth: AuthenticatedUser,
+    orderId: string,
+    input: { reason?: string }
+  ) {
+    this.assertActiveCustomer(auth);
+    await this.orderRepository.claimGuestOrdersForUser(auth.id, auth.email);
+
+    const order = await this.orderRepository.findById(orderId);
+
+    if (!order || !this.customerOwnsOrder(auth, order)) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Order not found",
+        statusCode: 404,
+      });
+    }
+
+    const eligibility = canCustomerCancelBeforeShipping({
+      orderStatus: order.status,
+      vendorOrders: order.vendorOrders.map((vendorOrder) => ({
+        status: vendorOrder.status,
+        inboundShipmentStatus: vendorOrder.inboundShipment?.status ?? null,
+      })),
+    });
+
+    if (!eligibility.eligible) {
+      const message =
+        eligibility.reason === "ORDER_ALREADY_CANCELLED"
+          ? "This order has already been cancelled."
+          : "This order can no longer be cancelled because it has already been shipped.";
+      throw new AppError({
+        code: ERROR_CODE.CONFLICT,
+        message,
+        statusCode: 409,
+      });
+    }
+
+    const customerEmail =
+      order.user?.email ?? order.guestEmail ?? auth.email;
+
+    const result = await executeOrderCancellation({
+      orderId: order.id,
+      cancelledByRole: "CUSTOMER",
+      cancelledByUserId: auth.id,
+      cancellationReason: input.reason,
+      notifyEmail: customerEmail,
+    });
+
+    await this.auditLogRepository.create({
+      actorUserId: auth.id,
+      actorRole: auth.role,
+      action: "customer.order_cancelled",
+      entityType: "Order",
+      entityId: order.id,
+      metadata: {
+        orderNumber: order.orderNumber,
+        reason: input.reason?.trim() || null,
+        cancelledAt: result.cancelledAt,
+      },
+    });
+
+    return this.getOrderForCustomer(auth, order.id);
+  }
+
   async listVendorOrders(auth: AuthenticatedUser) {
     const vendor = await this.requireActiveVendor(auth.id);
     const vendorOrders = await this.orderRepository.listByVendorProfileId(vendor.id);
@@ -249,6 +320,7 @@ export class OrderService {
       deliveryAmount: vendorOrder.deliveryAmount,
       discountAmount: vendorOrder.discountAmount,
       grandTotalAmount: vendorOrder.grandTotalAmount,
+      deliveredAt: vendorOrder.deliveredAt?.toISOString() ?? null,
       createdAt: vendorOrder.createdAt.toISOString(),
       updatedAt: vendorOrder.updatedAt.toISOString(),
       order: {
@@ -262,6 +334,9 @@ export class OrderService {
         shippingCity: vendorOrder.order.shippingCity,
         shippingCountry: vendorOrder.order.shippingCountry,
         shippingPostalCode: vendorOrder.order.shippingPostalCode,
+        cancelledAt: vendorOrder.order.cancelledAt?.toISOString() ?? null,
+        cancellationReason: vendorOrder.order.cancellationReason ?? null,
+        cancelledByRole: vendorOrder.order.cancelledByRole ?? null,
       },
       warehouse: {
         inboundShipment: vendorOrder.inboundShipment
@@ -317,6 +392,18 @@ export class OrderService {
         code: ERROR_CODE.NOT_FOUND,
         message: "Vendor order not found",
         statusCode: 404,
+      });
+    }
+
+    const parentOrder = vendorOrder.order;
+    if (
+      parentOrder.status === "CANCELLED" ||
+      isOrderLockedByCustomerCancellation(parentOrder.cancelledByRole)
+    ) {
+      throw new AppError({
+        code: ERROR_CODE.CONFLICT,
+        message: "This order was cancelled by the customer and cannot be updated.",
+        statusCode: 409,
       });
     }
 
@@ -725,6 +812,16 @@ export class OrderService {
         country: order.shippingCountry,
         postalCode: order.shippingPostalCode,
       },
+      cancellation: getCustomerCancellationState({
+        status: order.status,
+        cancelledAt: order.cancelledAt,
+        cancellationReason: order.cancellationReason,
+        cancelledByRole: order.cancelledByRole,
+        vendorOrders: order.vendorOrders.map((vendorOrder) => ({
+          status: vendorOrder.status,
+          inboundShipmentStatus: vendorOrder.inboundShipment?.status ?? null,
+        })),
+      }),
       customer: order.user
         ? {
             id: order.user.id,

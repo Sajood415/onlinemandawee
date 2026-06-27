@@ -11,8 +11,11 @@ import {
 } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
+import { useClientPagination } from "@/hooks/use-client-pagination";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
+import { resolveVendorOrderDeliveredAtIso } from "@/lib/orders/resolve-vendor-order-delivered-at";
 import { toast } from "@/lib/utils/toast";
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
@@ -58,6 +61,7 @@ type VendorOrder = {
   deliveryAmount: number;
   discountAmount: number;
   grandTotalAmount: number;
+  deliveredAt: string | null;
   createdAt: string;
   updatedAt: string;
   order: {
@@ -71,6 +75,9 @@ type VendorOrder = {
     shippingCity: string;
     shippingCountry: string;
     shippingPostalCode: string;
+    cancelledAt: string | null;
+    cancellationReason: string | null;
+    cancelledByRole: "CUSTOMER" | "VENDOR" | "ADMIN" | "SYSTEM" | null;
   };
   warehouse: {
     inboundShipment: {
@@ -356,6 +363,8 @@ function OrderRow({
   const totalItems = order.items.reduce((s, i) => s + i.quantity, 0);
   const isStandardWorkflow =
     order.deliveryMethod === "STANDARD" && order.sellerType === "THIRD_PARTY";
+  const isCancelledByCustomer =
+    order.status === "CANCELLED" && order.order.cancelledByRole === "CUSTOMER";
   const warehouseTimeline = [
     {
       key: "preparing",
@@ -425,7 +434,27 @@ function OrderRow({
               </span>
             ) : null}
           </div>
-          <p className="text-xs text-gray-400 mt-1">{formatDate(order.createdAt)}</p>
+          <p className="text-xs text-gray-400 mt-1">Placed {formatDate(order.createdAt)}</p>
+          {isCancelledByCustomer && order.order.cancelledAt ? (
+            <p className="text-xs text-rose-700 mt-0.5">
+              Cancelled by customer on {formatDateTime(order.order.cancelledAt)}
+            </p>
+          ) : null}
+          {(() => {
+            const deliveredAt = resolveVendorOrderDeliveredAtIso({
+              status: order.status,
+              deliveredAt: order.deliveredAt,
+              outboundDeliveredAt: order.warehouse.outboundShipment?.deliveredAt,
+              statusChangedAt: order.updatedAt,
+            });
+            if (order.status !== "DELIVERED" && !deliveredAt) return null;
+            return (
+              <p className="text-xs text-emerald-700 mt-0.5">
+                Delivered on{" "}
+                {deliveredAt ? formatDateTime(deliveredAt) : "— date not recorded"}
+              </p>
+            );
+          })()}
         </div>
 
         {/* Customer */}
@@ -450,6 +479,24 @@ function OrderRow({
       {/* Expanded details */}
       {expanded && (
         <div className="border-t border-gray-100 px-6 py-5 space-y-6">
+          {isCancelledByCustomer ? (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+              <p className="font-semibold">Cancelled by customer</p>
+              {order.order.cancelledAt ? (
+                <p className="mt-1 text-rose-800">
+                  Cancelled on {formatDateTime(order.order.cancelledAt)}
+                </p>
+              ) : null}
+              {order.order.cancellationReason ? (
+                <p className="mt-2 text-rose-800">
+                  <span className="font-medium">Reason:</span> {order.order.cancellationReason}
+                </p>
+              ) : (
+                <p className="mt-2 text-rose-700 italic">No reason provided.</p>
+              )}
+            </div>
+          ) : null}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Delivery address */}
             <div>
@@ -635,6 +682,20 @@ function OrderRow({
             {order.status === "DELIVERED" && (
               <p className="text-xs text-green-600 mt-2">
                 📧 An email was sent to the customer confirming delivery.
+                {(() => {
+                  const deliveredAt = resolveVendorOrderDeliveredAtIso({
+                    status: order.status,
+                    deliveredAt: order.deliveredAt,
+                    outboundDeliveredAt: order.warehouse.outboundShipment?.deliveredAt,
+                    statusChangedAt: order.updatedAt,
+                  });
+                  if (!deliveredAt) return null;
+                  return (
+                    <span className="block mt-1 text-neutral-600">
+                      Delivered on {formatDateTime(deliveredAt)}
+                    </span>
+                  );
+                })()}
               </p>
             )}
           </div>
@@ -769,6 +830,21 @@ export default function VendorOrdersPage() {
     return matchesSearch && matchesStatus;
   });
 
+  const filterResetKey = `${search}|${statusFilter}`;
+
+  const {
+    paginatedItems: paginatedOrders,
+    pageIndex,
+    pageCount,
+    pageSize,
+    pageSizeOptions,
+    setPageIndex,
+    setPageSize,
+  } = useClientPagination(filtered, {
+    initialPageSize: 10,
+    resetKey: filterResetKey,
+  });
+
   if (authLoading || !user) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -845,18 +921,28 @@ export default function VendorOrdersPage() {
           </div>
         </div>
       ) : (
-        <div className="space-y-3">
-          <p className="text-xs text-gray-400">
-            Showing {filtered.length} of {orders.length} order{orders.length !== 1 ? "s" : ""}
-          </p>
-          {filtered.map((order) => (
-            <OrderRow
-              key={order.id}
-              order={order}
-              onStatusChange={handleStatusChange}
-              onInboundShip={handleInboundShip}
-            />
-          ))}
+        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+          <div className="space-y-3 px-4 py-4">
+            <p className="text-xs text-gray-400">
+              Showing {filtered.length} of {orders.length} order{orders.length !== 1 ? "s" : ""}
+            </p>
+            {paginatedOrders.map((order) => (
+              <OrderRow
+                key={order.id}
+                order={order}
+                onStatusChange={handleStatusChange}
+                onInboundShip={handleInboundShip}
+              />
+            ))}
+          </div>
+          <PaginationFooter
+            pageIndex={pageIndex}
+            pageCount={pageCount}
+            pageSize={pageSize}
+            pageSizeOptions={pageSizeOptions}
+            onPageIndexChange={setPageIndex}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       )}
     </div>

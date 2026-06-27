@@ -90,7 +90,19 @@
         "startShopping": "Start shopping",
         "placed": "Placed {date}",
         "payment": "Payment",
-        "deliveryAddress": "Delivery address"
+        "deliveryAddress": "Delivery address",
+        "cancelOrder": "Cancel order",
+        "cancelledByYou": "You cancelled this order",
+        "cancelledOn": "Cancelled on {date}",
+        "cancellationReason": "Reason",
+        "cancelModalTitle": "Cancel order",
+        "cancelModalDescription": "You can cancel this order before it is shipped. This action cannot be undone.",
+        "cancelReasonLabel": "Reason for cancellation (optional)",
+        "cancelReasonPlaceholder": "Tell us why you are cancelling…",
+        "cancelModalDismiss": "Keep order",
+        "cancelModalConfirm": "Cancel order",
+        "cancelling": "Cancelling…",
+        "cancelSuccess": "Your order has been cancelled."
       },
       "addresses": {
         "title": "Saved addresses",

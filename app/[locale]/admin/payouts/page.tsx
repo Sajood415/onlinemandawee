@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, CheckCircle2, Loader2, RefreshCw, X } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
+import { useClientPagination } from "@/hooks/use-client-pagination";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 
@@ -203,6 +205,19 @@ export default function AdminPayoutsPage() {
     };
   }, [data]);
 
+  const holdPagination = useClientPagination(data?.hold ?? [], {
+    initialPageSize: 10,
+    resetKey: data?.now,
+  });
+  const readyPagination = useClientPagination(data?.ready ?? [], {
+    initialPageSize: 10,
+    resetKey: data?.now,
+  });
+  const releasedPagination = useClientPagination(data?.released ?? [], {
+    initialPageSize: 10,
+    resetKey: data?.now,
+  });
+
   const renderViewDetailsButton = (payoutId: string) => (
     <button
       type="button"
@@ -298,7 +313,7 @@ export default function AdminPayoutsPage() {
                       </td>
                     </tr>
                   ) : (
-                    data.hold.map((payout) => (
+                    holdPagination.paginatedItems.map((payout) => (
                       <tr key={payout.id} className="border-b border-neutral-100">
                         <td className="px-4 py-3 text-neutral-900">{payout.vendor.label}</td>
                         <td className="px-4 py-3 text-neutral-700">{payout.order.orderNumber}</td>
@@ -314,6 +329,16 @@ export default function AdminPayoutsPage() {
                 </tbody>
               </table>
             </div>
+            {data.hold.length > 0 ? (
+              <PaginationFooter
+                pageIndex={holdPagination.pageIndex}
+                pageCount={holdPagination.pageCount}
+                pageSize={holdPagination.pageSize}
+                pageSizeOptions={holdPagination.pageSizeOptions}
+                onPageIndexChange={holdPagination.setPageIndex}
+                onPageSizeChange={holdPagination.setPageSize}
+              />
+            ) : null}
           </section>
 
           <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
@@ -342,7 +367,7 @@ export default function AdminPayoutsPage() {
                       </td>
                     </tr>
                   ) : (
-                    data.ready.map((payout) => (
+                    readyPagination.paginatedItems.map((payout) => (
                       <tr key={payout.id} className="border-b border-neutral-100">
                         <td className="px-4 py-3 text-neutral-900">{payout.vendor.label}</td>
                         <td className="px-4 py-3 text-neutral-700">{payout.order.orderNumber}</td>
@@ -374,6 +399,16 @@ export default function AdminPayoutsPage() {
                 </tbody>
               </table>
             </div>
+            {data.ready.length > 0 ? (
+              <PaginationFooter
+                pageIndex={readyPagination.pageIndex}
+                pageCount={readyPagination.pageCount}
+                pageSize={readyPagination.pageSize}
+                pageSizeOptions={readyPagination.pageSizeOptions}
+                onPageIndexChange={readyPagination.setPageIndex}
+                onPageSizeChange={readyPagination.setPageSize}
+              />
+            ) : null}
           </section>
 
           <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
@@ -401,7 +436,7 @@ export default function AdminPayoutsPage() {
                       </td>
                     </tr>
                   ) : (
-                    data.released.map((payout) => (
+                    releasedPagination.paginatedItems.map((payout) => (
                       <tr key={payout.id} className="border-b border-neutral-100">
                         <td className="px-4 py-3 text-neutral-900">{payout.vendor.label}</td>
                         <td className="px-4 py-3 text-neutral-700">{payout.order.orderNumber}</td>
@@ -440,6 +475,16 @@ export default function AdminPayoutsPage() {
                 </tbody>
               </table>
             </div>
+            {data.released.length > 0 ? (
+              <PaginationFooter
+                pageIndex={releasedPagination.pageIndex}
+                pageCount={releasedPagination.pageCount}
+                pageSize={releasedPagination.pageSize}
+                pageSizeOptions={releasedPagination.pageSizeOptions}
+                onPageIndexChange={releasedPagination.setPageIndex}
+                onPageSizeChange={releasedPagination.setPageSize}
+              />
+            ) : null}
           </section>
         </>
       )}

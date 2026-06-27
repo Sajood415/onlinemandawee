@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { ImagePlus, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
+import { useClientPagination } from "@/hooks/use-client-pagination";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
@@ -85,6 +87,16 @@ export default function VendorPromotionsPage() {
     if (guardLoading) return;
     void loadData();
   }, [guardLoading, loadData]);
+
+  const {
+    paginatedItems: paginatedBanners,
+    pageIndex,
+    pageCount,
+    pageSize,
+    pageSizeOptions,
+    setPageIndex,
+    setPageSize,
+  } = useClientPagination(banners, { initialPageSize: 10 });
 
   const uploadImage = async (file: File) => {
     setUploading(true);
@@ -332,7 +344,7 @@ export default function VendorPromotionsPage() {
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
@@ -342,58 +354,68 @@ export default function VendorPromotionsPage() {
             No promotional banners yet. Create one to highlight sales on your storefront.
           </div>
         ) : (
-          <div className="divide-y divide-neutral-200">
-            {banners.map((banner) => (
-              <div
-                key={banner.id}
-                className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="flex min-w-0 items-start gap-4">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={banner.imageUrl}
-                    alt={banner.title}
-                    className="h-20 w-36 rounded-lg border object-cover"
-                  />
-                  <div className="min-w-0">
-                    <p className="font-semibold text-[#0f3460]">{banner.title}</p>
-                    {banner.subtitle ? (
-                      <p className="mt-1 text-sm text-neutral-600">{banner.subtitle}</p>
-                    ) : null}
-                    {banner.couponCode ? (
-                      <p className="mt-2 font-mono text-sm font-bold text-primary">
-                        Code: {banner.couponCode}
+          <>
+            <div className="divide-y divide-neutral-200">
+              {paginatedBanners.map((banner) => (
+                <div
+                  key={banner.id}
+                  className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex min-w-0 items-start gap-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={banner.imageUrl}
+                      alt={banner.title}
+                      className="h-20 w-36 rounded-lg border object-cover"
+                    />
+                    <div className="min-w-0">
+                      <p className="font-semibold text-[#0f3460]">{banner.title}</p>
+                      {banner.subtitle ? (
+                        <p className="mt-1 text-sm text-neutral-600">{banner.subtitle}</p>
+                      ) : null}
+                      {banner.couponCode ? (
+                        <p className="mt-2 font-mono text-sm font-bold text-primary">
+                          Code: {banner.couponCode}
+                        </p>
+                      ) : null}
+                      <p className="mt-1 text-xs text-neutral-500">
+                        {banner.isActive ? "Active" : "Inactive"}
+                        {banner.expiresAt
+                          ? ` · Expires ${new Date(banner.expiresAt).toLocaleDateString()}`
+                          : ""}
                       </p>
-                    ) : null}
-                    <p className="mt-1 text-xs text-neutral-500">
-                      {banner.isActive ? "Active" : "Inactive"}
-                      {banner.expiresAt
-                        ? ` · Expires ${new Date(banner.expiresAt).toLocaleDateString()}`
-                        : ""}
-                    </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(banner)}
+                      className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void deleteBanner(banner.id)}
+                      className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </button>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => openEdit(banner)}
-                    className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-                  >
-                    <Pencil className="h-4 w-4" />
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void deleteBanner(banner.id)}
-                    className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            <PaginationFooter
+              pageIndex={pageIndex}
+              pageCount={pageCount}
+              pageSize={pageSize}
+              pageSizeOptions={pageSizeOptions}
+              onPageIndexChange={setPageIndex}
+              onPageSizeChange={setPageSize}
+            />
+          </>
         )}
       </section>
     </div>

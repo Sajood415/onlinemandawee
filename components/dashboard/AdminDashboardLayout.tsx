@@ -13,7 +13,6 @@ import {
   ShoppingBag,
   Tag,
   Truck,
-  Users,
   Wallet,
 } from "lucide-react";
 
@@ -41,7 +40,6 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
         { label: t("nav.categories"), href: "/admin/categories", icon: <Tag size={16} /> },
         { label: t("nav.banners"), href: "/admin/banners", icon: <ImageIcon size={16} /> },
         { label: t("nav.giftRequests"), href: "/admin/gift-requests", icon: <Gift size={16} /> },
-        { label: t("nav.users"), href: "/admin/users", icon: <Users size={16} /> },
         { label: t("nav.settings"), href: "/admin/settings", icon: <Settings size={16} /> },
       ]}
     >

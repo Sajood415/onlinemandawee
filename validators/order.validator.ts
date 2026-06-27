@@ -29,3 +29,7 @@ export const vendorOrderStatusSchema = z.object({
     "Unsupported status update"
   ),
 });
+
+export const cancelOrderBodySchema = z.object({
+  reason: z.string().trim().max(500).optional(),
+});

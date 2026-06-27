@@ -1,5 +1,7 @@
 import type { PaymentIntent, Stripe } from "@stripe/stripe-js";
 
+import { isValidPaymentIntentClientSecret } from "@/lib/stripe/checkout-client";
+
 type ConfirmCheckoutPayload = Record<string, unknown>;
 
 type ConfirmCheckoutResult = {
@@ -13,15 +15,21 @@ async function sleep(ms: number) {
 
 export async function waitForSucceededPaymentIntent(
   stripe: Stripe,
-  paymentIntentId: string,
+  clientSecret: string,
   initial?: PaymentIntent | null
 ) {
   if (initial?.status === "succeeded") {
     return initial;
   }
 
+  if (!isValidPaymentIntentClientSecret(clientSecret)) {
+    throw new Error(
+      "Invalid payment session. Please refresh checkout and try again."
+    );
+  }
+
   for (let attempt = 0; attempt < 16; attempt += 1) {
-    const { paymentIntent, error } = await stripe.retrievePaymentIntent(paymentIntentId);
+    const { paymentIntent, error } = await stripe.retrievePaymentIntent(clientSecret);
     if (error) {
       break;
     }

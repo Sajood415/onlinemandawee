@@ -4,11 +4,21 @@ import { useEffect, useState } from "react";
 import { ImageIcon, Loader2, Plus, Trash2, Upload } from "lucide-react";
 
 import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-status";
+import { deriveProductFieldsFromStoredVariants } from "@/lib/products/derive-variant-product-fields";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
 
 type Category = { id: string; name: string; isActive: boolean };
+
+type ProductVariant = {
+  id: string;
+  name: string;
+  priceAmount: number | null;
+  stockQty: number;
+  sku: string | null;
+  isActive: boolean;
+};
 
 type EditableProduct = {
   id: string;
@@ -84,7 +94,12 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
   const [form, setForm] = useState<FormState>(() => productToForm(product));
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [variantsLoading, setVariantsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const hasVariants = variants.length > 0;
+  const showBasePricingFields = !variantsLoading && variants.length === 0;
 
   useEffect(() => {
     setForm(productToForm(product));
@@ -98,6 +113,18 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
       .catch(() => toast.error("Could not load categories"))
       .finally(() => setCategoriesLoading(false));
   }, []);
+
+  useEffect(() => {
+    setVariantsLoading(true);
+    fetchWithAuth(`/api/admin/products/${product.id}/variants`)
+      .then((res) => parseApiResponse<ProductVariant[]>(res))
+      .then(setVariants)
+      .catch(() => {
+        setVariants([]);
+        toast.error("Could not load variants");
+      })
+      .finally(() => setVariantsLoading(false));
+  }, [product.id]);
 
   const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -177,16 +204,25 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
     }
 
     const priceRaw = Number(form.priceAmount);
-    if (!Number.isFinite(priceRaw) || priceRaw <= 0) {
-      toast.error("Invalid price", "Enter a price greater than 0.");
-      return;
-    }
-    const priceAmount = Math.round(priceRaw * 100);
+    let priceAmount: number;
+    let stockQty: number;
 
-    const stockQty = Number(form.stockQty);
-    if (!Number.isInteger(stockQty) || stockQty < 0) {
-      toast.error("Invalid stock", "Must be 0 or more.");
-      return;
+    if (hasVariants) {
+      const derived = deriveProductFieldsFromStoredVariants(variants, product.priceAmount);
+      priceAmount = derived.priceAmount;
+      stockQty = derived.stockQty;
+    } else {
+      if (!Number.isFinite(priceRaw) || priceRaw <= 0) {
+        toast.error("Invalid price", "Enter a price greater than 0.");
+        return;
+      }
+      priceAmount = Math.round(priceRaw * 100);
+
+      stockQty = Number(form.stockQty);
+      if (!Number.isInteger(stockQty) || stockQty < 0) {
+        toast.error("Invalid stock", "Must be 0 or more.");
+        return;
+      }
     }
 
     setSaving(true);
@@ -217,7 +253,7 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
         approvalStatus: form.approvalStatus,
         isActive: form.isActive,
       };
-      if (form.sku.trim()) payload.sku = form.sku.trim();
+      if (form.sku.trim() && !hasVariants) payload.sku = form.sku.trim();
       if (form.approvalStatus === "REJECTED") {
         payload.rejectionReason = form.rejectionReason.trim() || null;
       } else {
@@ -294,7 +330,7 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className={`grid gap-4 ${showBasePricingFields ? "sm:grid-cols-4" : "sm:grid-cols-1"}`}>
         <div className="flex flex-col gap-1.5">
           <label className={LABEL}>Currency</label>
           <select
@@ -309,38 +345,106 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
             ))}
           </select>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <label className={LABEL}>Price</label>
-          <input
-            type="number"
-            min="0.01"
-            step="0.01"
-            className={INPUT}
-            value={form.priceAmount}
-            onChange={(e) => updateField("priceAmount", e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className={LABEL}>Stock</label>
-          <input
-            type="number"
-            min="0"
-            step="1"
-            className={INPUT}
-            value={form.stockQty}
-            onChange={(e) => updateField("stockQty", e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className={LABEL}>SKU</label>
-          <input
-            className={INPUT}
-            value={form.sku}
-            onChange={(e) => updateField("sku", e.target.value)}
-            maxLength={100}
-          />
-        </div>
+        {showBasePricingFields ? (
+          <>
+            <div className="flex flex-col gap-1.5">
+              <label className={LABEL}>Price</label>
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                className={INPUT}
+                value={form.priceAmount}
+                onChange={(e) => updateField("priceAmount", e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className={LABEL}>Stock</label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                className={INPUT}
+                value={form.stockQty}
+                onChange={(e) => updateField("stockQty", e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className={LABEL}>SKU</label>
+              <input
+                className={INPUT}
+                value={form.sku}
+                onChange={(e) => updateField("sku", e.target.value)}
+                maxLength={100}
+              />
+            </div>
+          </>
+        ) : null}
       </div>
+
+      {variantsLoading ? (
+        <div className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-500">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading variant details…
+        </div>
+      ) : hasVariants ? (
+        <div className="space-y-2 rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <label className={LABEL}>
+              Variants ({variants.length})
+            </label>
+            <span className="text-xs text-neutral-500">Managed by vendor</span>
+          </div>
+          <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-neutral-100 bg-neutral-50 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                  <th className="px-3 py-2 text-left">Variant</th>
+                  <th className="px-3 py-2 text-right">Price</th>
+                  <th className="px-3 py-2 text-right">Stock</th>
+                  <th className="px-3 py-2 text-left">SKU</th>
+                  <th className="px-3 py-2 text-left">Active</th>
+                </tr>
+              </thead>
+              <tbody>
+                {variants.map((variant) => (
+                  <tr key={variant.id} className="border-b border-neutral-100 last:border-0">
+                    <td className="px-3 py-2 font-medium text-neutral-800">{variant.name}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-neutral-600">
+                      {variant.priceAmount != null
+                        ? (variant.priceAmount / 100).toLocaleString(undefined, {
+                            style: "currency",
+                            currency: form.currency || "USD",
+                          })
+                        : (
+                          <span className="text-neutral-400">
+                            {(product.priceAmount / 100).toLocaleString(undefined, {
+                              style: "currency",
+                              currency: form.currency || "USD",
+                            })}
+                          </span>
+                        )}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums">{variant.stockQty}</td>
+                    <td className="px-3 py-2 text-neutral-500">{variant.sku ?? "—"}</td>
+                    <td className="px-3 py-2">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                          variant.isActive
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-neutral-100 text-neutral-500"
+                        }`}
+                      >
+                        {variant.isActive ? "Yes" : "No"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
 
       <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
         <input
