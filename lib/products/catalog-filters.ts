@@ -1,4 +1,5 @@
 import { convertMajorUnits } from "@/lib/currency/convert";
+import { localizedRecordSearchValues } from "@/lib/localization/product-content";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 
 type CatalogProduct = {
@@ -9,7 +10,7 @@ type CatalogProduct = {
   currency?: string;
   rating: number;
   description?: Record<SupportedLocale, string>;
-  categoryName?: string;
+  categoryName?: Record<SupportedLocale, string> | string;
 };
 
 export function getCatalogPriceInCurrency(
@@ -26,13 +27,22 @@ const productMatchesSearch = (
   search: string,
   locale: SupportedLocale
 ) => {
+  const categoryNames = localizedRecordSearchValues(
+    typeof product.categoryName === "string"
+      ? undefined
+      : product.categoryName
+  );
+  if (typeof product.categoryName === "string") {
+    categoryNames.push(product.categoryName);
+  }
+
   const haystack = [
     product.name.en,
     product.name.ps,
     product.name["fa-AF"],
     product.vendor,
     product.category,
-    product.categoryName,
+    ...categoryNames,
     product.description?.en,
     product.description?.ps,
     product.description?.["fa-AF"],

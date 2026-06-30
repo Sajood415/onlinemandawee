@@ -20,6 +20,7 @@ import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-st
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
+import type { ProductTranslations } from "@/lib/localization/product-content";
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 
@@ -37,6 +38,7 @@ type AdminProduct = {
   categoryId: string;
   name: string;
   description: string;
+  translations?: ProductTranslations | null;
   images: string[];
   sku: string | null;
   currency: string;

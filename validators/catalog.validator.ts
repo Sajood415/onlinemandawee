@@ -3,8 +3,16 @@ import { z } from "zod";
 import { industryTypes } from "@/domain/vendor/vendor-types";
 import { productApprovalStatuses } from "@/domain/catalog/product-approval-status";
 
+export const categoryTranslationsSchema = z
+  .object({
+    ps: z.object({ name: z.string().trim().min(2).max(120).optional() }).optional(),
+    "fa-AF": z.object({ name: z.string().trim().min(2).max(120).optional() }).optional(),
+  })
+  .optional();
+
 export const createCategorySchema = z.object({
   name: z.string().trim().min(2).max(120),
+  translations: categoryTranslationsSchema,
   parentId: z.string().min(1).optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().min(0).max(10000).optional(),
@@ -12,6 +20,7 @@ export const createCategorySchema = z.object({
 
 export const updateCategorySchema = z.object({
   name: z.string().trim().min(2).max(120),
+  translations: categoryTranslationsSchema,
   parentId: z.string().min(1).optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().min(0).max(10000).optional(),
@@ -21,10 +30,23 @@ export const categoryIdParamsSchema = z.object({
   id: z.string().min(1),
 });
 
+const localeProductContentSchema = z.object({
+  name: z.string().trim().min(2).max(160).optional(),
+  description: z.string().trim().min(10).max(5000).optional(),
+});
+
+export const productTranslationsSchema = z
+  .object({
+    ps: localeProductContentSchema.optional(),
+    "fa-AF": localeProductContentSchema.optional(),
+  })
+  .optional();
+
 export const createProductSchema = z.object({
   categoryId: z.string().min(1),
   name: z.string().trim().min(2).max(160),
   description: z.string().trim().min(10).max(5000),
+  translations: productTranslationsSchema,
   images: z.array(z.url().max(2048)).min(1).max(10),
   sku: z.string().trim().min(2).max(100).optional(),
   currency: z.string().trim().length(3).transform((value) => value.toUpperCase()),

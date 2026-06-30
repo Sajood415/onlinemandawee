@@ -614,10 +614,27 @@
   "Checkout": {
     "title": "تسویه‌حساب",
     "loading": "بارگذاری تسویه‌حساب...",
+    "stepOf": "گام {current} از {total}: {label}",
+    "stepHeading": "گام {current} از {total}",
     "steps": {
-      "contact": "تماس",
-      "address": "آدرس",
-      "payment": "پرداخت"
+      "shipping": "ارسال",
+      "delivery": "تحویل",
+      "payment": "پرداخت",
+      "review": "بازبینی"
+    },
+    "common": {
+      "tryAgain": "دوباره تلاش کنید",
+      "vendor": "فروشنده",
+      "default": "پیش‌فرض",
+      "applying": "در حال اعمال…",
+      "apply": "اعمال",
+      "processing": "در حال پردازش…"
+    },
+    "deliveryMethod": {
+      "title": "روش تحویل شخص ثالث",
+      "pickup": "دریافت حضوری",
+      "express": "فوری",
+      "standard": "معمولی"
     },
     "contact": {
       "fullName": "نام کامل",
@@ -625,7 +642,7 @@
       "phone": "شماره تلفن",
       "fullNamePlaceholder": "John Doe",
       "emailPlaceholder": "you@example.com",
-      "phonePlaceholder": "+93 70 000 0000"
+      "phonePlaceholder": "0701234567"
     },
     "address": {
       "street": "آدرس خیابان",
@@ -635,33 +652,86 @@
       "streetPlaceholder": "123 Main Street, Apt 4",
       "cityPlaceholder": "Kabul",
       "postalPlaceholder": "1001",
-      "countryPlaceholder": "Afghanistan"
+      "countryPlaceholder": "Afghanistan",
+      "selectCountry": "کشور را انتخاب کنید",
+      "searchCountries": "جستجوی کشورها…",
+      "noCountries": "کشوری با جستجوی شما یافت نشد",
+      "selectCity": "شهر را انتخاب یا جستجو کنید",
+      "selectCountryFirst": "ابتدا کشور را انتخاب کنید",
+      "searchCities": "جستجوی شهرها…",
+      "noCities": "شهری یافت نشد — نام شهر را بنویسید",
+      "chooseCountryFirst": "ابتدا کشور را انتخاب کنید",
+      "selectPostal": "کد پستی را انتخاب یا جستجو کنید",
+      "selectCityFirst": "ابتدا شهر را انتخاب کنید",
+      "searchPostal": "جستجوی کد پستی…",
+      "noPostal": "کد پستی یافت نشد — دستی وارد کنید",
+      "chooseCityFirst": "ابتدا شهر را انتخاب کنید"
+    },
+    "shipping": {
+      "savedAddresses": "آدرس‌های ذخیره‌شده",
+      "contactDetails": "اطلاعات تماس",
+      "shippingAddress": "آدرس ارسال",
+      "pickupNotice": "دریافت حضوری انتخاب شده — آدرس ارسال لازم نیست. فقط اطلاعات تماس را وارد کنید.",
+      "continueToDelivery": "ادامه به تحویل",
+      "fixFields": "لطفاً فیلدهای مشخص‌شده را اصلاح کنید."
+    },
+    "delivery": {
+      "howCalculated": "نحوه محاسبه هزینه تحویل",
+      "pickupFee": "برای سفارش‌های دریافت حضوری، هزینه تحویل برای فروشندگان شخص ثالث وجود ندارد.",
+      "expressFee": "تحویل فوری از قوانین تحویل فروشنده استفاده می‌کند.",
+      "standardFee": "تحویل معمولی از قوانین تحویل پلتفرم استفاده می‌کند.",
+      "platformRate": "نرخ پلتفرم: {base} پایه + {perKm} به ازای هر کیلومتر",
+      "drivingDistance": "{distance} کیلومتر فاصله رانندگی",
+      "methodBasedFee": "هزینه تحویل بر اساس روش",
+      "basePlusKm": "{base} پایه + {perKm}/km",
+      "totalDelivery": "مجموع تحویل",
+      "continueToPayment": "ادامه به پرداخت"
     },
     "payment": {
-      "cod": "پرداخت با کارت الزامی است",
-      "codSub": "در مرحله پرداخت با کارت به‌صورت امن پرداخت کنید",
+      "cardRequired": "برای ثبت این سفارش پرداخت با کارت الزامی است.",
       "card": "کارت اعتباری / دبیت",
-      "cardSub": "Visa, Mastercard, Amex — امن با Stripe",
-      "cardUnavailable": "Stripe تنظیم نشده — کلیدها را به .env.local اضافه کنید"
+      "cardSub": "Visa, Mastercard, Amex — {currencyLabel}",
+      "cardUnavailable": "Stripe تنظیم نشده — کلیدها را به .env.local اضافه کنید",
+      "applyCouponFirst": "کد تخفیف را اعمال کنید یا فیلد را پاک کنید.",
+      "pay": "پرداخت {amount}",
+      "securedByStripe": "امن با Stripe · اطلاعات کارت شما در سرورهای ما ذخیره نمی‌شود"
     },
     "summary": {
       "title": "خلاصه سفارش",
-      "yourCart": "سبد شما",
+      "emptyCart": "سبد شما خالی است.",
       "subtotal": "جمع جزئی",
       "delivery": "ارسال",
       "discount": "تخفیف",
       "total": "مجموع",
-      "qty": "تعداد"
+      "qty": "تعداد",
+      "unavailable": "ناموجود",
+      "calculatingDistance": "در حال محاسبه فاصله…",
+      "waitingForAddress": "در انتظار آدرس",
+      "calculatedAtPayment": "در زمان پرداخت محاسبه می‌شود",
+      "drivingDistance": "{distance} کیلومتر فاصله رانندگی",
+      "methodBasedFee": "هزینه تحویل بر اساس روش",
+      "basePlusKm": "{base} پایه + {perKm}/km"
     },
     "coupon": {
+      "discountFor": "کد تخفیف برای {storeName}",
       "placeholder": "SAVE10",
       "alreadyApplied": "این کوپن قبلاً اعمال شده است.",
-      "applyFailed": "اعمال کوپن ناموفق بود."
+      "applyFailed": "اعمال کوپن ناموفق بود.",
+      "appliesToStore": "فقط برای محصولات {storeName} در سبد شما اعمال می‌شود.",
+      "removeCoupon": "حذف کوپن {code}"
     },
     "success": {
+      "confirmation": "تأیید",
       "title": "سفارش ثبت شد!",
-      "codMessage": "پرداخت با کارت الزامی است. لطفاً برای ثبت سفارش پرداخت را تکمیل کنید.",
-      "cardMessage": "پرداخت شما موفق بود و به فروشنده اطلاع داده شد."
+      "cardMessage": "پرداخت شما موفق بود و به فروشنده اطلاع داده شد.",
+      "emailSent": "ایمیل تأیید به {email} ارسال شد.",
+      "orderNumber": "شماره سفارش",
+      "keepOrderNumber": "این شماره سفارش را نگه دارید.",
+      "trackOrder": "می‌خواهید این سفارش را پیگیری کنید؟",
+      "trackOrderHint": "با همان ایمیل یک حساب رایگان بسازید تا سفارش را پیگیری کنید و آدرس‌ها را ذخیره کنید.",
+      "createAccount": "ایجاد حساب",
+      "signIn": "حساب دارید؟ وارد شوید",
+      "continueShopping": "ادامه خرید"
     },
     "errors": {
       "requiredFields": "لطفاً همه فیلدهای ضروری را پر کنید.",
@@ -669,7 +739,25 @@
       "placeOrderFailed": "ثبت سفارش ناموفق بود. دوباره تلاش کنید.",
       "paymentFailed": "پرداخت ناموفق بود. دوباره تلاش کنید.",
       "orderNotRecorded": "سفارش ثبت نشد. با پشتیبانی تماس بگیرید.",
-      "pricingFailed": "بارگذاری قیمت ناموفق بود. دوباره تلاش کنید."
+      "pricingFailed": "بارگذاری قیمت ناموفق بود. دوباره تلاش کنید.",
+      "generic": "مشکلی پیش آمد. دوباره تلاش کنید."
+    },
+    "validation": {
+      "nameRequired": "نام کامل الزامی است.",
+      "nameMinLength": "نام باید حداقل ۲ حرف باشد.",
+      "nameLettersOnly": "نام باید فقط حروف داشته باشد.",
+      "emailRequired": "ایمیل الزامی است.",
+      "emailInvalid": "ایمیل معتبر وارد کنید.",
+      "phoneRequired": "شماره تلفن الزامی است.",
+      "phoneDigitsOnly": "تلفن باید فقط عدد باشد.",
+      "phoneMinLength": "شماره تلفن باید حداقل ۷ رقم باشد.",
+      "phoneMaxLength": "شماره تلفن باید حداکثر ۱۵ رقم باشد.",
+      "streetRequired": "آدرس خیابان الزامی است.",
+      "cityRequired": "شهر الزامی است.",
+      "cityLettersOnly": "شهر باید فقط حروف داشته باشد.",
+      "countryRequired": "کشور الزامی است.",
+      "countryLettersOnly": "کشور باید فقط حروف داشته باشد.",
+      "postalInvalid": "فرمت کد پستی نامعتبر است."
     }
   }
 }

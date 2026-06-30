@@ -1,4 +1,4 @@
-import { getDepartmentImage } from "@/lib/categories/storefront-departments";
+import { serializePublicCategoryDetail } from "@/lib/categories/public-category";
 import {
   listPublicCouponsForProduct,
   listPublicStorefrontOffers,
@@ -34,27 +34,7 @@ export class CatalogQueryService {
       });
     }
 
-    return {
-      id: category.id,
-      name: category.name,
-      slug: category.slug,
-      sortOrder: category.sortOrder,
-      image: getDepartmentImage(category.slug),
-      parent: category.parent
-        ? {
-            id: category.parent.id,
-            name: category.parent.name,
-            slug: category.parent.slug,
-          }
-        : null,
-      children: category.children.map((child) => ({
-        id: child.id,
-        name: child.name,
-        slug: child.slug,
-        sortOrder: child.sortOrder,
-        image: getDepartmentImage(child.slug),
-      })),
-    };
+    return serializePublicCategoryDetail(category);
   }
 
   async listProducts(filters: {

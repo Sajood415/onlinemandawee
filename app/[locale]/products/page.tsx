@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
 
+import { buildLocalizedCategoryLabels } from "@/lib/categories/category-labels";
 import { getProductsCopy } from "@/components/products/copy";
 import { ProductCard } from "@/components/products/ProductCard";
 import { ProductsEmptyState } from "@/components/products/ProductsEmptyState";
@@ -60,7 +61,13 @@ function ProductsPageContent() {
   const [sortBy, setSortBy] = useState<ProductSortBy>("featured");
   const [vendorProducts, setVendorProducts] = useState<PublicCatalogProduct[]>([]);
   const [apiCategories, setApiCategories] = useState<
-    Array<{ id: string; name: string; slug: string; parentId: string | null }>
+    Array<{
+      id: string;
+      name: string;
+      slug: string;
+      parentId: string | null;
+      translations?: unknown;
+    }>
   >([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const internalCategoryUpdate = useRef(false);
@@ -161,7 +168,13 @@ function ProductsPageContent() {
         ]);
         const categories = categoriesRes.ok
           ? await parseApiResponse<
-              Array<{ id: string; name: string; slug: string; parentId: string | null }>
+              Array<{
+                id: string;
+                name: string;
+                slug: string;
+                parentId: string | null;
+                translations?: unknown;
+              }>
             >(categoriesRes)
           : [];
 
@@ -186,7 +199,11 @@ function ProductsPageContent() {
     () =>
       apiCategories.map((category) => ({
         id: category.slug,
-        label: { en: category.name, ps: category.name, "fa-AF": category.name },
+        label: buildLocalizedCategoryLabels(
+          category.slug,
+          category.name,
+          category.translations
+        ),
       })),
     [apiCategories]
   );

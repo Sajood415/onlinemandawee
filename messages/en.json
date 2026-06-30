@@ -614,10 +614,27 @@
   "Checkout": {
     "title": "Checkout",
     "loading": "Loading checkout...",
+    "stepOf": "Step {current} of {total}: {label}",
+    "stepHeading": "Step {current} of {total}",
     "steps": {
-      "contact": "Contact",
-      "address": "Address",
-      "payment": "Payment"
+      "shipping": "Shipping",
+      "delivery": "Delivery",
+      "payment": "Payment",
+      "review": "Review"
+    },
+    "common": {
+      "tryAgain": "Try again",
+      "vendor": "Vendor",
+      "default": "Default",
+      "applying": "Applying…",
+      "apply": "Apply",
+      "processing": "Processing…"
+    },
+    "deliveryMethod": {
+      "title": "Third-party delivery method",
+      "pickup": "Pickup",
+      "express": "Express",
+      "standard": "Standard"
     },
     "contact": {
       "fullName": "Full Name",
@@ -625,7 +642,7 @@
       "phone": "Phone Number",
       "fullNamePlaceholder": "John Doe",
       "emailPlaceholder": "you@example.com",
-      "phonePlaceholder": "+93 70 000 0000"
+      "phonePlaceholder": "0701234567"
     },
     "address": {
       "street": "Street Address",
@@ -635,33 +652,86 @@
       "streetPlaceholder": "123 Main Street, Apt 4",
       "cityPlaceholder": "Kabul",
       "postalPlaceholder": "1001",
-      "countryPlaceholder": "Afghanistan"
+      "countryPlaceholder": "Afghanistan",
+      "selectCountry": "Select country",
+      "searchCountries": "Search countries…",
+      "noCountries": "No countries match your search",
+      "selectCity": "Select or search city",
+      "selectCountryFirst": "Select a country first",
+      "searchCities": "Search cities…",
+      "noCities": "No cities match — type to use a custom city",
+      "chooseCountryFirst": "Choose a country first",
+      "selectPostal": "Select or search postal code",
+      "selectCityFirst": "Select a city first",
+      "searchPostal": "Search postal codes…",
+      "noPostal": "No postal codes match — type to enter manually",
+      "chooseCityFirst": "Choose a city first"
+    },
+    "shipping": {
+      "savedAddresses": "Saved addresses",
+      "contactDetails": "Contact details",
+      "shippingAddress": "Shipping address",
+      "pickupNotice": "Pickup selected — no delivery address is needed. Continue with your contact details only.",
+      "continueToDelivery": "Continue to Delivery",
+      "fixFields": "Please fix the highlighted fields."
+    },
+    "delivery": {
+      "howCalculated": "How delivery is calculated",
+      "pickupFee": "Pickup orders have no delivery fee for third-party vendors.",
+      "expressFee": "Express delivery uses vendor-defined delivery rules.",
+      "standardFee": "Standard delivery uses platform delivery rules for third-party vendors.",
+      "platformRate": "Platform rate: {base} base + {perKm} per km",
+      "drivingDistance": "{distance} km driving distance",
+      "methodBasedFee": "Method-based delivery fee",
+      "basePlusKm": "{base} base + {perKm}/km",
+      "totalDelivery": "Total delivery",
+      "continueToPayment": "Continue to Payment"
     },
     "payment": {
-      "cod": "Card payment required",
-      "codSub": "Pay securely by card at checkout",
+      "cardRequired": "Card payment is required to place this order.",
       "card": "Credit / Debit Card",
-      "cardSub": "Visa, Mastercard, Amex — secured by Stripe",
-      "cardUnavailable": "Stripe not configured — add keys to .env.local"
+      "cardSub": "Visa, Mastercard, Amex — {currencyLabel}",
+      "cardUnavailable": "Stripe not configured — add keys to .env.local",
+      "applyCouponFirst": "Apply your discount code or clear the field before continuing.",
+      "pay": "Pay {amount}",
+      "securedByStripe": "Secured by Stripe · Your card details are never stored on our servers"
     },
     "summary": {
       "title": "Order Summary",
-      "yourCart": "Your Cart",
+      "emptyCart": "Your cart is empty.",
       "subtotal": "Subtotal",
       "delivery": "Delivery",
       "discount": "Discount",
       "total": "Total",
-      "qty": "Qty"
+      "qty": "Qty",
+      "unavailable": "Unavailable",
+      "calculatingDistance": "Calculating distance…",
+      "waitingForAddress": "Waiting for address",
+      "calculatedAtPayment": "Calculated at payment",
+      "drivingDistance": "{distance} km driving distance",
+      "methodBasedFee": "Method-based delivery fee",
+      "basePlusKm": "{base} base + {perKm}/km"
     },
     "coupon": {
+      "discountFor": "Discount code for {storeName}",
       "placeholder": "SAVE10",
       "alreadyApplied": "This coupon is already applied.",
-      "applyFailed": "Could not apply coupon."
+      "applyFailed": "Could not apply coupon.",
+      "appliesToStore": "Applies only to {storeName}'s products in your cart.",
+      "removeCoupon": "Remove coupon {code}"
     },
     "success": {
+      "confirmation": "Confirmation",
       "title": "Order Placed!",
-      "codMessage": "Card payment is required. Please complete payment to place your order.",
-      "cardMessage": "Your payment was successful and the vendor has been notified."
+      "cardMessage": "Your payment was successful and the vendor has been notified.",
+      "emailSent": "A confirmation email has been sent to {email}.",
+      "orderNumber": "Order Number",
+      "keepOrderNumber": "Keep this order number for your records.",
+      "trackOrder": "Want to track this order?",
+      "trackOrderHint": "Create a free account with the same email to track this order, view status updates, and save addresses for next time.",
+      "createAccount": "Create account",
+      "signIn": "Already have an account? Sign in",
+      "continueShopping": "Continue Shopping"
     },
     "errors": {
       "requiredFields": "Please fill in all required fields.",
@@ -669,7 +739,25 @@
       "placeOrderFailed": "Could not place order. Please try again.",
       "paymentFailed": "Payment failed. Please try again.",
       "orderNotRecorded": "Order could not be recorded. Please contact support.",
-      "pricingFailed": "Could not load pricing. Please try again."
+      "pricingFailed": "Could not load pricing. Please try again.",
+      "generic": "Something went wrong. Please try again."
+    },
+    "validation": {
+      "nameRequired": "Full name is required.",
+      "nameMinLength": "Full name must be at least 2 characters.",
+      "nameLettersOnly": "Name must contain letters only.",
+      "emailRequired": "Email is required.",
+      "emailInvalid": "Enter a valid email address.",
+      "phoneRequired": "Phone number is required.",
+      "phoneDigitsOnly": "Phone must contain numbers only.",
+      "phoneMinLength": "Phone number must be at least 7 digits.",
+      "phoneMaxLength": "Phone number must be at most 15 digits.",
+      "streetRequired": "Street address is required.",
+      "cityRequired": "City is required.",
+      "cityLettersOnly": "City must contain letters only.",
+      "countryRequired": "Country is required.",
+      "countryLettersOnly": "Country must contain letters only.",
+      "postalInvalid": "Postal code format is invalid."
     }
   }
 }

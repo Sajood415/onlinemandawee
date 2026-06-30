@@ -1,5 +1,7 @@
 import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-status";
 import { prisma } from "@/lib/db/prisma";
+import type { ProductTranslations } from "@/lib/localization/product-content";
+import { Prisma } from "@prisma/client";
 
 export class ProductRepository {
   create(input: {
@@ -8,6 +10,7 @@ export class ProductRepository {
     name: string;
     slug: string;
     description: string;
+    translations?: ProductTranslations;
     images: string[];
     sku?: string;
     currency: string;
@@ -22,6 +25,9 @@ export class ProductRepository {
         name: input.name,
         slug: input.slug,
         description: input.description,
+        ...(input.translations
+          ? { translations: input.translations as Prisma.InputJsonValue }
+          : {}),
         images: input.images,
         sku: input.sku ?? null,
         currency: input.currency,
@@ -41,6 +47,7 @@ export class ProductRepository {
     name: string;
     slug: string;
     description: string;
+    translations?: ProductTranslations | null;
     images: string[];
     sku?: string;
     currency: string;
@@ -53,10 +60,12 @@ export class ProductRepository {
     return prisma.product.update({
       where: { id: input.id },
       data: {
-        categoryId: input.categoryId,
         name: input.name,
         slug: input.slug,
         description: input.description,
+        ...(input.translations !== undefined
+          ? { translations: (input.translations ?? null) as Prisma.InputJsonValue }
+          : {}),
         images: input.images,
         sku: input.sku ?? null,
         currency: input.currency,
@@ -65,6 +74,9 @@ export class ProductRepository {
         approvalStatus: input.approvalStatus,
         rejectionReason: input.rejectionReason,
         isActive: input.isActive,
+        category: {
+          connect: { id: input.categoryId },
+        },
       },
       include: {
         category: true,

@@ -1,4 +1,9 @@
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
+import { buildLocalizedCategoryLabels } from "@/lib/categories/category-labels";
+import {
+  buildLocalizedProductContent,
+  type ProductTranslations,
+} from "@/lib/localization/product-content";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import {
   getProductStockStatusLabel,
@@ -12,13 +17,14 @@ export type ApiCatalogProduct = {
   id: string;
   name: string;
   description: string;
+  translations?: ProductTranslations | null;
   images: string[];
   sku: string | null;
   currency: string;
   priceAmount: number;
   stockQty: number;
   slug: string;
-  category: { id: string; name: string; slug: string };
+  category: { id: string; name: string; slug: string; translations?: unknown };
   vendorProfile: {
     id: string;
     storeName: string | null;
@@ -62,7 +68,7 @@ export type PublicCatalogProduct = {
   name: Record<SupportedLocale, string>;
   badge: Record<SupportedLocale, string>;
   category: string;
-  categoryName: string;
+  categoryName: Record<SupportedLocale, string>;
   rating: number;
   reviews: number;
   delivery: string;
@@ -154,6 +160,16 @@ export function mapApiProductToCatalog(product: ApiCatalogProduct): PublicCatalo
   const currency = product.currency || "USD";
   const inStock = resolveProductInStock(product);
   const stockLabel = getProductStockStatusLabel(product);
+  const localized = buildLocalizedProductContent(
+    product.name,
+    product.description,
+    product.translations
+  );
+  const stockBadge = {
+    en: stockLabel,
+    ps: inStock ? "په موجودیت کې" : "پلورل شوی",
+    "fa-AF": inStock ? "موجود" : "تمام شده",
+  };
 
   return {
     id: product.id,
@@ -164,18 +180,18 @@ export function mapApiProductToCatalog(product: ApiCatalogProduct): PublicCatalo
     vendor: product.vendorProfile.storeName ?? "Vendor",
     image: product.images[0] ?? PLACEHOLDER_IMAGE,
     images: product.images.length > 0 ? product.images : [PLACEHOLDER_IMAGE],
-    name: { en: product.name, ps: product.name, "fa-AF": product.name },
-    badge: { en: stockLabel, ps: stockLabel, "fa-AF": stockLabel },
+    name: localized.name,
+    badge: stockBadge,
     category: product.category.slug,
-    categoryName: product.category.name,
+    categoryName: buildLocalizedCategoryLabels(
+      product.category.slug,
+      product.category.name,
+      product.category.translations
+    ),
     rating: 4.5,
     reviews: 0,
     delivery: "Standard delivery",
-    description: {
-      en: product.description,
-      ps: product.description,
-      "fa-AF": product.description,
-    },
+    description: localized.description,
     features: [],
     inStock,
     vendorSlug: product.vendorProfile.storeSlug ?? product.vendorProfile.id,

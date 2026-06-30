@@ -10,6 +10,10 @@ import { ProductsEmptyState } from "@/components/products/ProductsEmptyState";
 import { ProductsGridSkeleton } from "@/components/products/ProductsGridSkeleton";
 import type { CatalogRow } from "@/components/products/types";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
+import {
+  localizedRecordSearchValues,
+  resolveLocalizedRecord,
+} from "@/lib/localization/product-content";
 import { fetchPublicCatalogProducts } from "@/lib/products/public-catalog";
 import { useRouter } from "@/i18n/navigation";
 
@@ -56,7 +60,12 @@ function isBabyPackageProduct(product: CatalogRow) {
     product.name.ps,
     product.name["fa-AF"],
     product.category,
-    "categoryName" in product ? product.categoryName : "",
+    ...localizedRecordSearchValues(
+      "categoryName" in product && typeof product.categoryName !== "string"
+        ? product.categoryName
+        : undefined
+    ),
+    ...(typeof product.categoryName === "string" ? [product.categoryName] : []),
     "description" in product ? product.description.en : "",
     "description" in product ? product.description.ps : "",
     "description" in product ? product.description["fa-AF"] : "",
@@ -113,14 +122,17 @@ export function BabyPackagesPageClient() {
   const packageGroups = useMemo(() => {
     const grouped = new Map<string, number>();
     for (const product of babyProducts) {
-      const key = product.categoryName || product.category;
+      const key =
+        "categoryName" in product && product.categoryName
+          ? resolveLocalizedRecord(product.categoryName, locale)
+          : product.category;
       grouped.set(key, (grouped.get(key) ?? 0) + 1);
     }
     return Array.from(grouped.entries())
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 6);
-  }, [babyProducts]);
+  }, [babyProducts, locale]);
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-[#f6f8fc]">

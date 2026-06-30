@@ -2,6 +2,10 @@ import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-st
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import {
+  sanitizeProductTranslations,
+  type ProductTranslations,
+} from "@/lib/localization/product-content";
 import { slugify } from "@/lib/utils/slug";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { CategoryRepository } from "@/repositories/category.repository";
@@ -107,6 +111,7 @@ export class AdminProductService {
       categoryId: string;
       name: string;
       description: string;
+      translations?: ProductTranslations;
       images: string[];
       sku?: string;
       currency: string;
@@ -171,6 +176,7 @@ export class AdminProductService {
       name: input.name,
       slug,
       description: input.description,
+      translations: sanitizeProductTranslations(input.translations),
       images: input.images,
       sku: input.sku,
       currency: input.currency,

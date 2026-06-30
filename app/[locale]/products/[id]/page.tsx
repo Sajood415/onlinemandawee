@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/store/cart-context";
 import { useCurrency } from "@/store/currency-context";
+import { resolveLocalizedRecord } from "@/lib/localization/product-content";
 import {
   localizeDelivery,
   localizeVendor,
@@ -830,7 +831,7 @@ export default function ProductDetailPage() {
           categorySlug={product.category}
           categoryLabel={
             "categoryName" in product && product.categoryName
-              ? product.categoryName
+              ? resolveLocalizedRecord(product.categoryName, locale)
               : product.category
           }
         />

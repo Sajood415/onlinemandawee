@@ -1,5 +1,6 @@
 import type { CatalogRow } from "@/components/products/types";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
+import { localizedRecordSearchValues } from "@/lib/localization/product-content";
 
 function getGiftSearchText(product: CatalogRow) {
   return [
@@ -7,7 +8,9 @@ function getGiftSearchText(product: CatalogRow) {
     product.name.ps,
     product.name["fa-AF"],
     product.category,
-    "categoryName" in product ? product.categoryName : undefined,
+    ...localizedRecordSearchValues(
+      "categoryName" in product ? product.categoryName : undefined
+    ),
     "description" in product ? product.description?.en : undefined,
     "description" in product ? product.description?.ps : undefined,
     "description" in product ? product.description?.["fa-AF"] : undefined,

@@ -6,6 +6,14 @@ import { Loader2, Pencil, Plus, ToggleLeft, ToggleRight, X } from "lucide-react"
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { DataTable } from "@/components/ui/data-table";
+import { CategoryTranslationFields } from "@/components/categories/CategoryTranslationFields";
+import {
+  buildCategoryTranslationsPayload,
+  categoryTranslationFieldsFromRecord,
+  emptyCategoryTranslationFields,
+  type CategoryTranslationFormFields,
+} from "@/components/categories/category-translation-form";
+import type { CategoryTranslations } from "@/lib/localization/category-content";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
 
@@ -18,6 +26,7 @@ type Category = {
   isActive: boolean;
   sortOrder: number;
   parentId: string | null;
+  translations?: CategoryTranslations | null;
   parent: { id: string; name: string } | null;
   children: { id: string; name: string }[];
   _count?: { products: number };
@@ -40,6 +49,9 @@ export default function AdminCategoriesPage() {
   /* form state */
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formName, setFormName] = useState("");
+  const [formTranslations, setFormTranslations] = useState<CategoryTranslationFormFields>(
+    emptyCategoryTranslationFields()
+  );
   const [formSortOrder, setFormSortOrder] = useState("0");
   const [formParentId, setFormParentId] = useState("");
   const [formIsActive, setFormIsActive] = useState(true);
@@ -78,6 +90,7 @@ export default function AdminCategoriesPage() {
   const resetForm = () => {
     setEditingId(null);
     setFormName("");
+    setFormTranslations(emptyCategoryTranslationFields());
     setFormSortOrder("0");
     setFormParentId("");
     setFormIsActive(true);
@@ -86,6 +99,7 @@ export default function AdminCategoriesPage() {
   const startEdit = (cat: Category) => {
     setEditingId(cat.id);
     setFormName(cat.name);
+    setFormTranslations(categoryTranslationFieldsFromRecord(cat.translations));
     setFormSortOrder(String(cat.sortOrder));
     setFormParentId(cat.parentId ?? "");
     setFormIsActive(cat.isActive);
@@ -112,6 +126,8 @@ export default function AdminCategoriesPage() {
       isActive: formIsActive,
     };
     if (formParentId) payload.parentId = formParentId;
+    const translations = buildCategoryTranslationsPayload(formTranslations);
+    if (translations) payload.translations = translations;
 
     setSaving(true);
     try {
@@ -355,7 +371,7 @@ export default function AdminCategoriesPage() {
             {/* Name */}
             <div className="flex flex-col gap-1.5 lg:col-span-2">
               <label className={LABEL}>
-                Name <span className="text-red-500">*</span>
+                Name (English) <span className="text-red-500">*</span>
               </label>
               <input
                 className={INPUT}
@@ -410,6 +426,15 @@ export default function AdminCategoriesPage() {
               />
             </div>
           </div>
+
+          <CategoryTranslationFields
+            fields={formTranslations}
+            onChange={(key, value) =>
+              setFormTranslations((prev) => ({ ...prev, [key]: value }))
+            }
+            inputClassName={INPUT}
+            labelClassName={LABEL}
+          />
 
           {/* Active toggle */}
           <label className="inline-flex cursor-pointer items-center gap-2.5">

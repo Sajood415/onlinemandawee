@@ -13,7 +13,7 @@ export type CatalogRow =
       name: Record<SupportedLocale, string>;
       badge: Record<SupportedLocale, string>;
       category: string;
-      categoryName: string;
+      categoryName: Record<SupportedLocale, string>;
       rating: number;
       reviews: number;
       delivery: string;

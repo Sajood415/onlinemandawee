@@ -43,6 +43,7 @@ import { CurrencySelector } from "@/components/layout/header/CurrencySelector";
 import { LanguageSelector } from "@/components/layout/header/LanguageSelector";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
 import { MobileNavMenu } from "@/components/layout/header/MobileNavMenu";
+import { resolveCategoryLabel } from "@/lib/categories/category-labels";
 import {
   localizeDelivery,
   localizeVendor,
@@ -185,7 +186,7 @@ export default function Header() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showCategoriesDropdown, setShowCategoriesDropdown] = useState(false);
   const [catalogCategories, setCatalogCategories] = useState<
-    { id: string; name: string; slug: string }[]
+    { id: string; name: string; slug: string; translations?: unknown }[]
   >([]);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
@@ -217,7 +218,9 @@ export default function Header() {
       try {
         const res = await fetch("/api/catalog/categories");
         if (!res.ok) return;
-        const data = await parseApiResponse<{ id: string; name: string; slug: string }[]>(res);
+        const data = await parseApiResponse<
+          { id: string; name: string; slug: string; translations?: unknown }[]
+        >(res);
         if (mounted) setCatalogCategories(data);
       } catch {
         // keep fallback hardcoded items
@@ -571,7 +574,12 @@ export default function Header() {
                             key={category.id}
                             href={`/category/${category.slug}`}
                             icon={<ShoppingBag size={18} />}
-                            label={category.name}
+                            label={resolveCategoryLabel(
+                              category.slug,
+                              category.name,
+                              safeLocale,
+                              category.translations
+                            )}
                             onClick={closeAll}
                             showSeparator={idx > 0 && idx % 6 === 0}
                           />

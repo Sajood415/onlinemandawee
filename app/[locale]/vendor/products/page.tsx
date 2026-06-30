@@ -19,6 +19,13 @@ import {
   formatProductPriceRangeMinor,
   resolveProductPriceRangeMinor,
 } from "@/lib/products/resolve-checkout-variant";
+import type { ProductTranslations } from "@/lib/localization/product-content";
+import {
+  buildTranslationsPayload,
+  translationFieldsFromProduct,
+  type ProductTranslationFormFields,
+} from "@/components/products/product-translation-form";
+import { ProductTranslationFields } from "@/components/products/ProductTranslationFields";
 import { toast } from "@/lib/utils/toast";
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
@@ -32,6 +39,7 @@ type VendorProduct = {
   name: string;
   slug: string;
   description: string;
+  translations?: ProductTranslations | null;
   images: string[];
   sku: string | null;
   currency: string;
@@ -72,6 +80,7 @@ type ProductFormState = {
   categoryId: string;
   name: string;
   description: string;
+  translations: ProductTranslationFormFields;
   images: ImageSlot[];
   sku: string;
   currency: string;
@@ -92,6 +101,12 @@ function emptyForm(defaultCategoryId = ""): ProductFormState {
     categoryId: defaultCategoryId,
     name: "",
     description: "",
+    translations: {
+      namePs: "",
+      nameFa: "",
+      descriptionPs: "",
+      descriptionFa: "",
+    },
     images: [],
     sku: "",
     currency: "USD",
@@ -105,6 +120,7 @@ function toFormState(p: VendorProduct): ProductFormState {
     categoryId: p.categoryId,
     name: p.name,
     description: p.description,
+    translations: translationFieldsFromProduct(p.translations),
     images: p.images.map((url) => ({ kind: "url", url })),
     sku: p.sku ?? "",
     currency: p.currency,
@@ -273,6 +289,15 @@ export default function VendorProductsPage() {
   const updateField = <K extends keyof ProductFormState>(k: K, v: ProductFormState[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
 
+  const updateTranslationField = <K extends keyof ProductTranslationFormFields>(
+    key: K,
+    value: ProductTranslationFormFields[K]
+  ) =>
+    setForm((prev) => ({
+      ...prev,
+      translations: { ...prev.translations, [key]: value },
+    }));
+
   const addImageSlot = () =>
     updateField("images", [...form.images, { kind: "url", url: "" }]);
 
@@ -408,6 +433,9 @@ export default function VendorProductsPage() {
         stockQty,
       };
       if (!hasVariants && form.sku.trim()) payload.sku = form.sku.trim();
+
+      const translations = buildTranslationsPayload(form.translations);
+      if (translations) payload.translations = translations;
 
       const res = await fetch(
         isEdit ? `/api/vendor/products/${editingProductId}` : "/api/vendor/products",
@@ -934,7 +962,7 @@ export default function VendorProductsPage() {
                 {/* Name + Category */}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
-                    <label className={LABEL}>Product name <span className="text-red-500">*</span></label>
+                    <label className={LABEL}>Product name (English) <span className="text-red-500">*</span></label>
                     <input
                       className={INPUT}
                       value={form.name}
@@ -957,6 +985,13 @@ export default function VendorProductsPage() {
                     </select>
                   </div>
                 </div>
+
+                <ProductTranslationFields
+                  fields={form.translations}
+                  onChange={updateTranslationField}
+                  inputClassName={INPUT}
+                  labelClassName={LABEL}
+                />
 
                 {/* Price row */}
                 <div className={`grid gap-4 ${showBasePricingFields ? "sm:grid-cols-4" : "sm:grid-cols-1"}`}>
@@ -1100,7 +1135,7 @@ export default function VendorProductsPage() {
 
                 {/* Description */}
                 <div className="flex flex-col gap-1.5">
-                  <label className={LABEL}>Description <span className="text-red-500">*</span></label>
+                  <label className={LABEL}>Description (English) <span className="text-red-500">*</span></label>
                   <textarea
                     rows={4}
                     className={`${INPUT} resize-y`}

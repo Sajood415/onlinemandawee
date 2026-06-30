@@ -1,9 +1,12 @@
 import { prisma } from "@/lib/db/prisma";
+import type { CategoryTranslations } from "@/lib/localization/category-content";
+import { Prisma } from "@prisma/client";
 
 export class CategoryRepository {
   create(input: {
     name: string;
     slug: string;
+    translations?: CategoryTranslations;
     parentId?: string;
     isActive?: boolean;
     sortOrder?: number;
@@ -12,6 +15,9 @@ export class CategoryRepository {
       data: {
         name: input.name,
         slug: input.slug,
+        ...(input.translations
+          ? { translations: input.translations as Prisma.InputJsonValue }
+          : {}),
         parentId: input.parentId ?? null,
         isActive: input.isActive ?? true,
         sortOrder: input.sortOrder ?? 0,
@@ -23,7 +29,8 @@ export class CategoryRepository {
     id: string;
     name: string;
     slug: string;
-    parentId?: string;
+    translations?: CategoryTranslations | null;
+    parentId?: string | null;
     isActive?: boolean;
     sortOrder?: number;
   }) {
@@ -32,9 +39,16 @@ export class CategoryRepository {
       data: {
         name: input.name,
         slug: input.slug,
-        parentId: input.parentId ?? null,
+        ...(input.translations !== undefined
+          ? { translations: (input.translations ?? null) as Prisma.InputJsonValue }
+          : {}),
         isActive: input.isActive ?? true,
         sortOrder: input.sortOrder ?? 0,
+        ...(input.parentId !== undefined
+          ? input.parentId
+            ? { parent: { connect: { id: input.parentId } } }
+            : { parent: { disconnect: true } }
+          : {}),
       },
     });
   }
@@ -108,7 +122,10 @@ export class CategoryRepository {
       },
       include: {
         parent: true,
-        children: true,
+        children: {
+          where: { isActive: true },
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        },
       },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     });

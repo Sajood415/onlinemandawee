@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import { ImageIcon, Loader2, Plus, Trash2, Upload } from "lucide-react";
 
 import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-status";
+import { ProductTranslationFields } from "@/components/products/ProductTranslationFields";
+import {
+  buildTranslationsPayload,
+  translationFieldsFromProduct,
+  type ProductTranslationFormFields,
+} from "@/components/products/product-translation-form";
 import { deriveProductFieldsFromStoredVariants } from "@/lib/products/derive-variant-product-fields";
+import type { ProductTranslations } from "@/lib/localization/product-content";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
@@ -25,6 +32,7 @@ type EditableProduct = {
   categoryId: string;
   name: string;
   description: string;
+  translations?: ProductTranslations | null;
   images: string[];
   sku: string | null;
   currency: string;
@@ -50,6 +58,7 @@ type FormState = {
   categoryId: string;
   name: string;
   description: string;
+  translations: ProductTranslationFormFields;
   images: ImageSlot[];
   sku: string;
   currency: string;
@@ -78,6 +87,7 @@ function productToForm(product: EditableProduct): FormState {
     categoryId: product.categoryId,
     name: product.name,
     description: product.description,
+    translations: translationFieldsFromProduct(product.translations),
     images: product.images.map((url) => ({ kind: "url", url })),
     sku: product.sku ?? "",
     currency: product.currency || "USD",
@@ -128,6 +138,15 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
 
   const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
+
+  const updateTranslationField = <K extends keyof ProductTranslationFormFields>(
+    key: K,
+    value: ProductTranslationFormFields[K]
+  ) =>
+    setForm((prev) => ({
+      ...prev,
+      translations: { ...prev.translations, [key]: value },
+    }));
 
   const addUrlSlot = () =>
     updateField("images", [...form.images, { kind: "url", url: "" }]);
@@ -253,6 +272,8 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
         approvalStatus: form.approvalStatus,
         isActive: form.isActive,
       };
+      const translations = buildTranslationsPayload(form.translations);
+      if (translations) payload.translations = translations;
       if (form.sku.trim() && !hasVariants) payload.sku = form.sku.trim();
       if (form.approvalStatus === "REJECTED") {
         payload.rejectionReason = form.rejectionReason.trim() || null;
@@ -282,7 +303,7 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
     <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5 sm:col-span-2">
-          <label className={LABEL}>Product name</label>
+          <label className={LABEL}>Product name (English)</label>
           <input
             className={INPUT}
             value={form.name}
@@ -329,6 +350,14 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
           </select>
         </div>
       </div>
+
+      <ProductTranslationFields
+        fields={form.translations}
+        onChange={updateTranslationField}
+        inputClassName={INPUT}
+        labelClassName={LABEL}
+      />
+
 
       <div className={`grid gap-4 ${showBasePricingFields ? "sm:grid-cols-4" : "sm:grid-cols-1"}`}>
         <div className="flex flex-col gap-1.5">
@@ -470,7 +499,7 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
       )}
 
       <div className="flex flex-col gap-1.5">
-        <label className={LABEL}>Description</label>
+        <label className={LABEL}>Description (English)</label>
         <textarea
           rows={4}
           className={INPUT}

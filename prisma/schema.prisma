@@ -512,10 +512,12 @@ model VendorAgreementAcceptance {
 }
 
 model Category {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  slug      String     @unique
-  parentId  String?    @db.ObjectId
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  slug         String     @unique
+  /// Optional Pashto / Dari names: { "ps": { "name" }, "fa-AF": { "name" } }
+  translations Json?
+  parentId     String?    @db.ObjectId
   isActive  Boolean    @default(true)
   sortOrder Int        @default(0)
   createdAt DateTime   @default(now())
@@ -534,6 +536,8 @@ model Product {
   name            String
   slug            String
   description     String
+  /// Optional Pashto / Dari copy: { "ps": { "name", "description" }, "fa-AF": { ... } }
+  translations    Json?
   images          String[]
   sku             String?
   currency        String

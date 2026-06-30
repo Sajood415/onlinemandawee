@@ -10,6 +10,7 @@ import { ProductsEmptyState } from "@/components/products/ProductsEmptyState";
 import { ProductsGridSkeleton } from "@/components/products/ProductsGridSkeleton";
 import type { CatalogRow } from "@/components/products/types";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
+import { localizedRecordSearchValues } from "@/lib/localization/product-content";
 import { fetchPublicCatalogProducts } from "@/lib/products/public-catalog";
 import { useRouter } from "@/i18n/navigation";
 
@@ -55,7 +56,12 @@ function isDealProduct(product: CatalogRow) {
     product.name.ps,
     product.name["fa-AF"],
     product.category,
-    "categoryName" in product ? product.categoryName : "",
+    ...localizedRecordSearchValues(
+      "categoryName" in product && typeof product.categoryName !== "string"
+        ? product.categoryName
+        : undefined
+    ),
+    ...(typeof product.categoryName === "string" ? [product.categoryName] : []),
     "description" in product ? product.description.en : "",
     "description" in product ? product.description.ps : "",
     "description" in product ? product.description["fa-AF"] : "",

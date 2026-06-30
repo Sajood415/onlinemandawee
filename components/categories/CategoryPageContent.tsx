@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, Search } from "lucide-react";
 
+import { resolveCategoryLabel } from "@/lib/categories/category-labels";
 import { getCategoryCopy } from "@/components/categories/copy";
 import { ProductCard } from "@/components/products/ProductCard";
 import { ProductsGridSkeleton } from "@/components/products/ProductsGridSkeleton";
@@ -105,6 +106,21 @@ export function CategoryPageContent({ slug, locale, isRtl }: CategoryPageContent
     );
   }
 
+  const categoryTitle = resolveCategoryLabel(
+    category.slug,
+    category.name,
+    locale,
+    category.translations
+  );
+  const parentTitle = category.parent
+    ? resolveCategoryLabel(
+        category.parent.slug,
+        category.parent.name,
+        locale,
+        category.parent.translations
+      )
+    : null;
+
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-[#f6f8fc]">
       <section className="border-b border-[#0f3460]/10 bg-gradient-to-br from-[#0f3460] via-[#123f74] to-[#0f3460] text-white">
@@ -127,15 +143,15 @@ export function CategoryPageContent({ slug, locale, isRtl }: CategoryPageContent
                   href={`/category/${category.parent.slug}`}
                   className="transition hover:text-white hover:underline"
                 >
-                  {category.parent.name}
+                  {parentTitle}
                 </Link>
               </>
             ) : null}
             <ChevronRight className={`h-4 w-4 shrink-0 ${isRtl ? "rotate-180" : ""}`} />
-            <span className="truncate font-medium text-white">{category.name}</span>
+            <span className="truncate font-medium text-white">{categoryTitle}</span>
           </nav>
 
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{category.name}</h1>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{categoryTitle}</h1>
           <p className="mt-2 text-sm text-white/75">{copy.results(filteredProducts.length)}</p>
 
           <label className="relative mt-6 block max-w-xl">
@@ -180,7 +196,7 @@ export function CategoryPageContent({ slug, locale, isRtl }: CategoryPageContent
                     />
                   </div>
                   <span className="text-center text-sm font-semibold text-neutral-800 group-hover:text-primary">
-                    {child.name}
+                    {resolveCategoryLabel(child.slug, child.name, locale, child.translations)}
                   </span>
                 </Link>
               ))}

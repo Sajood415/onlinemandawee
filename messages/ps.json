@@ -614,10 +614,27 @@
   "Checkout": {
     "title": "چک‌اوټ",
     "loading": "چک‌اوټ بارېږي...",
+    "stepOf": "ګام {current} له {total}: {label}",
+    "stepHeading": "ګام {current} له {total}",
     "steps": {
-      "contact": "اړیکه",
-      "address": "پته",
-      "payment": "تادیه"
+      "shipping": "لېږد",
+      "delivery": "رسول",
+      "payment": "تادیه",
+      "review": "کتنه"
+    },
+    "common": {
+      "tryAgain": "بیا هڅه وکړئ",
+      "vendor": "پلورونکی",
+      "default": "اصلي",
+      "applying": "پلي کېږي…",
+      "apply": "پلي کړئ",
+      "processing": "پروسس کېږي…"
+    },
+    "deliveryMethod": {
+      "title": "د دریمې ډلې د رسولو طریقه",
+      "pickup": "اخیستل",
+      "express": "چټک",
+      "standard": "معیاري"
     },
     "contact": {
       "fullName": "بشپړ نوم",
@@ -625,7 +642,7 @@
       "phone": "د تلیفون شمېره",
       "fullNamePlaceholder": "John Doe",
       "emailPlaceholder": "you@example.com",
-      "phonePlaceholder": "+93 70 000 0000"
+      "phonePlaceholder": "0701234567"
     },
     "address": {
       "street": "د پتې کرښه",
@@ -635,33 +652,86 @@
       "streetPlaceholder": "123 Main Street, Apt 4",
       "cityPlaceholder": "Kabul",
       "postalPlaceholder": "1001",
-      "countryPlaceholder": "Afghanistan"
+      "countryPlaceholder": "Afghanistan",
+      "selectCountry": "هیواد وټاکئ",
+      "searchCountries": "هیوادونه ولټوئ…",
+      "noCountries": "ستاسو لټون سره هیواد نه موندل شو",
+      "selectCity": "ښار وټاکئ یا ولټوئ",
+      "selectCountryFirst": "لومړی هیواد وټاکئ",
+      "searchCities": "ښارونه ولټوئ…",
+      "noCities": "ښار ونه موندل شو — دودیز ښار ولیکئ",
+      "chooseCountryFirst": "لومړی هیواد وټاکئ",
+      "selectPostal": "پوستي کوډ وټاکئ یا ولټوئ",
+      "selectCityFirst": "لومړی ښار وټاکئ",
+      "searchPostal": "پوستي کوډونه ولټوئ…",
+      "noPostal": "پوستي کوډ ونه موندل شو — لاسي ولیکئ",
+      "chooseCityFirst": "لومړی ښار وټاکئ"
+    },
+    "shipping": {
+      "savedAddresses": "خوندي پتې",
+      "contactDetails": "د اړیکې معلومات",
+      "shippingAddress": "د رسولو پته",
+      "pickupNotice": "اخیستل ټاکل شوي — د رسولو پته نه غواړي. یوازې د اړیکې معلومات ولیکئ.",
+      "continueToDelivery": "رسولو ته دوام ورکړئ",
+      "fixFields": "مهرباني وکړئ نښان شوي ځایونه سم کړئ."
+    },
+    "delivery": {
+      "howCalculated": "رسول څنګه محاسبه کېږي",
+      "pickupFee": "د اخیستلو فرمایشونو لپاره د دریمې ډلې پلورونکو ته رسولو فیس نشته.",
+      "expressFee": "چټک رسول د پلورونکي د رسولو قواعد کاروي.",
+      "standardFee": "معیاري رسول د پlatfarm د رسولو قواعد کاروي.",
+      "platformRate": "د پlatfarm نرخ: {base} اساس + {perKm} په هر کیلومتر",
+      "drivingDistance": "{distance} کیلومتره موټر فاصله",
+      "methodBasedFee": "د طریقې پر بنسټ رسولو فیس",
+      "basePlusKm": "{base} اساس + {perKm}/km",
+      "totalDelivery": "ټول رسول",
+      "continueToPayment": "تادیې ته دوام ورکړئ"
     },
     "payment": {
-      "cod": "د کارت تادیه لازمه ده",
-      "codSub": "په چک‌آوټ کې د کارت له لارې خوندي تادیه وکړئ",
+      "cardRequired": "د دې فرمایش لپاره د کارت تادیه لازمه ده.",
       "card": "کریډیټ / ډیبټ کارت",
-      "cardSub": "Visa, Mastercard, Amex — د Stripe له لارې خوندي",
-      "cardUnavailable": "Stripe تنظیم نشوی — .env.local ته کیلي اضافه کړئ"
+      "cardSub": "Visa, Mastercard, Amex — {currencyLabel}",
+      "cardUnavailable": "Stripe تنظیم نشوی — .env.local ته کیلي اضافه کړئ",
+      "applyCouponFirst": "د تخفیف کوډ پلي کړئ یا ځای پاک کړئ مخکې له دوامه.",
+      "pay": "{amount} تادیه کړئ",
+      "securedByStripe": "د Stripe له لارې خوندي · ستاسو د کارت معلومات زموږ سرورونو کې نه ساتل کېږي"
     },
     "summary": {
       "title": "د فرمایش لنډیز",
-      "yourCart": "ستاسو کارټ",
+      "emptyCart": "ستاسو کارټ خالي دی.",
       "subtotal": "فرعي مجموعه",
       "delivery": "لېږد",
       "discount": "تخفیف",
       "total": "ټول",
-      "qty": "شمېر"
+      "qty": "شمېر",
+      "unavailable": "شته نه ده",
+      "calculatingDistance": "فاصله محاسبه کېږي…",
+      "waitingForAddress": "د پتې په تمه",
+      "calculatedAtPayment": "په تادیه کې محاسبه کېږي",
+      "drivingDistance": "{distance} کیلومتره موټر فاصله",
+      "methodBasedFee": "د طریقې پر بنسټ رسولو فیس",
+      "basePlusKm": "{base} اساس + {perKm}/km"
     },
     "coupon": {
+      "discountFor": "د {storeName} لپاره د تخفیف کوډ",
       "placeholder": "SAVE10",
       "alreadyApplied": "دا کوپن دمخه پلي شوی دی.",
-      "applyFailed": "کوپن پلي نشو."
+      "applyFailed": "کوپن پلي نشو.",
+      "appliesToStore": "یوازې د {storeName} محصولاتو ته پلي کېږي.",
+      "removeCoupon": "کوپن {code} لرې کړئ"
     },
     "success": {
+      "confirmation": "تایید",
       "title": "فرمایش ثبت شو!",
-      "codMessage": "د کارت تادیه لازمه ده. مهرباني وکړئ د فرمایش لپاره تادیه بشپړه کړئ.",
-      "cardMessage": "ستاسو تادیه بریالۍ شوه او پلورونکی خبر شو."
+      "cardMessage": "ستاسو تادیه بریالۍ شوه او پلورونکی خبر شو.",
+      "emailSent": "تایید بریښنالیک {email} ته ولیږل شو.",
+      "orderNumber": "د فرمایش شمېره",
+      "keepOrderNumber": "دا د فرمایش شمېره خوندي وساتئ.",
+      "trackOrder": "غواړئ دا فرمایش وڅارئ؟",
+      "trackOrderHint": "د ورته بریښنالیک سره وړیا حساب جوړ کړئ ترڅو فرمایش وڅارئ او پتې خوندي کړئ.",
+      "createAccount": "حساب جوړ کړئ",
+      "signIn": "دمخه حساب لرئ؟ ننوتل",
+      "continueShopping": "پیرود ته دوام ورکړئ"
     },
     "errors": {
       "requiredFields": "ټول اړین ځایونه ډک کړئ.",
@@ -669,7 +739,25 @@
       "placeOrderFailed": "فرمایش ثبت نشو. بیا هڅه وکړئ.",
       "paymentFailed": "تادیه ناکامه شوه. بیا هڅه وکړئ.",
       "orderNotRecorded": "فرمایش ثبت نشو. له ملاتړ سره اړیکه ونیسئ.",
-      "pricingFailed": "بیه بار نشوه. بیا هڅه وکړئ."
+      "pricingFailed": "بیه بار نشوه. بیا هڅه وکړئ.",
+      "generic": "یو څه ستونزه رامنځته شوه. بیا هڅه وکړئ."
+    },
+    "validation": {
+      "nameRequired": "بشپړ نوم اړین دی.",
+      "nameMinLength": "نوم باید لږترلږه ۲ حروف ولري.",
+      "nameLettersOnly": "نوم باید یوازې حروف ولري.",
+      "emailRequired": "بریښنالیک اړین دی.",
+      "emailInvalid": "سم بریښنالیک ولیکئ.",
+      "phoneRequired": "د تلیفون شمېره اړینه ده.",
+      "phoneDigitsOnly": "تلیفون باید یوازې عدد ولري.",
+      "phoneMinLength": "تلیفون باید لږترلږه ۷ عدد ولري.",
+      "phoneMaxLength": "تلیفون باید تر ۱۵ عدده ونه زیات شي.",
+      "streetRequired": "د پتې کرښه اړینه ده.",
+      "cityRequired": "ښار اړین دی.",
+      "cityLettersOnly": "ښار باید یوازې حروف ولري.",
+      "countryRequired": "هیواد اړین دی.",
+      "countryLettersOnly": "هیواد باید یوازې حروف ولري.",
+      "postalInvalid": "د پوستي کوډ بڼه ناسمه ده."
     }
   }
 }

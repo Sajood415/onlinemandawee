@@ -9,12 +9,14 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
+import { useLocale } from "next-intl";
 import {
   fetchPublicCatalogProduct,
   resolveDefaultCatalogVariant,
 } from "@/lib/products/public-catalog";
 import { resolveCheckoutUnitPriceMinor } from "@/lib/products/resolve-checkout-variant";
 import { assertSufficientStock } from "@/lib/products/product-stock";
+import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { useCurrency } from "@/store/currency-context";
 
 type CartItem = {
@@ -80,6 +82,7 @@ function normalizeCart(cart: Cart): Cart {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const locale = useLocale() as SupportedLocale;
   const { currency, convertPrice } = useCurrency();
   const [cart, setCart] = useState<Cart>({ items: [] });
   const [isLoading, setIsLoading] = useState(false);
@@ -125,6 +128,52 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const relocalizeCartItems = useCallback(
+    async (items: CartItem[]) => {
+      if (items.length === 0) return items;
+
+      const productCache = new Map<
+        string,
+        Awaited<ReturnType<typeof fetchPublicCatalogProduct>>
+      >();
+
+      return Promise.all(
+        items.map(async (item) => {
+          let catalogProduct = productCache.get(item.productId);
+          if (!catalogProduct) {
+            catalogProduct = await fetchPublicCatalogProduct(item.productId);
+            productCache.set(item.productId, catalogProduct);
+          }
+
+          return {
+            ...item,
+            productName: catalogProduct.name[locale],
+            productDescription: catalogProduct.description[locale],
+          };
+        })
+      );
+    },
+    [locale]
+  );
+
+  useEffect(() => {
+    if (cart.items.length === 0) return;
+
+    let cancelled = false;
+    void relocalizeCartItems(cart.items).then((items) => {
+      if (cancelled) return;
+      const newCart = { items };
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newCart));
+      setCart(newCart);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // Only re-localize when the site language changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale, relocalizeCartItems]);
+
   const refreshCartPrices = useCallback(async () => {
     const stored = localStorage.getItem(CART_STORAGE_KEY);
     if (!stored) return;
@@ -164,7 +213,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
               basePriceAmount: catalogProduct.basePriceAmount,
               variants: catalogProduct.variants,
               variantId,
-              productName: catalogProduct.name.en,
+              productName: catalogProduct.name[locale],
             });
           } catch {
             return item;
@@ -176,7 +225,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             variantName: item.variantName ?? selectedVariant?.name,
             productPrice: unitPriceMinor / 100,
             productCurrency: catalogProduct.currency || "USD",
-            productName: catalogProduct.name.en,
+            productName: catalogProduct.name[locale],
             productImage: catalogProduct.image,
           };
         })
@@ -188,7 +237,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [locale]);
 
   const addItem = async (
     productId: string,
@@ -226,7 +275,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         basePriceAmount: catalogProduct.basePriceAmount,
         variants: catalogProduct.variants,
         variantId,
-        productName: catalogProduct.name.en,
+        productName: catalogProduct.name[locale],
       });
 
       setCart((prev) => {
@@ -250,8 +299,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
             variantId,
             variantName: options?.variantName ?? selectedVariant?.name,
             quantity,
-            productName: catalogProduct.name.en,
-            productDescription: catalogProduct.description.en,
+            productName: catalogProduct.name[locale],
+            productDescription: catalogProduct.description[locale],
             productPrice: unitPriceMinor / 100,
             productCurrency: catalogProduct.currency || "USD",
             productImage: catalogProduct.image,
