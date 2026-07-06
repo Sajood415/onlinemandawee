@@ -358,7 +358,6 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
         labelClassName={LABEL}
       />
 
-
       <div className={`grid gap-4 ${showBasePricingFields ? "sm:grid-cols-4" : "sm:grid-cols-1"}`}>
         <div className="flex flex-col gap-1.5">
           <label className={LABEL}>Currency</label>

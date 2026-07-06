@@ -39,9 +39,11 @@ export class AdminDeliveryService {
     auth: AuthenticatedUser
   ) {
     await this.ensureVendorRuleTarget(input.vendorProfileId);
-    await this.ensureNoDuplicateActiveGlobalStandardRule({
+    await this.ensureNoDuplicateActiveRule({
       method: input.method,
       scope: input.scope,
+      vendorProfileId: input.vendorProfileId,
+      countryCode: input.countryCode,
       isActive: input.isActive ?? true,
     });
     const rule = await this.deliveryRuleRepository.create(
@@ -92,9 +94,11 @@ export class AdminDeliveryService {
     }
 
     await this.ensureVendorRuleTarget(input.vendorProfileId);
-    await this.ensureNoDuplicateActiveGlobalStandardRule({
+    await this.ensureNoDuplicateActiveRule({
       method: input.method,
       scope: input.scope,
+      vendorProfileId: input.vendorProfileId,
+      countryCode: input.countryCode,
       isActive: input.isActive ?? true,
       excludeRuleId: ruleId,
     });
@@ -157,6 +161,31 @@ export class AdminDeliveryService {
     };
   }
 
+  /**
+   * Wipes every delivery rule (active or inactive). Unlike deleteRule, this is
+   * an explicit bulk reset the admin opts into, so it intentionally bypasses
+   * the "active rules cannot be deleted" guard. Checkout will have no
+   * matching delivery rules until new ones are created.
+   */
+  async deleteAllRules(auth: AuthenticatedUser) {
+    const existingRules = await this.deliveryRuleRepository.listAll();
+    const deletedCount = await this.deliveryRuleRepository.deleteAll();
+
+    await this.auditLogRepository.create({
+      actorUserId: auth.id,
+      actorRole: auth.role,
+      action: "admin.delivery_rules_bulk_deleted",
+      entityType: "DeliveryRule",
+      entityId: "ALL",
+      metadata: {
+        deletedCount,
+        ruleIds: existingRules.map((rule) => rule.id),
+      },
+    });
+
+    return { deletedCount };
+  }
+
   private async ensureVendorRuleTarget(vendorProfileId?: string) {
     if (!vendorProfileId) {
       return;
@@ -173,26 +202,50 @@ export class AdminDeliveryService {
     }
   }
 
-  private async ensureNoDuplicateActiveGlobalStandardRule(input: {
+  /**
+   * Only one active rule may exist per (method, scope, target) combination,
+   * so admins can never end up with two conflicting rules silently competing
+   * for the same orders (e.g. two active GLOBAL EXPRESS rules, or two active
+   * VENDOR rules for the same vendor + method).
+   */
+  private async ensureNoDuplicateActiveRule(input: {
     method: "PICKUP" | "EXPRESS" | "STANDARD";
     scope: "GLOBAL" | "COUNTRY" | "VENDOR";
+    vendorProfileId?: string;
+    countryCode?: string;
     isActive: boolean;
     excludeRuleId?: string;
   }) {
-    if (!(input.method === "STANDARD" && input.scope === "GLOBAL" && input.isActive)) {
+    if (!input.isActive) {
+      return;
+    }
+
+    if (input.scope === "COUNTRY" && !input.countryCode) {
+      return;
+    }
+
+    if (input.scope === "VENDOR" && !input.vendorProfileId) {
       return;
     }
 
     const duplicate = await this.deliveryRuleRepository.findFirstActiveByMethodAndScope({
-      method: "STANDARD",
-      scope: "GLOBAL",
+      method: input.method,
+      scope: input.scope,
+      vendorProfileId: input.vendorProfileId,
+      countryCode: input.countryCode,
       excludeId: input.excludeRuleId,
     });
 
     if (duplicate) {
+      const target =
+        input.scope === "VENDOR"
+          ? "for this vendor "
+          : input.scope === "COUNTRY"
+            ? `for ${input.countryCode} `
+            : "";
       throw new AppError({
         code: ERROR_CODE.CONFLICT,
-        message: "An active global STANDARD rule already exists",
+        message: `An active ${input.scope.toLowerCase()} ${input.method} rule ${target}already exists. Deactivate or edit it instead of creating another one.`,
         statusCode: 409,
       });
     }

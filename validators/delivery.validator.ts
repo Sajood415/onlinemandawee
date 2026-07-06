@@ -48,6 +48,17 @@ export const deliveryRuleSchema = z
         message: "countryCode is required for country-scoped rules",
       });
     }
+
+    if (
+      value.priceModel === "PER_KM" &&
+      (value.perKmRateAmount === undefined || value.perKmRateAmount <= 0)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["perKmRateAmount"],
+        message: "perKmRateAmount must be greater than 0 for per-km pricing",
+      });
+    }
   });
 
 export const deliveryQuoteSchema = z.object({

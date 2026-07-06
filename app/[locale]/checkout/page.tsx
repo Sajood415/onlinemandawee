@@ -29,11 +29,15 @@ import {
   X,
 } from "lucide-react";
 
+import { AddressAutocompleteInput } from "@/components/address/AddressAutocompleteInput";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import {
   getCitiesForCountryName,
   getPostalCodesForCity,
+  normalizeCityNameForCountry,
+  normalizeCountryName,
+  normalizePostalCodeForCity,
   SHIPPING_COUNTRIES,
 } from "@/lib/geo/shipping-locations";
 import { convertMajorUnits } from "@/lib/currency/convert";
@@ -485,6 +489,11 @@ function ShippingAddressStep({
     [address.country, address.city]
   );
 
+  const shippingCountryIsoCodes = useMemo(
+    () => SHIPPING_COUNTRIES.map((country) => country.iso),
+    []
+  );
+
   const clearFieldError = (field: keyof ShippingFieldErrors) => {
     setFieldErrors((current) => {
       if (!current[field]) return current;
@@ -622,22 +631,51 @@ function ShippingAddressStep({
       {addressRequired ? (
         <div className="space-y-4 border-t border-gray-100 pt-6">
           <p className="text-sm font-semibold text-gray-700">{copy.shipping.shippingAddress}</p>
-          <InputField
-            label={copy.address.street}
-            required
-            type="text"
-            placeholder={copy.address.streetPlaceholder}
-            value={address.addressLine1}
-            error={fieldErrors.addressLine1}
-            onChange={(e) => {
-              onAddressChange({ addressLine1: e.target.value });
-              clearFieldError("addressLine1");
-            }}
-            onBlur={() => {
-              const error = validators.validateAddressLine(address.addressLine1);
-              if (error) setFieldErrors((current) => ({ ...current, addressLine1: error }));
-            }}
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              {copy.address.street}
+              <span className="text-red-500 ml-0.5">*</span>
+            </label>
+            <AddressAutocompleteInput
+              className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400 ${
+                fieldErrors.addressLine1
+                  ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                  : "border-gray-200 focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10"
+              }`}
+              placeholder={copy.address.streetPlaceholder}
+              value={address.addressLine1}
+              countryCodes={shippingCountryIsoCodes}
+              onTextChange={(value) => {
+                onAddressChange({ addressLine1: value });
+                clearFieldError("addressLine1");
+              }}
+              onPlaceSelect={(place) => {
+                const matchedCountry = place.country ? normalizeCountryName(place.country) : "";
+                const matchedCity =
+                  matchedCountry && place.city
+                    ? normalizeCityNameForCountry(matchedCountry, place.city)
+                    : "";
+                const matchedPostal =
+                  matchedCountry && matchedCity && place.postalCode
+                    ? normalizePostalCodeForCity(matchedCountry, matchedCity, place.postalCode)
+                    : "";
+                onAddressChange({
+                  addressLine1: place.addressLine1,
+                  ...(matchedCountry
+                    ? { country: matchedCountry, city: matchedCity, postalCode: matchedPostal }
+                    : {}),
+                });
+                clearFieldError("addressLine1");
+              }}
+              onBlur={() => {
+                const error = validators.validateAddressLine(address.addressLine1);
+                if (error) setFieldErrors((current) => ({ ...current, addressLine1: error }));
+              }}
+            />
+            {fieldErrors.addressLine1 ? (
+              <p className="mt-1.5 text-xs text-red-600">{fieldErrors.addressLine1}</p>
+            ) : null}
+          </div>
           <SearchableSelect
             label={copy.address.country}
             required

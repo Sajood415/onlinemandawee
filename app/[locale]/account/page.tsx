@@ -14,6 +14,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 
+import { AddressAutocompleteInput } from "@/components/address/AddressAutocompleteInput";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { RequestRefundModal } from "@/components/refunds/RequestRefundModal";
 import { CancelOrderModal } from "@/components/orders/CancelOrderModal";
@@ -610,11 +611,20 @@ function AddressFields({
       </label>
       <label className="block text-sm text-neutral-700 sm:col-span-2">
         {t("addressLine1")}
-        <input
+        <AddressAutocompleteInput
           className={INPUT_CLASS}
           value={form.addressLine1}
-          onChange={(event) => onChange({ ...form, addressLine1: event.target.value })}
           required
+          onTextChange={(addressLine1) => onChange({ ...form, addressLine1 })}
+          onPlaceSelect={(place) =>
+            onChange({
+              ...form,
+              addressLine1: place.addressLine1,
+              city: place.city || form.city,
+              country: place.country || form.country,
+              postalCode: place.postalCode || form.postalCode,
+            })
+          }
         />
       </label>
       <label className="block text-sm text-neutral-700">

@@ -10,6 +10,7 @@ import { durationFromNow } from "@/lib/utils/duration";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 import { getClientIpAddress, getUserAgent } from "@/lib/utils/request-metadata";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
+import { HawalaTransferRepository } from "@/repositories/hawala-transfer.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { SessionRepository } from "@/repositories/session.repository";
 import { UserRepository } from "@/repositories/user.repository";
@@ -63,7 +64,8 @@ export class AuthService {
     private readonly userRepository = new UserRepository(),
     private readonly sessionRepository = new SessionRepository(),
     private readonly auditLogRepository = new AuditLogRepository(),
-    private readonly orderRepository = new OrderRepository()
+    private readonly orderRepository = new OrderRepository(),
+    private readonly hawalaTransferRepository = new HawalaTransferRepository()
   ) {}
 
   async assertSignupIdentifiersAvailable(input: { email?: string; phone?: string }) {
@@ -154,6 +156,10 @@ export class AuthService {
     });
 
     await this.orderRepository.claimGuestOrdersForUser(user.id, normalizedEmail);
+    await this.hawalaTransferRepository.claimGuestTransfersForUser(user.id, {
+      email: normalizedEmail,
+      phone: input.phone,
+    });
 
     return authResult;
   }
@@ -199,6 +205,10 @@ export class AuthService {
 
     if (user.role === "CUSTOMER") {
       await this.orderRepository.claimGuestOrdersForUser(user.id, user.email);
+      await this.hawalaTransferRepository.claimGuestTransfersForUser(user.id, {
+        email: user.email,
+        phone: user.phone,
+      });
     }
 
     return this.createSessionTokens(user, metadata);

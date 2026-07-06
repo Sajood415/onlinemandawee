@@ -12,6 +12,8 @@ export type HeaderCopy = {
   vendors: string;
   giftSets: string;
   gifts: string;
+  hawala: string;
+  hawalaShort: string;
   new: string;
   babyCare: string;
   support: string;
@@ -50,6 +52,8 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     vendors: "Vendors",
     giftSets: "Gift Sets",
     gifts: "Gifts",
+    hawala: "Hawala Transfer",
+    hawalaShort: "Hawala",
     new: "New",
     babyCare: "Baby Care",
     support: "Support",
@@ -87,6 +91,8 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     vendors: "پلورونکي",
     giftSets: "د ډالۍ بستې",
     gifts: "ډالۍ",
+    hawala: "د حواله لېږد",
+    hawalaShort: "حواله",
     new: "نوی",
     babyCare: "د ماشوم پاملرنه",
     support: "مرسته",
@@ -124,6 +130,8 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     vendors: "فروشندگان",
     giftSets: "بسته‌های هدیه",
     gifts: "هدایا",
+    hawala: "انتقال حواله",
+    hawalaShort: "حواله",
     new: "جدید",
     babyCare: "مراقبت نوزاد",
     support: "پشتیبانی",

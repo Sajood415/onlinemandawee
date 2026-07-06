@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Loader2, Plus, RefreshCw } from "lucide-react";
+import { Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { DataTable } from "@/components/ui/data-table";
@@ -86,6 +86,16 @@ function isPickupMethod(method: DeliveryMethod) {
   return method === "PICKUP";
 }
 
+/**
+ * EXPRESS and STANDARD let the admin choose between a flat fee and a per-KM
+ * rate. For EXPRESS the distance is vendor pickup → customer; for STANDARD
+ * it's Mandawee's warehouse → customer (platform items ship via the
+ * warehouse), so the rate can be set independently for each.
+ */
+function allowsPerKmPricing(method: DeliveryMethod) {
+  return method === "EXPRESS" || method === "STANDARD";
+}
+
 function minorToMajorDisplay(amountMinor: number | null | undefined) {
   if (amountMinor == null) return "";
   return Number((amountMinor / 100).toFixed(2));
@@ -121,7 +131,10 @@ function computeRuleValue(rule: DeliveryRuleRecord) {
   }
 
   if (usesTransactionFee(rule.method)) {
-    const deliveryLabel = `$${formatMoney(rule.baseFeeAmount)} delivery`;
+    const deliveryLabel =
+      allowsPerKmPricing(rule.method) && rule.priceModel === "PER_KM"
+        ? `$${formatMoney(rule.baseFeeAmount)} base + $${formatMoney(rule.perKmRateAmount ?? 0)}/km`
+        : `$${formatMoney(rule.baseFeeAmount)} delivery`;
     return `${deliveryLabel} · $${FIXED_TRANSACTION_FEE_MAJOR.toFixed(2)} commission / order (fixed)`;
   }
 
@@ -210,7 +223,9 @@ export default function AdminDeliveryRulesPage() {
       transactionFeeAmount: usesTransactionFee(rule.method)
         ? FIXED_TRANSACTION_FEE_MAJOR
         : minorToMajorDisplay(rule.transactionFeeAmountMinor),
-      perKmRateAmount: rule.perKmRateAmount ?? "",
+      perKmRateAmount: allowsPerKmPricing(rule.method)
+        ? minorToMajorDisplay(rule.perKmRateAmount)
+        : (rule.perKmRateAmount ?? ""),
       freeAboveAmount: rule.freeAboveAmount ?? "",
       etaMinDays: rule.etaMinDays,
       etaMaxDays: rule.etaMaxDays,
@@ -227,12 +242,18 @@ export default function AdminDeliveryRulesPage() {
   const buildRulePayload = (vendorProfileId?: string) => {
     const transactionFeeBased = usesTransactionFee(form.method);
     const pickupBased = isPickupMethod(form.method);
+    const perKmBased = allowsPerKmPricing(form.method) && form.priceModel === "PER_KM";
+
     return {
       method: form.method,
       scope: form.scope,
       vendorProfileId: form.scope === "VENDOR" ? vendorProfileId : undefined,
       countryCode: form.scope === "COUNTRY" ? form.countryCode : undefined,
-      priceModel: transactionFeeBased || pickupBased ? ("FLAT" as const) : form.priceModel,
+      priceModel: perKmBased
+        ? ("PER_KM" as const)
+        : transactionFeeBased || pickupBased
+          ? ("FLAT" as const)
+          : form.priceModel,
       baseFeeAmount: transactionFeeBased
         ? majorToMinor(Number(form.deliveryFeeAmount) || 0)
         : pickupBased
@@ -241,8 +262,9 @@ export default function AdminDeliveryRulesPage() {
       transactionFeeAmountMinor: transactionFeeBased
         ? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
         : undefined,
-      perKmRateAmount:
-        !transactionFeeBased && !pickupBased && form.priceModel === "PER_KM"
+      perKmRateAmount: perKmBased
+        ? majorToMinor(Number(form.perKmRateAmount) || 0)
+        : !transactionFeeBased && !pickupBased && form.priceModel === "PER_KM"
           ? Number(form.perKmRateAmount)
           : undefined,
       freeAboveAmount:
@@ -328,6 +350,13 @@ export default function AdminDeliveryRulesPage() {
         }
       }
 
+      if (allowsPerKmPricing(form.method) && form.priceModel === "PER_KM") {
+        const perKmRate = Number(form.perKmRateAmount);
+        if (!Number.isFinite(perKmRate) || perKmRate <= 0) {
+          throw new Error("Per kilometer rate must be greater than zero.");
+        }
+      }
+
       const payload = buildRulePayload(
         form.scope === "VENDOR" ? form.vendorProfileId : undefined
       );
@@ -348,6 +377,67 @@ export default function AdminDeliveryRulesPage() {
       await loadRules();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Failed to save delivery rule.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  /**
+   * Vendor-scoped rules always take priority over GLOBAL/COUNTRY rules for
+   * that vendor's orders (see findBestMatchingDeliveryRule), so when an admin
+   * is editing a GLOBAL or COUNTRY rule we surface any active vendor
+   * overrides for the same method — otherwise the admin's change silently
+   * has no effect for those vendors.
+   */
+  const vendorOverridesForMethod = useMemo(() => {
+    return rules.filter(
+      (rule) =>
+        rule.scope === "VENDOR" &&
+        rule.method === form.method &&
+        rule.isActive &&
+        rule.id !== editingRule?.id
+    );
+  }, [rules, form.method, editingRule]);
+
+  const deactivateVendorOverrides = async () => {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const failures: string[] = [];
+      for (const rule of vendorOverridesForMethod) {
+        try {
+          const response = await fetchWithAuth(`/api/admin/delivery-rules/${rule.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              method: rule.method,
+              scope: rule.scope,
+              vendorProfileId: rule.vendorProfileId ?? undefined,
+              countryCode: rule.countryCode ?? undefined,
+              priceModel: rule.priceModel,
+              baseFeeAmount: rule.baseFeeAmount,
+              transactionFeeAmountMinor: usesTransactionFee(rule.method)
+                ? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
+                : (rule.transactionFeeAmountMinor ?? undefined),
+              perKmRateAmount: rule.perKmRateAmount ?? undefined,
+              freeAboveAmount: rule.freeAboveAmount ?? undefined,
+              etaMinDays: rule.etaMinDays,
+              etaMaxDays: rule.etaMaxDays,
+              isActive: false,
+            }),
+          });
+          await parseApiResponse(response);
+        } catch (deactivateError) {
+          const label = rule.vendorStoreName ?? rule.vendorStoreSlug ?? rule.id;
+          failures.push(
+            deactivateError instanceof Error ? `${label}: ${deactivateError.message}` : `${label}: failed`
+          );
+        }
+      }
+      await loadRules();
+      if (failures.length > 0) {
+        setError(`Some vendor overrides could not be deactivated: ${failures.slice(0, 3).join("; ")}`);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -381,6 +471,34 @@ export default function AdminDeliveryRulesPage() {
       await loadRules();
     } catch (toggleError) {
       setError(toggleError instanceof Error ? toggleError.message : "Failed to update rule status.");
+    } finally {
+      setActionRuleId(null);
+    }
+  };
+
+  const deleteAllRules = async () => {
+    if (rules.length === 0) return;
+
+    const confirmed = window.confirm(
+      `Delete ALL ${rules.length} delivery rule(s)? This includes active rules and cannot be undone. ` +
+        `Checkout will have no delivery pricing until you create new rules.`
+    );
+    if (!confirmed) return;
+
+    setActionRuleId("__ALL__");
+    setError(null);
+    try {
+      const response = await fetchWithAuth("/api/admin/delivery-rules", {
+        method: "DELETE",
+      });
+      await parseApiResponse(response);
+      await loadRules();
+    } catch (deleteAllError) {
+      setError(
+        deleteAllError instanceof Error
+          ? deleteAllError.message
+          : "Failed to delete all delivery rules."
+      );
     } finally {
       setActionRuleId(null);
     }
@@ -437,11 +555,10 @@ export default function AdminDeliveryRulesPage() {
         id: "pricingType",
         cell: ({ row }) => {
           const rule = row.original;
-          return usesTransactionFee(rule.method)
-            ? "FLAT"
-            : isPickupMethod(rule.method)
-              ? "NONE"
-              : rule.priceModel;
+          if (usesTransactionFee(rule.method)) {
+            return allowsPerKmPricing(rule.method) ? rule.priceModel : "FLAT";
+          }
+          return isPickupMethod(rule.method) ? "NONE" : rule.priceModel;
         },
       },
       {
@@ -543,6 +660,15 @@ export default function AdminDeliveryRulesPage() {
           </button>
           <button
             type="button"
+            disabled={rules.length === 0 || actionRuleId === "__ALL__"}
+            onClick={() => void deleteAllRules()}
+            className="inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete all
+          </button>
+          <button
+            type="button"
             onClick={openCreate}
             className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-3 py-2 text-sm font-semibold text-white hover:bg-[#0a2847]"
           >
@@ -618,6 +744,7 @@ export default function AdminDeliveryRulesPage() {
                     setForm((current) => ({
                       ...current,
                       method,
+                      priceModel: allowsPerKmPricing(method) ? current.priceModel : "FLAT",
                       transactionFeeAmount: usesTransactionFee(method)
                         ? FIXED_TRANSACTION_FEE_MAJOR
                         : "",
@@ -626,6 +753,7 @@ export default function AdminDeliveryRulesPage() {
                           ? 0
                           : current.deliveryFeeAmount
                         : "",
+                      perKmRateAmount: allowsPerKmPricing(method) ? current.perKmRateAmount : "",
                     }));
                   }}
                 >
@@ -699,10 +827,56 @@ export default function AdminDeliveryRulesPage() {
                   />
                 </label>
               ) : null}
+              {form.scope !== "VENDOR" && vendorOverridesForMethod.length > 0 ? (
+                <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:col-span-2">
+                  <p className="font-semibold">
+                    {vendorOverridesForMethod.length} vendor-specific {form.method} rule
+                    {vendorOverridesForMethod.length === 1 ? "" : "s"} will override this{" "}
+                    {form.scope.toLowerCase()} rule
+                  </p>
+                  <p className="mt-1 text-xs text-amber-800">
+                    Vendor-scoped rules always take priority over{" "}
+                    {form.scope === "GLOBAL" ? "global" : "country"} rules, so orders from{" "}
+                    {vendorOverridesForMethod
+                      .map((rule) => rule.vendorStoreName ?? rule.vendorStoreSlug ?? "a vendor")
+                      .join(", ")}{" "}
+                    will keep using their own rule instead of the one you&apos;re saving here.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => void deactivateVendorOverrides()}
+                    className="mt-2 rounded-lg border border-amber-400 bg-white px-2.5 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-60"
+                  >
+                    Deactivate all {vendorOverridesForMethod.length} vendor override
+                    {vendorOverridesForMethod.length === 1 ? "" : "s"}
+                  </button>
+                </div>
+              ) : null}
               {usesTransactionFee(form.method) ? (
                 <>
+                  {allowsPerKmPricing(form.method) ? (
+                    <label className="text-sm text-neutral-700 sm:col-span-2">
+                      Pricing type
+                      <select
+                        className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
+                        value={form.priceModel === "PER_KM" ? "PER_KM" : "FLAT"}
+                        onChange={(event) =>
+                          setForm((current) => ({
+                            ...current,
+                            priceModel: event.target.value as DeliveryPriceModel,
+                          }))
+                        }
+                      >
+                        <option value="FLAT">Flat fee per order</option>
+                        <option value="PER_KM">Per kilometer (driving distance)</option>
+                      </select>
+                    </label>
+                  ) : null}
                   <label className="text-sm text-neutral-700 sm:col-span-2">
-                    Delivery fee (USD)
+                    {allowsPerKmPricing(form.method) && form.priceModel === "PER_KM"
+                      ? "Base fee (USD)"
+                      : "Delivery fee (USD)"}
                     <div className="mt-1 flex items-center gap-2">
                       <span className="text-sm text-neutral-500">$</span>
                       <input
@@ -721,12 +895,42 @@ export default function AdminDeliveryRulesPage() {
                       />
                     </div>
                     <span className="mt-1 block text-xs text-neutral-500">
-                      Customer delivery charge added to each order
-                      {form.method === "EXPRESS"
-                        ? " (per vendor on multi-vendor express orders)."
-                        : " (one fee per order on standard delivery)."}
+                      {allowsPerKmPricing(form.method) && form.priceModel === "PER_KM"
+                        ? "Flat starting charge added on top of the per-km rate below."
+                        : `Customer delivery charge added to each order${
+                            form.method === "EXPRESS"
+                              ? " (per vendor on multi-vendor express orders)."
+                              : " (one fee per order on standard delivery)."
+                          }`}
                     </span>
                   </label>
+                  {allowsPerKmPricing(form.method) && form.priceModel === "PER_KM" ? (
+                    <label className="text-sm text-neutral-700 sm:col-span-2">
+                      Per kilometer rate (USD)
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="text-sm text-neutral-500">$</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                          value={form.perKmRateAmount}
+                          onChange={(event) =>
+                            setForm((current) => ({
+                              ...current,
+                              perKmRateAmount:
+                                event.target.value === "" ? "" : Number(event.target.value),
+                            }))
+                          }
+                        />
+                      </div>
+                      <span className="mt-1 block text-xs text-neutral-500">
+                        {form.method === "STANDARD"
+                          ? "Charged per kilometer of driving distance between Mandawee's warehouse (set in Platform settings) and the customer's delivery address, added to the base fee above."
+                          : "Charged per kilometer of driving distance between the vendor's pickup address and the customer's delivery address, added to the base fee above."}
+                      </span>
+                    </label>
+                  ) : null}
                   <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 sm:col-span-2">
                     <p className="text-sm font-semibold text-neutral-900">
                       Platform commission (fixed)
@@ -919,7 +1123,12 @@ export default function AdminDeliveryRulesPage() {
                   <div>
                     <dt className="text-neutral-500">Delivery fee</dt>
                     <dd className="font-medium text-neutral-900">
-                      ${formatMoney(selectedRule.baseFeeAmount)} per order
+                      {allowsPerKmPricing(selectedRule.method) &&
+                      selectedRule.priceModel === "PER_KM"
+                        ? `$${formatMoney(selectedRule.baseFeeAmount)} base + $${formatMoney(
+                            selectedRule.perKmRateAmount ?? 0
+                          )}/km`
+                        : `$${formatMoney(selectedRule.baseFeeAmount)} per order`}
                     </dd>
                   </div>
                   <div>
@@ -928,6 +1137,12 @@ export default function AdminDeliveryRulesPage() {
                       ${FIXED_TRANSACTION_FEE_MAJOR.toFixed(2)} per order (fixed)
                     </dd>
                   </div>
+                  {allowsPerKmPricing(selectedRule.method) ? (
+                    <div>
+                      <dt className="text-neutral-500">Pricing type</dt>
+                      <dd className="font-medium text-neutral-900">{selectedRule.priceModel}</dd>
+                    </div>
+                  ) : null}
                 </>
               ) : null}
               {!usesTransactionFee(selectedRule.method) ? (

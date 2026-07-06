@@ -16,6 +16,10 @@ type UpdatePlatformSettingsInput = {
   transactionFeeAmountMinor?: number;
   availableLocales?: string[];
   availableCurrencies?: string[];
+  warehouseAddressLine1?: string | null;
+  warehouseCity?: string | null;
+  warehouseCountry?: string | null;
+  warehousePostalCode?: string | null;
 };
 
 export class PlatformSettingsService {
@@ -74,6 +78,10 @@ export class PlatformSettingsService {
       availableCurrencies: normalizeAvailableCurrencies(
         settings.availableCurrencies
       ),
+      warehouseAddressLine1: settings.warehouseAddressLine1,
+      warehouseCity: settings.warehouseCity,
+      warehouseCountry: settings.warehouseCountry,
+      warehousePostalCode: settings.warehousePostalCode,
       updatedAt: settings.updatedAt.toISOString(),
     };
   }

@@ -220,12 +220,14 @@
         "vendors": "پلورونکي",
         "products": "محصولات",
         "categories": "کټګورۍ",
+        "subCategories": "فرعي کټګورۍ",
         "banners": "بینرونه",
         "orders": "امرونه",
         "deliveryRules": "د تحویلي قواعد",
         "payouts": "تادیات",
         "warehouse": "ګودام",
         "giftRequests": "د ډالۍ غوښتنې",
+        "hawala": "حواله",
         "disputes": "شخړې",
         "users": "کاروونکي",
         "settings": "تنظیمات"
@@ -251,6 +253,7 @@
       "nav": {
         "overview": "لنډیز",
         "giftRequests": "د ډالۍ غوښتنې",
+        "hawala": "حواله",
         "disputes": "شخړې",
         "settings": "تنظیمات"
       }
@@ -375,6 +378,36 @@
       "paymentReceived": "تادیه ترلاسه شوه: {amount}",
       "errors": {
         "loadFailed": "د ډالۍ غوښتنې پورته کول ناکام شول."
+      }
+    },
+    "hawala": {
+      "badge": "د حواله لېږدونه",
+      "title": "ستاسو د حواله لېږدونه",
+      "subtitle": "خپلو پیسو د افغانستان ته او د هغه څخه لېږد غوښتنې وڅارئ.",
+      "loading": "لېږدونه بارېږي...",
+      "count": "{count} لېږدونه",
+      "sender": "لیږونکی",
+      "receiver": "ترلاسه کوونکی",
+      "submitted": "سپارل شوی {date}",
+      "lastUpdated": "وروستی تازه {date}",
+      "exchangeRate": "د تبادلې نرخ",
+      "note": "یادونه",
+      "adminNote": "د اډمین یادونه",
+      "emptyTitle": "تر اوسه د حواله لېږد نشته",
+      "emptyDescription": "د حواله پاڼې څخه یوه د لېږد غوښتنه وسپارئ. ستاسو د حساب سره تړلې غوښتنې به دلته ښکاره شي.",
+      "createTransfer": "د لېږد غوښتنه جوړه کړئ",
+      "status": {
+        "PENDING": "په تمه",
+        "APPROVED": "تصویب شوی",
+        "REJECTED": "رد شوی",
+        "IN_PROGRESS": "پرمختګ کې",
+        "DELIVERED": "ترلاسه شوی",
+        "COMPLETED": "بشپړ شوی",
+        "FAILED": "ناکام شو",
+        "CANCELLED": "لغوه شوی"
+      },
+      "errors": {
+        "loadFailed": "د حواله لېږدونو پورته کول ناکام شول."
       }
     }
   },

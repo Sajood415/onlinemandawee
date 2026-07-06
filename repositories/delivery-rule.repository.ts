@@ -171,6 +171,8 @@ export class DeliveryRuleRepository {
   findFirstActiveByMethodAndScope(input: {
     method: DeliveryMethod;
     scope: DeliveryRuleScope;
+    vendorProfileId?: string;
+    countryCode?: string;
     excludeId?: string;
   }) {
     return prisma.deliveryRule.findFirst({
@@ -178,6 +180,12 @@ export class DeliveryRuleRepository {
         method: input.method,
         scope: input.scope,
         isActive: true,
+        ...(input.scope === "VENDOR" && input.vendorProfileId
+          ? { vendorProfileId: input.vendorProfileId }
+          : {}),
+        ...(input.scope === "COUNTRY" && input.countryCode
+          ? { countryCode: input.countryCode }
+          : {}),
         ...(input.excludeId
           ? {
               id: {
@@ -195,9 +203,28 @@ export class DeliveryRuleRepository {
     });
   }
 
+  listActiveVendorScopedByMethod(method: DeliveryMethod) {
+    return prisma.deliveryRule.findMany({
+      where: {
+        method,
+        scope: "VENDOR",
+        isActive: true,
+      },
+      include: {
+        vendorProfile: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
   deleteById(id: string) {
     return prisma.deliveryRule.delete({
       where: { id },
     });
+  }
+
+  async deleteAll() {
+    const result = await prisma.deliveryRule.deleteMany({});
+    return result.count;
   }
 }

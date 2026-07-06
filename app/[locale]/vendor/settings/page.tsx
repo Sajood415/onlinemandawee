@@ -17,6 +17,7 @@ import {
   Wallet,
 } from "lucide-react";
 
+import { AddressAutocompleteInput } from "@/components/address/AddressAutocompleteInput";
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { invalidateVendorStoreNameCache } from "@/lib/vendor/store-name-cache";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -544,13 +545,19 @@ function BusinessInfoTab({
             <label htmlFor="store-address-line1" className={LABEL}>
               Street address <RequiredMark />
             </label>
-            <input
+            <AddressAutocompleteInput
               id="store-address-line1"
               className={CONTROL}
               value={addressLine1}
-              onChange={(e) => setAddressLine1(e.target.value)}
               placeholder="123 Main Street, Shop 4"
               maxLength={255}
+              onTextChange={setAddressLine1}
+              onPlaceSelect={(place) => {
+                setAddressLine1(place.addressLine1);
+                if (place.city) setCity(place.city);
+                if (place.country) setCountry(place.country);
+                if (place.postalCode) setPostalCode(place.postalCode);
+              }}
             />
           </div>
 

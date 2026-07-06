@@ -220,12 +220,14 @@
         "vendors": "فروشندگان",
         "products": "محصولات",
         "categories": "دسته‌بندی‌ها",
+        "subCategories": "زیردسته‌ها",
         "banners": "بنرها",
         "orders": "سفارش‌ها",
         "deliveryRules": "قوانین تحویل",
         "payouts": "پرداخت‌ها",
         "warehouse": "انبار",
         "giftRequests": "درخواست‌های هدیه",
+        "hawala": "حواله",
         "disputes": "اختلافات",
         "users": "کاربران",
         "settings": "تنظیمات"
@@ -251,6 +253,7 @@
       "nav": {
         "overview": "نمای کلی",
         "giftRequests": "درخواست‌های هدیه",
+        "hawala": "حواله",
         "disputes": "اختلافات",
         "settings": "تنظیمات"
       }
@@ -375,6 +378,36 @@
       "paymentReceived": "پرداخت دریافت شد: {amount}",
       "errors": {
         "loadFailed": "بارگذاری درخواست‌های هدیه ناموفق بود."
+      }
+    },
+    "hawala": {
+      "badge": "انتقال‌های حواله",
+      "title": "انتقال‌های حواله شما",
+      "subtitle": "درخواست‌های انتقال پول خود به افغانستان و از آن را پیگیری کنید.",
+      "loading": "در حال بارگذاری انتقال‌ها...",
+      "count": "{count} انتقال",
+      "sender": "فرستنده",
+      "receiver": "گیرنده",
+      "submitted": "ثبت شده {date}",
+      "lastUpdated": "آخرین به‌روزرسانی {date}",
+      "exchangeRate": "نرخ تبادله",
+      "note": "یادداشت",
+      "adminNote": "یادداشت مدیر",
+      "emptyTitle": "هنوز انتقال حواله‌ای نیست",
+      "emptyDescription": "از صفحه حواله یک درخواست انتقال ثبت کنید. درخواست‌های مرتبط با حساب شما اینجا نمایش داده می‌شوند.",
+      "createTransfer": "ثبت درخواست انتقال",
+      "status": {
+        "PENDING": "در انتظار",
+        "APPROVED": "تأیید شده",
+        "REJECTED": "رد شده",
+        "IN_PROGRESS": "در حال انجام",
+        "DELIVERED": "تحویل شده",
+        "COMPLETED": "تکمیل شده",
+        "FAILED": "ناموفق",
+        "CANCELLED": "لغو شده"
+      },
+      "errors": {
+        "loadFailed": "بارگذاری انتقال‌های حواله ناموفق بود."
       }
     }
   },

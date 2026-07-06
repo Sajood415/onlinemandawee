@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { DollarSign, Globe, Loader2, Save } from "lucide-react";
+import { DollarSign, Globe, Loader2, Save, Warehouse } from "lucide-react";
 
+import { AddressAutocompleteInput } from "@/components/address/AddressAutocompleteInput";
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { CURRENCY_LABELS, SUPPORTED_CURRENCIES } from "@/lib/currency/constants";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
@@ -19,6 +20,10 @@ type PlatformSettings = {
   id: string;
   availableLocales: StorefrontLocale[];
   availableCurrencies: SupportedCurrency[];
+  warehouseAddressLine1: string | null;
+  warehouseCity: string | null;
+  warehouseCountry: string | null;
+  warehousePostalCode: string | null;
   updatedAt: string;
 };
 
@@ -38,6 +43,10 @@ export default function AdminSettingsPage() {
   const [availableCurrencies, setAvailableCurrencies] = useState<SupportedCurrency[]>([
     ...SUPPORTED_CURRENCIES,
   ]);
+  const [warehouseAddressLine1, setWarehouseAddressLine1] = useState("");
+  const [warehouseCity, setWarehouseCity] = useState("");
+  const [warehouseCountry, setWarehouseCountry] = useState("");
+  const [warehousePostalCode, setWarehousePostalCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +60,10 @@ export default function AdminSettingsPage() {
       setSettings(data);
       setAvailableLocales(data.availableLocales);
       setAvailableCurrencies(data.availableCurrencies);
+      setWarehouseAddressLine1(data.warehouseAddressLine1 ?? "");
+      setWarehouseCity(data.warehouseCity ?? "");
+      setWarehouseCountry(data.warehouseCountry ?? "");
+      setWarehousePostalCode(data.warehousePostalCode ?? "");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load settings.");
     } finally {
@@ -97,12 +110,20 @@ export default function AdminSettingsPage() {
         body: JSON.stringify({
           availableLocales,
           availableCurrencies,
+          warehouseAddressLine1,
+          warehouseCity,
+          warehouseCountry,
+          warehousePostalCode,
         }),
       });
       const data = await parseApiResponse<PlatformSettings>(res);
       setSettings(data);
       setAvailableLocales(data.availableLocales);
       setAvailableCurrencies(data.availableCurrencies);
+      setWarehouseAddressLine1(data.warehouseAddressLine1 ?? "");
+      setWarehouseCity(data.warehouseCity ?? "");
+      setWarehouseCountry(data.warehouseCountry ?? "");
+      setWarehousePostalCode(data.warehousePostalCode ?? "");
       toast.success("Settings saved", "Platform settings updated for the storefront.");
     } catch (e) {
       toast.error("Could not save", e instanceof Error ? e.message : "Unknown error");
@@ -199,6 +220,76 @@ export default function AdminSettingsPage() {
                     </span>
                   </label>
                 ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="max-w-2xl rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="rounded-lg bg-[#0f3460]/10 p-2">
+            <Warehouse className="h-5 w-5 text-[#0f3460]" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-base font-semibold text-neutral-900">Warehouse pickup address</h2>
+            <p className="mt-1 text-sm text-neutral-600">
+              Used to calculate the delivery distance (in km) for platform-sold items priced
+              with a per-kilometer standard delivery rate.
+            </p>
+
+            {loading ? (
+              <div className="mt-4 flex items-center gap-2 text-sm text-neutral-500">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading…
+              </div>
+            ) : (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="text-sm text-neutral-700 sm:col-span-2">
+                  Address line
+                  <AddressAutocompleteInput
+                    className={`${INPUT} mt-1 max-w-none`}
+                    value={warehouseAddressLine1}
+                    placeholder="Start typing an address…"
+                    onTextChange={setWarehouseAddressLine1}
+                    onPlaceSelect={(place) => {
+                      setWarehouseAddressLine1(place.addressLine1);
+                      if (place.city) setWarehouseCity(place.city);
+                      if (place.country) setWarehouseCountry(place.country);
+                      if (place.postalCode) setWarehousePostalCode(place.postalCode);
+                    }}
+                  />
+                </label>
+                <label className="text-sm text-neutral-700">
+                  City
+                  <input
+                    type="text"
+                    className={`${INPUT} mt-1 max-w-none`}
+                    value={warehouseCity}
+                    onChange={(event) => setWarehouseCity(event.target.value)}
+                    placeholder="City"
+                  />
+                </label>
+                <label className="text-sm text-neutral-700">
+                  Country
+                  <input
+                    type="text"
+                    className={`${INPUT} mt-1 max-w-none`}
+                    value={warehouseCountry}
+                    onChange={(event) => setWarehouseCountry(event.target.value)}
+                    placeholder="Country"
+                  />
+                </label>
+                <label className="text-sm text-neutral-700">
+                  Postal code
+                  <input
+                    type="text"
+                    className={`${INPUT} mt-1 max-w-none`}
+                    value={warehousePostalCode}
+                    onChange={(event) => setWarehousePostalCode(event.target.value)}
+                    placeholder="Postal code (optional)"
+                  />
+                </label>
               </div>
             )}
           </div>

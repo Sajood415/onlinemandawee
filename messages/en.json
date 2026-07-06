@@ -220,12 +220,14 @@
         "vendors": "Vendors",
         "products": "Products",
         "categories": "Categories",
+        "subCategories": "Sub-categories",
         "banners": "Banners",
         "orders": "Orders",
         "deliveryRules": "Delivery rules",
         "payouts": "Payouts",
         "warehouse": "Warehouse",
         "giftRequests": "Gift requests",
+        "hawala": "Hawala",
         "disputes": "Disputes",
         "users": "Users",
         "settings": "Settings"
@@ -251,6 +253,7 @@
       "nav": {
         "overview": "Overview",
         "giftRequests": "Gift requests",
+        "hawala": "Hawala",
         "disputes": "Disputes",
         "settings": "Settings"
       }
@@ -375,6 +378,36 @@
       "paymentReceived": "Payment received: {amount}",
       "errors": {
         "loadFailed": "Failed to load gift requests."
+      }
+    },
+    "hawala": {
+      "badge": "Hawala transfers",
+      "title": "Your Hawala transfers",
+      "subtitle": "Track your money transfer requests to and from Afghanistan.",
+      "loading": "Loading transfers...",
+      "count": "{count, plural, one {# transfer} other {# transfers}}",
+      "sender": "Sender",
+      "receiver": "Receiver",
+      "submitted": "Submitted {date}",
+      "lastUpdated": "Last updated {date}",
+      "exchangeRate": "Exchange rate",
+      "note": "Note",
+      "adminNote": "Note from admin",
+      "emptyTitle": "No Hawala transfers yet",
+      "emptyDescription": "Submit a Hawala transfer request from the Hawala page. Requests linked to your account will appear here.",
+      "createTransfer": "Create a transfer request",
+      "status": {
+        "PENDING": "Pending",
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected",
+        "IN_PROGRESS": "In progress",
+        "DELIVERED": "Delivered",
+        "COMPLETED": "Completed",
+        "FAILED": "Failed",
+        "CANCELLED": "Cancelled"
+      },
+      "errors": {
+        "loadFailed": "Failed to load Hawala transfers."
       }
     }
   },

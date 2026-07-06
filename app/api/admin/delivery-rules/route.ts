@@ -22,3 +22,10 @@ export const POST = withErrorHandling(
     return NextResponse.json({ data: result }, { status: 201 });
   })
 );
+
+export const DELETE = withErrorHandling(
+  withRbac(["ADMIN"], async (_request, context) => {
+    const result = await adminDeliveryService.deleteAllRules(context.auth);
+    return NextResponse.json({ data: result }, { status: 200 });
+  })
+);

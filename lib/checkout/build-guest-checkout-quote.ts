@@ -18,13 +18,17 @@ import {
 } from "@/lib/products/resolve-checkout-variant";
 import {
   calculateGuestDelivery,
+  getDistanceKmBetweenAddresses,
+  getVendorDistancesKm,
   type GuestCheckoutDeliveryBreakdown,
 } from "@/lib/delivery/calculate-guest-delivery";
+import { getWarehouseAddress } from "@/lib/delivery/get-warehouse-address";
 import { prisma } from "@/lib/db/prisma";
 import { isMongoObjectId } from "@/lib/db/object-id";
 import type { PostalAddress } from "@/lib/maps/google-maps";
 import type { DeliveryMethod } from "@/domain/delivery/delivery-types";
 import type { SellerType } from "@/domain/vendor/vendor-types";
+import { DeliveryRuleRepository } from "@/repositories/delivery-rule.repository";
 import { DeliveryPricingService } from "@/services/delivery-pricing.service";
 import {
   mergeGuestCheckoutCartItems,
@@ -142,6 +146,7 @@ export async function buildGuestCheckoutQuote(input: {
     couponCodes: input.couponCodes,
   });
   const deliveryPricingService = new DeliveryPricingService();
+  const deliveryRuleRepository = new DeliveryRuleRepository();
   const selectedThirdPartyMethod: DeliveryMethod = input.deliveryMethod ?? "STANDARD";
 
   const products = await Promise.all(
@@ -287,16 +292,58 @@ export async function buildGuestCheckoutQuote(input: {
         deliveryByVendorForSettlement.set(vendorGroup.vendorProfileId, 0);
       }
     } else if (input.deliveryAddress) {
+      let vendorDistances: Map<string, { distanceKm: number; vendorStoreName: string | null }> | null =
+        null;
+      let sharedDistanceKm: number | undefined;
+
+      if (selectedThirdPartyMethod === "EXPRESS") {
+        const activeExpressRules = await deliveryRuleRepository.listActiveByMethod("EXPRESS");
+        const needsDistance = activeExpressRules.some(
+          (rule) => rule.priceModel === "PER_KM"
+        );
+        if (needsDistance) {
+          vendorDistances = await getVendorDistancesKm(
+            thirdPartyVendorGroups.map((vendorGroup) => vendorGroup.vendorProfileId),
+            input.deliveryAddress
+          );
+        }
+      } else if (selectedThirdPartyMethod === "STANDARD") {
+        // STANDARD ships as one consolidated shipment from Mandawee's
+        // warehouse, so a single warehouse → customer distance applies.
+        const activeStandardRules = await deliveryRuleRepository.listActiveByMethod("STANDARD");
+        const needsDistance = activeStandardRules.some(
+          (rule) => rule.priceModel === "PER_KM"
+        );
+        if (needsDistance) {
+          const warehouseAddress = await getWarehouseAddress();
+          if (!warehouseAddress) {
+            throw new GuestCheckoutQuoteError(
+              "WAREHOUSE_ADDRESS_MISSING",
+              "Delivery cannot be calculated because the warehouse pickup address has not been configured yet. Please contact support.",
+              400
+            );
+          }
+          sharedDistanceKm = await getDistanceKmBetweenAddresses(
+            warehouseAddress,
+            input.deliveryAddress
+          );
+        }
+      }
+
       const thirdPartyDeliveryQuote = await deliveryPricingService.quote({
         method: selectedThirdPartyMethod,
         countryCode: input.deliveryAddress.country,
         currency,
+        distanceKm: sharedDistanceKm,
         items: thirdPartyItems.map((item) => ({
           vendorProfileId: item.vendorProfileId,
           quantity: item.quantity,
           currentLineTotal: item.lineTotalAmount,
         })),
-        vendorGroups: thirdPartyVendorGroups,
+        vendorGroups: thirdPartyVendorGroups.map((vendorGroup) => ({
+          ...vendorGroup,
+          distanceKm: vendorDistances?.get(vendorGroup.vendorProfileId)?.distanceKm,
+        })),
       });
 
       deliveryAmount += thirdPartyDeliveryQuote.totalAmount;
@@ -311,14 +358,17 @@ export async function buildGuestCheckoutQuote(input: {
         );
         if (existing) {
           existing.deliveryAmount += entry.amount;
+          if (entry.distanceKm > 0) existing.distanceKm = entry.distanceKm;
+          if (entry.baseFeeAmount > 0) existing.baseFeeAmount = entry.baseFeeAmount;
+          if (entry.perKmRateAmount > 0) existing.perKmRateAmount = entry.perKmRateAmount;
           continue;
         }
         breakdownEntries.push({
           vendorProfileId: entry.vendorProfileId,
-          vendorStoreName: null,
-          distanceKm: 0,
-          baseFeeAmount: 0,
-          perKmRateAmount: 0,
+          vendorStoreName: vendorDistances?.get(entry.vendorProfileId)?.vendorStoreName ?? null,
+          distanceKm: entry.distanceKm,
+          baseFeeAmount: entry.baseFeeAmount,
+          perKmRateAmount: entry.perKmRateAmount,
           deliveryAmount: entry.amount,
         });
       }

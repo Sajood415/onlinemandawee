@@ -13,6 +13,7 @@ import {
 } from "@/domain/vendor/vendor-types";
 import type { BusinessType, IndustryType, KycDocumentType, PayoutMethodType } from "@/domain/vendor/vendor-types";
 import type { VendorUploadKind } from "@/domain/vendor/vendor-upload-kind";
+import { AddressAutocompleteInput } from "@/components/address/AddressAutocompleteInput";
 import { FileAttachmentField } from "@/components/vendor/onboarding/FileAttachmentField";
 import type { OnboardingStatusPayload } from "@/components/vendor/onboarding/types";
 import { PasswordRequirements } from "@/components/vendor/onboarding/PasswordRequirements";
@@ -143,6 +144,11 @@ export function VendorOnboardingWizard() {
         value: entry.name,
         label: `${entry.flag} ${entry.name}`,
       })),
+    []
+  );
+
+  const shippingCountryIsoCodes = useMemo(
+    () => SHIPPING_COUNTRIES.map((entry) => entry.iso),
     []
   );
 
@@ -1115,7 +1121,28 @@ export function VendorOnboardingWizard() {
                 <label className={LABEL}>Address line 1
                   <RequiredMark />
                 </label>
-                <input className={CONTROL} value={addressLine1} onChange={(e) => setAddressLine1(e.target.value)} />
+                <AddressAutocompleteInput
+                  className={CONTROL}
+                  value={addressLine1}
+                  countryCodes={shippingCountryIsoCodes}
+                  onTextChange={setAddressLine1}
+                  onPlaceSelect={(place) => {
+                    setAddressLine1(place.addressLine1);
+                    if (place.country) {
+                      const matchedCountry = normalizeCountryName(place.country);
+                      setCountry(matchedCountry);
+                      const matchedCity = place.city
+                        ? normalizeCityNameForCountry(matchedCountry, place.city)
+                        : "";
+                      setCity(matchedCity);
+                      setPostalCode(
+                        matchedCity && place.postalCode
+                          ? normalizePostalCodeForCity(matchedCountry, matchedCity, place.postalCode)
+                          : ""
+                      );
+                    }
+                  }}
+                />
               </div>
               <SearchableSelect
                 label="Country"

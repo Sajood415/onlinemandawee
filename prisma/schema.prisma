@@ -271,6 +271,7 @@ model User {
   refundCases       RefundCase[]
   caseMessages      CaseMessage[]
   giftRequests      GiftRequest[]
+  hawalaTransfers   HawalaTransfer[]
 }
 
 model Session {
@@ -1024,8 +1025,79 @@ model PlatformSettings {
   transactionFeeAmountMinor Int      @default(399)
   availableLocales          String[] @default(["en", "ps", "fa-AF"])
   availableCurrencies       String[] @default(["USD", "EUR", "GBP", "CAD"])
+  /// Mandawee's own warehouse pickup address, used as the delivery origin for
+  /// platform (1P) items priced per kilometer.
+  warehouseAddressLine1     String?
+  warehouseCity             String?
+  warehouseCountry          String?
+  warehousePostalCode       String?
   updatedAt                 DateTime @updatedAt
   updatedByUserId           String?  @db.ObjectId
+}
+
+enum HawalaTransferStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  IN_PROGRESS
+  DELIVERED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model HawalaExchangeRate {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  /// ISO currency code, e.g. "USD", "AFN".
+  currency        String   @unique
+  /// Value of 1 unit of `currency` expressed in AFN (Afghan Afghani).
+  rateToAfn       Float
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  updatedByUserId String?  @db.ObjectId
+}
+
+model HawalaTransfer {
+  id                    String               @id @default(auto()) @map("_id") @db.ObjectId
+  transferNumber        String               @unique
+  userId                String?              @db.ObjectId
+
+  senderName            String
+  senderPhone           String
+  senderEmail           String?
+  senderCountry         String
+  senderAddress         String
+  senderBankName        String
+  senderAccountNumber   String
+
+  receiverName          String
+  receiverPhone         String
+  receiverCountry       String
+  receiverAddress       String
+  receiverBankName      String
+  receiverAccountNumber String
+
+  sendAmountMinor       Int
+  sendCurrency          String
+  receiveAmountMinor    Int
+  receiveCurrency       String
+  /// Snapshot of the receiveCurrency-per-sendCurrency rate used at submission time.
+  exchangeRate          Float
+  note                  String?
+
+  status                HawalaTransferStatus @default(PENDING)
+  adminNote             String?
+
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  user                  User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([senderPhone, createdAt])
+  @@index([receiverPhone, createdAt])
 }
 
 enum HomeBannerPlacement {

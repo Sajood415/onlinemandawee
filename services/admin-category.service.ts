@@ -133,6 +133,52 @@ export class AdminCategoryService {
     return this.categoryRepository.listAll();
   }
 
+  async remove(categoryId: string, admin: AuthenticatedUser) {
+    const category = await this.categoryRepository.findById(categoryId);
+
+    if (!category) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Category not found",
+        statusCode: 404,
+      });
+    }
+
+    const [childCount, productCount] = await Promise.all([
+      this.categoryRepository.countChildren(categoryId),
+      this.categoryRepository.countProducts(categoryId),
+    ]);
+
+    if (childCount > 0) {
+      throw new AppError({
+        code: ERROR_CODE.CONFLICT,
+        message:
+          "This category has sub-categories. Delete or move them before deleting this category.",
+        statusCode: 409,
+      });
+    }
+
+    if (productCount > 0) {
+      throw new AppError({
+        code: ERROR_CODE.CONFLICT,
+        message: `${productCount} product${productCount === 1 ? "" : "s"} still use this category. Move or remove them before deleting it.`,
+        statusCode: 409,
+      });
+    }
+
+    await this.categoryRepository.delete(categoryId);
+
+    await this.auditLogRepository.create({
+      actorUserId: admin.id,
+      actorRole: admin.role,
+      action: "admin.category_deleted",
+      entityType: "Category",
+      entityId: categoryId,
+    });
+
+    return { id: categoryId };
+  }
+
   private async ensureUniqueSlug(name: string) {
     const baseSlug = slugify(name);
 

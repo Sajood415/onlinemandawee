@@ -698,6 +698,9 @@ export default function Header() {
             <HeaderNavLink href="/category/baby-care" pathname={pathname} size="desktop">
               {copy.babyCare}
             </HeaderNavLink>
+            <HeaderNavLink href="/hawala" pathname={pathname} size="desktop">
+              {copy.hawala}
+            </HeaderNavLink>
             <HeaderNavLink href="/contact" pathname={pathname} size="desktop">
               {copy.support}
             </HeaderNavLink>

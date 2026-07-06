@@ -14,6 +14,10 @@ type PlatformSettingsRecord = {
   transactionFeeAmountMinor: number;
   availableLocales: string[];
   availableCurrencies: string[];
+  warehouseAddressLine1: string | null;
+  warehouseCity: string | null;
+  warehouseCountry: string | null;
+  warehousePostalCode: string | null;
   updatedAt: Date;
   updatedByUserId: string | null;
 };
@@ -24,6 +28,10 @@ function defaultPlatformSettings(): PlatformSettingsRecord {
     transactionFeeAmountMinor: DEFAULT_TRANSACTION_FEE_AMOUNT_MINOR,
     availableLocales: [...DEFAULT_AVAILABLE_LOCALES],
     availableCurrencies: [...DEFAULT_AVAILABLE_CURRENCIES],
+    warehouseAddressLine1: null,
+    warehouseCity: null,
+    warehouseCountry: null,
+    warehousePostalCode: null,
     updatedAt: new Date(),
     updatedByUserId: null,
   };
@@ -43,6 +51,10 @@ function normalizeRecord(
       record.availableCurrencies && record.availableCurrencies.length > 0
         ? record.availableCurrencies
         : [...DEFAULT_AVAILABLE_CURRENCIES],
+    warehouseAddressLine1: record.warehouseAddressLine1 ?? null,
+    warehouseCity: record.warehouseCity ?? null,
+    warehouseCountry: record.warehouseCountry ?? null,
+    warehousePostalCode: record.warehousePostalCode ?? null,
     updatedAt: record.updatedAt ?? new Date(),
     updatedByUserId: record.updatedByUserId ?? null,
   };
@@ -72,6 +84,10 @@ export class PlatformSettingsRepository {
     transactionFeeAmountMinor?: number;
     availableLocales?: string[];
     availableCurrencies?: string[];
+    warehouseAddressLine1?: string | null;
+    warehouseCity?: string | null;
+    warehouseCountry?: string | null;
+    warehousePostalCode?: string | null;
     updatedByUserId?: string;
   }): Promise<PlatformSettingsRecord> {
     const current = defaultPlatformSettings();
@@ -85,6 +101,16 @@ export class PlatformSettingsRepository {
         ...(input.availableCurrencies !== undefined
           ? { availableCurrencies: input.availableCurrencies }
           : {}),
+        ...(input.warehouseAddressLine1 !== undefined
+          ? { warehouseAddressLine1: input.warehouseAddressLine1 }
+          : {}),
+        ...(input.warehouseCity !== undefined ? { warehouseCity: input.warehouseCity } : {}),
+        ...(input.warehouseCountry !== undefined
+          ? { warehouseCountry: input.warehouseCountry }
+          : {}),
+        ...(input.warehousePostalCode !== undefined
+          ? { warehousePostalCode: input.warehousePostalCode }
+          : {}),
         updatedByUserId: input.updatedByUserId ?? null,
       };
     }
@@ -97,6 +123,10 @@ export class PlatformSettingsRepository {
         availableLocales: input.availableLocales ?? [...DEFAULT_AVAILABLE_LOCALES],
         availableCurrencies:
           input.availableCurrencies ?? [...DEFAULT_AVAILABLE_CURRENCIES],
+        warehouseAddressLine1: input.warehouseAddressLine1 ?? null,
+        warehouseCity: input.warehouseCity ?? null,
+        warehouseCountry: input.warehouseCountry ?? null,
+        warehousePostalCode: input.warehousePostalCode ?? null,
         updatedByUserId: input.updatedByUserId ?? null,
       },
       update: {
@@ -105,6 +135,16 @@ export class PlatformSettingsRepository {
           : {}),
         ...(input.availableCurrencies !== undefined
           ? { availableCurrencies: input.availableCurrencies }
+          : {}),
+        ...(input.warehouseAddressLine1 !== undefined
+          ? { warehouseAddressLine1: input.warehouseAddressLine1 }
+          : {}),
+        ...(input.warehouseCity !== undefined ? { warehouseCity: input.warehouseCity } : {}),
+        ...(input.warehouseCountry !== undefined
+          ? { warehouseCountry: input.warehouseCountry }
+          : {}),
+        ...(input.warehousePostalCode !== undefined
+          ? { warehousePostalCode: input.warehousePostalCode }
           : {}),
         updatedByUserId: input.updatedByUserId ?? null,
       },

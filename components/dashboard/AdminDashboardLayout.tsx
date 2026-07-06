@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import {
+  Banknote,
   Gift,
   ImageIcon,
   LayoutDashboard,
@@ -12,6 +13,7 @@ import {
   Settings,
   ShoppingBag,
   Tag,
+  Tags,
   Truck,
   Wallet,
 } from "lucide-react";
@@ -38,8 +40,14 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
         { label: t("nav.warehouse"), href: "/admin/warehouse", icon: <Warehouse size={16} /> },
         { label: t("nav.disputes"), href: "/admin/disputes", icon: <Scale size={16} /> },
         { label: t("nav.categories"), href: "/admin/categories", icon: <Tag size={16} /> },
+        {
+          label: t("nav.subCategories"),
+          href: "/admin/categories/subcategories",
+          icon: <Tags size={16} />,
+        },
         { label: t("nav.banners"), href: "/admin/banners", icon: <ImageIcon size={16} /> },
         { label: t("nav.giftRequests"), href: "/admin/gift-requests", icon: <Gift size={16} /> },
+        { label: t("nav.hawala"), href: "/admin/hawala", icon: <Banknote size={16} /> },
         { label: t("nav.settings"), href: "/admin/settings", icon: <Settings size={16} /> },
       ]}
     >

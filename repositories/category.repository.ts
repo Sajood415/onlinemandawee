@@ -130,4 +130,16 @@ export class CategoryRepository {
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     });
   }
+
+  countChildren(categoryId: string) {
+    return prisma.category.count({ where: { parentId: categoryId } });
+  }
+
+  countProducts(categoryId: string) {
+    return prisma.product.count({ where: { categoryId } });
+  }
+
+  delete(id: string) {
+    return prisma.category.delete({ where: { id } });
+  }
 }

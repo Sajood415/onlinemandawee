@@ -18,6 +18,8 @@ type DeliveryQuoteItem = {
 type DeliveryQuoteVendorGroup = {
   vendorProfileId: string;
   subtotalCurrent: number;
+  /** Driving distance from this vendor's pickup address to the customer, if known. */
+  distanceKm?: number;
 };
 
 export class DeliveryPricingService {
@@ -62,10 +64,12 @@ export class DeliveryPricingService {
           countryCode,
         });
 
+        const distanceKm = vendorGroup.distanceKm ?? input.distanceKm;
         const amountUsdMinor = this.calculateAmount(rule, {
           subtotalAmount: vendorGroup.subtotalCurrent,
-          distanceKm: input.distanceKm,
+          distanceKm,
         });
+        const isPerKm = rule.priceModel === "PER_KM";
 
         return {
           vendorProfileId: vendorGroup.vendorProfileId,
@@ -74,6 +78,11 @@ export class DeliveryPricingService {
           etaMaxDays: rule.etaMaxDays,
           ruleId: rule.id,
           scope: rule.scope,
+          distanceKm: isPerKm ? distanceKm ?? 0 : 0,
+          baseFeeAmount: convertDeliveryRuleAmountMinor(rule.baseFeeAmount, input.currency),
+          perKmRateAmount: isPerKm
+            ? convertDeliveryRuleAmountMinor(rule.perKmRateAmount ?? 0, input.currency)
+            : 0,
         };
       });
 
@@ -110,6 +119,7 @@ export class DeliveryPricingService {
       totalAmountUsdMinor,
       input.currency
     );
+    const isPerKm = rule.priceModel === "PER_KM";
 
     return {
       method: input.method,
@@ -124,6 +134,11 @@ export class DeliveryPricingService {
         ruleId: rule.id,
         scope: rule.scope,
         vendorGroups: input.vendorGroups,
+        distanceKm: isPerKm ? input.distanceKm ?? 0 : 0,
+        baseFeeAmount: convertDeliveryRuleAmountMinor(rule.baseFeeAmount, input.currency),
+        perKmRateAmount: isPerKm
+          ? convertDeliveryRuleAmountMinor(rule.perKmRateAmount ?? 0, input.currency)
+          : 0,
       }),
     };
   }
@@ -222,6 +237,9 @@ export class DeliveryPricingService {
     ruleId: string;
     scope: string;
     vendorGroups: DeliveryQuoteVendorGroup[];
+    distanceKm: number;
+    baseFeeAmount: number;
+    perKmRateAmount: number;
   }) {
     if (input.vendorGroups.length === 0) {
       return [];
@@ -236,6 +254,9 @@ export class DeliveryPricingService {
           etaMaxDays: input.etaMaxDays,
           ruleId: input.ruleId,
           scope: input.scope,
+          distanceKm: input.distanceKm,
+          baseFeeAmount: input.baseFeeAmount,
+          perKmRateAmount: input.perKmRateAmount,
         },
       ];
     }
@@ -263,6 +284,12 @@ export class DeliveryPricingService {
         etaMaxDays: input.etaMaxDays,
         ruleId: input.ruleId,
         scope: input.scope,
+        // This is one consolidated shipment (single warehouse → customer
+        // distance shared across vendors), so distance/rate are shown as-is
+        // on every line rather than split per vendor.
+        distanceKm: input.distanceKm,
+        baseFeeAmount: input.baseFeeAmount,
+        perKmRateAmount: input.perKmRateAmount,
       };
     });
   }
