@@ -15,6 +15,15 @@ export type GiftRequestFormFields = {
   recipientAddress: string;
   occasion: string;
   preferredDeliveryDate: string;
+  itemType: string;
+  dressColor: string;
+  dressSize: string;
+  dressSleeveType: string;
+  dressLength: string;
+  dressFitting: string;
+  dressTexture: string;
+  dressForMale: boolean;
+  dressForFemale: boolean;
   preparationNotes: string;
   deliveryInstructions: string;
   budgetNote: string;
@@ -125,8 +134,10 @@ export function validateBudgetNote(value: string): string | null {
 
 export function validateGiftRequestField(
   field: keyof GiftRequestFormFields,
-  value: string
+  value: string | boolean
 ): string | null {
+  if (typeof value === "boolean") return null;
+
   switch (field) {
     case "senderName":
       return validateGuestName(value);

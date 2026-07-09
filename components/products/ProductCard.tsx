@@ -163,7 +163,11 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
           </div>
 
           <div className="mt-3 border-t border-neutral-100 pt-3">
-            <StarRating rating={product.rating} reviews={product.reviews} />
+            {product.reviews > 0 ? (
+              <StarRating rating={product.rating} reviews={product.reviews} />
+            ) : (
+              <span className="text-xs text-neutral-400">{copy.noReviews}</span>
+            )}
           </div>
 
           <div className="mt-auto flex flex-col gap-3 pt-4">

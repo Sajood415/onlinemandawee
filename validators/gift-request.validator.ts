@@ -53,6 +53,9 @@ const recipientAddressSchema = z
 
 const occasionSchema = z.string().trim().max(80).optional();
 
+const itemTypeSchema = z.enum(["DRESS"]).optional();
+const dressAttributeSchema = z.string().trim().max(80).optional();
+
 const preferredDeliveryDateSchema = z
   .string()
   .trim()
@@ -99,6 +102,15 @@ export const createGiftRequestSchema = z
     recipientAddress: recipientAddressSchema,
     occasion: occasionSchema,
     preferredDeliveryDate: preferredDeliveryDateSchema,
+    itemType: itemTypeSchema,
+    dressColor: dressAttributeSchema,
+    dressSize: dressAttributeSchema,
+    dressSleeveType: dressAttributeSchema,
+    dressLength: dressAttributeSchema,
+    dressFitting: dressAttributeSchema,
+    dressTexture: dressAttributeSchema,
+    dressForMale: z.boolean().optional(),
+    dressForFemale: z.boolean().optional(),
     preparationNotes: preparationNotesSchema,
     deliveryInstructions: deliveryInstructionsSchema,
     budgetNote: budgetNoteSchema,
@@ -109,6 +121,20 @@ export const createGiftRequestSchema = z
     ...data,
     imageUrls: sanitizeGiftMediaUrls(data.imageUrls, MAX_GIFT_REQUEST_IMAGES),
     videoUrls: sanitizeGiftMediaUrls(data.videoUrls, MAX_GIFT_REQUEST_VIDEOS),
+    // Dress attributes are only meaningful when the item type is "DRESS";
+    // drop them otherwise so stale values can't linger in the database.
+    ...(data.itemType !== "DRESS"
+      ? {
+          dressColor: undefined,
+          dressSize: undefined,
+          dressSleeveType: undefined,
+          dressLength: undefined,
+          dressFitting: undefined,
+          dressTexture: undefined,
+          dressForMale: undefined,
+          dressForFemale: undefined,
+        }
+      : {}),
   }));
 
 export type CreateGiftRequestInput = z.infer<typeof createGiftRequestSchema>;

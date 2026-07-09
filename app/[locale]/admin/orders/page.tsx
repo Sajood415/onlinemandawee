@@ -835,7 +835,7 @@ export default function AdminOrdersPage() {
       {detailOrderId ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
           <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-neutral-200 bg-white shadow-xl">
-            <div className="sticky top-0 flex items-center justify-between border-b border-neutral-200 bg-white px-5 py-4">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-200 bg-white px-5 py-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
                   Order detail

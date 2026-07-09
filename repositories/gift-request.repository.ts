@@ -16,6 +16,15 @@ const giftRequestSelect = {
   recipientAddress: true,
   occasion: true,
   preferredDeliveryDate: true,
+  itemType: true,
+  dressColor: true,
+  dressSize: true,
+  dressSleeveType: true,
+  dressLength: true,
+  dressFitting: true,
+  dressTexture: true,
+  dressForMale: true,
+  dressForFemale: true,
   preparationNotes: true,
   deliveryInstructions: true,
   budgetNote: true,
@@ -109,6 +118,15 @@ export class GiftRequestRepository {
     recipientAddress: string;
     occasion?: string | null;
     preferredDeliveryDate?: string | null;
+    itemType?: string | null;
+    dressColor?: string | null;
+    dressSize?: string | null;
+    dressSleeveType?: string | null;
+    dressLength?: string | null;
+    dressFitting?: string | null;
+    dressTexture?: string | null;
+    dressForMale?: boolean;
+    dressForFemale?: boolean;
     preparationNotes: string;
     deliveryInstructions: string;
     budgetNote?: string | null;
@@ -130,6 +148,15 @@ export class GiftRequestRepository {
         recipientAddress: input.recipientAddress,
         occasion: input.occasion ?? null,
         preferredDeliveryDate: input.preferredDeliveryDate ?? null,
+        itemType: input.itemType ?? null,
+        dressColor: input.dressColor ?? null,
+        dressSize: input.dressSize ?? null,
+        dressSleeveType: input.dressSleeveType ?? null,
+        dressLength: input.dressLength ?? null,
+        dressFitting: input.dressFitting ?? null,
+        dressTexture: input.dressTexture ?? null,
+        dressForMale: input.dressForMale ?? false,
+        dressForFemale: input.dressForFemale ?? false,
         preparationNotes: input.preparationNotes,
         deliveryInstructions: input.deliveryInstructions,
         budgetNote: input.budgetNote ?? null,

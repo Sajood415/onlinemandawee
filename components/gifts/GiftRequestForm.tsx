@@ -5,6 +5,11 @@ import { CheckCircle, Gift, Loader2, MapPin, Send, User } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 
 import {
+  DRESS_FITTING_OPTIONS,
+  DRESS_LENGTH_OPTIONS,
+  DRESS_SIZE_OPTIONS,
+  DRESS_SLEEVE_OPTIONS,
+  GIFT_ITEM_TYPE_OPTIONS,
   GIFT_OCCASION_OPTIONS,
   getGiftRequestFormCopy,
 } from "@/components/gifts/copy";
@@ -77,6 +82,15 @@ const EMPTY_FORM: GiftRequestFormFields = {
   recipientAddress: "",
   occasion: "",
   preferredDeliveryDate: "",
+  itemType: "",
+  dressColor: "",
+  dressSize: "",
+  dressSleeveType: "",
+  dressLength: "",
+  dressFitting: "",
+  dressTexture: "",
+  dressForMale: false,
+  dressForFemale: false,
   preparationNotes: "",
   deliveryInstructions: "",
   budgetNote: "",
@@ -125,6 +139,37 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
       })),
     [locale]
   );
+
+  const itemTypeOptions = useMemo(
+    () =>
+      GIFT_ITEM_TYPE_OPTIONS.map((option) => ({
+        value: option.value,
+        label: option.label[locale],
+      })),
+    [locale]
+  );
+
+  const dressSizeOptions = useMemo(
+    () => DRESS_SIZE_OPTIONS.map((option) => ({ value: option.value, label: option.label[locale] })),
+    [locale]
+  );
+
+  const dressSleeveOptions = useMemo(
+    () => DRESS_SLEEVE_OPTIONS.map((option) => ({ value: option.value, label: option.label[locale] })),
+    [locale]
+  );
+
+  const dressLengthOptions = useMemo(
+    () => DRESS_LENGTH_OPTIONS.map((option) => ({ value: option.value, label: option.label[locale] })),
+    [locale]
+  );
+
+  const dressFittingOptions = useMemo(
+    () => DRESS_FITTING_OPTIONS.map((option) => ({ value: option.value, label: option.label[locale] })),
+    [locale]
+  );
+
+  const isDressSelected = form.itemType === "DRESS";
 
   const clearFieldError = (field: keyof GiftRequestFormFields) => {
     setErrors((current) => {
@@ -180,6 +225,15 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
         recipientAddress: form.recipientAddress.trim(),
         occasion: form.occasion || undefined,
         preferredDeliveryDate: form.preferredDeliveryDate || undefined,
+        itemType: (form.itemType as "DRESS" | "") || undefined,
+        dressColor: isDressSelected ? form.dressColor.trim() || undefined : undefined,
+        dressSize: isDressSelected ? form.dressSize || undefined : undefined,
+        dressSleeveType: isDressSelected ? form.dressSleeveType || undefined : undefined,
+        dressLength: isDressSelected ? form.dressLength || undefined : undefined,
+        dressFitting: isDressSelected ? form.dressFitting || undefined : undefined,
+        dressTexture: isDressSelected ? form.dressTexture.trim() || undefined : undefined,
+        dressForMale: isDressSelected ? form.dressForMale : undefined,
+        dressForFemale: isDressSelected ? form.dressForFemale : undefined,
         preparationNotes: form.preparationNotes.trim(),
         deliveryInstructions: form.deliveryInstructions.trim(),
         budgetNote: form.budgetNote.trim() || undefined,
@@ -409,6 +463,125 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
                 onBlur={() => validateOnBlur("preferredDeliveryDate")}
               />
             </FormField>
+            <FormField label={copy.itemType}>
+              <select
+                className={fieldClassName()}
+                value={form.itemType}
+                onChange={(event) => updateField("itemType", event.target.value)}
+              >
+                <option value="">{copy.itemTypePlaceholder}</option>
+                {itemTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+
+            {isDressSelected ? (
+              <div className="sm:col-span-2 rounded-xl border border-[#0f3460]/15 bg-[#0f3460]/5 p-4">
+                <h4 className="text-sm font-semibold text-[#0f3460]">{copy.dressSection}</h4>
+                <p className="mt-1 text-xs text-neutral-600">{copy.dressSectionHint}</p>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <FormField label={copy.dressColor}>
+                    <input
+                      className={fieldClassName()}
+                      value={form.dressColor}
+                      onChange={(event) => updateField("dressColor", event.target.value)}
+                      placeholder={copy.dressColorPlaceholder}
+                    />
+                  </FormField>
+                  <FormField label={copy.dressTexture}>
+                    <input
+                      className={fieldClassName()}
+                      value={form.dressTexture}
+                      onChange={(event) => updateField("dressTexture", event.target.value)}
+                      placeholder={copy.dressTexturePlaceholder}
+                    />
+                  </FormField>
+                  <FormField label={copy.dressSize}>
+                    <select
+                      className={fieldClassName()}
+                      value={form.dressSize}
+                      onChange={(event) => updateField("dressSize", event.target.value)}
+                    >
+                      <option value="">{copy.dressSizePlaceholder}</option>
+                      {dressSizeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
+                  <FormField label={copy.dressSleeveType}>
+                    <select
+                      className={fieldClassName()}
+                      value={form.dressSleeveType}
+                      onChange={(event) => updateField("dressSleeveType", event.target.value)}
+                    >
+                      <option value="">{copy.dressSleeveTypePlaceholder}</option>
+                      {dressSleeveOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
+                  <FormField label={copy.dressLength}>
+                    <select
+                      className={fieldClassName()}
+                      value={form.dressLength}
+                      onChange={(event) => updateField("dressLength", event.target.value)}
+                    >
+                      <option value="">{copy.dressLengthPlaceholder}</option>
+                      {dressLengthOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
+                  <FormField label={copy.dressFitting}>
+                    <select
+                      className={fieldClassName()}
+                      value={form.dressFitting}
+                      onChange={(event) => updateField("dressFitting", event.target.value)}
+                    >
+                      <option value="">{copy.dressFittingPlaceholder}</option>
+                      {dressFittingOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
+                  <div className="sm:col-span-2">
+                    <label className={LABEL_CLASS}>{copy.dressGenderLabel}</label>
+                    <div className="flex flex-wrap items-center gap-5">
+                      <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-neutral-300 text-[#0f3460] focus:ring-[#0f3460]/30"
+                          checked={form.dressForMale}
+                          onChange={(event) => updateField("dressForMale", event.target.checked)}
+                        />
+                        {copy.dressForMale}
+                      </label>
+                      <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-neutral-300 text-[#0f3460] focus:ring-[#0f3460]/30"
+                          checked={form.dressForFemale}
+                          onChange={(event) => updateField("dressForFemale", event.target.checked)}
+                        />
+                        {copy.dressForFemale}
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             <div className="sm:col-span-2">
               <FormField label={copy.preparationNotes} required error={errors.preparationNotes}>
                 <textarea

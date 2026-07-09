@@ -42,6 +42,7 @@ export function getProductsCopy(locale: SupportedLocale) {
     sortPriceLow: en ? "Price: Low to High" : ps ? "قیمت: کم به زیاد" : "قیمت: کم به زیاد",
     sortPriceHigh: en ? "Price: High to Low" : ps ? "قیمت: زیاد به کم" : "قیمت: زیاد به کم",
     sortRating: en ? "Top rated" : ps ? "ترټولو ښه" : "بالاترین امتیاز",
+    noReviews: en ? "No reviews yet" : ps ? "تر اوسه بیاکتنه نشته" : "هنوز نظری ثبت نشده",
     clearAll: en ? "Clear all" : ps ? "ټول پاک کړئ" : "پاک کردن همه",
     category: en ? "Category" : ps ? "کټګوري" : "دسته",
     price: en ? "Price" : ps ? "قیمت" : "قیمت",

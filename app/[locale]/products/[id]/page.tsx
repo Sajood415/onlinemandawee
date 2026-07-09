@@ -28,6 +28,7 @@ import {
   localizeDelivery,
   localizeVendor,
 } from "@/lib/localization/product-vendor";
+import { ProductReviews } from "@/components/products/ProductReviews";
 import { RelatedProducts } from "@/components/products/RelatedProducts";
 import type { CatalogRow } from "@/components/products/types";
 import {
@@ -489,9 +490,12 @@ export default function ProductDetailPage() {
                 ))}
               </div>
               <span className="text-sm font-medium text-gray-700">
-                {product.rating}
+                {product.reviews > 0 ? product.rating.toFixed(1) : "—"}
               </span>
-              <span className="text-sm text-gray-500 hover:text-primary hover:underline cursor-pointer">
+              <a
+                href="#reviews"
+                className="text-sm text-gray-500 hover:text-primary hover:underline"
+              >
                 ({product.reviews}{" "}
                 {locale === "en"
                   ? "reviews"
@@ -499,7 +503,7 @@ export default function ProductDetailPage() {
                     ? "بیاکتنې"
                     : "نقد"}
                 )
-              </span>
+              </a>
               <span className="text-sm text-green-600 font-medium">
                 {inStock
                   ? locale === "en"
@@ -823,6 +827,10 @@ export default function ProductDetailPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="mb-12">
+          <ProductReviews productId={product.id} locale={locale} />
         </div>
 
         <RelatedProducts

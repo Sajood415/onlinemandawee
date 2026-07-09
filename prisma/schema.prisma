@@ -272,6 +272,7 @@ model User {
   caseMessages      CaseMessage[]
   giftRequests      GiftRequest[]
   hawalaTransfers   HawalaTransfer[]
+  productReviews    ProductReview[]
 }
 
 model Session {
@@ -547,6 +548,9 @@ model Product {
   approvalStatus  ProductApprovalStatus @default(DRAFT)
   rejectionReason String?
   isActive        Boolean               @default(true)
+  /// Denormalized from non-hidden ProductReview rows for fast catalog reads.
+  ratingAverage   Float                 @default(0)
+  reviewCount     Int                   @default(0)
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
   vendorProfile   VendorProfile         @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
@@ -554,10 +558,27 @@ model Product {
   cartItems       CartItem[]
   orderItems      OrderItem[]
   variants        ProductVariant[]
+  reviews         ProductReview[]
 
   @@unique([vendorProfileId, slug])
   @@index([vendorProfileId, approvalStatus])
   @@index([categoryId, approvalStatus, isActive])
+}
+
+model ProductReview {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId String   @db.ObjectId
+  userId    String   @db.ObjectId
+  rating    Int
+  comment   String
+  isHidden  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([productId, isHidden, createdAt])
+  @@index([userId, createdAt])
 }
 
 model ProductVariant {
@@ -995,6 +1016,16 @@ model GiftRequest {
   recipientAddress      String
   occasion              String?
   preferredDeliveryDate String?
+  /// When set to "DRESS", the dress* fields below describe the requested item.
+  itemType              String?
+  dressColor            String?
+  dressSize             String?
+  dressSleeveType       String?
+  dressLength           String?
+  dressFitting          String?
+  dressTexture          String?
+  dressForMale          Boolean           @default(false)
+  dressForFemale        Boolean           @default(false)
   preparationNotes      String
   deliveryInstructions  String
   budgetNote            String?

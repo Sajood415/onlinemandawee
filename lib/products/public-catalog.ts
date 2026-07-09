@@ -24,6 +24,8 @@ export type ApiCatalogProduct = {
   priceAmount: number;
   stockQty: number;
   slug: string;
+  ratingAverage?: number;
+  reviewCount?: number;
   category: { id: string; name: string; slug: string; translations?: unknown };
   vendorProfile: {
     id: string;
@@ -188,8 +190,8 @@ export function mapApiProductToCatalog(product: ApiCatalogProduct): PublicCatalo
       product.category.name,
       product.category.translations
     ),
-    rating: 4.5,
-    reviews: 0,
+    rating: product.ratingAverage ?? 0,
+    reviews: product.reviewCount ?? 0,
     delivery: "Standard delivery",
     description: localized.description,
     features: [],

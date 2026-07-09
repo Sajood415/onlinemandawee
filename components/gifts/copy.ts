@@ -36,6 +36,73 @@ export const GIFT_OCCASION_OPTIONS: GiftOccasionOption[] = [
   },
 ];
 
+export type GiftItemTypeOption = {
+  value: string;
+  label: Record<SupportedLocale, string>;
+};
+
+export const GIFT_ITEM_TYPE_OPTIONS: GiftItemTypeOption[] = [
+  {
+    value: "DRESS",
+    label: { en: "Dress", ps: "کالي", "fa-AF": "لباس" },
+  },
+];
+
+export const DRESS_SIZE_OPTIONS: GiftItemTypeOption[] = [
+  { value: "XS", label: { en: "XS", ps: "XS", "fa-AF": "XS" } },
+  { value: "S", label: { en: "S", ps: "S", "fa-AF": "S" } },
+  { value: "M", label: { en: "M", ps: "M", "fa-AF": "M" } },
+  { value: "L", label: { en: "L", ps: "L", "fa-AF": "L" } },
+  { value: "XL", label: { en: "XL", ps: "XL", "fa-AF": "XL" } },
+  { value: "XXL", label: { en: "XXL", ps: "XXL", "fa-AF": "XXL" } },
+  { value: "XXXL", label: { en: "XXXL", ps: "XXXL", "fa-AF": "XXXL" } },
+  {
+    value: "custom",
+    label: { en: "Custom / Other", ps: "ځانګړی اندازه / نور", "fa-AF": "اندازه خاص / سایر" },
+  },
+];
+
+export const DRESS_SLEEVE_OPTIONS: GiftItemTypeOption[] = [
+  {
+    value: "sleeveless",
+    label: { en: "Sleeveless", ps: "پرته له لستوڼي", "fa-AF": "بدون آستین" },
+  },
+  {
+    value: "half-sleeve",
+    label: { en: "Half sleeve", ps: "نیم لستوڼی", "fa-AF": "آستین نیم" },
+  },
+  {
+    value: "three-quarter-sleeve",
+    label: { en: "3/4 sleeve", ps: "٣/٤ لستوڼی", "fa-AF": "آستین سه‌ربعی" },
+  },
+  {
+    value: "full-sleeve",
+    label: { en: "Full sleeve", ps: "بشپړ لستوڼی", "fa-AF": "آستین کامل" },
+  },
+];
+
+export const DRESS_LENGTH_OPTIONS: GiftItemTypeOption[] = [
+  { value: "short", label: { en: "Short", ps: "لنډ", "fa-AF": "کوتاه" } },
+  {
+    value: "knee-length",
+    label: { en: "Knee-length", ps: "تر زنګون پورې", "fa-AF": "تا زانو" },
+  },
+  { value: "midi", label: { en: "Midi", ps: "منځنی", "fa-AF": "میدی" } },
+  {
+    value: "maxi",
+    label: { en: "Long / Maxi", ps: "اوږد / مکسي", "fa-AF": "بلند / مکسی" },
+  },
+];
+
+export const DRESS_FITTING_OPTIONS: GiftItemTypeOption[] = [
+  { value: "slim", label: { en: "Slim fit", ps: "نری فټ", "fa-AF": "فیت باریک" } },
+  {
+    value: "regular",
+    label: { en: "Regular fit", ps: "منظم فټ", "fa-AF": "فیت معمولی" },
+  },
+  { value: "loose", label: { en: "Loose fit", ps: "لوز فټ", "fa-AF": "فیت گشاد" } },
+];
+
 export function getGiftsCopy(locale: SupportedLocale) {
   const en = locale === "en";
   const ps = locale === "ps";
@@ -85,6 +152,41 @@ export function getGiftsCopy(locale: SupportedLocale) {
     occasion: en ? "Occasion (optional)" : ps ? "مناسبت (اختیاري)" : "مناسبت (اختیاری)",
     occasionPlaceholder: en ? "Select an occasion" : ps ? "مناسبت وټاکئ" : "مناسبت را انتخاب کنید",
     preferredDate: en ? "Preferred delivery date (optional)" : ps ? "غوره د تحویلي نېټه (اختیاري)" : "تاریخ تحویل ترجیحی (اختیاری)",
+    itemType: en ? "Item type (optional)" : ps ? "د توکي ډول (اختیاري)" : "نوع قلم (اختیاری)",
+    itemTypePlaceholder: en
+      ? "None — general gift request"
+      : ps
+        ? "هیڅ — عمومي د ډالۍ غوښتنه"
+        : "هیچ — درخواست عمومی هدیه",
+    dressSection: en ? "Dress details" : ps ? "د کالي جزییات" : "جزئیات لباس",
+    dressSectionHint: en
+      ? "Tell us how the dress should look so we can source or tailor it."
+      : ps
+        ? "موږ ته ووایاست چې کالي څنګه ښکاره شي ترڅو موږ یې چمتو یا ګنډل کړو."
+        : "بگویید لباس چگونه باید باشد تا آن را تهیه یا بدوزیم.",
+    dressColor: en ? "Color" : ps ? "رنګ" : "رنگ",
+    dressColorPlaceholder: en ? "e.g. Red, Navy blue" : ps ? "لکه سور، نيوي شين" : "مثلاً قرمز، سرمه‌ای",
+    dressSize: en ? "Size" : ps ? "اندازه" : "اندازه",
+    dressSizePlaceholder: en ? "Select a size" : ps ? "اندازه وټاکئ" : "اندازه را انتخاب کنید",
+    dressSleeveType: en ? "Sleeve type" : ps ? "د لستوڼي ډول" : "نوع آستین",
+    dressSleeveTypePlaceholder: en
+      ? "Select sleeve type"
+      : ps
+        ? "د لستوڼي ډول وټاکئ"
+        : "نوع آستین را انتخاب کنید",
+    dressLength: en ? "Length" : ps ? "اوږدوالی" : "طول",
+    dressLengthPlaceholder: en ? "Select length" : ps ? "اوږدوالی وټاکئ" : "طول را انتخاب کنید",
+    dressFitting: en ? "Fitting" : ps ? "فټینګ" : "فیت",
+    dressFittingPlaceholder: en ? "Select fitting" : ps ? "فټینګ وټاکئ" : "فیت را انتخاب کنید",
+    dressTexture: en ? "Fabric / texture" : ps ? "کیڼل / بڼه" : "پارچه / بافت",
+    dressTexturePlaceholder: en
+      ? "e.g. Cotton, Silk, Velvet"
+      : ps
+        ? "لکه کاټن، ورېښمین، مخملي"
+        : "مثلاً پنبه، ابریشم، مخمل",
+    dressGenderLabel: en ? "For" : ps ? "لپاره" : "برای",
+    dressForMale: en ? "Male" : ps ? "نارینه" : "مرد",
+    dressForFemale: en ? "Female" : ps ? "ښځینه" : "زن",
     preparationNotes: en ? "How should the gift be prepared?" : ps ? "ډالۍ څنګه چمتو شي؟" : "هدیه چگونه آماده شود؟",
     preparationPlaceholder: en
       ? "Describe items, packaging, wrapping, personalization, dietary preferences, or anything special you want included."

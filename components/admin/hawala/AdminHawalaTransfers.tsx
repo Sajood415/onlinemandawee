@@ -357,7 +357,7 @@ export function AdminHawalaTransfers() {
       {selected ? (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 p-4">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
-            <div className="sticky top-0 flex items-start justify-between border-b border-neutral-100 bg-white px-6 py-4">
+            <div className="sticky top-0 z-10 flex items-start justify-between border-b border-neutral-100 bg-white px-6 py-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">
                   Hawala transfer

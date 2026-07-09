@@ -234,6 +234,17 @@ export class ProductRepository {
     });
   }
 
+  updateRatingAggregate(id: string, input: { ratingAverage: number; reviewCount: number }) {
+    return prisma.product.update({
+      where: { id },
+      data: {
+        ratingAverage: input.ratingAverage,
+        reviewCount: input.reviewCount,
+      },
+      select: { id: true, ratingAverage: true, reviewCount: true },
+    });
+  }
+
   archive(id: string) {
     return prisma.product.update({
       where: { id },

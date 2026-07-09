@@ -40,6 +40,15 @@ type CustomerGiftRequest = {
   recipientAddress: string;
   occasion: string | null;
   preferredDeliveryDate: string | null;
+  itemType: string | null;
+  dressColor: string | null;
+  dressSize: string | null;
+  dressSleeveType: string | null;
+  dressLength: string | null;
+  dressFitting: string | null;
+  dressTexture: string | null;
+  dressForMale: boolean;
+  dressForFemale: boolean;
   preparationNotes: string;
   deliveryInstructions: string;
   budgetNote: string | null;
@@ -148,6 +157,49 @@ function GiftRequestCard({
               </p>
             </div>
           </div>
+
+          {request.itemType === "DRESS" ? (
+            <div className="rounded-xl border border-[#0f3460]/15 bg-[#0f3460]/5 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#0f3460]">
+                {t("dressDetails")}
+              </p>
+              <div className="mt-2 grid gap-2 text-sm text-neutral-800 sm:grid-cols-3">
+                <p>
+                  <span className="text-neutral-500">{t("dressColor")}:</span>{" "}
+                  {request.dressColor ?? "—"}
+                </p>
+                <p>
+                  <span className="text-neutral-500">{t("dressSize")}:</span>{" "}
+                  {request.dressSize ?? "—"}
+                </p>
+                <p>
+                  <span className="text-neutral-500">{t("dressSleeveType")}:</span>{" "}
+                  {request.dressSleeveType ?? "—"}
+                </p>
+                <p>
+                  <span className="text-neutral-500">{t("dressLength")}:</span>{" "}
+                  {request.dressLength ?? "—"}
+                </p>
+                <p>
+                  <span className="text-neutral-500">{t("dressFitting")}:</span>{" "}
+                  {request.dressFitting ?? "—"}
+                </p>
+                <p>
+                  <span className="text-neutral-500">{t("dressTexture")}:</span>{" "}
+                  {request.dressTexture ?? "—"}
+                </p>
+                <p className="sm:col-span-3">
+                  <span className="text-neutral-500">{t("dressGenderLabel")}:</span>{" "}
+                  {[
+                    request.dressForMale ? t("dressForMale") : null,
+                    request.dressForFemale ? t("dressForFemale") : null,
+                  ]
+                    .filter(Boolean)
+                    .join(", ") || "—"}
+                </p>
+              </div>
+            </div>
+          ) : null}
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">

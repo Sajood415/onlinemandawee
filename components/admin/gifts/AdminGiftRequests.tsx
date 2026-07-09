@@ -34,6 +34,15 @@ type GiftRequestRow = {
   recipientAddress: string;
   occasion: string | null;
   preferredDeliveryDate: string | null;
+  itemType: string | null;
+  dressColor: string | null;
+  dressSize: string | null;
+  dressSleeveType: string | null;
+  dressLength: string | null;
+  dressFitting: string | null;
+  dressTexture: string | null;
+  dressForMale: boolean;
+  dressForFemale: boolean;
   preparationNotes: string;
   deliveryInstructions: string;
   budgetNote: string | null;
@@ -174,7 +183,14 @@ export function AdminGiftRequests() {
         header: "Recipient",
         cell: ({ row }) => (
           <div>
-            <p className="font-medium text-neutral-900">{row.original.recipientName}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="font-medium text-neutral-900">{row.original.recipientName}</p>
+              {row.original.itemType === "DRESS" ? (
+                <span className="rounded-full bg-[#0f3460]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#0f3460]">
+                  Dress
+                </span>
+              ) : null}
+            </div>
             <p className="text-xs text-neutral-500">{row.original.recipientCity}</p>
           </div>
         ),
@@ -298,7 +314,7 @@ export function AdminGiftRequests() {
       {selected ? (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 p-4">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
-            <div className="sticky top-0 flex items-start justify-between border-b border-neutral-100 bg-white px-6 py-4">
+            <div className="sticky top-0 z-10 flex items-start justify-between border-b border-neutral-100 bg-white px-6 py-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">
                   Gift request
@@ -367,6 +383,67 @@ export function AdminGiftRequests() {
                   <p className="mt-1 text-sm text-neutral-800">{selected.budgetNote ?? "—"}</p>
                 </div>
               </section>
+
+              {selected.itemType === "DRESS" ? (
+                <section className="rounded-xl border border-[#0f3460]/15 bg-[#0f3460]/5 p-4">
+                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-[#0f3460]">
+                    Dress details
+                  </h3>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        Color
+                      </p>
+                      <p className="mt-1 text-sm text-neutral-800">{selected.dressColor ?? "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        Size
+                      </p>
+                      <p className="mt-1 text-sm text-neutral-800">{selected.dressSize ?? "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        Sleeve type
+                      </p>
+                      <p className="mt-1 text-sm text-neutral-800">
+                        {selected.dressSleeveType ?? "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        Length
+                      </p>
+                      <p className="mt-1 text-sm text-neutral-800">{selected.dressLength ?? "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        Fitting
+                      </p>
+                      <p className="mt-1 text-sm text-neutral-800">{selected.dressFitting ?? "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        Fabric / texture
+                      </p>
+                      <p className="mt-1 text-sm text-neutral-800">{selected.dressTexture ?? "—"}</p>
+                    </div>
+                    <div className="sm:col-span-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        For
+                      </p>
+                      <p className="mt-1 text-sm text-neutral-800">
+                        {[
+                          selected.dressForMale ? "Male" : null,
+                          selected.dressForFemale ? "Female" : null,
+                        ]
+                          .filter(Boolean)
+                          .join(", ") || "—"}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+              ) : null}
 
               <section>
                 <h3 className="mb-2 text-sm font-semibold text-neutral-800">Preparation notes</h3>
