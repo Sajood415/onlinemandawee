@@ -15,19 +15,39 @@ const REFRESH_TOKEN_KEY = "refreshToken";
 const clearStoredTokens = () => {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("auth:session-expired"));
+  }
+};
+
+const normalizeHeaders = (headers?: HeadersInit): Record<string, string> => {
+  if (!headers) return {};
+  if (headers instanceof Headers) {
+    return Object.fromEntries(headers.entries());
+  }
+  if (Array.isArray(headers)) {
+    return Object.fromEntries(headers);
+  }
+  return { ...headers };
 };
 
 const withAuthHeader = (init: RequestInit | undefined, token: string): RequestInit => {
-  const headers = new Headers(init?.headers);
-  headers.set("Authorization", `Bearer ${token}`);
+  const trimmedToken = token.trim();
+  if (!trimmedToken) {
+    throw new Error("Session expired. Please sign in again.");
+  }
+
   return {
     ...init,
-    headers,
+    headers: {
+      ...normalizeHeaders(init?.headers),
+      Authorization: `Bearer ${trimmedToken}`,
+    },
   };
 };
 
 const refreshAccessToken = async (): Promise<string | null> => {
-  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY)?.trim();
   if (!refreshToken) return null;
 
   try {
@@ -56,8 +76,9 @@ export async function fetchWithAuth(
   input: RequestInfo | URL,
   init?: RequestInit
 ): Promise<Response> {
-  const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+  const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY)?.trim();
   if (!accessToken) {
+    clearStoredTokens();
     throw new Error("Session expired. Please sign in again.");
   }
 

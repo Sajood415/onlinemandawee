@@ -60,7 +60,7 @@ export class ProductReviewService {
     });
   }
 
-  async createForCustomer(
+  async createForUser(
     auth: AuthenticatedUser,
     productId: string,
     input: CreateProductReviewInput

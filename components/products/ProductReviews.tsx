@@ -9,7 +9,19 @@ import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
 import { getProductReviewsCopy } from "@/components/products/product-reviews-copy";
+import type { Role } from "@/domain/auth/role";
 import { useAuth } from "@/store/auth-context";
+
+const REVIEW_AUTHOR_ROLES: Role[] = ["CUSTOMER", "VENDOR", "ADMIN"];
+
+function hasStoredAccessToken() {
+  if (typeof window === "undefined") return false;
+  return !!localStorage.getItem("accessToken")?.trim();
+}
+
+function isAuthErrorMessage(message: string) {
+  return /authorization|session|sign in|token|permission|expired/i.test(message);
+}
 
 type ProductReview = {
   id: string;
@@ -80,8 +92,13 @@ function StarPicker({
 
 export function ProductReviews({ productId, locale }: ProductReviewsProps) {
   const copy = getProductReviewsCopy(locale);
-  const { user, isAuthenticated } = useAuth();
-  const canReview = isAuthenticated && user?.role === "CUSTOMER";
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const canReview =
+    !isLoading &&
+    isAuthenticated &&
+    !!user &&
+    REVIEW_AUTHOR_ROLES.includes(user.role) &&
+    hasStoredAccessToken();
 
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [page, setPage] = useState(1);
@@ -145,7 +162,13 @@ export function ProductReviews({ productId, locale }: ProductReviewsProps) {
       return;
     }
     if (comment.trim().length < 5) {
-      toast.error(copy.submitFailed);
+      toast.error(copy.commentTooShort);
+      return;
+    }
+
+    if (!hasStoredAccessToken()) {
+      logout();
+      toast.error(copy.sessionExpired);
       return;
     }
 
@@ -163,7 +186,13 @@ export function ProductReviews({ productId, locale }: ProductReviewsProps) {
       setComment("");
       toast.success(copy.submitSuccess);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : copy.submitFailed);
+      const message = error instanceof Error ? error.message : copy.submitFailed;
+      if (isAuthErrorMessage(message)) {
+        logout();
+        toast.error(copy.sessionExpired);
+        return;
+      }
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }

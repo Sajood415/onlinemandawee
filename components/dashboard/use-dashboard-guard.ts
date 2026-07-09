@@ -14,6 +14,12 @@ type AuthUser = {
   email: string;
 };
 
+const clearStoredSession = () => {
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+  window.dispatchEvent(new CustomEvent("auth:session-expired"));
+};
+
 export function useDashboardGuard(expectedRole: DashboardRole) {
   const router = useRouter();
   const pathname = usePathname();
@@ -41,8 +47,7 @@ export function useDashboardGuard(expectedRole: DashboardRole) {
       }
 
       if (!res.ok) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        clearStoredSession();
         routerRef.current.replace(buildLoginRedirectPath(pathname));
         return;
       }
@@ -55,8 +60,7 @@ export function useDashboardGuard(expectedRole: DashboardRole) {
       }
 
       if (currentUser.role === "VENDOR" && currentUser.status !== "ACTIVE") {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        clearStoredSession();
         routerRef.current.replace("/auth/login");
         return;
       }
@@ -80,8 +84,7 @@ export function useDashboardGuard(expectedRole: DashboardRole) {
       if (signal?.aborted || (error instanceof DOMException && error.name === "AbortError")) {
         return;
       }
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+      clearStoredSession();
       routerRef.current.replace(buildLoginRedirectPath(pathname));
     }
   }, [expectedRole, pathname]);

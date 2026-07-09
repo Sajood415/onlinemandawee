@@ -48,16 +48,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAuthenticated = !!user;
 
+  const logout = () => {
+    invalidateVendorStoreNameCache();
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    setUser(null);
+  };
+
   // useLayoutEffect: resolve no-token path synchronously before paint to avoid
   // flashing the login control for guests; keep "loading" until /me returns when a token exists.
   useLayoutEffect(() => {
     void checkAuth();
   }, []);
 
+  useLayoutEffect(() => {
+    const handleSessionExpired = () => logout();
+
+    window.addEventListener("auth:session-expired", handleSessionExpired);
+    return () => {
+      window.removeEventListener("auth:session-expired", handleSessionExpired);
+    };
+  }, []);
+
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem("accessToken");
+      const token = localStorage.getItem("accessToken")?.trim();
       if (!token) {
+        setUser(null);
         setIsLoading(false);
         return;
       }
@@ -110,13 +127,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const logout = () => {
-    invalidateVendorStoreNameCache();
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    setUser(null);
   };
 
   const refreshToken = async () => {

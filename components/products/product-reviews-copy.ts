@@ -34,6 +34,16 @@ export function getProductReviewsCopy(locale: SupportedLocale) {
       : ps
         ? "مهرباني وکړئ ستوري درجه وټاکئ"
         : "لطفاً یک امتیاز ستاره‌ای انتخاب کنید",
+    commentTooShort: en
+      ? "Please write at least 5 characters in your review."
+      : ps
+        ? "مهرباني وکړئ لږترلږه ۵ توري ولیکئ."
+        : "لطفاً حداقل ۵ کاراکتر در نظر خود بنویسید.",
+    sessionExpired: en
+      ? "Your session expired. Please log in again to submit a review."
+      : ps
+        ? "ستاسو ناسته پای ته ورسېده. د بیاکتنې لپاره بیا ننوځئ."
+        : "نشست شما منقضی شده است. برای ثبت نظر دوباره وارد شوید.",
     submitSuccess: en ? "Review submitted" : ps ? "بیاکتنه وسپارل شوه" : "نظر شما ثبت شد",
     submitFailed: en
       ? "Could not submit your review. Please try again."
