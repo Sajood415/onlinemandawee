@@ -1,12 +1,10 @@
-import "server-only";
-
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { PrismaClient } from "@prisma/client";
 
-import { env } from "@/config/env";
+import { env } from "@/config/env.shared";
 
 declare global {
   var __prisma__: PrismaClient | undefined;

@@ -1,5 +1,3 @@
-import "server-only";
-
 import { disputeRoomName } from "@/domain/realtime/dispute-events";
 import { publishDisputeEvent } from "@/lib/realtime/publish-dispute-event";
 
