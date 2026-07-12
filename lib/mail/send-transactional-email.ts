@@ -1,8 +1,6 @@
-import "server-only";
-
 import nodemailer from "nodemailer";
 
-import { env } from "@/config/env";
+import { env } from "@/config/env.shared";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 

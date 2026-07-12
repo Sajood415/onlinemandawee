@@ -18,7 +18,8 @@
     "seed:baby-care": "dotenv -e .env.local -- node --import tsx scripts/seed-baby-care-products.ts",
     "categories:consolidate-baby-care": "dotenv -e .env.local -- node --import tsx scripts/consolidate-baby-care-category.ts",
     "realtime:dev": "npm run dev --prefix realtime",
-    "realtime:build": "npm run build --prefix realtime"
+    "realtime:build": "npm run build --prefix realtime",
+    "worker:refund-overdue-escalation": "node --import tsx scripts/refund-overdue-escalation-worker.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

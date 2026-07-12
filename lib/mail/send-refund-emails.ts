@@ -1,6 +1,4 @@
-import "server-only";
-
-import { env } from "@/config/env";
+import { env } from "@/config/env.shared";
 import { sendTransactionalEmail } from "@/lib/mail/send-transactional-email";
 
 type RefundEmailCase = {

@@ -1,13 +1,12 @@
 import { Prisma } from "@prisma/client";
 
-import { env } from "@/config/env";
+import { env } from "@/config/env.shared";
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { disputeRoomName } from "@/domain/realtime/dispute-events";
 import type { PaymentStatus } from "@/domain/order/order-status";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { prisma } from "@/lib/db/prisma";
-import { getStripeServerClient } from "@/lib/stripe/server";
 import { getRefundEligibility } from "@/lib/refunds/refund-eligibility";
 import {
   canCustomerOpenRefundCase,
@@ -1279,6 +1278,7 @@ export class RefundService {
       });
     }
 
+    const { getStripeServerClient } = await import("@/lib/stripe/server");
     const stripe = getStripeServerClient();
 
     try {

@@ -1,7 +1,5 @@
-import "server-only";
-
 import type { DisputeBroadcastBody } from "@/domain/realtime/dispute-events";
-import { env } from "@/config/env";
+import { env } from "@/config/env.shared";
 
 export async function publishDisputeEvent(body: DisputeBroadcastBody) {
   const publishUrl = env.REALTIME_PUBLISH_URL;
