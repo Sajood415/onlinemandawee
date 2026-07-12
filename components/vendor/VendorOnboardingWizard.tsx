@@ -2,6 +2,7 @@
 
 import { Link } from "@/i18n/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react";
 
 import {
@@ -9,9 +10,8 @@ import {
   industryTypes,
   industryTypeLabels,
   kycDocumentTypes,
-  payoutMethodTypes,
 } from "@/domain/vendor/vendor-types";
-import type { BusinessType, IndustryType, KycDocumentType, PayoutMethodType } from "@/domain/vendor/vendor-types";
+import type { BusinessType, IndustryType, KycDocumentType } from "@/domain/vendor/vendor-types";
 import type { VendorUploadKind } from "@/domain/vendor/vendor-upload-kind";
 import { AddressAutocompleteInput } from "@/components/address/AddressAutocompleteInput";
 import { FileAttachmentField } from "@/components/vendor/onboarding/FileAttachmentField";
@@ -38,6 +38,7 @@ import {
   getPhoneValidationMessage,
   isValidPhone,
 } from "@/components/vendor/onboarding/validation";
+import { formatMoneyMinor } from "@/lib/membership/subscription-policy";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { vendorOnboardingResumeStep } from "@/lib/vendor/vendor-onboarding-wizard-step";
 import { slugify } from "@/lib/utils/slug";
@@ -92,6 +93,8 @@ const stepsMeta = [
 ] as const;
 
 export function VendorOnboardingWizard() {
+  const locale = useLocale();
+  const t = useTranslations("VendorPages.register.agreements");
   const [ready, setReady] = useState(false);
   const [step, setStep] = useState(1);
   const [busy, setBusy] = useState(false);
@@ -170,18 +173,29 @@ export function VendorOnboardingWizard() {
     [country, city]
   );
 
-  const [payoutMethod, setPayoutMethod] = useState<PayoutMethodType>("BANK");
   const [accountName, setAccountName] = useState("");
   const [accountNumberOrIban, setAccountNumberOrIban] = useState("");
   const [bankName, setBankName] = useState("");
-  const [stripeEmail, setStripeEmail] = useState("");
 
   const [ag1, setAg1] = useState(false);
   const [ag2, setAg2] = useState(false);
   const [ag3, setAg3] = useState(false);
   const [ag4, setAg4] = useState(false);
   const [ag5, setAg5] = useState(false);
-  const [transactionFeeLabel, setTransactionFeeLabel] = useState("$3.99 per order");
+  const [transactionFeeAmountMinor, setTransactionFeeAmountMinor] = useState(399);
+  const [membershipFeeAmount, setMembershipFeeAmount] = useState(499);
+  const [membershipCurrency, setMembershipCurrency] = useState("USD");
+  const [membershipTrialDays, setMembershipTrialDays] = useState(180);
+
+  const membershipFeeLabel = useMemo(
+    () => formatMoneyMinor(membershipFeeAmount, membershipCurrency, locale),
+    [locale, membershipCurrency, membershipFeeAmount]
+  );
+
+  const transactionFeeLabel = useMemo(
+    () => formatMoneyMinor(transactionFeeAmountMinor, "USD", locale),
+    [locale, transactionFeeAmountMinor]
+  );
 
   const authHeaders = useCallback((): Record<string, string> => {
     if (!accessToken) return {};
@@ -195,9 +209,17 @@ export function VendorOnboardingWizard() {
         const res = await fetch("/api/platform/settings");
         if (!res.ok) return;
         const data = await parseApiResponse<{
-          transactionFeeLabel: string;
+          transactionFeeAmountMinor: number;
+          membershipFeeAmount: number;
+          membershipCurrency: string;
+          membershipTrialDays: number;
         }>(res);
-        if (!cancelled) setTransactionFeeLabel(data.transactionFeeLabel);
+        if (!cancelled) {
+          setTransactionFeeAmountMinor(data.transactionFeeAmountMinor);
+          setMembershipFeeAmount(data.membershipFeeAmount);
+          setMembershipCurrency(data.membershipCurrency);
+          setMembershipTrialDays(data.membershipTrialDays);
+        }
       } catch {
         // Keep default label
       }
@@ -265,11 +287,9 @@ export function VendorOnboardingWizard() {
           setProofOfAddressUrl(draft.address.proofOfAddressUrl);
         }
         if (draft.payout) {
-          setPayoutMethod(draft.payout.method);
           setAccountName(draft.payout.accountName);
           setAccountNumberOrIban(draft.payout.accountNumberOrIban);
           setBankName(draft.payout.bankName);
-          setStripeEmail(draft.payout.stripeEmail);
         }
         if (draft.agreements) {
           setAg1(draft.agreements.agreedToVendorTerms);
@@ -575,30 +595,17 @@ export function VendorOnboardingWizard() {
         });
         setStep(5);
       } else if (step === 5) {
-        if (payoutMethod === "BANK") {
-          if (!accountName.trim() || !accountNumberOrIban.trim() || !bankName.trim()) {
-            toast.error("Payout", "Fill in all bank fields.");
-            setBusy(false);
-            return;
-          }
-        } else if (payoutMethod === "STRIPE" && !stripeEmail.trim()) {
-          toast.error("Payout", "Stripe email is required.");
-          setBusy(false);
-          return;
-        } else if (payoutMethod === "STRIPE" && !EMAIL_REGEX.test(stripeEmail.trim())) {
-          toast.error("Payout", "Enter a valid Stripe email.");
+        if (!accountName.trim() || !accountNumberOrIban.trim() || !bankName.trim()) {
+          toast.error("Payout", "Fill in all bank fields.");
           setBusy(false);
           return;
         }
-        const payout: Record<string, unknown> = { method: payoutMethod };
-        if (payoutMethod === "BANK") {
-          payout.accountName = accountName.trim();
-          payout.accountNumberOrIban = accountNumberOrIban.trim();
-          payout.bankName = bankName.trim();
-        } else {
-          payout.stripeEmail = stripeEmail.trim();
-        }
-        await patchJson("/api/vendor/onboarding/step-5-payout", payout);
+        await patchJson("/api/vendor/onboarding/step-5-payout", {
+          method: "BANK",
+          accountName: accountName.trim(),
+          accountNumberOrIban: accountNumberOrIban.trim(),
+          bankName: bankName.trim(),
+        });
         setStep(6);
       } else if (step === 6) {
         if (!ag1 || !ag2 || !ag3 || !ag4 || !ag5) {
@@ -1211,82 +1218,62 @@ export function VendorOnboardingWizard() {
           {step === 5 && (
             <div className={STEP_STACK}>
               <p className={CALLOUT}>Account name must match your ID or business name.</p>
-              <div className={FIELD}>
-                <label className={LABEL}>Payout method
-                  <RequiredMark />
-                </label>
-                <select
-                  className={CONTROL}
-                  value={payoutMethod}
-                  onChange={(e) => setPayoutMethod(e.target.value as PayoutMethodType)}
-                >
-                  {payoutMethodTypes.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {payoutMethod === "BANK" && (
-                <div className="flex flex-col gap-6 sm:gap-8">
-                  <div className={FIELD}>
-                    <label className={LABEL}>Account name
-                      <RequiredMark />
-                    </label>
-                    <input className={CONTROL} value={accountName} onChange={(e) => setAccountName(e.target.value)} />
-                  </div>
-                  <div className={FIELD}>
-                    <label className={LABEL}>Account number / IBAN
-                      <RequiredMark />
-                    </label>
-                    <input className={CONTROL} value={accountNumberOrIban} onChange={(e) => setAccountNumberOrIban(e.target.value)} />
-                  </div>
-                  <div className={FIELD}>
-                    <label className={LABEL}>Bank name
-                      <RequiredMark />
-                    </label>
-                    <input className={CONTROL} value={bankName} onChange={(e) => setBankName(e.target.value)} />
-                  </div>
-                </div>
-              )}
-              {payoutMethod === "STRIPE" && (
+              <div className="flex flex-col gap-6 sm:gap-8">
                 <div className={FIELD}>
-                  <label className={LABEL}>Stripe email
+                  <label className={LABEL}>Account name
                     <RequiredMark />
                   </label>
-                  <input type="email" className={CONTROL} value={stripeEmail} onChange={(e) => setStripeEmail(e.target.value)} />
+                  <input className={CONTROL} value={accountName} onChange={(e) => setAccountName(e.target.value)} />
                 </div>
-              )}
+                <div className={FIELD}>
+                  <label className={LABEL}>Account number / IBAN
+                    <RequiredMark />
+                  </label>
+                  <input className={CONTROL} value={accountNumberOrIban} onChange={(e) => setAccountNumberOrIban(e.target.value)} />
+                </div>
+                <div className={FIELD}>
+                  <label className={LABEL}>Bank name
+                    <RequiredMark />
+                  </label>
+                  <input className={CONTROL} value={bankName} onChange={(e) => setBankName(e.target.value)} />
+                </div>
+              </div>
             </div>
           )}
 
           {step === 6 && (
             <div className="flex flex-col gap-3 sm:gap-4">
               <p className="text-sm font-medium leading-relaxed text-neutral-800">
-                Please confirm each policy. You must accept all to submit.
+                {t("intro")}
               </p>
               <label className={CHECK_ROW}>
                 <input type="checkbox" checked={ag1} onChange={(e) => setAg1(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>I agree to the Vendor Terms &amp; Conditions.<RequiredMark /></span>
+                <span>{t("vendorTerms")}<RequiredMark /></span>
               </label>
               <label className={CHECK_ROW}>
                 <input type="checkbox" checked={ag2} onChange={(e) => setAg2(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>I agree to the membership: USD $6.99 per month, first 3 months free for new vendors.<RequiredMark /></span>
+                <span>
+                  {t("membership", {
+                    fee: membershipFeeLabel,
+                    trialDays: membershipTrialDays,
+                  })}
+                  <RequiredMark />
+                </span>
               </label>
               <label className={CHECK_ROW}>
                 <input type="checkbox" checked={ag3} onChange={(e) => setAg3(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
                 <span>
-                  I agree to the transaction fee: {transactionFeeLabel} (allocated from each customer
-                  order; not applied to shipping).<RequiredMark />
+                  {t("transactionFee", { fee: transactionFeeLabel })}
+                  <RequiredMark />
                 </span>
               </label>
               <label className={CHECK_ROW}>
                 <input type="checkbox" checked={ag4} onChange={(e) => setAg4(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>I agree Online Mandawee has final decision on escalated disputes/refunds.<RequiredMark /></span>
+                <span>{t("disputes")}<RequiredMark /></span>
               </label>
               <label className={CHECK_ROW}>
                 <input type="checkbox" checked={ag5} onChange={(e) => setAg5(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>I agree to follow platform delivery rules.<RequiredMark /></span>
+                <span>{t("delivery")}<RequiredMark /></span>
               </label>
             </div>
           )}

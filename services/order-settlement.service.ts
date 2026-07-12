@@ -25,6 +25,7 @@ type DeliveryMethodForSettlement = "PICKUP" | "EXPRESS" | "STANDARD" | null;
 type VendorOrderForSettlement = {
   id: string;
   vendorProfileId: string;
+  sellerType?: "PLATFORM" | "THIRD_PARTY";
   deliveryMethod?: DeliveryMethodForSettlement;
   subtotalAmount: number;
   deliveryAmount: number;
@@ -50,7 +51,7 @@ export class OrderSettlementService {
     paymentTransactionId?: string;
     deliveryMethod?: DeliveryMethodForSettlement;
     shippingCountry?: string | null;
-    orderSubtotalAmount: number;
+    billableOrderSubtotalAmount: number;
     flatFeeAmountMinor: number;
   }) {
     const { vendorOrder } = input;
@@ -58,14 +59,17 @@ export class OrderSettlementService {
     const effectiveDeliveryMethod =
       vendorOrder.deliveryMethod ?? input.deliveryMethod ?? null;
 
-    const commissionAmount = Math.min(
-      allocateFlatFeeToVendorSplit({
-        vendorSubtotalAmount: Math.max(0, vendorOrder.subtotalAmount),
-        orderSubtotalAmount: input.orderSubtotalAmount,
-        flatFeeAmountMinor: input.flatFeeAmountMinor,
-      }),
-      vendorOrder.grandTotalAmount
-    );
+    const isPlatformVendor = vendorOrder.sellerType === "PLATFORM";
+    const commissionAmount = isPlatformVendor
+      ? 0
+      : Math.min(
+          allocateFlatFeeToVendorSplit({
+            vendorSubtotalAmount: Math.max(0, vendorOrder.subtotalAmount),
+            orderSubtotalAmount: input.billableOrderSubtotalAmount,
+            flatFeeAmountMinor: input.flatFeeAmountMinor,
+          }),
+          vendorOrder.grandTotalAmount
+        );
     const netEarningsAmount = vendorOrder.grandTotalAmount - commissionAmount;
 
     const holdUntil = computeInitialPayoutHoldUntil(effectiveDeliveryMethod);
@@ -154,19 +158,25 @@ export class OrderSettlementService {
     const deliveryMethod: DeliveryMethodForSettlement = order?.deliveryMethod ?? null;
     const shippingCountry = order?.shippingCountry ?? null;
 
-    const orderSubtotalAmount = input.vendorOrders.reduce(
+    const billableVendorOrders = input.vendorOrders.filter(
+      (vendorOrder) => vendorOrder.sellerType !== "PLATFORM"
+    );
+    const billableOrderSubtotalAmount = billableVendorOrders.reduce(
       (sum, vendorOrder) => sum + Math.max(0, vendorOrder.subtotalAmount),
       0
     );
 
-    const flatFeeAmountMinor = await this.resolveOrderTransactionFeeAmountMinor({
-      deliveryMethod,
-      shippingCountry,
-      vendorProfileIds: input.vendorOrders.map(
-        (vendorOrder) => vendorOrder.vendorProfileId
-      ),
-      orderCurrency: input.vendorOrders[0]?.currency ?? "USD",
-    });
+    const flatFeeAmountMinor =
+      billableVendorOrders.length === 0
+        ? 0
+        : await this.resolveOrderTransactionFeeAmountMinor({
+            deliveryMethod,
+            shippingCountry,
+            vendorProfileIds: billableVendorOrders.map(
+              (vendorOrder) => vendorOrder.vendorProfileId
+            ),
+            orderCurrency: input.vendorOrders[0]?.currency ?? "USD",
+          });
 
     for (const vendorOrder of input.vendorOrders) {
       const result = await this.settleVendorOrderSplit({
@@ -176,7 +186,7 @@ export class OrderSettlementService {
         paymentTransactionId: input.paymentTransactionId,
         deliveryMethod,
         shippingCountry,
-        orderSubtotalAmount,
+        billableOrderSubtotalAmount,
         flatFeeAmountMinor,
       });
       results.push({ vendorOrderId: vendorOrder.id, ...result });

@@ -31,9 +31,26 @@ export function resolveMembershipBillingAlertLevel(input: {
   return "none";
 }
 
+export function formatMoneyMinor(
+  amountMinor: number,
+  currency: string,
+  locale = "en-US"
+) {
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amountMinor / 100);
+  } catch {
+    const value = (amountMinor / 100).toFixed(2);
+    return currency === "USD" ? `$${value}` : `${value} ${currency}`;
+  }
+}
+
 export function formatMembershipFee(amountCents: number, currency: string) {
-  const value = (amountCents / 100).toFixed(2);
-  return currency === "USD" ? `$${value}` : `${value} ${currency}`;
+  return formatMoneyMinor(amountCents, currency, "en-US");
 }
 
 export function formatMembershipGracePeriodLabel(

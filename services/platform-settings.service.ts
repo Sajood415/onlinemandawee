@@ -1,5 +1,7 @@
+import { env } from "@/config/env.shared";
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { AppError } from "@/lib/errors/app-error";
+import { formatMembershipFee } from "@/lib/membership/subscription-policy";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import {
   FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR,
@@ -74,6 +76,13 @@ export class PlatformSettingsService {
         FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
       ),
       transactionFeeIsFixed: true,
+      membershipFeeAmount: env.MEMBERSHIP_FEE_AMOUNT,
+      membershipCurrency: env.MEMBERSHIP_INVOICE_CURRENCY,
+      membershipTrialDays: env.MEMBERSHIP_TRIAL_DAYS,
+      membershipFeeLabel: formatMembershipFee(
+        env.MEMBERSHIP_FEE_AMOUNT,
+        env.MEMBERSHIP_INVOICE_CURRENCY
+      ),
       availableLocales: normalizeAvailableLocales(settings.availableLocales),
       availableCurrencies: normalizeAvailableCurrencies(
         settings.availableCurrencies

@@ -243,6 +243,7 @@ export class AdminVendorService {
       vendorProfileId,
       sellerType: targetSellerType,
     });
+    await this.vendorSubscriptionService.ensureSubscriptionForVendor(vendorProfileId);
 
     await this.auditLogRepository.create({
       actorUserId: admin.id,

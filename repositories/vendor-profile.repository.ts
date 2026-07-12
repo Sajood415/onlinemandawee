@@ -233,6 +233,7 @@ export class VendorProfileRepository {
   listForMembershipBilling() {
     return prisma.vendorProfile.findMany({
       where: {
+        sellerType: "THIRD_PARTY",
         OR: [
           { status: "ACTIVE" },
           {

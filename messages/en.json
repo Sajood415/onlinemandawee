@@ -609,6 +609,16 @@
         "business": "Business Info",
         "payout": "Bank Details"
       }
+    },
+    "register": {
+      "agreements": {
+        "intro": "Please confirm each policy. You must accept all to submit.",
+        "vendorTerms": "I agree to the Vendor Terms & Conditions.",
+        "membership": "I agree to the membership: {fee} per month, {trialDays} days free for new vendors.",
+        "transactionFee": "I agree to the transaction fee: {fee} per order (allocated from each customer order; not applied to shipping).",
+        "disputes": "I agree Online Mandawee has final decision on escalated disputes/refunds.",
+        "delivery": "I agree to follow platform delivery rules."
+      }
     }
   },
   "AdminPages": {

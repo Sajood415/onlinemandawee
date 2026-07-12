@@ -26,6 +26,13 @@ export class VendorSubscriptionService {
         statusCode: 404,
       });
     }
+    if (vendor.sellerType === "PLATFORM") {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "PLATFORM vendors are exempt from membership billing",
+        statusCode: 400,
+      });
+    }
 
     const customer = await this.ensureStripeCustomer(vendor);
     const stripe = getStripeServerClient();
@@ -56,6 +63,13 @@ export class VendorSubscriptionService {
         code: ERROR_CODE.NOT_FOUND,
         message: "Vendor profile not found",
         statusCode: 404,
+      });
+    }
+    if (vendor.sellerType === "PLATFORM") {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "PLATFORM vendors are exempt from membership billing",
+        statusCode: 400,
       });
     }
 
@@ -94,6 +108,13 @@ export class VendorSubscriptionService {
     }
 
     const subscription = await this.ensureSubscriptionForVendor(vendor.id);
+    if (!subscription) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "PLATFORM vendors are exempt from membership billing",
+        statusCode: 400,
+      });
+    }
     await stripe.customers.update(customer.id, {
       invoice_settings: {
         default_payment_method: paymentMethodId,
@@ -129,6 +150,7 @@ export class VendorSubscriptionService {
 
     return {
       status: vendor.subscriptionStatus,
+      membershipExempt: vendor.sellerType === "PLATFORM",
       monthlyAmount: env.MEMBERSHIP_FEE_AMOUNT,
       currency: env.MEMBERSHIP_INVOICE_CURRENCY,
       trialEndsAt: vendor.subscriptionTrialEndsAt?.toISOString() ?? null,
@@ -170,6 +192,13 @@ export class VendorSubscriptionService {
         statusCode: 404,
       });
     }
+    if (vendor.sellerType === "PLATFORM") {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "PLATFORM vendors are exempt from membership billing",
+        statusCode: 400,
+      });
+    }
 
     const customer = await this.ensureStripeCustomer(vendor);
     await this.ensureSubscriptionForVendor(vendor.id);
@@ -193,6 +222,10 @@ export class VendorSubscriptionService {
         message: "Vendor profile not found",
         statusCode: 404,
       });
+    }
+    if (vendor.sellerType === "PLATFORM") {
+      await this.disableMembershipBillingForPlatformVendor(vendor);
+      return null;
     }
 
     const customer = await this.ensureStripeCustomer(vendor);
@@ -356,5 +389,34 @@ export class VendorSubscriptionService {
   private toDate(value?: number | null) {
     if (!value) return null;
     return new Date(value * 1000);
+  }
+
+  private async disableMembershipBillingForPlatformVendor(
+    vendor: NonNullable<VendorProfileWithUser>
+  ) {
+    const stripe = getStripeServerClient();
+    if (vendor.stripeSubscriptionId) {
+      try {
+        const existing = await stripe.subscriptions.retrieve(vendor.stripeSubscriptionId);
+        if (existing.status !== "canceled") {
+          await stripe.subscriptions.cancel(existing.id);
+        }
+      } catch {
+        // Best effort: local exemption still applies even if Stripe cancellation fails.
+      }
+    }
+
+    await this.vendorProfileRepository.updateStep({
+      vendorProfileId: vendor.id,
+      onboardingStep: vendor.onboardingStep,
+      subscriptionStatus: "ACTIVE",
+      stripeSubscriptionId: null,
+      stripeDefaultPaymentMethodId: null,
+      subscriptionGracePeriodEndsAt: null,
+      subscriptionFailedAt: null,
+      subscriptionFailedPaymentCount: 0,
+      subscriptionNextBillingAt: null,
+    });
+    await syncVendorBillingAccess(vendor.id);
   }
 }
