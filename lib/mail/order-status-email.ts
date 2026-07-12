@@ -432,6 +432,51 @@ export function buildOrderDeliveredEmail(ctx: OrderEmailContext) {
   };
 }
 
+export function buildOrderPickupReadyEmail(
+  ctx: OrderEmailContext,
+  input: { storeName?: string | null; pickupAddress?: string | null }
+) {
+  const storeLine = input.storeName
+    ? `<p style="margin-top:16px"><strong>Pickup store:</strong> ${input.storeName}</p>`
+    : "";
+  const pickupAddressBlock = input.pickupAddress
+    ? `<p style="margin-top:8px"><strong>Pickup location:</strong><br/>${input.pickupAddress}</p>`
+    : `<p style="margin-top:8px"><strong>Pickup location:</strong> We will confirm your pickup address shortly.</p>`;
+
+  const body = `
+    <span class="badge blue">📍 Ready for pickup</span>
+    <h2>Your order is ready for pickup, ${ctx.customerName}!</h2>
+    <p>Your pickup order is now prepared and ready to collect.</p>
+
+    <div class="order-box">
+      <div class="label">Order Number</div>
+      <div class="value">${ctx.orderNumber}</div>
+    </div>
+
+    ${storeLine}
+    ${pickupAddressBlock}
+
+    <p style="margin-top:16px">
+      Please bring your order number or confirmation email when collecting your order.
+    </p>
+  `;
+
+  return {
+    subject: `Order ${ctx.orderNumber} is ready for pickup`,
+    html: baseLayout(`Pickup Ready — ${ctx.orderNumber}`, body),
+    text: [
+      `Hi ${ctx.customerName},`,
+      "",
+      `Your order ${ctx.orderNumber} is ready for pickup.`,
+      input.storeName ? `Pickup store: ${input.storeName}` : null,
+      input.pickupAddress ? `Pickup location: ${input.pickupAddress}` : null,
+      "Please bring your order number or confirmation email when collecting your order.",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  };
+}
+
 export function buildOrderCancelledEmail(ctx: OrderEmailContext) {
   const body = `
     <span class="badge" style="background:#fef2f2;color:#b91c1c;border-color:#fecaca">❌ Order Cancelled</span>

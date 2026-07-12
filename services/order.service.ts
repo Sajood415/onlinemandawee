@@ -6,6 +6,7 @@ import { ERROR_CODE } from "@/lib/errors/error-codes";
 import {
   buildOrderCancelledEmail,
   buildOrderDeliveredEmail,
+  buildOrderPickupReadyEmail,
   buildOrderShippedEmail,
 } from "@/lib/mail/order-status-email";
 import { sendTransactionalEmail } from "@/lib/mail/send-transactional-email";
@@ -91,6 +92,8 @@ type QuoteResult = {
 };
 
 export class OrderService {
+  private static readonly PICKUP_READY_EMAIL_AUDIT_ACTION = "order.pickup_ready_email_sent";
+
   constructor(
     private readonly cartRepository = new CartRepository(),
     private readonly cartItemRepository = new CartItemRepository(),
@@ -439,7 +442,11 @@ export class OrderService {
 
     // Send email notification to customer on key status changes
     if (status === "SHIPPED" || status === "DELIVERED" || status === "CANCELLED") {
-      await this.sendOrderStatusEmail(vendorOrder.order.id, status);
+      await this.sendOrderStatusEmail({
+        orderId: vendorOrder.order.id,
+        status,
+        vendorOrderId: vendorOrder.id,
+      });
     }
 
     return {
@@ -646,9 +653,13 @@ export class OrderService {
     return vendor;
   }
 
-  private async sendOrderStatusEmail(orderId: string, status: VendorOrderStatus) {
+  private async sendOrderStatusEmail(input: {
+    orderId: string;
+    status: VendorOrderStatus;
+    vendorOrderId?: string;
+  }) {
     try {
-      const order = await this.orderRepository.findById(orderId);
+      const order = await this.orderRepository.findById(input.orderId);
       if (!order) return;
 
       const customerEmail = order.guestEmail ?? order.user?.email;
@@ -684,9 +695,55 @@ export class OrderService {
       };
 
       let emailPayload: { subject: string; html: string; text: string };
-      if (status === "SHIPPED") {
+      if (input.status === "SHIPPED") {
+        const updatedVendorOrder = input.vendorOrderId
+          ? order.vendorOrders.find((vendorOrder) => vendorOrder.id === input.vendorOrderId)
+          : undefined;
+        const isPickupReady = updatedVendorOrder?.deliveryMethod === "PICKUP";
+
+        if (isPickupReady && input.vendorOrderId) {
+          const alreadySent = await this.auditLogRepository.findLatestByEntityAndAction({
+            entityType: "OrderVendor",
+            entityId: input.vendorOrderId,
+            action: OrderService.PICKUP_READY_EMAIL_AUDIT_ACTION,
+          });
+
+          if (alreadySent) return;
+
+          const vendorProfile = await this.vendorProfileRepository.findById(
+            updatedVendorOrder.vendorProfileId
+          );
+          const pickupAddress = vendorProfile?.address
+            ? [
+                vendorProfile.address.addressLine1,
+                vendorProfile.address.city,
+                vendorProfile.address.postalCode,
+                vendorProfile.address.country,
+              ]
+                .filter(Boolean)
+                .join(", ")
+            : null;
+
+          emailPayload = buildOrderPickupReadyEmail(ctx, {
+            storeName: updatedVendorOrder.vendorProfile.storeName,
+            pickupAddress,
+          });
+          await sendTransactionalEmail({ to: customerEmail, ...emailPayload });
+          await this.auditLogRepository.create({
+            action: OrderService.PICKUP_READY_EMAIL_AUDIT_ACTION,
+            entityType: "OrderVendor",
+            entityId: input.vendorOrderId,
+            metadata: {
+              orderId: order.id,
+              orderNumber: order.orderNumber,
+              status: input.status,
+            },
+          });
+          return;
+        }
+
         emailPayload = buildOrderShippedEmail(ctx);
-      } else if (status === "DELIVERED") {
+      } else if (input.status === "DELIVERED") {
         emailPayload = buildOrderDeliveredEmail(ctx);
       } else {
         emailPayload = buildOrderCancelledEmail(ctx);
