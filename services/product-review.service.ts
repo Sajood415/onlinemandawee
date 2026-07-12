@@ -1,4 +1,5 @@
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
+import { Prisma } from "@prisma/client";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { ProductRepository } from "@/repositories/product.repository";
@@ -65,6 +66,14 @@ export class ProductReviewService {
     productId: string,
     input: CreateProductReviewInput
   ) {
+    if (auth.role !== "CUSTOMER") {
+      throw new AppError({
+        code: ERROR_CODE.FORBIDDEN,
+        message: "Only customers can submit reviews",
+        statusCode: 403,
+      });
+    }
+
     const product = await this.productRepository.findById(productId);
 
     if (!product || product.approvalStatus !== "APPROVED" || !product.isActive) {
@@ -75,12 +84,39 @@ export class ProductReviewService {
       });
     }
 
-    const review = await this.productReviewRepository.create({
-      productId,
-      userId: auth.id,
-      rating: input.rating,
-      comment: input.comment,
-    });
+    const hasEligiblePurchase = await this.productReviewRepository.hasDeliveredPaidPurchaseForUser(
+      {
+        productId,
+        userId: auth.id,
+      }
+    );
+    if (!hasEligiblePurchase) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message:
+          "You can only review products that you purchased in a paid order and received.",
+        statusCode: 400,
+      });
+    }
+
+    let review;
+    try {
+      review = await this.productReviewRepository.create({
+        productId,
+        userId: auth.id,
+        rating: input.rating,
+        comment: input.comment,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new AppError({
+          code: ERROR_CODE.CONFLICT,
+          message: "You have already reviewed this product.",
+          statusCode: 409,
+        });
+      }
+      throw error;
+    }
 
     await this.recomputeAggregate(productId);
 

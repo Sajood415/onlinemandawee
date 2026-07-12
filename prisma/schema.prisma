@@ -579,6 +579,7 @@ model ProductReview {
 
   @@index([productId, isHidden, createdAt])
   @@index([userId, createdAt])
+  @@unique([productId, userId])
 }
 
 model ProductVariant {

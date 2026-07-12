@@ -24,7 +24,7 @@ export const GET = withErrorHandling(async (request, context) => {
 });
 
 export const POST = withErrorHandling(
-  withRbac(["CUSTOMER", "VENDOR", "ADMIN"], async (request, context) => {
+  withRbac(["CUSTOMER"], async (request, context) => {
     const params = parseParams(await context.params, productIdParamsSchema);
     const input = await parseBody(request, createProductReviewSchema);
     const result = await productReviewService.createForUser(

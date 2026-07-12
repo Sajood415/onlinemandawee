@@ -28,6 +28,23 @@ export class ProductReviewRepository {
     });
   }
 
+  async hasDeliveredPaidPurchaseForUser(input: { productId: string; userId: string }) {
+    const count = await prisma.orderItem.count({
+      where: {
+        productId: input.productId,
+        orderVendor: {
+          status: "DELIVERED",
+          order: {
+            userId: input.userId,
+            paymentStatus: "PAID",
+          },
+        },
+      },
+    });
+
+    return count > 0;
+  }
+
   findById(id: string) {
     return prisma.productReview.findUnique({
       where: { id },
