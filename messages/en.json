@@ -625,7 +625,87 @@
     "orders": "Orders",
     "users": "Users",
     "reports": "Reports",
-    "settings": "Settings"
+    "settings": "Settings",
+    "warehouse": {
+      "title": "Standard Delivery Warehouse",
+      "subtitle": "For Standard delivery orders: receive vendor packages at the warehouse, combine them into one shipment, then deliver to the customer.",
+      "refresh": "Refresh",
+      "errors": {
+        "loadFailed": "Could not load warehouse lists.",
+        "actionFailed": "That warehouse action failed."
+      },
+      "guide": {
+        "title": "How Standard delivery works",
+        "step1": "Each row is one vendor package for an order (not one product). Qty is the total units in that package.",
+        "step2": "Vendors send items to the Mandawee warehouse (Vendor Orders → Send to warehouse).",
+        "step3": "When a package arrives, mark it received at the warehouse.",
+        "step4": "When every vendor package has arrived, pack them into one customer shipment, then mark it shipped and delivered."
+      },
+      "common": {
+        "status": "Status",
+        "all": "All",
+        "order": "Order",
+        "vendor": "Vendor",
+        "products": "Products",
+        "qty": "Qty",
+        "tracking": "Tracking",
+        "shipped": "Shipped",
+        "received": "Received",
+        "delivered": "Delivered",
+        "actions": "Actions"
+      },
+      "inbound": {
+        "title": "Packages from vendors (incoming)",
+        "packageStatus": "Package status",
+        "orderProgress": "Order progress",
+        "recordShip": "Mark vendor shipped",
+        "markReceived": "Mark received at warehouse",
+        "promptTracking": "Vendor tracking number (optional):",
+        "waitingForShip": "Waiting for vendor to ship, or use Mark vendor shipped",
+        "alreadyReceived": "Already received at warehouse"
+      },
+      "consolidation": {
+        "title": "Combine packages (when all arrived)",
+        "orderProgress": "Order progress",
+        "receivedProgress": "Packages received",
+        "vendorProgress": "{received} of {expected} vendors received",
+        "readyAt": "All ready at",
+        "customerShipment": "Customer shipment",
+        "notCreated": "Not created yet",
+        "combine": "Pack for customer",
+        "promptTracking": "Customer tracking number (optional):"
+      },
+      "outbound": {
+        "title": "Final delivery to customer",
+        "shipmentStatus": "Shipment status",
+        "orderProgress": "Order progress",
+        "packedAt": "Packed at",
+        "markShipped": "Mark sent to customer",
+        "markDelivered": "Mark delivered to customer",
+        "promptTracking": "Tracking number (optional):"
+      },
+      "statuses": {
+        "inbound": {
+          "PENDING_SHIPMENT": "Waiting for vendor to ship",
+          "INBOUND_SHIPPED": "On the way to warehouse",
+          "RECEIVED": "Received at warehouse"
+        },
+        "batch": {
+          "OPEN": "Waiting for packages",
+          "PARTIALLY_RECEIVED": "Some packages received",
+          "READY_TO_CONSOLIDATE": "All received — ready to pack",
+          "CONSOLIDATED": "Packed into one shipment",
+          "OUTBOUND_SHIPPED": "Sent to customer",
+          "DELIVERED": "Customer received",
+          "CANCELLED": "Cancelled"
+        },
+        "outbound": {
+          "CONSOLIDATED": "Packed — not sent yet",
+          "OUTBOUND_SHIPPED": "On the way to customer",
+          "DELIVERED": "Delivered to customer"
+        }
+      }
+    }
   },
   "Cart": {
     "title": "Your cart",

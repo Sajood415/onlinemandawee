@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Loader2, RefreshCw } from "lucide-react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
@@ -77,13 +78,6 @@ const INPUT_CLASS =
   "w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
 const LABEL_CLASS = "mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-500";
 
-function displayDate(iso: string | null) {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString();
-}
-
 function badgeClass(status: string) {
   if (status === "RECEIVED" || status === "DELIVERED") return "bg-emerald-50 text-emerald-700";
   if (status === "READY_TO_CONSOLIDATE" || status === "CONSOLIDATED")
@@ -96,6 +90,8 @@ function badgeClass(status: string) {
 }
 
 export default function AdminWarehousePage() {
+  const locale = useLocale();
+  const t = useTranslations("AdminPages.warehouse");
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
 
   const [inboundStatusFilter, setInboundStatusFilter] = useState("");
@@ -108,6 +104,34 @@ export default function AdminWarehousePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoadingKey, setActionLoadingKey] = useState<string | null>(null);
+
+  const displayDate = useCallback(
+    (iso: string | null) => {
+      if (!iso) return "—";
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return "—";
+      return date.toLocaleString(locale);
+    },
+    [locale]
+  );
+
+  const inboundStatusLabel = useCallback(
+    (status: InboundShipment["status"]) =>
+      t.has(`statuses.inbound.${status}`) ? t(`statuses.inbound.${status}`) : status,
+    [t]
+  );
+
+  const batchStatusLabel = useCallback(
+    (status: string) =>
+      t.has(`statuses.batch.${status}`) ? t(`statuses.batch.${status}`) : status,
+    [t]
+  );
+
+  const outboundStatusLabel = useCallback(
+    (status: string) =>
+      t.has(`statuses.outbound.${status}`) ? t(`statuses.outbound.${status}`) : status,
+    [t]
+  );
 
   const inboundQuery = useMemo(() => {
     const params = new URLSearchParams({ page: "1", pageSize: "50" });
@@ -147,11 +171,11 @@ export default function AdminWarehousePage() {
       setBatchData(batchParsed);
       setOutboundData(outboundParsed);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load warehouse queues.");
+      setError(e instanceof Error ? e.message : t("errors.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [inboundQuery, batchQuery, outboundQuery]);
+  }, [batchQuery, inboundQuery, outboundQuery, t]);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -174,12 +198,12 @@ export default function AdminWarehousePage() {
         await parseApiResponse(res);
         await loadAll();
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Warehouse action failed.");
+        setError(e instanceof Error ? e.message : t("errors.actionFailed"));
       } finally {
         setActionLoadingKey(null);
       }
     },
-    [loadAll]
+    [loadAll, t]
   );
 
   const inboundPagination = useClientPagination(inboundData?.items ?? [], {
@@ -207,10 +231,8 @@ export default function AdminWarehousePage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0f3460]">Warehouse Operations</h1>
-          <p className="mt-1 text-sm text-neutral-600">
-            Operate inbound receiving, consolidation, and outbound delivery workflow.
-          </p>
+          <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+          <p className="mt-1 text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <button
           type="button"
@@ -218,17 +240,17 @@ export default function AdminWarehousePage() {
           className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
         >
           <RefreshCw className="h-4 w-4" />
-          Refresh
+          {t("refresh")}
         </button>
       </div>
 
       <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-        <p className="font-semibold">Standard delivery tracking flow</p>
+        <p className="font-semibold">{t("guide.title")}</p>
         <ol className="mt-2 list-decimal space-y-1 pl-5 text-blue-800">
-          <li>Each inbound row is one vendor shipment (not one unit). Qty shows total units in that shipment.</li>
-          <li>Vendor ships items to the warehouse and submits tracking (Vendor Orders → Send to warehouse).</li>
-          <li>Admin records inbound tracking here if the vendor has not, then marks each vendor shipment received.</li>
-          <li>When all vendor shipments are received, consolidate the batch and ship outbound to the customer.</li>
+          <li>{t("guide.step1")}</li>
+          <li>{t("guide.step2")}</li>
+          <li>{t("guide.step3")}</li>
+          <li>{t("guide.step4")}</li>
         </ol>
       </div>
 
@@ -240,18 +262,18 @@ export default function AdminWarehousePage() {
 
       <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-neutral-900">Inbound Queue</h2>
+          <h2 className="text-lg font-semibold text-neutral-900">{t("inbound.title")}</h2>
           <div className="w-full max-w-xs">
-            <label className={LABEL_CLASS}>Status</label>
+            <label className={LABEL_CLASS}>{t("common.status")}</label>
             <select
               className={INPUT_CLASS}
               value={inboundStatusFilter}
               onChange={(event) => setInboundStatusFilter(event.target.value)}
             >
-              <option value="">All</option>
-              <option value="PENDING_SHIPMENT">Pending Shipment</option>
-              <option value="INBOUND_SHIPPED">Inbound Shipped</option>
-              <option value="RECEIVED">Received</option>
+              <option value="">{t("common.all")}</option>
+              <option value="PENDING_SHIPMENT">{inboundStatusLabel("PENDING_SHIPMENT")}</option>
+              <option value="INBOUND_SHIPPED">{inboundStatusLabel("INBOUND_SHIPPED")}</option>
+              <option value="RECEIVED">{inboundStatusLabel("RECEIVED")}</option>
             </select>
           </div>
         </div>
@@ -264,15 +286,15 @@ export default function AdminWarehousePage() {
             <table className="w-full min-w-[900px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500">
-                  <th className="px-2 py-2">Order</th>
-                  <th className="px-2 py-2">Vendor</th>
-                  <th className="px-2 py-2">Products</th>
-                  <th className="px-2 py-2">Qty</th>
-                  <th className="px-2 py-2">Inbound status</th>
-                  <th className="px-2 py-2">Batch</th>
-                  <th className="px-2 py-2">Tracking</th>
-                  <th className="px-2 py-2">Shipped</th>
-                  <th className="px-2 py-2">Received</th>
+                  <th className="px-2 py-2">{t("common.order")}</th>
+                  <th className="px-2 py-2">{t("common.vendor")}</th>
+                  <th className="px-2 py-2">{t("common.products")}</th>
+                  <th className="px-2 py-2">{t("common.qty")}</th>
+                  <th className="px-2 py-2">{t("inbound.packageStatus")}</th>
+                  <th className="px-2 py-2">{t("inbound.orderProgress")}</th>
+                  <th className="px-2 py-2">{t("common.tracking")}</th>
+                  <th className="px-2 py-2">{t("common.shipped")}</th>
+                  <th className="px-2 py-2">{t("common.received")}</th>
                   <th className="px-2 py-2" />
                 </tr>
               </thead>
@@ -281,7 +303,9 @@ export default function AdminWarehousePage() {
                   <tr key={row.id} className="border-b border-neutral-100">
                     <td className="px-2 py-2 font-medium text-neutral-900">{row.order.orderNumber}</td>
                     <td className="px-2 py-2 text-neutral-700">
-                      {row.vendorOrder.vendorStoreName ?? row.vendorOrder.vendorStoreSlug ?? "Vendor"}
+                      {row.vendorOrder.vendorStoreName ??
+                        row.vendorOrder.vendorStoreSlug ??
+                        t("common.vendor")}
                     </td>
                     <td className="px-2 py-2 text-neutral-700">
                       {row.products.length === 0 ? (
@@ -299,14 +323,14 @@ export default function AdminWarehousePage() {
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${badgeClass(row.status)}`}
                       >
-                        {row.status}
+                        {inboundStatusLabel(row.status)}
                       </span>
                     </td>
                     <td className="px-2 py-2">
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${badgeClass(row.consolidationBatch.status)}`}
                       >
-                        {row.consolidationBatch.status}
+                        {batchStatusLabel(row.consolidationBatch.status)}
                       </span>
                     </td>
                     <td className="px-2 py-2 text-neutral-700">{row.trackingRef ?? "—"}</td>
@@ -320,7 +344,7 @@ export default function AdminWarehousePage() {
                             disabled={actionLoadingKey === `${row.id}:ship`}
                             onClick={() => {
                               const trackingRef = window.prompt(
-                                "Inbound tracking / AWB from vendor (optional):",
+                                t("inbound.promptTracking"),
                                 row.trackingRef ?? ""
                               );
                               if (trackingRef === null) return;
@@ -332,7 +356,7 @@ export default function AdminWarehousePage() {
                             }}
                             className="rounded-lg border border-cyan-300 bg-cyan-50 px-2.5 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-100 disabled:opacity-50"
                           >
-                            Record inbound ship
+                            {t("inbound.recordShip")}
                           </button>
                         ) : null}
                         <button
@@ -340,9 +364,9 @@ export default function AdminWarehousePage() {
                           disabled={row.status !== "INBOUND_SHIPPED" || actionLoadingKey === row.id}
                           title={
                             row.status === "PENDING_SHIPMENT"
-                              ? "Waiting for vendor inbound shipment or use Record inbound ship"
+                              ? t("inbound.waitingForShip")
                               : row.status === "RECEIVED"
-                                ? "Already received"
+                                ? t("inbound.alreadyReceived")
                                 : undefined
                           }
                           onClick={() =>
@@ -353,7 +377,7 @@ export default function AdminWarehousePage() {
                           }
                           className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
                         >
-                          Mark received
+                          {t("inbound.markReceived")}
                         </button>
                       </div>
                     </td>
@@ -377,21 +401,23 @@ export default function AdminWarehousePage() {
 
       <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-neutral-900">Consolidation Queue</h2>
+          <h2 className="text-lg font-semibold text-neutral-900">{t("consolidation.title")}</h2>
           <div className="w-full max-w-xs">
-            <label className={LABEL_CLASS}>Status</label>
+            <label className={LABEL_CLASS}>{t("common.status")}</label>
             <select
               className={INPUT_CLASS}
               value={batchStatusFilter}
               onChange={(event) => setBatchStatusFilter(event.target.value)}
             >
-              <option value="">All</option>
-              <option value="OPEN">Open</option>
-              <option value="PARTIALLY_RECEIVED">Partially Received</option>
-              <option value="READY_TO_CONSOLIDATE">Ready To Consolidate</option>
-              <option value="CONSOLIDATED">Consolidated</option>
-              <option value="OUTBOUND_SHIPPED">Outbound Shipped</option>
-              <option value="DELIVERED">Delivered</option>
+              <option value="">{t("common.all")}</option>
+              <option value="OPEN">{batchStatusLabel("OPEN")}</option>
+              <option value="PARTIALLY_RECEIVED">{batchStatusLabel("PARTIALLY_RECEIVED")}</option>
+              <option value="READY_TO_CONSOLIDATE">
+                {batchStatusLabel("READY_TO_CONSOLIDATE")}
+              </option>
+              <option value="CONSOLIDATED">{batchStatusLabel("CONSOLIDATED")}</option>
+              <option value="OUTBOUND_SHIPPED">{batchStatusLabel("OUTBOUND_SHIPPED")}</option>
+              <option value="DELIVERED">{batchStatusLabel("DELIVERED")}</option>
             </select>
           </div>
         </div>
@@ -404,11 +430,11 @@ export default function AdminWarehousePage() {
             <table className="w-full min-w-[860px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500">
-                  <th className="px-2 py-2">Order</th>
-                  <th className="px-2 py-2">Batch status</th>
-                  <th className="px-2 py-2">Received progress</th>
-                  <th className="px-2 py-2">Ready at</th>
-                  <th className="px-2 py-2">Outbound</th>
+                  <th className="px-2 py-2">{t("common.order")}</th>
+                  <th className="px-2 py-2">{t("consolidation.orderProgress")}</th>
+                  <th className="px-2 py-2">{t("consolidation.receivedProgress")}</th>
+                  <th className="px-2 py-2">{t("consolidation.readyAt")}</th>
+                  <th className="px-2 py-2">{t("consolidation.customerShipment")}</th>
                   <th className="px-2 py-2" />
                 </tr>
               </thead>
@@ -420,15 +446,20 @@ export default function AdminWarehousePage() {
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${badgeClass(row.status)}`}
                       >
-                        {row.status}
+                        {batchStatusLabel(row.status)}
                       </span>
                     </td>
                     <td className="px-2 py-2 text-neutral-700">
-                      {row.receivedVendorCount}/{row.expectedVendorCount} vendors
+                      {t("consolidation.vendorProgress", {
+                        received: row.receivedVendorCount,
+                        expected: row.expectedVendorCount,
+                      })}
                     </td>
                     <td className="px-2 py-2 text-neutral-700">{displayDate(row.readyToConsolidateAt)}</td>
                     <td className="px-2 py-2 text-neutral-700">
-                      {row.outboundShipment ? row.outboundShipment.status : "Not created"}
+                      {row.outboundShipment
+                        ? outboundStatusLabel(row.outboundShipment.status)
+                        : t("consolidation.notCreated")}
                     </td>
                     <td className="px-2 py-2">
                       <button
@@ -436,16 +467,17 @@ export default function AdminWarehousePage() {
                         disabled={row.status !== "READY_TO_CONSOLIDATE" || actionLoadingKey === row.id}
                         onClick={() => {
                           const trackingRef = window.prompt(
-                            "Optional outbound tracking reference for consolidation:",
+                            t("consolidation.promptTracking"),
                             row.outboundShipment?.trackingRef ?? ""
                           );
+                          if (trackingRef === null) return;
                           void runAction(row.id, `/api/admin/warehouse/batches/${row.id}/consolidate`, {
-                            trackingRef: trackingRef?.trim() || undefined,
+                            trackingRef: trackingRef.trim() || undefined,
                           });
                         }}
                         className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
                       >
-                        Consolidate
+                        {t("consolidation.combine")}
                       </button>
                     </td>
                   </tr>
@@ -468,18 +500,18 @@ export default function AdminWarehousePage() {
 
       <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-neutral-900">Outbound Queue</h2>
+          <h2 className="text-lg font-semibold text-neutral-900">{t("outbound.title")}</h2>
           <div className="w-full max-w-xs">
-            <label className={LABEL_CLASS}>Status</label>
+            <label className={LABEL_CLASS}>{t("common.status")}</label>
             <select
               className={INPUT_CLASS}
               value={outboundStatusFilter}
               onChange={(event) => setOutboundStatusFilter(event.target.value)}
             >
-              <option value="">All</option>
-              <option value="CONSOLIDATED">Consolidated</option>
-              <option value="OUTBOUND_SHIPPED">Outbound Shipped</option>
-              <option value="DELIVERED">Delivered</option>
+              <option value="">{t("common.all")}</option>
+              <option value="CONSOLIDATED">{outboundStatusLabel("CONSOLIDATED")}</option>
+              <option value="OUTBOUND_SHIPPED">{outboundStatusLabel("OUTBOUND_SHIPPED")}</option>
+              <option value="DELIVERED">{outboundStatusLabel("DELIVERED")}</option>
             </select>
           </div>
         </div>
@@ -492,13 +524,13 @@ export default function AdminWarehousePage() {
             <table className="w-full min-w-[980px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500">
-                  <th className="px-2 py-2">Order</th>
-                  <th className="px-2 py-2">Status</th>
-                  <th className="px-2 py-2">Batch status</th>
-                  <th className="px-2 py-2">Tracking</th>
-                  <th className="px-2 py-2">Consolidated</th>
-                  <th className="px-2 py-2">Shipped</th>
-                  <th className="px-2 py-2">Delivered</th>
+                  <th className="px-2 py-2">{t("common.order")}</th>
+                  <th className="px-2 py-2">{t("outbound.shipmentStatus")}</th>
+                  <th className="px-2 py-2">{t("outbound.orderProgress")}</th>
+                  <th className="px-2 py-2">{t("common.tracking")}</th>
+                  <th className="px-2 py-2">{t("outbound.packedAt")}</th>
+                  <th className="px-2 py-2">{t("common.shipped")}</th>
+                  <th className="px-2 py-2">{t("common.delivered")}</th>
                   <th className="px-2 py-2" />
                 </tr>
               </thead>
@@ -510,10 +542,12 @@ export default function AdminWarehousePage() {
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${badgeClass(row.status)}`}
                       >
-                        {row.status}
+                        {outboundStatusLabel(row.status)}
                       </span>
                     </td>
-                    <td className="px-2 py-2 text-neutral-700">{row.consolidationBatch.status}</td>
+                    <td className="px-2 py-2 text-neutral-700">
+                      {batchStatusLabel(row.consolidationBatch.status)}
+                    </td>
                     <td className="px-2 py-2 text-neutral-700">{row.trackingRef ?? "—"}</td>
                     <td className="px-2 py-2 text-neutral-700">{displayDate(row.consolidatedAt)}</td>
                     <td className="px-2 py-2 text-neutral-700">{displayDate(row.shippedAt)}</td>
@@ -525,20 +559,21 @@ export default function AdminWarehousePage() {
                           disabled={row.status !== "CONSOLIDATED" || actionLoadingKey === `${row.id}:ship`}
                           onClick={() => {
                             const trackingRef = window.prompt(
-                              "Tracking reference (optional):",
+                              t("outbound.promptTracking"),
                               row.trackingRef ?? ""
                             );
+                            if (trackingRef === null) return;
                             void runAction(
                               `${row.id}:ship`,
                               `/api/admin/warehouse/outbound-shipments/${row.id}/ship`,
                               {
-                                trackingRef: trackingRef?.trim() || undefined,
+                                trackingRef: trackingRef.trim() || undefined,
                               }
                             );
                           }}
                           className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
                         >
-                          Mark shipped
+                          {t("outbound.markShipped")}
                         </button>
                         <button
                           type="button"
@@ -553,7 +588,7 @@ export default function AdminWarehousePage() {
                           }
                           className="rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
                         >
-                          Mark delivered
+                          {t("outbound.markDelivered")}
                         </button>
                       </div>
                     </td>
