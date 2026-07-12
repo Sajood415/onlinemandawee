@@ -545,28 +545,22 @@ export default function AdminVendorDetailPage() {
           </div>
         </section>
 
-        {/* Payout details — show each method section independently */}
+        {/* Payout details */}
         <section className="rounded-2xl border border-neutral-200 bg-white p-5 lg:col-span-2">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
             Payout Details
-            {vendor.payoutMethod && (
-              <span className="ml-2 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-neutral-500">
-                Preferred: {vendor.payoutMethod.method === "BANK" ? "Bank account" : "PayPal / Stripe"}
-              </span>
-            )}
           </h3>
 
           {!vendor.payoutMethod ? (
             <p className="mt-3 text-sm text-neutral-400">No payout details submitted.</p>
           ) : (
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {/* Bank account */}
               {(vendor.payoutMethod.accountName ||
                 vendor.payoutMethod.accountNumberOrIban ||
                 vendor.payoutMethod.bankName) ? (
                 <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
                   <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">
-                    Foreign Bank Account
+                    Bank Account
                   </p>
                   <dl className="space-y-1.5 text-sm">
                     <div className="flex flex-wrap gap-x-2">
@@ -585,29 +579,8 @@ export default function AdminVendorDetailPage() {
                     </div>
                   </dl>
                 </div>
-              ) : null}
-
-              {/* Digital wallet */}
-              {vendor.payoutMethod.stripeEmail ? (
-                <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">
-                    PayPal / Stripe
-                  </p>
-                  <dl className="space-y-1.5 text-sm">
-                    <div className="flex flex-wrap gap-x-2">
-                      <dt className="font-medium text-neutral-500 shrink-0">Email:</dt>
-                      <dd className="break-all text-neutral-800">{vendor.payoutMethod.stripeEmail}</dd>
-                    </div>
-                  </dl>
-                </div>
-              ) : null}
-
-              {/* Fallback if method exists but no fields filled */}
-              {!vendor.payoutMethod.accountName &&
-               !vendor.payoutMethod.accountNumberOrIban &&
-               !vendor.payoutMethod.bankName &&
-               !vendor.payoutMethod.stripeEmail && (
-                <p className="text-sm text-neutral-400">Payout record exists but no details filled in.</p>
+              ) : (
+                <p className="text-sm text-neutral-400">Payout record exists but no bank details filled in.</p>
               )}
             </div>
           )}

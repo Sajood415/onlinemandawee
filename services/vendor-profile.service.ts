@@ -1,5 +1,5 @@
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
-import type { BusinessType, IndustryType, PayoutMethodType } from "@/domain/vendor/vendor-types";
+import type { BusinessType, IndustryType } from "@/domain/vendor/vendor-types";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { slugify } from "@/lib/utils/slug";
@@ -17,11 +17,10 @@ type UpdateBusinessInfoInput = {
 };
 
 type UpdatePayoutInput = {
-  method: PayoutMethodType;
-  accountName?: string;
-  accountNumberOrIban?: string;
-  bankName?: string;
-  stripeEmail?: string;
+  method: "BANK";
+  accountName: string;
+  accountNumberOrIban: string;
+  bankName: string;
 };
 
 type UpdateAddressInput = {
@@ -79,11 +78,10 @@ export class VendorProfileService {
         : null,
       payoutMethod: vendor.payoutMethod
         ? {
-            method: vendor.payoutMethod.method,
+            method: "BANK" as const,
             accountName: vendor.payoutMethod.accountName ?? "",
             accountNumberOrIban: vendor.payoutMethod.accountNumberOrIban ?? "",
             bankName: vendor.payoutMethod.bankName ?? "",
-            stripeEmail: vendor.payoutMethod.stripeEmail ?? "",
           }
         : null,
     };
@@ -159,15 +157,14 @@ export class VendorProfileService {
       existing?.accountNumberOrIban
     );
     const bankName = mergeTrimmedPayoutField(input.bankName, existing?.bankName);
-    const stripeEmail = mergeTrimmedPayoutField(input.stripeEmail, existing?.stripeEmail);
 
     await this.vendorPayoutMethodRepository.upsert({
       vendorProfileId: vendor.id,
-      method: input.method,
+      method: "BANK",
       accountName,
       accountNumberOrIban,
       bankName,
-      stripeEmail,
+      stripeEmail: null,
     });
 
     await this.auditLogRepository.create({

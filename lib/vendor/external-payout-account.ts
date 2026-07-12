@@ -1,10 +1,9 @@
 type VendorPayoutMethodLike = {
   accountNumberOrIban?: string | null;
   accountName?: string | null;
-  stripeEmail?: string | null;
 };
 
-/** Vendor can receive off-platform payouts (foreign bank or PayPal / Stripe email). */
+/** Vendor can receive off-platform payouts via bank transfer. */
 export function vendorHasExternalPayoutAccount(
   payoutMethod: VendorPayoutMethodLike | null | undefined
 ) {
@@ -12,10 +11,8 @@ export function vendorHasExternalPayoutAccount(
     return false;
   }
 
-  const hasBank =
+  return (
     Boolean(payoutMethod.accountNumberOrIban?.trim()) &&
-    Boolean(payoutMethod.accountName?.trim());
-  const hasPayPal = Boolean(payoutMethod.stripeEmail?.trim());
-
-  return hasBank || hasPayPal;
+    Boolean(payoutMethod.accountName?.trim())
+  );
 }
