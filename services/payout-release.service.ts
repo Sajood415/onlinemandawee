@@ -131,15 +131,36 @@ export class PayoutReleaseService {
     }
 
     const now = new Date();
-    const transition = await prisma.payout.updateMany({
-      where: {
-        id: payoutId,
-        status: "READY",
-      },
-      data: {
-        status: "SENT",
-        sentAt: now,
-      },
+    const transition = await prisma.$transaction(async (tx) => {
+      const updated = await tx.payout.updateMany({
+        where: {
+          id: payoutId,
+          status: "READY",
+        },
+        data: {
+          status: "SENT",
+          sentAt: now,
+        },
+      });
+
+      if (updated.count === 0) {
+        return updated;
+      }
+
+      await tx.vendorLedgerEntry.create({
+        data: {
+          vendorProfileId: payout.vendorProfileId,
+          orderVendorId: payout.orderVendorId,
+          payoutId: payout.id,
+          bucket: "AVAILABLE",
+          entryType: "PAYOUT_DEBIT",
+          amount: -payout.amount,
+          currency: payout.currency,
+          description: `Payout sent ${payout.id}`,
+        },
+      });
+
+      return updated;
     });
 
     if (transition.count === 0) {
