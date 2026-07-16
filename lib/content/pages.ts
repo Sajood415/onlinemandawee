@@ -379,7 +379,7 @@ export const refundsPage: ContentPageDefinition = {
         "We and our vendors may consider exceptional circumstances on a case-by-case basis.",
       ],
       bullets: [
-        "Requests submitted after the 3-day post-delivery window.",
+        "Requests submitted after the 7-day post-delivery window.",
         "Items that were delivered as described and show no defect, damage, or fulfillment issue.",
         "Change-of-mind requests where the product was correctly fulfilled.",
         "Cases involving suspected abuse, false claims, or policy violations.",

@@ -120,7 +120,7 @@ export function GiftsShowcase() {
           />
         </div>
 
-        <div className="relative mx-auto w-full max-w-[1100px] px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
+        <div className="relative mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
           <nav className="mb-5 flex items-center gap-2 text-sm text-white/70">
             <Link href="/" className="transition hover:text-white hover:underline">
               {t("home")}
@@ -156,7 +156,7 @@ export function GiftsShowcase() {
       </section>
 
       <section className="w-full min-w-0 py-3 sm:py-4">
-        <div className="mx-auto w-full max-w-[1100px] px-4 sm:px-6">
+        <div className="mx-auto w-full max-w-[1540px] px-4 sm:px-6">
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:gap-3">
             {DUO_IMAGES.map((item) => (
               <a
@@ -182,7 +182,7 @@ export function GiftsShowcase() {
       </section>
 
       <section className="w-full min-w-0 pb-3 sm:pb-4">
-        <div className="mx-auto w-full max-w-[1100px] px-4 sm:px-6">
+        <div className="mx-auto w-full max-w-[1540px] px-4 sm:px-6">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
             {PROMO_IMAGES.map((item) => (
               <a
@@ -208,13 +208,13 @@ export function GiftsShowcase() {
       </section>
 
       <section id="gift-request" className="w-full min-w-0 py-4 sm:py-6">
-        <div className="mx-auto w-full max-w-[1100px] px-4 sm:px-6">
+        <div className="mx-auto w-full max-w-[1540px] px-4 sm:px-6">
           <GiftRequestForm locale={locale} />
         </div>
       </section>
 
       <section className="w-full border-t border-black/5">
-        <div className="mx-auto w-full max-w-[1100px] px-4 py-10 sm:px-6 sm:py-12">
+        <div className="mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12">
           <h2 className="text-lg font-bold text-neutral-900 sm:text-xl">
             {t("howItWorks.title")}
           </h2>
@@ -236,7 +236,7 @@ export function GiftsShowcase() {
       </section>
 
       <section id="gift-sets" className="w-full border-t border-black/5 bg-white/50">
-        <div className="mx-auto w-full max-w-[1100px] px-4 py-8 sm:px-6 sm:py-10">
+        <div className="mx-auto w-full max-w-[1540px] px-4 py-8 sm:px-6 sm:py-10">
           <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-xl font-bold text-neutral-900 sm:text-2xl">

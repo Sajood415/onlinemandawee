@@ -47,7 +47,7 @@ export function HawalaShowcase() {
             className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.14),transparent_45%)]"
           />
         </div>
-        <div className="relative mx-auto w-full max-w-[1100px] px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
+        <div className="relative mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
             MandawEE · {t("eyebrow")}
           </p>
@@ -62,14 +62,14 @@ export function HawalaShowcase() {
 
       {/* Form immediately under hero */}
       <section id="hawala-form" className="relative w-full min-w-0 -mt-1">
-        <div className="mx-auto w-full max-w-[1100px] px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mx-auto w-full max-w-[1540px] px-4 py-6 sm:px-6 sm:py-8">
           <HawalaTransferForm />
         </div>
       </section>
 
       {/* How it works — flat numbered row, no cards */}
       <section id="how-it-works" className="w-full border-t border-black/5">
-        <div className="mx-auto w-full max-w-[1100px] px-4 py-10 sm:px-6 sm:py-12">
+        <div className="mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12">
           <h2 className="text-lg font-bold text-neutral-900 sm:text-xl">
             {t("howItWorks.title")}
           </h2>
@@ -92,7 +92,7 @@ export function HawalaShowcase() {
 
       {/* Trust — single line of text, no cards */}
       <section className="w-full border-t border-black/5 bg-white/60">
-        <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:px-6">
+        <div className="mx-auto flex w-full max-w-[1540px] flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:px-6">
           <p className="text-sm font-semibold text-neutral-900">{t("trust.title")}</p>
           <p className="max-w-2xl text-sm leading-relaxed text-neutral-600">
             {t("trust.rates.description")} · {t("trust.review.description")} ·{" "}
@@ -103,7 +103,7 @@ export function HawalaShowcase() {
 
       {/* FAQ — hairline dividers only */}
       <section className="w-full border-t border-black/5">
-        <div className="mx-auto w-full max-w-[1100px] px-4 py-10 sm:px-6 sm:py-12">
+        <div className="mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12">
           <h2 className="text-lg font-bold text-neutral-900 sm:text-xl">{t("faq.title")}</h2>
           <div className="mt-6 divide-y divide-neutral-200 border-y border-neutral-200">
             <FaqItem
