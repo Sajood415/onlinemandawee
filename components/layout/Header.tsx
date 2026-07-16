@@ -32,6 +32,7 @@ import {
   Flame,
   Gift,
   Banknote,
+  HelpCircle,
   PackageSearch,
   ChevronRight,
 } from "lucide-react";
@@ -797,6 +798,14 @@ export default function Header() {
                   pathname={pathname}
                   label={copy.hawalaShort}
                   icon={<Banknote size={15} />}
+                  className="hidden xl:inline-flex"
+                />
+                <NavDivider />
+                <SecondaryNavLink
+                  href="/contact"
+                  pathname={pathname}
+                  label={copy.support}
+                  icon={<HelpCircle size={15} />}
                   className="hidden xl:inline-flex"
                 />
 

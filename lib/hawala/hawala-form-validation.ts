@@ -20,7 +20,30 @@ export type HawalaTransferFormFields = {
   note: string;
 };
 
-export type HawalaTransferFieldErrors = Partial<Record<keyof HawalaTransferFormFields, string>>;
+export type HawalaValidationErrorCode =
+  | "required"
+  | "minLength"
+  | "maxLength"
+  | "lettersOnly"
+  | "numbersOnly"
+  | "minDigits"
+  | "maxDigits"
+  | "alphanumeric"
+  | "invalidEmail"
+  | "amountRequired"
+  | "amountPositive"
+  | "amountTooLarge"
+  | "noteMaxLength";
+
+export type HawalaValidationError = {
+  code: HawalaValidationErrorCode;
+  min?: number;
+  max?: number;
+};
+
+export type HawalaTransferFieldErrors = Partial<
+  Record<keyof HawalaTransferFormFields, HawalaValidationError>
+>;
 
 const LETTERS_ONLY_REGEX = /^[A-Za-z\s'.-]+$/;
 const PHONE_REGEX = /^[+\d\s-]+$/;
@@ -38,109 +61,101 @@ export function sanitizeAccountNumberInput(value: string) {
   return value.replace(/[^A-Za-z0-9\s-]/g, "");
 }
 
-function validateNameField(value: string, label: string): string | null {
+function validateNameField(value: string): HawalaValidationError | null {
   const trimmed = value.trim();
-  if (!trimmed) return `${label} is required.`;
-  if (trimmed.length < 2) return `${label} must be at least 2 characters.`;
-  if (trimmed.length > 100) return `${label} must be at most 100 characters.`;
-  if (!LETTERS_ONLY_REGEX.test(trimmed)) return `${label} must contain letters only.`;
+  if (!trimmed) return { code: "required" };
+  if (trimmed.length < 2) return { code: "minLength", min: 2 };
+  if (trimmed.length > 100) return { code: "maxLength", max: 100 };
+  if (!LETTERS_ONLY_REGEX.test(trimmed)) return { code: "lettersOnly" };
   return null;
 }
 
-function validatePhoneField(value: string, label: string): string | null {
+function validatePhoneField(value: string): HawalaValidationError | null {
   const trimmed = value.trim();
-  if (!trimmed) return `${label} is required.`;
-  if (!PHONE_REGEX.test(trimmed)) return `${label} must contain numbers only.`;
+  if (!trimmed) return { code: "required" };
+  if (!PHONE_REGEX.test(trimmed)) return { code: "numbersOnly" };
   const digits = trimmed.replace(/\D/g, "");
-  if (digits.length < 7) return `${label} must be at least 7 digits.`;
-  if (digits.length > 15) return `${label} must be at most 15 digits.`;
+  if (digits.length < 7) return { code: "minDigits", min: 7 };
+  if (digits.length > 15) return { code: "maxDigits", max: 15 };
   return null;
 }
 
-function validateCountryField(value: string, label: string): string | null {
+function validateCountryField(value: string): HawalaValidationError | null {
   const trimmed = value.trim();
-  if (!trimmed) return `${label} is required.`;
-  if (trimmed.length < 2) return `${label} must be at least 2 characters.`;
-  if (!LETTERS_ONLY_REGEX.test(trimmed)) return `${label} must contain letters only.`;
+  if (!trimmed) return { code: "required" };
+  if (trimmed.length < 2) return { code: "minLength", min: 2 };
+  if (!LETTERS_ONLY_REGEX.test(trimmed)) return { code: "lettersOnly" };
   return null;
 }
 
-function validateAddressField(value: string, label: string): string | null {
+function validateAddressField(value: string): HawalaValidationError | null {
   const trimmed = value.trim();
-  if (!trimmed) return `${label} is required.`;
-  if (trimmed.length < 5) return `${label} must be at least 5 characters.`;
-  if (trimmed.length > 500) return `${label} must be at most 500 characters.`;
+  if (!trimmed) return { code: "required" };
+  if (trimmed.length < 5) return { code: "minLength", min: 5 };
+  if (trimmed.length > 500) return { code: "maxLength", max: 500 };
   return null;
 }
 
-function validateBankNameField(value: string, label: string): string | null {
+function validateBankNameField(value: string): HawalaValidationError | null {
   const trimmed = value.trim();
-  if (!trimmed) return `${label} is required.`;
-  if (trimmed.length < 2) return `${label} must be at least 2 characters.`;
+  if (!trimmed) return { code: "required" };
+  if (trimmed.length < 2) return { code: "minLength", min: 2 };
   return null;
 }
 
-function validateAccountNumberField(value: string, label: string): string | null {
+function validateAccountNumberField(value: string): HawalaValidationError | null {
   const trimmed = value.trim();
-  if (!trimmed) return `${label} is required.`;
-  if (trimmed.length < 4) return `${label} must be at least 4 characters.`;
-  if (!ACCOUNT_NUMBER_REGEX.test(trimmed)) {
-    return `${label} can only contain letters and numbers.`;
-  }
+  if (!trimmed) return { code: "required" };
+  if (trimmed.length < 4) return { code: "minLength", min: 4 };
+  if (!ACCOUNT_NUMBER_REGEX.test(trimmed)) return { code: "alphanumeric" };
   return null;
 }
 
-export function validateHawalaEmail(value: string): string | null {
+export function validateHawalaEmail(value: string): HawalaValidationError | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return "Enter a valid email address.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return { code: "invalidEmail" };
   return null;
 }
 
-export function validateHawalaAmount(value: string): string | null {
+export function validateHawalaAmount(value: string): HawalaValidationError | null {
   const trimmed = value.trim();
-  if (!trimmed) return "Amount is required.";
+  if (!trimmed) return { code: "amountRequired" };
   const amount = Number(trimmed);
-  if (!Number.isFinite(amount) || amount <= 0) return "Enter an amount greater than 0.";
-  if (amount > 1_000_000) return "Amount is too large.";
+  if (!Number.isFinite(amount) || amount <= 0) return { code: "amountPositive" };
+  if (amount > 1_000_000) return { code: "amountTooLarge" };
   return null;
 }
 
 export function validateHawalaTransferField(
   field: keyof HawalaTransferFormFields,
   value: string
-): string | null {
+): HawalaValidationError | null {
   switch (field) {
     case "senderName":
-      return validateNameField(value, "Sender name");
+    case "receiverName":
+      return validateNameField(value);
     case "senderPhone":
-      return validatePhoneField(value, "Sender phone");
+    case "receiverPhone":
+      return validatePhoneField(value);
     case "senderEmail":
       return validateHawalaEmail(value);
     case "senderCountry":
-      return validateCountryField(value, "Sender country");
-    case "senderAddress":
-      return validateAddressField(value, "Sender address");
-    case "senderBankName":
-      return validateBankNameField(value, "Sender bank name");
-    case "senderAccountNumber":
-      return validateAccountNumberField(value, "Sender account number");
-    case "receiverName":
-      return validateNameField(value, "Receiver name");
-    case "receiverPhone":
-      return validatePhoneField(value, "Receiver phone");
     case "receiverCountry":
-      return validateCountryField(value, "Receiver country");
+      return validateCountryField(value);
+    case "senderAddress":
     case "receiverAddress":
-      return validateAddressField(value, "Receiver address");
+      return validateAddressField(value);
+    case "senderBankName":
     case "receiverBankName":
-      return validateBankNameField(value, "Receiver bank name");
+      return validateBankNameField(value);
+    case "senderAccountNumber":
     case "receiverAccountNumber":
-      return validateAccountNumberField(value, "Receiver account number");
+      return validateAccountNumberField(value);
     case "sendAmount":
       return validateHawalaAmount(value);
     case "note": {
-      if (value.trim().length > 500) return "Note must be at most 500 characters.";
+      if (value.trim().length > 500) return { code: "noteMaxLength", max: 500 };
       return null;
     }
     default:

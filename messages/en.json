@@ -89,18 +89,54 @@
         }
       ],
       "categoryTiles": [
-        { "slug": "breakfast", "label": "Breakfast Items" },
-        { "slug": "grocery", "label": "Food / Edible Grocery" },
-        { "slug": "snacks", "label": "Snack Bar" },
-        { "slug": "beverages", "label": "Beverages" },
-        { "slug": "fruits", "label": "Fruits" },
-        { "slug": "vegetables", "label": "Vegetables" },
-        { "slug": "dairy", "label": "Dairy Products" },
-        { "slug": "cleaning-products", "label": "Cleaning Products" },
-        { "slug": "baby-care", "label": "Baby Care" },
-        { "slug": "personal-care", "label": "Personal Care" },
-        { "slug": "whey-proteins", "label": "Whey Protein" },
-        { "slug": "stationery-items", "label": "Stationery Items" }
+        {
+          "slug": "breakfast",
+          "label": "Breakfast Items"
+        },
+        {
+          "slug": "grocery",
+          "label": "Food / Edible Grocery"
+        },
+        {
+          "slug": "snacks",
+          "label": "Snack Bar"
+        },
+        {
+          "slug": "beverages",
+          "label": "Beverages"
+        },
+        {
+          "slug": "fruits",
+          "label": "Fruits"
+        },
+        {
+          "slug": "vegetables",
+          "label": "Vegetables"
+        },
+        {
+          "slug": "dairy",
+          "label": "Dairy Products"
+        },
+        {
+          "slug": "cleaning-products",
+          "label": "Cleaning Products"
+        },
+        {
+          "slug": "baby-care",
+          "label": "Baby Care"
+        },
+        {
+          "slug": "personal-care",
+          "label": "Personal Care"
+        },
+        {
+          "slug": "whey-proteins",
+          "label": "Whey Protein"
+        },
+        {
+          "slug": "stationery-items",
+          "label": "Stationery Items"
+        }
       ]
     },
     "footer": {
@@ -919,6 +955,236 @@
           "button": "Continue to onboarding"
         },
         "flowLocked": "Your onboarding flow appears here after you click the start button."
+      }
+    }
+  },
+  "SupportPages": {
+    "landing": {
+      "eyebrow": "Customer & vendor support",
+      "title": "We're here to help you get answers fast",
+      "subtitle": "Contact Online Mandawee for order help, account questions, vendor support, or general inquiries. Our team is ready to assist.",
+      "heroImageAlt": "Support team ready to help customers and vendors",
+      "cta": {
+        "emailUs": "Email support",
+        "viewChannels": "View contact options"
+      },
+      "channels": {
+        "title": "Contact options",
+        "subtitle": "Choose the channel that works best for you. Include your order number when possible.",
+        "email": {
+          "label": "Email",
+          "hint": "Best for detailed questions and attachments."
+        },
+        "phone": {
+          "label": "Phone",
+          "hint": "Available during business hours (Afghanistan time)."
+        }
+      },
+      "topics": {
+        "title": "What we can help with",
+        "subtitle": "Common support needs for shoppers and sellers on Mandawee.",
+        "orders": {
+          "title": "Orders & delivery",
+          "description": "Track status, delivery timing, and package updates for your purchases."
+        },
+        "vendors": {
+          "title": "Vendor support",
+          "description": "Onboarding, payouts, store settings, and seller policy questions."
+        },
+        "account": {
+          "title": "Account help",
+          "description": "Login issues, profile updates, and account access questions."
+        },
+        "refunds": {
+          "title": "Refunds & disputes",
+          "description": "Guidance on return windows, dispute threads, and refund status."
+        }
+      },
+      "tips": {
+        "title": "Before you contact us",
+        "subtitle": "These steps often resolve questions faster.",
+        "items": {
+          "helpCenter": "Check the Help Center for answers to common questions.",
+          "refundPolicy": "Review the Refund Policy if your question is about returns or disputes.",
+          "orderNumber": "Have your order number ready when asking about a purchase.",
+          "accountStatus": "Signed-in customers can view live order status from their account."
+        }
+      },
+      "links": {
+        "helpCenter": "Help Center",
+        "refundPolicy": "Refund Policy"
+      },
+      "response": {
+        "title": "Response times",
+        "description": "We aim to reply quickly and keep every case clear and tracked.",
+        "email": "Email",
+        "emailValue": "Usually within 1–2 business days",
+        "phone": "Phone",
+        "phoneValue": "Available during business hours",
+        "disputes": "Open disputes",
+        "disputesValue": "Continue in your account dispute thread"
+      },
+      "faq": {
+        "title": "Frequently asked questions",
+        "items": {
+          "orders": {
+            "question": "How do I check my order status?",
+            "answer": "Sign in to your account and open Orders for live updates. If you need extra help, email us with your order number."
+          },
+          "vendors": {
+            "question": "I want to sell on Mandawee. Where do I start?",
+            "answer": "Start from Sell on Mandawee and complete the vendor application. Contact us if you get stuck during onboarding."
+          },
+          "hours": {
+            "question": "When can I expect a reply?",
+            "answer": "Email replies usually arrive within 1–2 business days. Phone support is available during Afghanistan business hours."
+          },
+          "refunds": {
+            "question": "How do refunds and disputes work?",
+            "answer": "Review the Refund Policy first. If a case is already open, continue in the dispute thread so all details stay in one place."
+          }
+        }
+      },
+      "finalCta": {
+        "eyebrow": "Still need help?",
+        "title": "Reach our support team now",
+        "subtitle": "Email or call us and we will guide you through the next step.",
+        "email": "Send email",
+        "call": "Call now"
+      }
+    }
+  },
+  "HawalaPages": {
+    "landing": {
+      "eyebrow": "Hawala money transfer",
+      "title": "Send money between Afghanistan and the world",
+      "subtitle": "Submit a transfer request with sender and receiver details. We calculate amounts using today's exchange rate and keep you updated as it moves forward.",
+      "heroImageAlt": "Global money transfer map connecting Afghanistan and the world",
+      "cta": {
+        "startTransfer": "Start transfer",
+        "howItWorks": "How it works"
+      },
+      "howItWorks": {
+        "title": "How Hawala transfers work",
+        "subtitle": "A clear path from request to delivery.",
+        "steps": {
+          "submit": {
+            "title": "Submit details",
+            "description": "Fill in sender and receiver info, bank details, and the amount you want to send."
+          },
+          "review": {
+            "title": "We review & approve",
+            "description": "Our team verifies the request and approves it for processing."
+          },
+          "track": {
+            "title": "Track delivery",
+            "description": "Status updates from in progress to delivered and completed."
+          }
+        }
+      },
+      "trust": {
+        "title": "Why transfer with MandawEE",
+        "subtitle": "Built for clarity, speed, and accountability.",
+        "rates": {
+          "title": "Live exchange rates",
+          "description": "Amounts update with today's rates before you submit."
+        },
+        "review": {
+          "title": "Human review",
+          "description": "Every request is checked by our team before processing."
+        },
+        "tracking": {
+          "title": "Account tracking",
+          "description": "Signed-in customers can follow status from their account."
+        }
+      },
+      "faq": {
+        "title": "Frequently asked questions",
+        "items": {
+          "rates": {
+            "question": "How are exchange rates calculated?",
+            "answer": "We use the latest rates configured for Hawala transfers. The form shows what the receiver will get before you submit."
+          },
+          "timing": {
+            "question": "How long does a transfer take?",
+            "answer": "After you submit, our team reviews the request. Once approved, status moves through in progress, delivered, and completed."
+          },
+          "account": {
+            "question": "Do I need an account?",
+            "answer": "No. Guests can submit a transfer. Signing in lets you track status under My Account → Hawala."
+          },
+          "support": {
+            "question": "Who do I contact if I need help?",
+            "answer": "Reach Support from the Contact page with your transfer number if you already submitted a request."
+          }
+        }
+      },
+      "finalCta": {
+        "eyebrow": "Ready to send?",
+        "title": "Start your Hawala transfer now",
+        "subtitle": "Fill in the form above, or contact support if you have questions first.",
+        "startTransfer": "Go to form",
+        "contactSupport": "Contact support"
+      }
+    },
+    "form": {
+      "badge": "New transfer request",
+      "title": "Send money",
+      "subtitle": "Submit your transfer request below. Our team will review and approve it, then update the status as it moves forward.",
+      "required": "Required fields",
+      "sections": {
+        "sender": "Sender details",
+        "receiver": "Receiver details",
+        "amount": "Amount & currency",
+        "note": "Additional note"
+      },
+      "fields": {
+        "senderName": "Sender full name",
+        "senderPhone": "Sender phone number",
+        "senderEmail": "Sender email (optional)",
+        "senderCountry": "Sender country",
+        "senderAddress": "Sender address",
+        "senderBankName": "Sender bank name",
+        "senderAccountNumber": "Sender account number",
+        "receiverName": "Receiver full name",
+        "receiverPhone": "Receiver phone number",
+        "receiverCountry": "Receiver country",
+        "receiverAddress": "Receiver address",
+        "receiverBankName": "Receiver bank name",
+        "receiverAccountNumber": "Receiver account number",
+        "sendAmount": "Amount to send",
+        "sendCurrency": "Send currency",
+        "receiveCurrency": "Receiver gets currency",
+        "note": "Note (optional)"
+      },
+      "notePlaceholder": "Purpose of transfer or any special delivery instructions",
+      "receiverGets": "Receiver will get",
+      "exchangeRateLabel": "Exchange rate",
+      "rateLoading": "Calculating...",
+      "rateUnavailable": "Exchange rate unavailable for this currency pair.",
+      "submit": "Submit transfer request",
+      "submitting": "Submitting...",
+      "validationSummary": "Please fix the highlighted fields.",
+      "submitFailed": "Could not submit your transfer request. Please try again.",
+      "successTitle": "Transfer request received!",
+      "successBody": "We received your Hawala transfer request. Our team will review and approve it shortly.",
+      "transferNumber": "Transfer number",
+      "submitAnother": "Submit another transfer",
+      "trackInAccount": "Track status in your account",
+      "validation": {
+        "required": "{field} is required.",
+        "minLength": "{field} must be at least {min} characters.",
+        "maxLength": "{field} must be at most {max} characters.",
+        "lettersOnly": "{field} must contain letters only.",
+        "numbersOnly": "{field} must contain numbers only.",
+        "minDigits": "{field} must be at least {min} digits.",
+        "maxDigits": "{field} must be at most {max} digits.",
+        "alphanumeric": "{field} can only contain letters and numbers.",
+        "invalidEmail": "Enter a valid email address.",
+        "amountRequired": "Amount is required.",
+        "amountPositive": "Enter an amount greater than 0.",
+        "amountTooLarge": "Amount is too large.",
+        "noteMaxLength": "Note must be at most {max} characters."
       }
     }
   },

@@ -53,11 +53,11 @@ export function MobileNavMenu({
       icon: <Baby size={18} />,
     },
     { href: "/hawala", label: copy.hawalaShort, icon: <Banknote size={18} /> },
+    { href: "/contact", label: copy.support, icon: <HelpCircle size={18} /> },
     { href: "/deals", label: copy.hot, icon: <Flame size={18} />, highlight: true },
     { href: "/gifts", label: copy.giftSets, icon: <Gift size={18} /> },
     { href: "/vendor/register", label: copy.sellOnPlatform, icon: <Store size={18} /> },
     { href: "/orders", label: copy.trackOrder, icon: <PackageSearch size={18} /> },
-    { href: "/contact", label: copy.support, icon: <HelpCircle size={18} /> },
   ];
 
   const accountHref =

@@ -1,18 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "@/i18n/navigation";
-import {
-  Banknote,
-  CheckCircle,
-  Landmark,
-  Loader2,
-  MapPin,
-  Send,
-  User,
-} from "lucide-react";
+import { useTranslations } from "next-intl";
+import { CheckCircle, Loader2, Send } from "lucide-react";
 
-import { getHawalaCopy } from "@/components/hawala/copy";
+import { Link } from "@/i18n/navigation";
 import {
   HAWALA_CURRENCIES,
   HAWALA_CURRENCY_LABELS,
@@ -27,23 +19,23 @@ import {
   validateHawalaTransferForm,
   type HawalaTransferFieldErrors,
   type HawalaTransferFormFields,
+  type HawalaValidationError,
 } from "@/lib/hawala/hawala-form-validation";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
-import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { toast } from "@/lib/utils/toast";
 import { useAuth } from "@/store/auth-context";
 
-const LABEL_CLASS = "mb-1.5 block text-sm font-medium text-neutral-700";
+const LABEL_CLASS = "mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500";
 const ERROR_CLASS = "mt-1.5 text-xs text-red-600";
 
 function fieldClassName(error?: string, multiline = false) {
-  return `w-full rounded-xl border px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 disabled:bg-neutral-50 disabled:text-neutral-400 ${
-    multiline ? "min-h-[100px] resize-y" : ""
+  return `w-full border-0 border-b bg-transparent px-0 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 disabled:text-neutral-400 ${
+    multiline ? "min-h-[88px] resize-y" : ""
   } ${
     error
-      ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100"
-      : "border-neutral-200 focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/15"
+      ? "border-red-400 focus:border-red-500"
+      : "border-neutral-300 focus:border-[#0F3460]"
   }`;
 }
 
@@ -62,11 +54,20 @@ function FormField({
     <div data-field-error={error ? "true" : undefined}>
       <label className={LABEL_CLASS}>
         {label}
-        {required ? <span className="ml-0.5 text-red-500">*</span> : null}
+        {required ? <span className="ms-0.5 text-red-500">*</span> : null}
       </label>
       {children}
       {error ? <p className={ERROR_CLASS}>{error}</p> : null}
     </div>
+  );
+}
+
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="border-t border-neutral-200 pt-7 first:border-t-0 first:pt-0">
+      <h3 className="mb-5 text-sm font-semibold text-neutral-900">{title}</h3>
+      {children}
+    </section>
   );
 }
 
@@ -92,12 +93,25 @@ const EMPTY_FORM: HawalaTransferFormFields = {
 
 type HawalaExchangeRateRow = { currency: HawalaCurrency; rateToAfn: number };
 
-type HawalaTransferFormProps = {
-  locale: SupportedLocale;
-};
+type FieldLabelKey =
+  | "senderName"
+  | "senderPhone"
+  | "senderEmail"
+  | "senderCountry"
+  | "senderAddress"
+  | "senderBankName"
+  | "senderAccountNumber"
+  | "receiverName"
+  | "receiverPhone"
+  | "receiverCountry"
+  | "receiverAddress"
+  | "receiverBankName"
+  | "receiverAccountNumber"
+  | "sendAmount"
+  | "note";
 
-export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
-  const copy = getHawalaCopy(locale);
+export function HawalaTransferForm() {
+  const t = useTranslations("HawalaPages.form");
   const formRef = useRef<HTMLFormElement>(null);
   const { user, isAuthenticated } = useAuth();
   const [form, setForm] = useState<HawalaTransferFormFields>(EMPTY_FORM);
@@ -106,6 +120,19 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
   const [transferNumber, setTransferNumber] = useState<string | null>(null);
   const [rates, setRates] = useState<Record<string, number> | null>(null);
   const [ratesLoading, setRatesLoading] = useState(true);
+
+  const translateError = (
+    field: FieldLabelKey,
+    error: HawalaValidationError | undefined
+  ) => {
+    if (!error) return undefined;
+    const fieldLabel = t(`fields.${field}`);
+    return t(`validation.${error.code}`, {
+      field: fieldLabel,
+      min: error.min ?? 0,
+      max: error.max ?? 0,
+    });
+  };
 
   useEffect(() => {
     if (!isAuthenticated || user?.role !== "CUSTOMER") return;
@@ -193,7 +220,7 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
     const nextErrors = validateHawalaTransferForm(form);
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
-      toast.error(copy.validationSummary);
+      toast.error(t("validationSummary"));
       scrollToFirstError();
       return;
     }
@@ -235,7 +262,7 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
 
       const data = await response.json();
       if (!response.ok) {
-        toast.error(data?.error?.message ?? copy.submitFailed);
+        toast.error(data?.error?.message ?? t("submitFailed"));
         return;
       }
 
@@ -248,7 +275,7 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
       });
       setErrors({});
     } catch {
-      toast.error(copy.submitFailed);
+      toast.error(t("submitFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -256,33 +283,31 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
 
   if (transferNumber) {
     return (
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 sm:p-8">
+      <div className="border-t-2 border-emerald-500 bg-white px-5 py-8 sm:px-8">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-            <CheckCircle className="h-6 w-6" />
-          </div>
+          <CheckCircle className="mt-0.5 h-6 w-6 shrink-0 text-emerald-600" />
           <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-bold text-emerald-900">{copy.successTitle}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-emerald-800">{copy.successBody}</p>
-            <p className="mt-4 text-sm text-emerald-900">
-              <span className="font-semibold">{copy.transferNumber}:</span>{" "}
+            <h2 className="text-xl font-bold text-neutral-900">{t("successTitle")}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-neutral-600">{t("successBody")}</p>
+            <p className="mt-4 text-sm text-neutral-900">
+              <span className="font-semibold">{t("transferNumber")}:</span>{" "}
               <span className="font-mono">{transferNumber}</span>
             </p>
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               {isAuthenticated && user?.role === "CUSTOMER" ? (
                 <Link
                   href="/account/hawala"
-                  className="inline-flex rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
+                  className="inline-flex min-h-11 items-center justify-center bg-[#0F3460] px-5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
                 >
-                  {copy.trackInAccount}
+                  {t("trackInAccount")}
                 </Link>
               ) : null}
               <button
                 type="button"
                 onClick={() => setTransferNumber(null)}
-                className="inline-flex rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100"
+                className="inline-flex min-h-11 items-center justify-center border border-neutral-300 bg-transparent px-5 text-sm font-semibold text-neutral-800 transition hover:border-neutral-400"
               >
-                {copy.submitAnother}
+                {t("submitAnother")}
               </button>
             </div>
           </div>
@@ -296,32 +321,31 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
       ref={formRef}
       onSubmit={handleSubmit}
       noValidate
-      className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-8"
+      className="bg-white px-5 py-7 shadow-[0_20px_50px_-28px_rgba(15,52,96,0.35)] sm:px-8 sm:py-9"
     >
-      <div className="mb-6">
-        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#0f3460]/15 bg-[#0f3460]/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#0f3460]">
-          <Banknote className="h-3.5 w-3.5" />
-          {copy.formBadge}
+      <div className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#0F3460]">
+            {t("badge")}
+          </p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900">{t("title")}</h2>
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-neutral-900">{copy.formTitle}</h2>
-        <p className="mt-2 text-sm leading-relaxed text-neutral-600">{copy.formSubtitle}</p>
-        <p className="mt-2 text-xs text-neutral-500">
-          <span className="text-red-500">*</span> {copy.required}
+        <p className="text-xs text-neutral-500">
+          <span className="text-red-500">*</span> {t("required")}
         </p>
       </div>
+      <p className="mb-8 max-w-2xl text-sm leading-relaxed text-neutral-600">{t("subtitle")}</p>
 
       <div className="space-y-8">
-        <section>
-          <div className="mb-4 flex items-center gap-2 text-[#0f3460]">
-            <User className="h-4 w-4" />
-            <h3 className="text-sm font-semibold uppercase tracking-[0.12em]">
-              {copy.senderSection}
-            </h3>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField label={copy.senderName} required error={errors.senderName}>
+        <FormSection title={t("sections.sender")}>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <FormField
+              label={t("fields.senderName")}
+              required
+              error={translateError("senderName", errors.senderName)}
+            >
               <input
-                className={fieldClassName(errors.senderName)}
+                className={fieldClassName(translateError("senderName", errors.senderName))}
                 value={form.senderName}
                 onChange={(event) =>
                   updateField("senderName", sanitizeNameLikeInput(event.target.value))
@@ -330,9 +354,13 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
                 autoComplete="name"
               />
             </FormField>
-            <FormField label={copy.senderPhone} required error={errors.senderPhone}>
+            <FormField
+              label={t("fields.senderPhone")}
+              required
+              error={translateError("senderPhone", errors.senderPhone)}
+            >
               <input
-                className={fieldClassName(errors.senderPhone)}
+                className={fieldClassName(translateError("senderPhone", errors.senderPhone))}
                 value={form.senderPhone}
                 onChange={(event) =>
                   updateField("senderPhone", sanitizePhoneInput(event.target.value))
@@ -341,19 +369,26 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
                 autoComplete="tel"
               />
             </FormField>
-            <FormField label={copy.senderEmail} error={errors.senderEmail}>
+            <FormField
+              label={t("fields.senderEmail")}
+              error={translateError("senderEmail", errors.senderEmail)}
+            >
               <input
                 type="email"
-                className={fieldClassName(errors.senderEmail)}
+                className={fieldClassName(translateError("senderEmail", errors.senderEmail))}
                 value={form.senderEmail}
                 onChange={(event) => updateField("senderEmail", event.target.value)}
                 onBlur={() => validateOnBlur("senderEmail")}
                 autoComplete="email"
               />
             </FormField>
-            <FormField label={copy.senderCountry} required error={errors.senderCountry}>
+            <FormField
+              label={t("fields.senderCountry")}
+              required
+              error={translateError("senderCountry", errors.senderCountry)}
+            >
               <input
-                className={fieldClassName(errors.senderCountry)}
+                className={fieldClassName(translateError("senderCountry", errors.senderCountry))}
                 value={form.senderCountry}
                 onChange={(event) =>
                   updateField("senderCountry", sanitizeNameLikeInput(event.target.value))
@@ -362,30 +397,43 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
               />
             </FormField>
             <div className="sm:col-span-2">
-              <FormField label={copy.senderAddress} required error={errors.senderAddress}>
+              <FormField
+                label={t("fields.senderAddress")}
+                required
+                error={translateError("senderAddress", errors.senderAddress)}
+              >
                 <textarea
-                  className={fieldClassName(errors.senderAddress, true)}
+                  className={fieldClassName(
+                    translateError("senderAddress", errors.senderAddress),
+                    true
+                  )}
                   value={form.senderAddress}
                   onChange={(event) => updateField("senderAddress", event.target.value)}
                   onBlur={() => validateOnBlur("senderAddress")}
                 />
               </FormField>
             </div>
-            <FormField label={copy.senderBankName} required error={errors.senderBankName}>
+            <FormField
+              label={t("fields.senderBankName")}
+              required
+              error={translateError("senderBankName", errors.senderBankName)}
+            >
               <input
-                className={fieldClassName(errors.senderBankName)}
+                className={fieldClassName(translateError("senderBankName", errors.senderBankName))}
                 value={form.senderBankName}
                 onChange={(event) => updateField("senderBankName", event.target.value)}
                 onBlur={() => validateOnBlur("senderBankName")}
               />
             </FormField>
             <FormField
-              label={copy.senderAccountNumber}
+              label={t("fields.senderAccountNumber")}
               required
-              error={errors.senderAccountNumber}
+              error={translateError("senderAccountNumber", errors.senderAccountNumber)}
             >
               <input
-                className={fieldClassName(errors.senderAccountNumber)}
+                className={fieldClassName(
+                  translateError("senderAccountNumber", errors.senderAccountNumber)
+                )}
                 value={form.senderAccountNumber}
                 onChange={(event) =>
                   updateField(
@@ -397,19 +445,17 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
               />
             </FormField>
           </div>
-        </section>
+        </FormSection>
 
-        <section>
-          <div className="mb-4 flex items-center gap-2 text-[#0f3460]">
-            <MapPin className="h-4 w-4" />
-            <h3 className="text-sm font-semibold uppercase tracking-[0.12em]">
-              {copy.receiverSection}
-            </h3>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField label={copy.receiverName} required error={errors.receiverName}>
+        <FormSection title={t("sections.receiver")}>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <FormField
+              label={t("fields.receiverName")}
+              required
+              error={translateError("receiverName", errors.receiverName)}
+            >
               <input
-                className={fieldClassName(errors.receiverName)}
+                className={fieldClassName(translateError("receiverName", errors.receiverName))}
                 value={form.receiverName}
                 onChange={(event) =>
                   updateField("receiverName", sanitizeNameLikeInput(event.target.value))
@@ -417,9 +463,13 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
                 onBlur={() => validateOnBlur("receiverName")}
               />
             </FormField>
-            <FormField label={copy.receiverPhone} required error={errors.receiverPhone}>
+            <FormField
+              label={t("fields.receiverPhone")}
+              required
+              error={translateError("receiverPhone", errors.receiverPhone)}
+            >
               <input
-                className={fieldClassName(errors.receiverPhone)}
+                className={fieldClassName(translateError("receiverPhone", errors.receiverPhone))}
                 value={form.receiverPhone}
                 onChange={(event) =>
                   updateField("receiverPhone", sanitizePhoneInput(event.target.value))
@@ -427,9 +477,15 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
                 onBlur={() => validateOnBlur("receiverPhone")}
               />
             </FormField>
-            <FormField label={copy.receiverCountry} required error={errors.receiverCountry}>
+            <FormField
+              label={t("fields.receiverCountry")}
+              required
+              error={translateError("receiverCountry", errors.receiverCountry)}
+            >
               <input
-                className={fieldClassName(errors.receiverCountry)}
+                className={fieldClassName(
+                  translateError("receiverCountry", errors.receiverCountry)
+                )}
                 value={form.receiverCountry}
                 onChange={(event) =>
                   updateField("receiverCountry", sanitizeNameLikeInput(event.target.value))
@@ -438,30 +494,45 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
               />
             </FormField>
             <div className="sm:col-span-2">
-              <FormField label={copy.receiverAddress} required error={errors.receiverAddress}>
+              <FormField
+                label={t("fields.receiverAddress")}
+                required
+                error={translateError("receiverAddress", errors.receiverAddress)}
+              >
                 <textarea
-                  className={fieldClassName(errors.receiverAddress, true)}
+                  className={fieldClassName(
+                    translateError("receiverAddress", errors.receiverAddress),
+                    true
+                  )}
                   value={form.receiverAddress}
                   onChange={(event) => updateField("receiverAddress", event.target.value)}
                   onBlur={() => validateOnBlur("receiverAddress")}
                 />
               </FormField>
             </div>
-            <FormField label={copy.receiverBankName} required error={errors.receiverBankName}>
+            <FormField
+              label={t("fields.receiverBankName")}
+              required
+              error={translateError("receiverBankName", errors.receiverBankName)}
+            >
               <input
-                className={fieldClassName(errors.receiverBankName)}
+                className={fieldClassName(
+                  translateError("receiverBankName", errors.receiverBankName)
+                )}
                 value={form.receiverBankName}
                 onChange={(event) => updateField("receiverBankName", event.target.value)}
                 onBlur={() => validateOnBlur("receiverBankName")}
               />
             </FormField>
             <FormField
-              label={copy.receiverAccountNumber}
+              label={t("fields.receiverAccountNumber")}
               required
-              error={errors.receiverAccountNumber}
+              error={translateError("receiverAccountNumber", errors.receiverAccountNumber)}
             >
               <input
-                className={fieldClassName(errors.receiverAccountNumber)}
+                className={fieldClassName(
+                  translateError("receiverAccountNumber", errors.receiverAccountNumber)
+                )}
                 value={form.receiverAccountNumber}
                 onChange={(event) =>
                   updateField(
@@ -473,29 +544,27 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
               />
             </FormField>
           </div>
-        </section>
+        </FormSection>
 
-        <section>
-          <div className="mb-4 flex items-center gap-2 text-[#0f3460]">
-            <Landmark className="h-4 w-4" />
-            <h3 className="text-sm font-semibold uppercase tracking-[0.12em]">
-              {copy.amountSection}
-            </h3>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <FormField label={copy.sendAmount} required error={errors.sendAmount}>
+        <FormSection title={t("sections.amount")}>
+          <div className="grid gap-5 sm:grid-cols-3">
+            <FormField
+              label={t("fields.sendAmount")}
+              required
+              error={translateError("sendAmount", errors.sendAmount)}
+            >
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 inputMode="decimal"
-                className={fieldClassName(errors.sendAmount)}
+                className={fieldClassName(translateError("sendAmount", errors.sendAmount))}
                 value={form.sendAmount}
                 onChange={(event) => updateField("sendAmount", event.target.value)}
                 onBlur={() => validateOnBlur("sendAmount")}
               />
             </FormField>
-            <FormField label={copy.sendCurrency}>
+            <FormField label={t("fields.sendCurrency")}>
               <select
                 className={fieldClassName()}
                 value={form.sendCurrency}
@@ -510,7 +579,7 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
                 ))}
               </select>
             </FormField>
-            <FormField label={copy.receiveCurrency}>
+            <FormField label={t("fields.receiveCurrency")}>
               <select
                 className={fieldClassName()}
                 value={form.receiveCurrency}
@@ -527,17 +596,17 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
             </FormField>
           </div>
 
-          <div className="mt-4 rounded-xl border border-[#0f3460]/15 bg-[#0f3460]/5 px-4 py-3.5">
+          <div className="mt-6 flex flex-wrap items-baseline justify-between gap-3 border-t border-neutral-200 pt-5">
             {ratesLoading ? (
               <p className="flex items-center gap-2 text-sm text-neutral-600">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {copy.rateLoading}
+                {t("rateLoading")}
               </p>
             ) : conversion ? (
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <>
                 <p className="text-sm text-neutral-700">
-                  {copy.receiverGets}{" "}
-                  <span className="text-lg font-bold text-[#0f3460]">
+                  {t("receiverGets")}{" "}
+                  <span className="text-2xl font-bold tracking-tight text-[#0F3460]">
                     {conversion.receiveAmount.toLocaleString(undefined, {
                       maximumFractionDigits: 2,
                     })}{" "}
@@ -545,43 +614,40 @@ export function HawalaTransferForm({ locale }: HawalaTransferFormProps) {
                   </span>
                 </p>
                 <p className="text-xs text-neutral-500">
-                  {copy.exchangeRateLabel}: 1 {form.sendCurrency} ≈{" "}
+                  {t("exchangeRateLabel")}: 1 {form.sendCurrency} ≈{" "}
                   {conversion.rate.toLocaleString(undefined, { maximumFractionDigits: 4 })}{" "}
                   {form.receiveCurrency}
                 </p>
-              </div>
+              </>
             ) : (
-              <p className="text-sm text-neutral-500">{copy.rateUnavailable}</p>
+              <p className="text-sm text-neutral-500">{t("rateUnavailable")}</p>
             )}
           </div>
-        </section>
+        </FormSection>
 
-        <section>
-          <div className="mb-4">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-[#0f3460]">
-              {copy.noteSection}
-            </h3>
-          </div>
-          <FormField label={copy.note} error={errors.note}>
+        <FormSection title={t("sections.note")}>
+          <FormField label={t("fields.note")} error={translateError("note", errors.note)}>
             <textarea
-              className={fieldClassName(errors.note, true)}
+              className={fieldClassName(translateError("note", errors.note), true)}
               value={form.note}
               onChange={(event) => updateField("note", event.target.value)}
               onBlur={() => validateOnBlur("note")}
-              placeholder={copy.notePlaceholder}
+              placeholder={t("notePlaceholder")}
             />
           </FormField>
-        </section>
+        </FormSection>
       </div>
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0f3460] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-      >
-        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        {submitting ? copy.submitting : copy.submit}
-      </button>
+      <div className="mt-10 border-t border-neutral-200 pt-6">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="inline-flex w-full items-center justify-center gap-2 bg-[#0F3460] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        >
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          {submitting ? t("submitting") : t("submit")}
+        </button>
+      </div>
     </form>
   );
 }
