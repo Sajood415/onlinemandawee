@@ -172,7 +172,7 @@ export function SearchableSelect({
                   onClick={() => selectValue(search.trim())}
                   className="flex w-full px-3 py-2.5 text-left text-sm text-[#0F3460] hover:bg-[#0F3460]/5"
                 >
-                  Use &ldquo;{search.trim()}&rdquo;
+                  &ldquo;{search.trim()}&rdquo;
                 </button>
               </li>
             ) : null}

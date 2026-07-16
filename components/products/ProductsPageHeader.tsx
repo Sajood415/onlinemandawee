@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ChevronRight, Search, Sparkles, X } from "lucide-react";
 
 type ProductsPageHeaderProps = {
@@ -29,6 +30,9 @@ export function ProductsPageHeader({
   onSearchChange,
   onClearSearch,
 }: ProductsPageHeaderProps) {
+  const tCommon = useTranslations("Common");
+  const tCatalog = useTranslations("ProductsPages.catalog");
+
   return (
     <section className="relative overflow-hidden border-b border-[#0f3460]/10 bg-gradient-to-br from-[#0f3460] via-[#123f74] to-[#0f3460] text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_45%)]" />
@@ -36,7 +40,7 @@ export function ProductsPageHeader({
 
       <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <nav
-          aria-label="Breadcrumb"
+          aria-label={tCommon("breadcrumb")}
           className="mb-5 flex min-w-0 items-center gap-2 overflow-hidden text-sm text-white/70"
         >
           <Link href="/" className="transition hover:text-white hover:underline">
@@ -84,7 +88,7 @@ export function ProductsPageHeader({
               {searchQuery ? (
                 <button
                   type="button"
-                  aria-label="Clear search"
+                  aria-label={tCatalog("clearFilters")}
                   onClick={onClearSearch}
                   className={`absolute top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800 ${
                     isRtl ? "left-2" : "right-2"

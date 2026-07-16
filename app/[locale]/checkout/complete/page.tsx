@@ -113,7 +113,7 @@ function CheckoutCompleteShell({
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-white">
       <div className="mx-auto w-full max-w-[720px] px-4 py-10 sm:px-6 lg:py-14">
         <nav
-          aria-label="Breadcrumb"
+          aria-label={copy.breadcrumb}
           className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-neutral-400"
         >
           <Link href="/" className="transition hover:text-[#0F3460] hover:underline">

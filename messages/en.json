@@ -211,7 +211,8 @@
     "errors": {
       "generic": "Something went wrong. Please try again.",
       "network": "Network error. Please try again."
-    }
+    },
+    "breadcrumb": "Breadcrumb"
   },
   "Dashboard": {
     "shell": {
@@ -1782,7 +1783,9 @@
       "alreadyApplied": "This coupon is already applied.",
       "applyFailed": "Could not apply coupon.",
       "appliesToStore": "Applies only to {storeName}'s products in your cart.",
-      "removeCoupon": "Remove coupon {code}"
+      "removeCoupon": "Remove coupon {code}",
+      "applied": "Coupon {code} applied",
+      "notValidFor": "Coupon \"{code}\" is not valid for {storeName}."
     },
     "success": {
       "confirmation": "Confirmation",

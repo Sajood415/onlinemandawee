@@ -44,7 +44,7 @@ export function GuestOrderTrackingShell({
 
         <div className="relative mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
           <nav
-            aria-label="Breadcrumb"
+            aria-label={copy.breadcrumb}
             className="mb-5 flex flex-wrap items-center gap-2 text-sm text-white/70"
           >
             <Link href="/" className="transition hover:text-white hover:underline">

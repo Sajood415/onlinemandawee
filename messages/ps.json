@@ -211,7 +211,8 @@
     "errors": {
       "generic": "یو څه ستونزه رامنځته شوه. بیا هڅه وکړئ.",
       "network": "د شبکې ستونزه. بیا هڅه وکړئ."
-    }
+    },
+    "breadcrumb": "لارښود"
   },
   "Dashboard": {
     "shell": {
@@ -632,232 +633,232 @@
         "delivery": "زه موافق یم چې د پلټفارم د لېږد قوانین تعقیب کړم."
       },
       "wizard": {
-        "loading": "Preparing onboarding...",
-        "stepOf": "Step {current} of {total}",
+        "loading": "آنبورډینګ چمتو کېږي...",
+        "stepOf": "ګام {current} له {total}",
         "steps": {
-          "account": "Account",
-          "store": "Store",
-          "identity": "Identity",
-          "address": "Address",
-          "payout": "Payout",
-          "agreements": "Agreements"
+          "account": "حساب",
+          "store": "پلورنځی",
+          "identity": "پېژندنه",
+          "address": "پته",
+          "payout": "تادیه",
+          "agreements": "تړونونه"
         },
         "actions": {
-          "next": "Next",
-          "submitApplication": "Submit Application",
-          "sendCode": "Send code",
-          "sending": "Sending...",
-          "verifyCode": "Verify code",
-          "resendCode": "Resend code",
-          "resending": "Resending...",
-          "changeEmail": "Change email"
+          "next": "بل",
+          "submitApplication": "غوښتنلیک وسپارئ",
+          "sendCode": "کوډ واستوئ",
+          "sending": "لیږل کېږي...",
+          "verifyCode": "کوډ تایید کړئ",
+          "resendCode": "بیا واستوئ",
+          "resending": "بیا لیږل کېږي...",
+          "changeEmail": "بریښنالیک بدل کړئ"
         },
         "fields": {
-          "email": "Email",
-          "fullName": "Full Name",
-          "phone": "Phone",
-          "phoneHint": "Use your active mobile number with country code.",
-          "password": "Password",
-          "confirmPassword": "Confirm Password",
-          "storeName": "Store Name",
-          "businessType": "Business Type",
-          "industry": "Industry",
-          "storeDescription": "Store Description",
-          "nationalIdType": "National ID Type",
-          "bankName": "Bank Name",
-          "accountTitle": "Account Title",
-          "accountNumberOrIban": "Account Number / IBAN",
-          "paypalEmailOptional": "PayPal Email (Optional)"
+          "email": "بریښنالیک",
+          "fullName": "بشپړ نوم",
+          "phone": "تلیفون",
+          "phoneHint": "خپل فعال موبایل شمېره د هیواد کوډ سره ولیکئ.",
+          "password": "پټنوم",
+          "confirmPassword": "پټنوم تایید",
+          "storeName": "د پلورنځي نوم",
+          "businessType": "د سوداګرۍ ډول",
+          "industry": "صنعت",
+          "storeDescription": "د پلورنځي تشریح",
+          "nationalIdType": "د ملي پېژندپاڼې ډول",
+          "bankName": "د بانک نوم",
+          "accountTitle": "د حساب سرلیک",
+          "accountNumberOrIban": "د حساب شمېره / IBAN",
+          "paypalEmailOptional": "PayPal بریښنالیک (اختیاري)"
         },
         "stepContent": {
           "account": {
-            "title": "Create your account",
-            "description": "We'll use this account to manage your products and orders."
+            "title": "خپل حساب جوړ کړئ",
+            "description": "دا حساب به ستاسو محصولات او امرونه اداره کړي."
           },
           "store": {
-            "title": "Store information",
-            "description": "Tell us about your store, business profile, and brand assets."
+            "title": "د پلورنځي معلومات",
+            "description": "د خپل پلورنځي، سوداګرۍ پروفایل او برانډ په اړه ووایاست."
           },
           "identity": {
-            "title": "Identity verification",
-            "description": "Upload your verification documents to complete KYC review."
+            "title": "د پېژندنې تایید",
+            "description": "د KYC بیاکتنې لپاره خپل اسناد اپلوډ کړئ."
           },
           "address": {
-            "title": "Business address",
-            "description": "Set your operating address. Use map-assisted autocomplete for faster entry."
+            "title": "د سوداګرۍ پته",
+            "description": "خپله کاري پته وټاکئ. د چټکۍ لپاره نقشه وکاروئ."
           },
           "payout": {
-            "title": "Payout details",
-            "description": "We'll send your earnings to this account. Payouts are currently processed manually."
+            "title": "د تادیې جزئیات",
+            "description": "ستاسو عاید به دې حساب ته واستول شي. تادیې اوس لاسي پروسس کېږي."
           },
           "agreements": {
-            "title": "Agreements",
-            "description": "Review and accept all required policies before submitting your application."
+            "title": "تړونونه",
+            "description": "د غوښتنلیک سپارلو مخکې ټول اړین سیاستونه بیاکتنه او ومنئ."
           }
         },
         "otp": {
-          "verifyTitle": "Verify your email",
-          "codeSentTo": "Code sent to {email}",
-          "verificationCode": "Verification code",
-          "codeDigitAria": "Verification code digit {number}",
-          "devCode": "Development code: {code}"
+          "verifyTitle": "خپل بریښنالیک تایید کړئ",
+          "codeSentTo": "کوډ {email} ته واستول شو",
+          "verificationCode": "د تایید کوډ",
+          "codeDigitAria": "د تایید کوډ شمېره {number}",
+          "devCode": "پرمختیایي کوډ: {code}"
         },
         "password": {
-          "title": "Password strength",
+          "title": "د پټنوم ځواک",
           "strength": {
-            "weak": "Weak",
-            "medium": "Medium",
-            "strong": "Strong"
+            "weak": "کمزوری",
+            "medium": "منځنی",
+            "strong": "قوي"
           },
           "rules": {
-            "length": "At least 8 characters",
-            "number": "At least one number",
-            "uppercase": "At least one uppercase letter",
-            "special": "At least one special character"
+            "length": "لږترلږه ۸ توري",
+            "number": "لږترلږه یوه شمېره",
+            "uppercase": "لږترلږه یو لوی توری",
+            "special": "لږترلږه یو ځانګړی نښه"
           }
         },
         "store": {
-          "urlPreview": "URL preview",
-          "businessTypeIndividual": "Individual",
-          "businessTypeRegistered": "Registered business",
-          "selectIndustry": "Select industry",
+          "urlPreview": "د URL مخکتنه",
+          "businessTypeIndividual": "شخصي",
+          "businessTypeRegistered": "ثبت شوې سوداګري",
+          "selectIndustry": "صنعت وټاکئ",
           "industryTypes": {
-            "BAKERY": "بیکري",
+            "BAKERY": "نانوايي",
             "CLOTHING": "جامې او پوښاک",
-            "ELECTRONICS": "بریښنایی توکي",
-            "FLORISTS": "ګل پلورونکي",
-            "DRIED_FRUITS": "وچې میوې او مغز لرونکي",
-            "CARPETS": "غالۍ او فرشونه",
+            "ELECTRONICS": "برېښنايي توکي",
+            "FLORISTS": "ګل پلورنځي",
+            "DRIED_FRUITS": "وچې میوې او مغزونه",
+            "CARPETS": "غالۍ او قالین",
             "FOOD_BEVERAGES": "خواړه او څښاک",
             "JEWELRY": "زیورات او لوازم",
             "HEALTH_BEAUTY": "روغتیا او ښکلا",
             "HOME_FURNITURE": "کور او فرنیچر",
-            "SPORTS_OUTDOORS": "سپورت او بهرني",
-            "BOOKS_STATIONERY": "کتابونه او دفتري توکي",
-            "TOYS_GAMES": "لوبې او لوبتکې",
-            "AUTOMOTIVE": "موټر او پرزې",
-            "HANDICRAFTS": "لاسي صنایع او هنري توکي",
-            "AGRICULTURE": "کرنه او مالدارۍ",
+            "SPORTS_OUTDOORS": "ورزش او بهر",
+            "BOOKS_STATIONERY": "کتابونه او لوازم",
+            "TOYS_GAMES": "لوبې او لوبېتوکي",
+            "AUTOMOTIVE": "موټر توکي",
+            "HANDICRAFTS": "لاسي صنایع",
+            "AGRICULTURE": "کرنه او زراعت",
             "OTHER": "نور"
           },
-          "logoUpload": "Logo Upload",
-          "logoHint": "JPG, PNG, or WebP. Max 10MB.",
-          "bannerUpload": "Banner Upload",
-          "bannerHint": "Optional staging banner for your onboarding draft.",
-          "descriptionMax": "Maximum {max} characters.",
-          "defaultSlug": "your-store"
+          "logoUpload": "لوګو اپلوډ",
+          "logoHint": "JPG، PNG یا WebP. اعظمي ۱۰MB.",
+          "bannerUpload": "بینر اپلوډ",
+          "bannerHint": "د آنبورډینګ مسودې لپاره اختیاري بینر.",
+          "descriptionMax": "اعظمي {max} توري.",
+          "defaultSlug": "ستاسو-پلورنځی"
         },
         "identity": {
           "documentTypes": {
-            "PASSPORT": "Passport",
-            "DRIVERS_LICENSE": "Driver's License",
-            "NATIONAL_ID": "National ID"
+            "PASSPORT": "پاسپورټ",
+            "DRIVERS_LICENSE": "د موټر چلولو جواز",
+            "NATIONAL_ID": "ملي پېژندپاڼه"
           },
-          "idDocument": "License / ID Document",
-          "idDocumentHint": "Image or PDF. Max 10MB.",
-          "verificationSelfieOptional": "Verification Selfie (Optional)",
-          "verificationSelfieHint": "Upload a selfie holding your ID."
+          "idDocument": "جواز / پېژندپاڼه",
+          "idDocumentHint": "انځور یا PDF. اعظمي ۱۰MB.",
+          "verificationSelfieOptional": "د تایید سلفی (اختیاري)",
+          "verificationSelfieHint": "د خپلې پېژندپاڼې سره سلفی اپلوډ کړئ."
         },
         "address": {
-          "streetAddress": "Street address",
-          "country": "Country",
-          "selectCountry": "Select country",
-          "searchCountries": "Search countries...",
-          "noCountries": "No countries match your search",
-          "provinceState": "Province / State",
-          "city": "City",
-          "selectCity": "Select or search city",
-          "selectCountryFirst": "Select a country first",
-          "searchCities": "Search cities...",
-          "noCities": "No cities match - type custom city",
-          "chooseCountryFirst": "Choose a country first",
-          "postalCode": "Postal code",
-          "selectPostalCode": "Select or search postal code",
-          "selectCityFirst": "Select city first",
-          "searchPostalCodes": "Search postal codes...",
-          "noPostalCodes": "No results - type manually",
-          "chooseCityFirst": "Choose a city first",
-          "proofOfAddressOptional": "Proof of Address (Optional)",
-          "proofOfAddressHint": "Upload utility bill, bank statement, or similar. PDF, JPG, PNG, WebP."
+          "streetAddress": "د سړک پته",
+          "country": "هیواد",
+          "selectCountry": "هیواد وټاکئ",
+          "searchCountries": "هیوادونه ولټوئ...",
+          "noCountries": "هیڅ هیواد ونه موندل شو",
+          "provinceState": "ولایت / ایالت",
+          "city": "ښار",
+          "selectCity": "ښار وټاکئ یا ولټوئ",
+          "selectCountryFirst": "لومړی هیواد وټاکئ",
+          "searchCities": "ښارونه ولټوئ...",
+          "noCities": "هیڅ ښار ونه موندل شو — خپل ښار ولیکئ",
+          "chooseCountryFirst": "لومړی هیواد وټاکئ",
+          "postalCode": "پوستي کوډ",
+          "selectPostalCode": "پوستي کوډ وټاکئ یا ولټوئ",
+          "selectCityFirst": "لومړی ښار وټاکئ",
+          "searchPostalCodes": "پوستي کوډونه ولټوئ...",
+          "noPostalCodes": "نتیجه نشته — لاسي ولیکئ",
+          "chooseCityFirst": "لومړی ښار وټاکئ",
+          "proofOfAddressOptional": "د پتې ثبوت (اختیاري)",
+          "proofOfAddressHint": "د برېښنا بل، بانکي بیان یا ورته. PDF، JPG، PNG، WebP."
         },
         "upload": {
-          "browse": "Drag & Drop or Browse",
-          "previewUnavailable": "Preview unavailable for this file type.",
-          "savedFileTitle": "A file is already saved for this section.",
-          "savedFileHint": "Upload a new one to replace it.",
+          "browse": "راښکاره کړئ یا وپلټئ",
+          "previewUnavailable": "د دې فایل ډول لپاره مخکتنه نشته.",
+          "savedFileTitle": "د دې برخې لپاره فایل خوندي دی.",
+          "savedFileHint": "د بدلولو لپاره نوی اپلوډ کړئ.",
           "fileSizeKb": "{size} KB"
         },
         "payout": {
-          "infoBox": "We'll send your earnings to this account after settlement."
+          "infoBox": "ستاسو عاید به د تصفیې وروسته دې حساب ته واستول شي."
         },
         "agreements": {
-          "vendorTerms": "Vendor Terms",
-          "membershipPolicy": "Membership Policy",
-          "commissionPolicy": "Commission Policy",
-          "refundDisputePolicy": "Refund & Dispute Policy",
-          "deliveryPolicy": "Delivery Policy",
-          "iAgree": "I agree"
+          "vendorTerms": "د پلورونکي شرایط",
+          "membershipPolicy": "د غړیتوب سیاست",
+          "commissionPolicy": "د کمېشن سیاست",
+          "refundDisputePolicy": "د بیرته ورکړې او شخړې سیاست",
+          "deliveryPolicy": "د رسولو سیاست",
+          "iAgree": "زه موافق یم"
         },
         "validation": {
-          "email": "Enter a valid email.",
-          "fullName": "Enter your full name.",
-          "passwordMismatch": "Passwords do not match.",
-          "minTwoCharacters": "Use at least 2 characters.",
-          "minFiveCharacters": "Use at least 5 characters.",
-          "phoneLooksGood": "Phone number looks good",
-          "storeName": "Store name must be at least 2 characters.",
-          "paypalEmail": "Enter a valid PayPal email."
+          "email": "سم بریښنالیک ولیکئ.",
+          "fullName": "خپل بشپړ نوم ولیکئ.",
+          "passwordMismatch": "پټنومونه سره سمون نه خوري.",
+          "minTwoCharacters": "لږترلږه ۲ توري وکاروئ.",
+          "minFiveCharacters": "لږترلږه ۵ توري وکاروئ.",
+          "phoneLooksGood": "د تلیفون شمېره سمه ښکاري",
+          "storeName": "د پلورنځي نوم باید لږترلږه ۲ توري وي.",
+          "paypalEmail": "سم PayPal بریښنالیک ولیکئ."
         },
         "success": {
-          "title": "Application received",
-          "description": "Your vendor application is pending admin approval. We will email you when there is an update.",
-          "backHome": "Back to home"
+          "title": "غوښتنلیک ترلاسه شو",
+          "description": "ستاسو د پلورونکي غوښتنلیک د اډمین تایید په تمه دی. د تازه معلوماتو پر مهال به تاسو ته بریښنالیک واستوو.",
+          "backHome": "کور ته بیرته"
         },
         "toasts": {
-          "genericError": "Something went wrong. Please try again.",
-          "error": "Error",
-          "sessionTitle": "Session",
-          "sessionStartAgain": "Start again from step 1.",
-          "emailRequiredTitle": "Email required",
-          "emailFirst": "Enter your email first.",
-          "emailInvalid": "Enter a valid email address.",
-          "verificationCodeReadyTitle": "Verification code ready",
-          "verificationCodeReadyDesc": "Email is not set up on this machine. Use the code shown on this page.",
-          "emailSentTitle": "Email sent",
-          "emailSentDesc": "We sent a 6-digit code to {email}.",
-          "couldNotSendCodeTitle": "Could not send code",
-          "emailTitle": "Email",
-          "invalidCodeTitle": "Invalid code",
-          "enterSixDigitCode": "Enter the 6-digit code.",
-          "emailVerifiedTitle": "Email verified",
-          "emailVerifiedDesc": "Continue to the next step.",
-          "verificationFailedTitle": "Verification failed",
-          "verifyEmailTitle": "Verify email",
-          "verifyEmailFirst": "Send and confirm your email code first.",
-          "nameTitle": "Name",
-          "enterFullName": "Enter your full name.",
-          "phoneTitle": "Phone number",
-          "passwordRequirementsTitle": "Password requirements",
-          "passwordTitle": "Password",
-          "passwordMismatch": "Password and confirm password must match.",
-          "accountCreatedTitle": "Account created",
-          "accountCreatedDesc": "Continue with your store details.",
-          "couldNotStartTitle": "Could not start",
-          "storeNameTitle": "Store name",
-          "storeNameMin": "Enter at least 2 characters.",
-          "storeDescriptionTooLongTitle": "Store description too long",
-          "storeDescriptionTooLongDesc": "Use {max} characters or fewer. You entered {count}.",
+          "genericError": "یوه تېروتنه وشوه. بیا هڅه وکړئ.",
+          "error": "تېروتنه",
+          "sessionTitle": "ناسته",
+          "sessionStartAgain": "له ۱ ګام څخه بیا پیل کړئ.",
+          "emailRequiredTitle": "بریښنالیک اړین دی",
+          "emailFirst": "لومړی خپل بریښنالیک ولیکئ.",
+          "emailInvalid": "سم بریښنالیک پته ولیکئ.",
+          "verificationCodeReadyTitle": "د تایید کوډ چمتو دی",
+          "verificationCodeReadyDesc": "په دې ماشین کې بریښنالیک تنظیم نه دی. په پاڼه کې ښودل شوی کوډ وکاروئ.",
+          "emailSentTitle": "بریښنالیک واستول شو",
+          "emailSentDesc": "موږ ۶ رقمي کوډ {email} ته واستاوه.",
+          "couldNotSendCodeTitle": "کوډ واستول نشو",
+          "emailTitle": "بریښنالیک",
+          "invalidCodeTitle": "ناسم کوډ",
+          "enterSixDigitCode": "۶ رقمي کوډ ولیکئ.",
+          "emailVerifiedTitle": "بریښنالیک تایید شو",
+          "emailVerifiedDesc": "بل ګام ته دوام ورکړئ.",
+          "verificationFailedTitle": "تایید ناکام شو",
+          "verifyEmailTitle": "بریښنالیک تایید کړئ",
+          "verifyEmailFirst": "لومړی خپل بریښنالیک کوډ واستوئ او تایید کړئ.",
+          "nameTitle": "نوم",
+          "enterFullName": "خپل بشپړ نوم ولیکئ.",
+          "phoneTitle": "د تلیفون شمېره",
+          "passwordRequirementsTitle": "د پټنوم اړتیاوې",
+          "passwordTitle": "پټنوم",
+          "passwordMismatch": "پټنوم او تایید باید سره سمون ولري.",
+          "accountCreatedTitle": "حساب جوړ شو",
+          "accountCreatedDesc": "د پلورنځي جزئیاتو سره دوام ورکړئ.",
+          "couldNotStartTitle": "پیل نشو",
+          "storeNameTitle": "د پلورنځي نوم",
+          "storeNameMin": "لږترلږه ۲ توري ولیکئ.",
+          "storeDescriptionTooLongTitle": "د پلورنځي تشریح ډېره اوږده ده",
+          "storeDescriptionTooLongDesc": "{max} یا لږ توري وکاروئ. تاسو {count} ولیکل.",
           "kycTitle": "KYC",
-          "attachIdDocument": "Attach your ID document to continue.",
-          "addressTitle": "Address",
-          "addressRequiredFields": "Fill in all required address fields.",
-          "payoutTitle": "Payout",
-          "payoutRequiredFields": "Fill in all bank fields.",
-          "agreementsTitle": "Agreements",
-          "agreementsRequired": "Accept all required policies.",
-          "submittedTitle": "Submitted",
-          "submittedDesc": "We will review your application.",
-          "couldNotSaveTitle": "Could not save"
+          "attachIdDocument": "د دوام لپاره خپل پېژندپاڼه ضمیمه کړئ.",
+          "addressTitle": "پته",
+          "addressRequiredFields": "ټول اړین پتې ساحې ډک کړئ.",
+          "payoutTitle": "تادیه",
+          "payoutRequiredFields": "ټول بانکي ساحې ډک کړئ.",
+          "agreementsTitle": "تړونونه",
+          "agreementsRequired": "ټول اړین سیاستونه ومنئ.",
+          "submittedTitle": "وسپارل شو",
+          "submittedDesc": "موږ به ستاسو غوښتنلیک بیاکتنه کړو.",
+          "couldNotSaveTitle": "خوندي نشو"
         }
       },
       "landing": {
@@ -1505,7 +1506,7 @@
       "notFound": "کټګوري ونه موندل شوه"
     },
     "showcase": {
-      "eyebrow": "MandawEE · {category}",
+      "eyebrow": "منډاوي · {category}",
       "subtitle": "د باوري پلورونکو محصولات — په دې کټګورۍ کې روښانه بیې او ګړندي لېږد اختیارونه.",
       "babyCareSubtitle": "د کوچنیانو لپاره نرم اړین توکي — نرم پاملرنه، ورځنی آرام، او باوري برانډونه په یوه ځای کې.",
       "shopProducts": "محصولات وپلټئ",
@@ -1754,7 +1755,7 @@
     "payment": {
       "cardRequired": "د دې فرمایش لپاره د کارت تادیه لازمه ده.",
       "card": "کریډیټ / ډیبټ کارت",
-      "cardSub": "Visa, Mastercard, Amex — {currencyLabel}",
+      "cardSub": "ویزا، مسترکارت، امکس — {currencyLabel}",
       "cardUnavailable": "Stripe تنظیم نشوی — .env.local ته کیلي اضافه کړئ",
       "applyCouponFirst": "د تخفیف کوډ پلي کړئ یا ځای پاک کړئ مخکې له دوامه.",
       "pay": "{amount} تادیه کړئ",
@@ -1782,7 +1783,9 @@
       "alreadyApplied": "دا کوپن دمخه پلي شوی دی.",
       "applyFailed": "کوپن پلي نشو.",
       "appliesToStore": "یوازې د {storeName} محصولاتو ته پلي کېږي.",
-      "removeCoupon": "کوپن {code} لرې کړئ"
+      "removeCoupon": "کوپن {code} لرې کړئ",
+      "applied": "کوپن {code} پلي شو",
+      "notValidFor": "کوپن \"{code}\" د {storeName} لپاره ناسم دی."
     },
     "success": {
       "confirmation": "تایید",

@@ -1,6 +1,7 @@
 "use client";
 
 import { Minus, Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type QuantitySelectorProps = {
   quantity: number;
@@ -19,6 +20,7 @@ export function QuantitySelector({
   compact = false,
   className,
 }: QuantitySelectorProps) {
+  const t = useTranslations("Cart.quantity");
   const size = compact ? "h-8" : "h-9";
   const btn = compact ? "h-8 w-8" : "h-9 w-9";
   const icon = compact ? "h-3 w-3" : "h-3.5 w-3.5";
@@ -31,7 +33,7 @@ export function QuantitySelector({
         type="button"
         onClick={onDecrease}
         disabled={disabled}
-        aria-label="Decrease quantity"
+        aria-label={t("decrease")}
         className={`flex ${btn} items-center justify-center text-neutral-600 transition hover:bg-neutral-50 hover:text-neutral-900 disabled:opacity-35`}
       >
         <Minus className={icon} />
@@ -47,7 +49,7 @@ export function QuantitySelector({
         type="button"
         onClick={onIncrease}
         disabled={disabled}
-        aria-label="Increase quantity"
+        aria-label={t("increase")}
         className={`flex ${btn} items-center justify-center text-neutral-600 transition hover:bg-neutral-50 hover:text-neutral-900 disabled:opacity-35`}
       >
         <Plus className={icon} />

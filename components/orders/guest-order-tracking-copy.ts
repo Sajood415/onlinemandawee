@@ -6,6 +6,7 @@ export function getGuestOrderTrackingCopy(locale: SupportedLocale) {
 
   return {
     home: en ? "Home" : ps ? "کور" : "خانه",
+    breadcrumb: en ? "Breadcrumb" : ps ? "لارښود" : "مسیر صفحه",
     eyebrow: en ? "Order tracking" : ps ? "د امر تعقیب" : "پیگیری سفارش",
     heroImageAlt: en
       ? "MandawEE order tracking"

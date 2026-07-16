@@ -156,7 +156,7 @@ export function ProductDetailShowcase({
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-white">
       <div className="mx-auto w-full max-w-[1540px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <nav
-          aria-label="Breadcrumb"
+          aria-label={copy.breadcrumb}
           className="mb-5 flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-neutral-400"
         >
           <Link href="/" className="transition hover:text-[#0F3460] hover:underline">

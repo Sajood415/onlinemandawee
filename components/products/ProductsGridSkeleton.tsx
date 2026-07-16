@@ -1,9 +1,15 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 export function ProductsGridSkeleton({ count = 8 }: { count?: number }) {
+  const t = useTranslations("Common");
+
   return (
     <div
       className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 xl:gap-5"
       aria-busy="true"
-      aria-label="Loading products"
+      aria-label={t("loading")}
     >
       {Array.from({ length: count }).map((_, index) => (
         <div

@@ -38,6 +38,7 @@ export function CategoryShowcase({
 }: CategoryShowcaseProps) {
   const t = useTranslations("CategoryPages.showcase");
   const tc = useTranslations("CategoryPages.common");
+  const tCommon = useTranslations("Common");
   const isBabyCare = category.slug === "baby-care";
 
   const media = useMemo(
@@ -74,7 +75,7 @@ export function CategoryShowcase({
 
         <div className="relative mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
           <nav
-            aria-label="Breadcrumb"
+            aria-label={tCommon("breadcrumb")}
             className="mb-5 flex min-w-0 flex-wrap items-center gap-2 text-sm text-white/70"
           >
             <Link href="/" className="transition hover:text-white hover:underline">

@@ -1696,7 +1696,10 @@ export default function CheckoutPage() {
       );
 
       if (!applied) {
-        const message = `Coupon "${code}" is not valid for ${couponEligibleVendors.find((v) => v.vendorProfileId === vendorProfileId)?.storeName ?? "this store"}.`;
+        const storeName =
+          couponEligibleVendors.find((v) => v.vendorProfileId === vendorProfileId)?.storeName ??
+          copy.common.vendor;
+        const message = copy.coupon.notValidFor(code, storeName);
         setCouponFieldErrors((current) => ({ ...current, [vendorProfileId]: message }));
         toast.error(message);
         return;
@@ -1706,7 +1709,7 @@ export default function CheckoutPage() {
       setCouponInputs((current) => ({ ...current, [vendorProfileId]: "" }));
       setPriceSummary(summary);
       setQuote(data as QuoteSummary);
-      toast.success(`Coupon ${code} applied`);
+      toast.success(copy.coupon.applied(code));
     } catch (error) {
       const message = error instanceof Error ? error.message : copy.coupon.applyFailed;
       setCouponFieldErrors((current) => ({ ...current, [vendorProfileId]: message }));
@@ -1913,7 +1916,7 @@ export default function CheckoutPage() {
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-white">
       <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         <nav
-          aria-label="Breadcrumb"
+          aria-label={copy.breadcrumb}
           className="mb-5 flex flex-wrap items-center gap-1.5 text-sm text-neutral-400"
         >
           <Link href="/" className="transition hover:text-[#0F3460] hover:underline">

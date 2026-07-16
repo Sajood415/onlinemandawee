@@ -117,7 +117,7 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
 
           <button
             type="button"
-            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            aria-label={isWishlisted ? copy.removeFromWishlist : copy.addToWishlist}
             aria-pressed={isWishlisted}
             onClick={(event) => {
               event.preventDefault();
@@ -223,7 +223,7 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
                 ) : (
                   <ShoppingBag className="h-4 w-4" />
                 )}
-                {!inStock ? "Sold out" : copy.addToCart}
+                {!inStock ? copy.soldOut : copy.addToCart}
               </button>
             )}
           </div>

@@ -21,6 +21,7 @@ export function useCheckoutCopy() {
       home: t("home"),
       cart: t("cart"),
       subtitle: t("subtitle"),
+      breadcrumb: tc("breadcrumb"),
       complete: {
         finalizing: t("complete.finalizing"),
         missingContext: t("complete.missingContext"),
@@ -126,6 +127,9 @@ export function useCheckoutCopy() {
         applyFailed: t("coupon.applyFailed"),
         appliesToStore: (storeName: string) => t("coupon.appliesToStore", { storeName }),
         removeCoupon: (code: string) => t("coupon.removeCoupon", { code }),
+        applied: (code: string) => t("coupon.applied", { code }),
+        notValidFor: (code: string, storeName: string) =>
+          t("coupon.notValidFor", { code, storeName }),
       },
       summary: {
         title: t("summary.title"),

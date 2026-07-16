@@ -63,6 +63,13 @@ export function getProductsCopy(locale: SupportedLocale) {
         : "پاک کردن همه فیلترها",
     quantity: en ? "Quantity" : ps ? "مقدار" : "تعداد",
     addToCart: en ? "Add to cart" : ps ? "کارټ ته اضافه کړئ" : "افزودن به سبد",
+    soldOut: en ? "Sold out" : ps ? "پلورل شوی" : "ناموجود",
+    addToWishlist: en ? "Add to wishlist" : ps ? "لیست ته اضافه کړئ" : "افزودن به علاقه‌مندی‌ها",
+    removeFromWishlist: en
+      ? "Remove from wishlist"
+      : ps
+        ? "له لیست څخه لرې کړئ"
+        : "حذف از علاقه‌مندی‌ها",
     chooseOptions: en ? "Choose options" : ps ? "انتخابونه وټاکئ" : "انتخاب گزینه‌ها",
     addedToCart: en ? "Added to cart!" : ps ? "کارټ ته اضافه شو!" : "به سبد اضافه شد!",
     addToCartFailed: en

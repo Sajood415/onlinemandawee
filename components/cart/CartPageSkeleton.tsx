@@ -1,6 +1,12 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 export function CartPageSkeleton() {
+  const t = useTranslations("Common");
+
   return (
-    <div className="animate-pulse" aria-busy="true" aria-label="Loading cart">
+    <div className="animate-pulse" aria-busy="true" aria-label={t("loadingCart")}>
       <div className="mb-6 h-4 w-48 bg-neutral-100" />
       <div className="mb-8 flex justify-between border-b border-neutral-200 pb-5">
         <div className="h-8 w-40 bg-neutral-100" />

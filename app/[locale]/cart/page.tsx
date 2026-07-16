@@ -22,6 +22,7 @@ export default function CartPage() {
   const isRtl = locale !== "en";
   const copy = useCartCopy();
   const tBreadcrumb = useTranslations("Cart.breadcrumb");
+  const tCommon = useTranslations("Common");
 
   const { cart, itemCount, displayTotal, removeItem, updateQuantity, isLoading, refreshCartPrices } =
     useCart();
@@ -77,7 +78,7 @@ export default function CartPage() {
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-white">
       <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
         <nav
-          aria-label="Breadcrumb"
+          aria-label={tCommon("breadcrumb")}
           className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-neutral-400"
         >
           <Link href="/" className="transition hover:text-[#0F3460] hover:underline">

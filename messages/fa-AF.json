@@ -211,7 +211,8 @@
     "errors": {
       "generic": "مشکلی پیش آمد. لطفاً دوباره تلاش کنید.",
       "network": "خطای شبکه. لطفاً دوباره تلاش کنید."
-    }
+    },
+    "breadcrumb": "مسیر صفحه"
   },
   "Dashboard": {
     "shell": {
@@ -632,232 +633,232 @@
         "delivery": "موافقم که قوانین تحویل پلتفرم را رعایت کنم."
       },
       "wizard": {
-        "loading": "Preparing onboarding...",
-        "stepOf": "Step {current} of {total}",
+        "loading": "در حال آماده‌سازی ثبت‌نام...",
+        "stepOf": "گام {current} از {total}",
         "steps": {
-          "account": "Account",
-          "store": "Store",
-          "identity": "Identity",
-          "address": "Address",
-          "payout": "Payout",
-          "agreements": "Agreements"
+          "account": "حساب",
+          "store": "فروشگاه",
+          "identity": "هویت",
+          "address": "آدرس",
+          "payout": "پرداخت",
+          "agreements": "توافق‌نامه‌ها"
         },
         "actions": {
-          "next": "Next",
-          "submitApplication": "Submit Application",
-          "sendCode": "Send code",
-          "sending": "Sending...",
-          "verifyCode": "Verify code",
-          "resendCode": "Resend code",
-          "resending": "Resending...",
-          "changeEmail": "Change email"
+          "next": "بعدی",
+          "submitApplication": "ارسال درخواست",
+          "sendCode": "ارسال کد",
+          "sending": "در حال ارسال...",
+          "verifyCode": "تأیید کد",
+          "resendCode": "ارسال مجدد کد",
+          "resending": "در حال ارسال مجدد...",
+          "changeEmail": "تغییر ایمیل"
         },
         "fields": {
-          "email": "Email",
-          "fullName": "Full Name",
-          "phone": "Phone",
-          "phoneHint": "Use your active mobile number with country code.",
-          "password": "Password",
-          "confirmPassword": "Confirm Password",
-          "storeName": "Store Name",
-          "businessType": "Business Type",
-          "industry": "Industry",
-          "storeDescription": "Store Description",
-          "nationalIdType": "National ID Type",
-          "bankName": "Bank Name",
-          "accountTitle": "Account Title",
-          "accountNumberOrIban": "Account Number / IBAN",
-          "paypalEmailOptional": "PayPal Email (Optional)"
+          "email": "ایمیل",
+          "fullName": "نام کامل",
+          "phone": "تلفن",
+          "phoneHint": "شماره موبایل فعال خود را با کد کشور وارد کنید.",
+          "password": "رمز عبور",
+          "confirmPassword": "تأیید رمز عبور",
+          "storeName": "نام فروشگاه",
+          "businessType": "نوع کسب‌وکار",
+          "industry": "صنعت",
+          "storeDescription": "توضیح فروشگاه",
+          "nationalIdType": "نوع شناسه ملی",
+          "bankName": "نام بانک",
+          "accountTitle": "عنوان حساب",
+          "accountNumberOrIban": "شماره حساب / IBAN",
+          "paypalEmailOptional": "ایمیل PayPal (اختیاری)"
         },
         "stepContent": {
           "account": {
-            "title": "Create your account",
-            "description": "We'll use this account to manage your products and orders."
+            "title": "حساب خود را بسازید",
+            "description": "با این حساب محصولات و سفارش‌هایتان را مدیریت می‌کنید."
           },
           "store": {
-            "title": "Store information",
-            "description": "Tell us about your store, business profile, and brand assets."
+            "title": "اطلاعات فروشگاه",
+            "description": "درباره فروشگاه، پروفایل کسب‌وکار و برند خود بگویید."
           },
           "identity": {
-            "title": "Identity verification",
-            "description": "Upload your verification documents to complete KYC review."
+            "title": "تأیید هویت",
+            "description": "اسناد تأیید هویت را برای بررسی KYC بارگذاری کنید."
           },
           "address": {
-            "title": "Business address",
-            "description": "Set your operating address. Use map-assisted autocomplete for faster entry."
+            "title": "آدرس کسب‌وکار",
+            "description": "آدرس کاری خود را ثبت کنید. برای سرعت از تکمیل خودکار نقشه استفاده کنید."
           },
           "payout": {
-            "title": "Payout details",
-            "description": "We'll send your earnings to this account. Payouts are currently processed manually."
+            "title": "جزئیات پرداخت",
+            "description": "درآمد شما به این حساب ارسال می‌شود. پرداخت‌ها فعلاً به‌صورت دستی انجام می‌شود."
           },
           "agreements": {
-            "title": "Agreements",
-            "description": "Review and accept all required policies before submitting your application."
+            "title": "توافق‌نامه‌ها",
+            "description": "پیش از ارسال درخواست، همه سیاست‌های لازم را بررسی و بپذیرید."
           }
         },
         "otp": {
-          "verifyTitle": "Verify your email",
-          "codeSentTo": "Code sent to {email}",
-          "verificationCode": "Verification code",
-          "codeDigitAria": "Verification code digit {number}",
-          "devCode": "Development code: {code}"
+          "verifyTitle": "ایمیل خود را تأیید کنید",
+          "codeSentTo": "کد به {email} ارسال شد",
+          "verificationCode": "کد تأیید",
+          "codeDigitAria": "رقم کد تأیید {number}",
+          "devCode": "کد توسعه: {code}"
         },
         "password": {
-          "title": "Password strength",
+          "title": "قدرت رمز عبور",
           "strength": {
-            "weak": "Weak",
-            "medium": "Medium",
-            "strong": "Strong"
+            "weak": "ضعیف",
+            "medium": "متوسط",
+            "strong": "قوی"
           },
           "rules": {
-            "length": "At least 8 characters",
-            "number": "At least one number",
-            "uppercase": "At least one uppercase letter",
-            "special": "At least one special character"
+            "length": "حداقل ۸ نویسه",
+            "number": "حداقل یک عدد",
+            "uppercase": "حداقل یک حرف بزرگ",
+            "special": "حداقل یک نویسه خاص"
           }
         },
         "store": {
-          "urlPreview": "URL preview",
-          "businessTypeIndividual": "Individual",
-          "businessTypeRegistered": "Registered business",
-          "selectIndustry": "Select industry",
+          "urlPreview": "پیش‌نمایش URL",
+          "businessTypeIndividual": "فردی",
+          "businessTypeRegistered": "کسب‌وکار ثبت‌شده",
+          "selectIndustry": "صنعت را انتخاب کنید",
           "industryTypes": {
             "BAKERY": "نانوایی",
-            "CLOTHING": "پوشاک و لباس",
+            "CLOTHING": "پوشاک",
             "ELECTRONICS": "الکترونیک",
             "FLORISTS": "گل‌فروشی",
             "DRIED_FRUITS": "میوه‌های خشک و مغزها",
             "CARPETS": "قالین و فرش",
-            "FOOD_BEVERAGES": "مواد غذایی و نوشیدنی",
+            "FOOD_BEVERAGES": "غذا و نوشیدنی",
             "JEWELRY": "جواهرات و لوازم",
             "HEALTH_BEAUTY": "سلامت و زیبایی",
             "HOME_FURNITURE": "خانه و مبلمان",
             "SPORTS_OUTDOORS": "ورزش و فضای باز",
             "BOOKS_STATIONERY": "کتاب و لوازم‌التحریر",
             "TOYS_GAMES": "اسباب‌بازی و بازی",
-            "AUTOMOTIVE": "خودرو و قطعات",
-            "HANDICRAFTS": "صنایع‌دستی و هنری",
-            "AGRICULTURE": "کشاورزی و دامداری",
+            "AUTOMOTIVE": "خودرو",
+            "HANDICRAFTS": "صنایع‌دستی",
+            "AGRICULTURE": "کشاورزی",
             "OTHER": "سایر"
           },
-          "logoUpload": "Logo Upload",
-          "logoHint": "JPG, PNG, or WebP. Max 10MB.",
-          "bannerUpload": "Banner Upload",
-          "bannerHint": "Optional staging banner for your onboarding draft.",
-          "descriptionMax": "Maximum {max} characters.",
-          "defaultSlug": "your-store"
+          "logoUpload": "بارگذاری لوگو",
+          "logoHint": "JPG، PNG یا WebP. حداکثر ۱۰MB.",
+          "bannerUpload": "بارگذاری بنر",
+          "bannerHint": "بنر اختیاری برای پیش‌نویس ثبت‌نام.",
+          "descriptionMax": "حداکثر {max} نویسه.",
+          "defaultSlug": "فروشگاه-شما"
         },
         "identity": {
           "documentTypes": {
-            "PASSPORT": "Passport",
-            "DRIVERS_LICENSE": "Driver's License",
-            "NATIONAL_ID": "National ID"
+            "PASSPORT": "پاسپورت",
+            "DRIVERS_LICENSE": "گواهینامه رانندگی",
+            "NATIONAL_ID": "شناسه ملی"
           },
-          "idDocument": "License / ID Document",
-          "idDocumentHint": "Image or PDF. Max 10MB.",
-          "verificationSelfieOptional": "Verification Selfie (Optional)",
-          "verificationSelfieHint": "Upload a selfie holding your ID."
+          "idDocument": "جواز / مدرک شناسایی",
+          "idDocumentHint": "تصویر یا PDF. حداکثر ۱۰MB.",
+          "verificationSelfieOptional": "سلفی تأیید (اختیاری)",
+          "verificationSelfieHint": "سلفی در حالی که مدرک خود را گرفته‌اید بارگذاری کنید."
         },
         "address": {
-          "streetAddress": "Street address",
-          "country": "Country",
-          "selectCountry": "Select country",
-          "searchCountries": "Search countries...",
-          "noCountries": "No countries match your search",
-          "provinceState": "Province / State",
-          "city": "City",
-          "selectCity": "Select or search city",
-          "selectCountryFirst": "Select a country first",
-          "searchCities": "Search cities...",
-          "noCities": "No cities match - type custom city",
-          "chooseCountryFirst": "Choose a country first",
-          "postalCode": "Postal code",
-          "selectPostalCode": "Select or search postal code",
-          "selectCityFirst": "Select city first",
-          "searchPostalCodes": "Search postal codes...",
-          "noPostalCodes": "No results - type manually",
-          "chooseCityFirst": "Choose a city first",
-          "proofOfAddressOptional": "Proof of Address (Optional)",
-          "proofOfAddressHint": "Upload utility bill, bank statement, or similar. PDF, JPG, PNG, WebP."
+          "streetAddress": "آدرس خیابان",
+          "country": "کشور",
+          "selectCountry": "کشور را انتخاب کنید",
+          "searchCountries": "جستجوی کشورها...",
+          "noCountries": "کشوری مطابق جستجو یافت نشد",
+          "provinceState": "ولایت / ایالت",
+          "city": "شهر",
+          "selectCity": "شهر را انتخاب یا جستجو کنید",
+          "selectCountryFirst": "ابتدا کشور را انتخاب کنید",
+          "searchCities": "جستجوی شهرها...",
+          "noCities": "شهری یافت نشد — شهر دلخواه را بنویسید",
+          "chooseCountryFirst": "ابتدا کشور را انتخاب کنید",
+          "postalCode": "کد پستی",
+          "selectPostalCode": "کد پستی را انتخاب یا جستجو کنید",
+          "selectCityFirst": "ابتدا شهر را انتخاب کنید",
+          "searchPostalCodes": "جستجوی کدهای پستی...",
+          "noPostalCodes": "نتیجه‌ای نیست — دستی وارد کنید",
+          "chooseCityFirst": "ابتدا شهر را انتخاب کنید",
+          "proofOfAddressOptional": "مدرک آدرس (اختیاری)",
+          "proofOfAddressHint": "قبض خدمات، صورت‌حساب بانکی یا مشابه. PDF، JPG، PNG، WebP."
         },
         "upload": {
-          "browse": "Drag & Drop or Browse",
-          "previewUnavailable": "Preview unavailable for this file type.",
-          "savedFileTitle": "A file is already saved for this section.",
-          "savedFileHint": "Upload a new one to replace it.",
+          "browse": "بکشید و رها کنید یا انتخاب کنید",
+          "previewUnavailable": "پیش‌نمایش برای این نوع فایل در دسترس نیست.",
+          "savedFileTitle": "برای این بخش قبلاً فایلی ذخیره شده است.",
+          "savedFileHint": "برای جایگزینی، فایل جدید بارگذاری کنید.",
           "fileSizeKb": "{size} KB"
         },
         "payout": {
-          "infoBox": "We'll send your earnings to this account after settlement."
+          "infoBox": "پس از تسویه، درآمد شما به این حساب ارسال می‌شود."
         },
         "agreements": {
-          "vendorTerms": "Vendor Terms",
-          "membershipPolicy": "Membership Policy",
-          "commissionPolicy": "Commission Policy",
-          "refundDisputePolicy": "Refund & Dispute Policy",
-          "deliveryPolicy": "Delivery Policy",
-          "iAgree": "I agree"
+          "vendorTerms": "شرایط فروشنده",
+          "membershipPolicy": "سیاست عضویت",
+          "commissionPolicy": "سیاست کمیسیون",
+          "refundDisputePolicy": "سیاست بازپرداخت و اختلاف",
+          "deliveryPolicy": "سیاست تحویل",
+          "iAgree": "موافقم"
         },
         "validation": {
-          "email": "Enter a valid email.",
-          "fullName": "Enter your full name.",
-          "passwordMismatch": "Passwords do not match.",
-          "minTwoCharacters": "Use at least 2 characters.",
-          "minFiveCharacters": "Use at least 5 characters.",
-          "phoneLooksGood": "Phone number looks good",
-          "storeName": "Store name must be at least 2 characters.",
-          "paypalEmail": "Enter a valid PayPal email."
+          "email": "ایمیل معتبر وارد کنید.",
+          "fullName": "نام کامل خود را وارد کنید.",
+          "passwordMismatch": "رمزها یکسان نیستند.",
+          "minTwoCharacters": "حداقل ۲ نویسه استفاده کنید.",
+          "minFiveCharacters": "حداقل ۵ نویسه استفاده کنید.",
+          "phoneLooksGood": "شماره تلفن درست به‌نظر می‌رسد",
+          "storeName": "نام فروشگاه باید حداقل ۲ نویسه باشد.",
+          "paypalEmail": "ایمیل معتبر PayPal وارد کنید."
         },
         "success": {
-          "title": "Application received",
-          "description": "Your vendor application is pending admin approval. We will email you when there is an update.",
-          "backHome": "Back to home"
+          "title": "درخواست دریافت شد",
+          "description": "درخواست فروشندگی شما در انتظار تأیید مدیر است. با به‌روزرسانی به شما ایمیل می‌فرستیم.",
+          "backHome": "بازگشت به خانه"
         },
         "toasts": {
-          "genericError": "Something went wrong. Please try again.",
-          "error": "Error",
-          "sessionTitle": "Session",
-          "sessionStartAgain": "Start again from step 1.",
-          "emailRequiredTitle": "Email required",
-          "emailFirst": "Enter your email first.",
-          "emailInvalid": "Enter a valid email address.",
-          "verificationCodeReadyTitle": "Verification code ready",
-          "verificationCodeReadyDesc": "Email is not set up on this machine. Use the code shown on this page.",
-          "emailSentTitle": "Email sent",
-          "emailSentDesc": "We sent a 6-digit code to {email}.",
-          "couldNotSendCodeTitle": "Could not send code",
-          "emailTitle": "Email",
-          "invalidCodeTitle": "Invalid code",
-          "enterSixDigitCode": "Enter the 6-digit code.",
-          "emailVerifiedTitle": "Email verified",
-          "emailVerifiedDesc": "Continue to the next step.",
-          "verificationFailedTitle": "Verification failed",
-          "verifyEmailTitle": "Verify email",
-          "verifyEmailFirst": "Send and confirm your email code first.",
-          "nameTitle": "Name",
-          "enterFullName": "Enter your full name.",
-          "phoneTitle": "Phone number",
-          "passwordRequirementsTitle": "Password requirements",
-          "passwordTitle": "Password",
-          "passwordMismatch": "Password and confirm password must match.",
-          "accountCreatedTitle": "Account created",
-          "accountCreatedDesc": "Continue with your store details.",
-          "couldNotStartTitle": "Could not start",
-          "storeNameTitle": "Store name",
-          "storeNameMin": "Enter at least 2 characters.",
-          "storeDescriptionTooLongTitle": "Store description too long",
-          "storeDescriptionTooLongDesc": "Use {max} characters or fewer. You entered {count}.",
+          "genericError": "مشکلی پیش آمد. دوباره تلاش کنید.",
+          "error": "خطا",
+          "sessionTitle": "نشست",
+          "sessionStartAgain": "از گام ۱ دوباره شروع کنید.",
+          "emailRequiredTitle": "ایمیل لازم است",
+          "emailFirst": "ابتدا ایمیل خود را وارد کنید.",
+          "emailInvalid": "آدرس ایمیل معتبر وارد کنید.",
+          "verificationCodeReadyTitle": "کد تأیید آماده است",
+          "verificationCodeReadyDesc": "ایمیل روی این دستگاه تنظیم نشده است. از کد نمایش‌داده‌شده در صفحه استفاده کنید.",
+          "emailSentTitle": "ایمیل ارسال شد",
+          "emailSentDesc": "کد ۶ رقمی به {email} ارسال شد.",
+          "couldNotSendCodeTitle": "ارسال کد ممکن نشد",
+          "emailTitle": "ایمیل",
+          "invalidCodeTitle": "کد نامعتبر",
+          "enterSixDigitCode": "کد ۶ رقمی را وارد کنید.",
+          "emailVerifiedTitle": "ایمیل تأیید شد",
+          "emailVerifiedDesc": "به گام بعدی ادامه دهید.",
+          "verificationFailedTitle": "تأیید ناموفق بود",
+          "verifyEmailTitle": "تأیید ایمیل",
+          "verifyEmailFirst": "ابتدا کد ایمیل را ارسال و تأیید کنید.",
+          "nameTitle": "نام",
+          "enterFullName": "نام کامل خود را وارد کنید.",
+          "phoneTitle": "شماره تلفن",
+          "passwordRequirementsTitle": "الزامات رمز عبور",
+          "passwordTitle": "رمز عبور",
+          "passwordMismatch": "رمز و تأیید رمز باید یکسان باشند.",
+          "accountCreatedTitle": "حساب ساخته شد",
+          "accountCreatedDesc": "با جزئیات فروشگاه ادامه دهید.",
+          "couldNotStartTitle": "شروع ممکن نشد",
+          "storeNameTitle": "نام فروشگاه",
+          "storeNameMin": "حداقل ۲ نویسه وارد کنید.",
+          "storeDescriptionTooLongTitle": "توضیح فروشگاه خیلی طولانی است",
+          "storeDescriptionTooLongDesc": "حداکثر {max} نویسه. شما {count} وارد کردید.",
           "kycTitle": "KYC",
-          "attachIdDocument": "Attach your ID document to continue.",
-          "addressTitle": "Address",
-          "addressRequiredFields": "Fill in all required address fields.",
-          "payoutTitle": "Payout",
-          "payoutRequiredFields": "Fill in all bank fields.",
-          "agreementsTitle": "Agreements",
-          "agreementsRequired": "Accept all required policies.",
-          "submittedTitle": "Submitted",
-          "submittedDesc": "We will review your application.",
-          "couldNotSaveTitle": "Could not save"
+          "attachIdDocument": "برای ادامه، مدرک شناسایی را ضمیمه کنید.",
+          "addressTitle": "آدرس",
+          "addressRequiredFields": "همه فیلدهای لازم آدرس را پر کنید.",
+          "payoutTitle": "پرداخت",
+          "payoutRequiredFields": "همه فیلدهای بانکی را پر کنید.",
+          "agreementsTitle": "توافق‌نامه‌ها",
+          "agreementsRequired": "همه سیاست‌های لازم را بپذیرید.",
+          "submittedTitle": "ارسال شد",
+          "submittedDesc": "درخواست شما را بررسی می‌کنیم.",
+          "couldNotSaveTitle": "ذخیره ممکن نشد"
         }
       },
       "landing": {
@@ -1505,7 +1506,7 @@
       "notFound": "دسته یافت نشد"
     },
     "showcase": {
-      "eyebrow": "MandawEE · {category}",
+      "eyebrow": "منداوی · {category}",
       "subtitle": "محصولات قابل اعتماد از فروشندگان محلی — خرید در این دسته با قیمت شفاف و گزینه‌های ارسال سریع.",
       "babyCareSubtitle": "ضروریات ملایم برای کوچولوها — مراقبت نرم، راحتی روزانه و برندهای قابل اعتماد در یک جا.",
       "shopProducts": "مشاهده محصولات",
@@ -1754,7 +1755,7 @@
     "payment": {
       "cardRequired": "برای ثبت این سفارش پرداخت با کارت الزامی است.",
       "card": "کارت اعتباری / دبیت",
-      "cardSub": "Visa, Mastercard, Amex — {currencyLabel}",
+      "cardSub": "ویزا، مسترکارت، امکس — {currencyLabel}",
       "cardUnavailable": "Stripe تنظیم نشده — کلیدها را به .env.local اضافه کنید",
       "applyCouponFirst": "کد تخفیف را اعمال کنید یا فیلد را پاک کنید.",
       "pay": "پرداخت {amount}",
@@ -1782,7 +1783,9 @@
       "alreadyApplied": "این کوپن قبلاً اعمال شده است.",
       "applyFailed": "اعمال کوپن ناموفق بود.",
       "appliesToStore": "فقط برای محصولات {storeName} در سبد شما اعمال می‌شود.",
-      "removeCoupon": "حذف کوپن {code}"
+      "removeCoupon": "حذف کوپن {code}",
+      "applied": "کوپن {code} اعمال شد",
+      "notValidFor": "کوپن «{code}» برای {storeName} معتبر نیست."
     },
     "success": {
       "confirmation": "تأیید",

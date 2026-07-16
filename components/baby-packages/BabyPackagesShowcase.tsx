@@ -33,6 +33,7 @@ function parseSort(value: string | null): PublicCatalogSort {
 
 function BabyPackagesContent() {
   const t = useTranslations("BabyPackagesPages.landing");
+  const tCommon = useTranslations("Common");
   const locale = useLocale() as SupportedLocale;
   const isRtl = locale !== "en";
   const searchParams = useSearchParams();
@@ -130,7 +131,7 @@ function BabyPackagesContent() {
     <div dir={isRtl ? "rtl" : "ltr"} className="w-full min-w-0 bg-[#eef1f6]">
       <div className="mx-auto w-full max-w-[1540px] px-4 py-6 sm:px-6 sm:py-8">
         <div className="mb-6">
-          <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1.5 text-sm text-neutral-400">
+          <nav aria-label={tCommon("breadcrumb")} className="mb-3 flex flex-wrap items-center gap-1.5 text-sm text-neutral-400">
             <Link href="/" className="transition hover:text-[#0F3460] hover:underline">
               {t("home")}
             </Link>

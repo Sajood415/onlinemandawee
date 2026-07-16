@@ -6,6 +6,7 @@ export function getProductDetailCopy(locale: SupportedLocale) {
 
   return {
     home: en ? "Home" : ps ? "کور" : "خانه",
+    breadcrumb: en ? "Breadcrumb" : ps ? "لارښود" : "مسیر صفحه",
     products: en ? "Products" : ps ? "محصولات" : "محصولات",
     visitStore: en ? "Visit the store" : ps ? "پلورنځی وګورئ" : "مشاهده فروشگاه",
     reviews: en ? "reviews" : ps ? "بیاکتنې" : "نظرات",
