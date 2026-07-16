@@ -33,6 +33,7 @@ import {
   Gift,
   Banknote,
   PackageSearch,
+  ChevronRight,
 } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -55,13 +56,12 @@ import { buildLoginRedirectPath } from "@/lib/auth/client-auth-routing";
 
 // --- Framer Motion Configuration ---
 const dropdownVariants: Variants = {
-  hidden: { opacity: 0, y: 8 },
+  hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    y: 0,
-    transition: { duration: 0.18, ease: "easeOut" },
+    transition: { duration: 0.08, ease: "linear" },
   },
-  exit: { opacity: 0, y: 6, transition: { duration: 0.12 } },
+  exit: { opacity: 0, transition: { duration: 0.08 } },
 };
 
 const sheetVariants: Variants = {
@@ -102,6 +102,7 @@ function getFallbackCategories(locale: SupportedLocale) {
     slug,
     href: `/category/${slug}`,
     label: localeLabels[locale],
+    children: [],
   }));
 }
 
@@ -238,8 +239,20 @@ export default function Header() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showCategoriesDropdown, setShowCategoriesDropdown] = useState(false);
   const [catalogCategories, setCatalogCategories] = useState<
-    { id: string; name: string; slug: string; translations?: unknown }[]
+    {
+      id: string;
+      name: string;
+      slug: string;
+      translations?: unknown;
+      children?: {
+        id: string;
+        name: string;
+        slug: string;
+        translations?: unknown;
+      }[];
+    }[]
   >([]);
+  const [activeMegaCategorySlug, setActiveMegaCategorySlug] = useState<string | null>(null);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
@@ -256,10 +269,35 @@ export default function Header() {
           safeLocale,
           category.translations,
         ),
+        children: (category.children ?? []).map((child) => ({
+          id: child.id,
+          slug: child.slug,
+          href: `/category/${child.slug}`,
+          label: resolveCategoryLabel(child.slug, child.name, safeLocale, child.translations),
+        })),
       }));
     }
     return getFallbackCategories(safeLocale);
   }, [catalogCategories, safeLocale]);
+
+  const activeMegaCategory = useMemo(() => {
+    if (categoryItems.length === 0) return null;
+    if (!activeMegaCategorySlug) return categoryItems[0];
+    return categoryItems.find((item) => item.slug === activeMegaCategorySlug) ?? categoryItems[0];
+  }, [activeMegaCategorySlug, categoryItems]);
+
+  const megaRelatedCategories = useMemo(() => {
+    if (!activeMegaCategory) return [];
+    return categoryItems.filter((item) => item.slug !== activeMegaCategory.slug);
+  }, [activeMegaCategory, categoryItems]);
+
+  const megaRelatedColumns = useMemo(() => {
+    const perColumn = Math.max(4, Math.ceil(megaRelatedCategories.length / 2));
+    return [
+      megaRelatedCategories.slice(0, perColumn),
+      megaRelatedCategories.slice(perColumn, perColumn * 2),
+    ].filter((column) => column.length > 0);
+  }, [megaRelatedCategories]);
 
   const cartSheetVariants = useMemo(() => getCartSheetVariants(isRtl), [isRtl]);
 
@@ -391,6 +429,12 @@ export default function Header() {
     setIsCartOpen(false);
     setShowAccountMenu(false);
   }, []);
+
+  useEffect(() => {
+    if (!showCategoriesDropdown) return;
+    if (categoryItems.length === 0) return;
+    setActiveMegaCategorySlug((current) => current ?? categoryItems[0].slug);
+  }, [showCategoriesDropdown, categoryItems]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -683,6 +727,7 @@ export default function Header() {
             ref={categoriesRef}
             dir={isRtl ? "rtl" : "ltr"}
             className="relative z-[9997] border-b border-gray-200 bg-white"
+            onMouseLeave={() => setShowCategoriesDropdown(false)}
           >
             <div className="flex h-11 w-full items-center gap-2 px-2 sm:px-3 lg:px-4">
               <LocaleLink
@@ -696,7 +741,8 @@ export default function Header() {
               <div className="hidden min-w-0 flex-1 items-center md:flex">
                 <button
                   type="button"
-                  onClick={() => setShowCategoriesDropdown(!showCategoriesDropdown)}
+                  onMouseEnter={() => setShowCategoriesDropdown(true)}
+                  onClick={() => setShowCategoriesDropdown(true)}
                   className={`inline-flex shrink-0 cursor-pointer items-center gap-2 px-2 py-2 text-sm font-bold transition-colors sm:px-3 ${
                     showCategoriesDropdown
                       ? "text-[#ec1b23]"
@@ -787,25 +833,18 @@ export default function Header() {
 
             <AnimatePresence>
               {showCategoriesDropdown ? (
-                <>
-                  <motion.button
-                    type="button"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    aria-label="Close categories"
-                    onClick={closeAll}
-                    className="fixed inset-0 z-[9994] cursor-default bg-black/40"
-                  />
-                  <motion.div
-                    variants={dropdownVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                    className="absolute inset-x-0 top-full z-[9999] border-t border-gray-200 bg-white shadow-2xl"
+                <motion.div
+                  variants={dropdownVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="absolute inset-x-0 top-full z-[9999] border-t border-gray-200 bg-white shadow-2xl"
+                >
+                  <div
+                    className="flex w-full min-h-0 flex-col px-2 py-3 sm:px-3 lg:px-4"
+                    style={{ height: "min(520px, calc(100dvh - var(--header-height) - 8px))" }}
                   >
-                    <div className="w-full px-2 py-5 sm:px-3 lg:px-4">
-                      <div className="mb-4 flex items-center justify-between gap-4">
+                      <div className="mb-3 flex shrink-0 items-center justify-between gap-4">
                         <div>
                           <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
                             {copy.storeDepartments}
@@ -818,37 +857,116 @@ export default function Header() {
                           type="button"
                           onClick={closeAll}
                           className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200"
-                          aria-label="Close"
+                          aria-label={copy.close}
                         >
                           <X size={18} />
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                        {categoryItems.map((category) => (
-                          <CategoryTile
-                            key={category.id}
-                            href={category.href}
-                            slug={category.slug}
-                            label={category.label}
-                            onClick={closeAll}
-                          />
-                        ))}
-                      </div>
-
-                      <div className="mt-5 flex justify-center border-t border-gray-100 pt-4">
-                        <Link
-                          href="/products"
-                          onClick={closeAll}
-                          className="inline-flex items-center gap-2 rounded-lg bg-[#ec1b23] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#d41920]"
+                      <div
+                        className={`min-h-0 flex-1 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm ${
+                          isRtl ? "flex flex-row-reverse" : "flex"
+                        }`}
+                      >
+                        <aside
+                          className={`h-full w-56 shrink-0 overflow-y-auto bg-[#fafafa] py-2 ${
+                            isRtl ? "border-l border-gray-200" : "border-r border-gray-200"
+                          }`}
                         >
-                          {copy.discoverEverything}
-                          <ArrowRight size={16} />
-                        </Link>
+                          {categoryItems.map((category) => {
+                            const isActive = activeMegaCategory?.slug === category.slug;
+                            return (
+                              <button
+                                key={category.id}
+                                type="button"
+                                onMouseEnter={() => setActiveMegaCategorySlug(category.slug)}
+                                onFocus={() => setActiveMegaCategorySlug(category.slug)}
+                                onClick={() => setActiveMegaCategorySlug(category.slug)}
+                                className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
+                                  isRtl ? "text-right" : "text-left"
+                                } ${
+                                  isActive
+                                    ? "bg-white font-semibold text-[#ec1b23]"
+                                    : "text-gray-700 hover:bg-white hover:text-gray-900"
+                                }`}
+                              >
+                                <span className="shrink-0 text-gray-500">
+                                  {getCategoryIcon(category.slug, 16)}
+                                </span>
+                                <span className="line-clamp-1">{category.label}</span>
+                              </button>
+                            );
+                          })}
+                        </aside>
+
+                        <div className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-5">
+                          {activeMegaCategory ? (
+                            <>
+                              <div className="mb-4 border-b border-gray-100 pb-3">
+                                <Link
+                                  href={activeMegaCategory.href}
+                                  onClick={closeAll}
+                                  className="inline-flex items-center gap-2 text-sm font-semibold text-[#0f3460] hover:text-[#ec1b23]"
+                                >
+                                  <span>{copy.megaAllIn}</span>
+                                  <span>{activeMegaCategory.label}</span>
+                                  <ChevronRight size={14} />
+                                </Link>
+                              </div>
+
+                              <div
+                                className={`grid grid-cols-1 gap-6 ${
+                                  activeMegaCategory.children.length > 0
+                                    ? "md:grid-cols-3"
+                                    : "md:grid-cols-2"
+                                }`}
+                              >
+                                {activeMegaCategory.children.length > 0 ? (
+                                  <div>
+                                    <h4 className="mb-3 text-sm font-bold text-gray-900">
+                                      {copy.megaSubcategories}
+                                    </h4>
+                                    <div className="space-y-2">
+                                      {activeMegaCategory.children.map((child) => (
+                                        <Link
+                                          key={child.id}
+                                          href={child.href}
+                                          onClick={closeAll}
+                                          className="block text-sm text-gray-600 transition-colors hover:text-[#ec1b23]"
+                                        >
+                                          {child.label}
+                                        </Link>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : null}
+
+                                {megaRelatedColumns.map((column, index) => (
+                                  <div key={`mega-related-col-${index}`}>
+                                    <h4 className="mb-3 text-sm font-bold text-gray-900">
+                                      {copy.megaRelatedCategories}
+                                    </h4>
+                                    <div className="space-y-2">
+                                      {column.map((item) => (
+                                        <Link
+                                          key={item.id}
+                                          href={item.href}
+                                          onClick={closeAll}
+                                          className="block text-sm text-gray-600 transition-colors hover:text-[#ec1b23]"
+                                        >
+                                          {item.label}
+                                        </Link>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          ) : null}
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                </>
+                  </div>
+                </motion.div>
               ) : null}
             </AnimatePresence>
           </nav>

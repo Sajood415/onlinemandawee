@@ -41,6 +41,12 @@ export type HeaderCopy = {
   becomeVendor: string;
   sellOnPlatform: string;
   categories: string;
+  megaAllIn: string;
+  megaSubcategories: string;
+  megaRelatedCategories: string;
+  megaNoSubcategories: string;
+  closeCategories: string;
+  close: string;
 };
 
 export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
@@ -92,6 +98,12 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     becomeVendor: "Become a Vendor",
     sellOnPlatform: "Sell on Mandawee!",
     categories: "Categories",
+    megaAllIn: "All in",
+    megaSubcategories: "Subcategories",
+    megaRelatedCategories: "Related categories",
+    megaNoSubcategories: "No subcategories yet",
+    closeCategories: "Close categories",
+    close: "Close",
   },
   ps: {
     searchSuggestions: [
@@ -141,6 +153,12 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     becomeVendor: "پلورونکی شئ",
     sellOnPlatform: "په منداوی کې وپلورئ!",
     categories: "کټګورۍ",
+    megaAllIn: "ټول په",
+    megaSubcategories: "فرعي کټګورۍ",
+    megaRelatedCategories: "اړوند کټګورۍ",
+    megaNoSubcategories: "لا تر اوسه فرعي کټګورۍ نشته",
+    closeCategories: "کټګورۍ وتړئ",
+    close: "بند",
   },
   "fa-AF": {
     searchSuggestions: [
@@ -190,6 +208,12 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     becomeVendor: "فروشنده شوید",
     sellOnPlatform: "در منداوی بفروشید!",
     categories: "دسته‌بندی‌ها",
+    megaAllIn: "همه در",
+    megaSubcategories: "زیردسته‌ها",
+    megaRelatedCategories: "دسته‌های مرتبط",
+    megaNoSubcategories: "هنوز زیردسته‌ای موجود نیست",
+    closeCategories: "بستن دسته‌بندی‌ها",
+    close: "بستن",
   },
 };
 
