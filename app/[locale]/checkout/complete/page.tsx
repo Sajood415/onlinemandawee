@@ -1,11 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { useLocale } from "next-intl";
+import { CheckCircle, ChevronRight, Loader2 } from "lucide-react";
 
 import { Link, useRouter } from "@/i18n/navigation";
 import { confirmCheckoutOrderWithRetry } from "@/lib/checkout/client-checkout-confirmation";
+import { useCheckoutCopy } from "@/lib/i18n/use-checkout-copy";
 import { getStripePromise } from "@/lib/stripe/client";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 
@@ -58,11 +60,7 @@ function clearPendingConfirmation(paymentIntentId: string) {
   window.sessionStorage.setItem(CHECKOUT_PENDING_STORAGE_KEY, JSON.stringify(records));
 }
 
-async function postCheckout(
-  path: string,
-  body: unknown,
-  useAuth: boolean
-) {
+async function postCheckout(path: string, body: unknown, useAuth: boolean) {
   if (useAuth) {
     return fetchWithAuth(path, {
       method: "POST",
@@ -90,20 +88,55 @@ async function postCheckoutConfirm(
 }
 
 export default function CheckoutCompletePage() {
+  const copy = useCheckoutCopy();
+
   return (
-    <Suspense fallback={<CheckoutCompleteLoadingState message="Finalizing your payment..." />}>
+    <Suspense
+      fallback={<CheckoutCompleteShell copy={copy}><CompleteLoading message={copy.complete.finalizing} /></CheckoutCompleteShell>}
+    >
       <CheckoutCompletePageContent />
     </Suspense>
   );
 }
 
-function CheckoutCompleteLoadingState({ message }: { message: string }) {
+function CheckoutCompleteShell({
+  copy,
+  children,
+}: {
+  copy: ReturnType<typeof useCheckoutCopy>;
+  children: ReactNode;
+}) {
+  const locale = useLocale();
+  const isRtl = locale !== "en";
+
   return (
-    <div className="flex min-h-[60vh] items-center justify-center px-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-        <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#0f3460]" />
-        <p className="mt-3 text-sm text-slate-600">{message}</p>
+    <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-white">
+      <div className="mx-auto w-full max-w-[720px] px-4 py-10 sm:px-6 lg:py-14">
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-neutral-400"
+        >
+          <Link href="/" className="transition hover:text-[#0F3460] hover:underline">
+            {copy.home}
+          </Link>
+          <ChevronRight className={`h-3.5 w-3.5 shrink-0 ${isRtl ? "rotate-180" : ""}`} />
+          <Link href="/checkout" className="transition hover:text-[#0F3460] hover:underline">
+            {copy.title}
+          </Link>
+          <ChevronRight className={`h-3.5 w-3.5 shrink-0 ${isRtl ? "rotate-180" : ""}`} />
+          <span className="text-neutral-800">{copy.complete.successTitle}</span>
+        </nav>
+        {children}
       </div>
+    </div>
+  );
+}
+
+function CompleteLoading({ message }: { message: string }) {
+  return (
+    <div className="flex min-h-[240px] flex-col items-center justify-center border border-neutral-200 px-6 py-16 text-center">
+      <Loader2 className="h-8 w-8 animate-spin text-[#0F3460]/40" />
+      <p className="mt-4 text-sm text-neutral-600">{message}</p>
     </div>
   );
 }
@@ -111,9 +144,10 @@ function CheckoutCompleteLoadingState({ message }: { message: string }) {
 function CheckoutCompletePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const copy = useCheckoutCopy();
   const [state, setState] = useState<CompletionState>({
     type: "loading",
-    message: "Finalizing your payment...",
+    message: copy.complete.finalizing,
   });
 
   useEffect(() => {
@@ -122,19 +156,13 @@ function CheckoutCompletePageContent() {
     const finalize = async () => {
       const clientSecret = searchParams.get("payment_intent_client_secret");
       if (!clientSecret) {
-        setState({
-          type: "error",
-          message: "Missing payment context. Please return to checkout and try again.",
-        });
+        setState({ type: "error", message: copy.complete.missingContext });
         return;
       }
 
       const stripe = await getStripePromise();
       if (!stripe) {
-        setState({
-          type: "error",
-          message: "Stripe is not configured. Please contact support.",
-        });
+        setState({ type: "error", message: copy.complete.stripeMissing });
         return;
       }
 
@@ -142,7 +170,7 @@ function CheckoutCompletePageContent() {
       if (error || !paymentIntent) {
         setState({
           type: "error",
-          message: error?.message ?? "Could not retrieve payment details.",
+          message: error?.message ?? copy.complete.retrieveFailed,
         });
         return;
       }
@@ -152,8 +180,8 @@ function CheckoutCompletePageContent() {
           type: "error",
           message:
             paymentIntent.status === "processing"
-              ? "Payment is still processing. Please refresh this page in a moment."
-              : "Payment is not completed yet. Please return to checkout.",
+              ? copy.complete.stillProcessing
+              : copy.complete.notCompleted,
         });
         return;
       }
@@ -162,9 +190,9 @@ function CheckoutCompletePageContent() {
       if (!pending) {
         setState({
           type: "success",
-          orderNumber: "Payment received",
+          orderNumber: copy.complete.paymentReceived,
           destinationHref: "/orders",
-          destinationLabel: "Track order",
+          destinationLabel: copy.complete.trackOrder,
         });
         return;
       }
@@ -174,16 +202,15 @@ function CheckoutCompletePageContent() {
         clearPendingConfirmation(paymentIntent.id);
         localStorage.removeItem("onlinemandawee-cart");
 
-        const destinationHref =
-          pending.useAuthCheckout
-            ? "/account"
-            : confirmed.guestTrackingToken
-              ? `/orders/track/${confirmed.guestTrackingToken}`
-              : "/orders";
+        const destinationHref = pending.useAuthCheckout
+          ? "/account"
+          : confirmed.guestTrackingToken
+            ? `/orders/track/${confirmed.guestTrackingToken}`
+            : "/orders";
 
         const destinationLabel = pending.useAuthCheckout
-          ? "View my orders"
-          : "Track order";
+          ? copy.complete.viewOrders
+          : copy.complete.trackOrder;
 
         if (cancelled) return;
         setState({
@@ -192,7 +219,7 @@ function CheckoutCompletePageContent() {
           destinationHref,
           destinationLabel,
         });
-        router.replace(destinationHref);
+        // Keep user on confirmation briefly — don't auto-redirect away
       } catch (confirmError) {
         if (cancelled) return;
         setState({
@@ -200,7 +227,7 @@ function CheckoutCompletePageContent() {
           message:
             confirmError instanceof Error
               ? confirmError.message
-              : "Could not finalize your order.",
+              : copy.complete.finalizeFailed,
         });
       }
     };
@@ -209,43 +236,47 @@ function CheckoutCompletePageContent() {
     return () => {
       cancelled = true;
     };
-  }, [router, searchParams]);
-
-  if (state.type === "loading") {
-    return <CheckoutCompleteLoadingState message={state.message} />;
-  }
-
-  if (state.type === "error") {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center px-4">
-        <div className="max-w-md rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
-          <h1 className="text-lg font-bold text-red-800">Checkout could not be completed</h1>
-          <p className="mt-2 text-sm text-red-700">{state.message}</p>
-          <Link
-            href="/checkout"
-            className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
-          >
-            Return to checkout
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  }, [copy.complete, router, searchParams]);
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center px-4">
-      <div className="max-w-md rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
-        <h1 className="text-lg font-bold text-green-800">Payment completed</h1>
-        <p className="mt-2 text-sm text-green-700">
-          Your order has been recorded: <span className="font-semibold">{state.orderNumber}</span>
-        </p>
-        <Link
-          href={state.destinationHref}
-          className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
-        >
-          {state.destinationLabel}
-        </Link>
-      </div>
-    </div>
+    <CheckoutCompleteShell copy={copy}>
+      {state.type === "loading" ? (
+        <CompleteLoading message={state.message} />
+      ) : state.type === "error" ? (
+        <div className="border border-neutral-200 px-6 py-12 text-center sm:px-8">
+          <h1 className="text-xl font-bold text-neutral-900">{copy.complete.errorTitle}</h1>
+          <p className="mx-auto mt-2 max-w-md text-sm text-neutral-600">{state.message}</p>
+          <Link
+            href="/checkout"
+            className="mt-6 inline-flex bg-[#0F3460] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+          >
+            {copy.complete.returnCheckout}
+          </Link>
+        </div>
+      ) : (
+        <div className="border border-neutral-200 px-6 py-12 text-center sm:px-8">
+          <CheckCircle className="mx-auto h-10 w-10 text-emerald-600" strokeWidth={1.5} />
+          <h1 className="mt-4 text-2xl font-bold text-neutral-900">{copy.complete.successTitle}</h1>
+          <p className="mt-2 text-sm text-neutral-600">
+            {copy.complete.successBody.replace("{orderNumber}", state.orderNumber)}
+          </p>
+          <p className="mt-4 text-lg font-bold text-[#0F3460]">{state.orderNumber}</p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href={state.destinationHref}
+              className="inline-flex bg-[#0F3460] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+            >
+              {state.destinationLabel}
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex border border-neutral-300 px-5 py-3 text-sm font-semibold text-neutral-800 transition hover:border-neutral-400"
+            >
+              {copy.success.continueShopping}
+            </Link>
+          </div>
+        </div>
+      )}
+    </CheckoutCompleteShell>
   );
 }

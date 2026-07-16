@@ -23,10 +23,9 @@ import {
   Loader2,
   MapPin,
   Package,
-  ShoppingBag,
-  ClipboardList,
   Truck,
   X,
+  ChevronRight,
 } from "lucide-react";
 
 import { AddressAutocompleteInput } from "@/components/address/AddressAutocompleteInput";
@@ -305,20 +304,20 @@ function InputField({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+      <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500">
         {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
+        {required ? <span className="ms-0.5 text-red-500">*</span> : null}
       </label>
       <input
         {...props}
-        className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400 ${
+        className={`w-full border-0 border-b bg-transparent px-0 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 disabled:text-neutral-400 ${
           error
-            ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100"
-            : "border-gray-200 focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10"
+            ? "border-red-400 focus:border-red-500"
+            : "border-neutral-300 focus:border-[#0F3460]"
         }`}
       />
       {error ? <p className="mt-1.5 text-xs text-red-600">{error}</p> : null}
-      {!error && hint ? <p className="mt-1.5 text-xs text-gray-500">{hint}</p> : null}
+      {!error && hint ? <p className="mt-1.5 text-xs text-neutral-500">{hint}</p> : null}
     </div>
   );
 }
@@ -351,8 +350,8 @@ function CouponSection({
   locale: string;
 }) {
   return (
-    <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50/80 p-4">
-      <p className="text-sm font-semibold text-gray-800">
+    <div className="space-y-3 border-t border-neutral-200 pt-5">
+      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
         {copy.coupon.discountFor(storeName)}
       </p>
       {availableOffers.length > 0 ? (
@@ -362,29 +361,31 @@ function CouponSection({
               key={offer.code}
               type="button"
               onClick={() => onCouponInputChange(offer.code)}
-              className="rounded-full border border-[#0f3460]/25 bg-white px-3 py-1 text-xs font-semibold text-[#0f3460] transition hover:bg-[#0f3460]/5"
+              className="border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-[#0F3460] transition hover:border-[#0F3460]"
             >
-              {offer.code} · {offer.label}
+              {offer.code}
             </button>
           ))}
         </div>
       ) : null}
-      <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
-        <input
-          value={couponInput}
-          onChange={(event) => onCouponInputChange(event.target.value.toUpperCase())}
-          placeholder={copy.coupon.placeholder}
-          className={`flex-1 rounded-xl border px-4 py-3 text-sm uppercase outline-none focus:ring-2 focus:ring-[#0f3460]/10 ${
-            fieldError
-              ? "border-red-300 focus:border-red-500"
-              : "border-gray-200 focus:border-[#0f3460]"
-          }`}
-        />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="min-w-0 flex-1">
+          <input
+            value={couponInput}
+            onChange={(event) => onCouponInputChange(event.target.value.toUpperCase())}
+            placeholder={copy.coupon.placeholder}
+            className={`w-full border-0 border-b bg-transparent px-0 py-2.5 text-sm uppercase text-neutral-900 outline-none transition placeholder:text-neutral-400 ${
+              fieldError
+                ? "border-red-400 focus:border-red-500"
+                : "border-neutral-300 focus:border-[#0F3460]"
+            }`}
+          />
+        </div>
         <button
           type="button"
           onClick={onApply}
           disabled={applying || !couponInput.trim()}
-          className="w-full shrink-0 rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-50 sm:w-auto"
+          className="shrink-0 bg-[#0F3460] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-50"
         >
           {applying ? copy.common.applying : copy.common.apply}
         </button>
@@ -395,18 +396,18 @@ function CouponSection({
           {appliedCoupons.map((coupon) => (
             <div
               key={coupon.code}
-              className="flex items-center justify-between rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-sm"
+              className="flex items-center justify-between border-b border-neutral-100 py-2 text-sm"
             >
               <div>
-                <p className="font-semibold text-green-800">{coupon.code}</p>
-                <p className="text-xs text-green-700">
-                  {coupon.vendorStoreName ?? copy.common.vendor} · -{formatAmount(coupon.discountAmount, "USD", locale)}
+                <p className="font-semibold text-emerald-800">{coupon.code}</p>
+                <p className="text-xs text-neutral-500">
+                  -{formatAmount(coupon.discountAmount, "USD", locale)}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => onRemove(coupon.code)}
-                className="rounded-lg p-1.5 text-green-700 hover:bg-green-100"
+                className="p-1.5 text-neutral-500 transition hover:text-red-600"
                 aria-label={copy.coupon.removeCoupon(coupon.code)}
               >
                 <X size={16} />
@@ -414,11 +415,7 @@ function CouponSection({
             </div>
           ))}
         </div>
-      ) : (
-        <p className="text-xs text-gray-500">
-          {copy.coupon.appliesToStore(storeName)}
-        </p>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -520,8 +517,10 @@ function ShippingAddressStep({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {hasThirdPartyProducts ? (
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-gray-700">{copy.deliveryMethod.title}</p>
+        <div className="space-y-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+            {copy.deliveryMethod.title}
+          </p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {([
               ["PICKUP", copy.deliveryMethod.pickup],
@@ -532,10 +531,10 @@ function ShippingAddressStep({
                 key={value}
                 type="button"
                 onClick={() => onDeliveryMethodChange(value)}
-                className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                className={`border px-3 py-2.5 text-sm font-semibold transition ${
                   deliveryMethod === value
-                    ? "border-[#0f3460] bg-[#0f3460]/10 text-[#0f3460]"
-                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                    ? "border-[#0F3460] bg-[#0F3460] text-white"
+                    : "border-neutral-300 text-neutral-700 hover:border-neutral-500"
                 }`}
               >
                 {label}
@@ -547,7 +546,9 @@ function ShippingAddressStep({
 
       {addressRequired && savedAddresses.length > 0 ? (
         <div className="space-y-3">
-          <p className="text-sm font-semibold text-gray-700">{copy.shipping.savedAddresses}</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+            {copy.shipping.savedAddresses}
+          </p>
           <div className="grid gap-2 sm:grid-cols-2">
             {savedAddresses.map((saved) => (
               <button
@@ -557,14 +558,14 @@ function ShippingAddressStep({
                   onSelectSavedAddress(saved);
                   setFieldErrors({});
                 }}
-                className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-left text-sm transition hover:border-[#0f3460]/40 hover:bg-[#0f3460]/5"
+                className="border border-neutral-200 px-4 py-3 text-left text-sm transition hover:border-[#0F3460]"
               >
-                <p className="font-semibold text-gray-800">{saved.fullName}</p>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="font-semibold text-neutral-800">{saved.fullName}</p>
+                <p className="mt-1 text-xs text-neutral-500">
                   {saved.addressLine1}, {saved.city}, {saved.country}
                 </p>
                 {saved.isDefault ? (
-                  <span className="mt-2 inline-block text-[10px] font-semibold uppercase tracking-wide text-[#0f3460]">
+                  <span className="mt-2 inline-block text-[10px] font-semibold uppercase tracking-wide text-[#0F3460]">
                     {copy.common.default}
                   </span>
                 ) : null}
@@ -575,7 +576,9 @@ function ShippingAddressStep({
       ) : null}
 
       <div className="space-y-4">
-        <p className="text-sm font-semibold text-gray-700">{copy.shipping.contactDetails}</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+          {copy.shipping.contactDetails}
+        </p>
         <InputField
           label={copy.contact.fullName}
           required
@@ -629,18 +632,20 @@ function ShippingAddressStep({
       </div>
 
       {addressRequired ? (
-        <div className="space-y-4 border-t border-gray-100 pt-6">
-          <p className="text-sm font-semibold text-gray-700">{copy.shipping.shippingAddress}</p>
+        <div className="space-y-4 border-t border-neutral-200 pt-6">
+          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+            {copy.shipping.shippingAddress}
+          </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500">
               {copy.address.street}
-              <span className="text-red-500 ml-0.5">*</span>
+              <span className="ms-0.5 text-red-500">*</span>
             </label>
             <AddressAutocompleteInput
-              className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400 ${
+              className={`w-full border-0 border-b bg-transparent px-0 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 disabled:text-neutral-400 ${
                 fieldErrors.addressLine1
-                  ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100"
-                  : "border-gray-200 focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10"
+                  ? "border-red-400 focus:border-red-500"
+                  : "border-neutral-300 focus:border-[#0F3460]"
               }`}
               placeholder={copy.address.streetPlaceholder}
               value={address.addressLine1}
@@ -677,6 +682,7 @@ function ShippingAddressStep({
             ) : null}
           </div>
           <SearchableSelect
+            variant="underline"
             label={copy.address.country}
             required
             value={address.country}
@@ -703,6 +709,7 @@ function ShippingAddressStep({
             emptyMessage={copy.address.noCountries}
           />
           <SearchableSelect
+            variant="underline"
             label={copy.address.city}
             required
             value={address.city}
@@ -733,6 +740,7 @@ function ShippingAddressStep({
             }
           />
           <SearchableSelect
+            variant="underline"
             label={copy.address.postalCode}
             value={address.postalCode}
             options={postalOptions}
@@ -755,15 +763,11 @@ function ShippingAddressStep({
             }
           />
         </div>
-      ) : (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          {copy.shipping.pickupNotice}
-        </div>
-      )}
+      ) : null}
 
       <button
         type="submit"
-        className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors"
+        className="flex w-full items-center justify-center gap-2 bg-[#0F3460] py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
       >
         <ArrowRight size={17} className="shrink-0" strokeWidth={2} />
         {copy.shipping.continueToDelivery}
@@ -803,32 +807,12 @@ function DeliveryCostStep({
   const canContinue = Boolean(summary) && !loading && !error;
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-xl bg-blue-50 border border-blue-100 p-4 flex gap-3">
-        <Truck size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-blue-900 space-y-1">
-          <p className="font-semibold">{copy.delivery.howCalculated}</p>
-          <p className="text-blue-800">
-            {deliveryMethod === "PICKUP"
-              ? copy.delivery.pickupFee
-              : deliveryMethod === "EXPRESS"
-                ? copy.delivery.expressFee
-                : copy.delivery.standardFee}
-          </p>
-          {breakdown[0] ? (
-            <p className="text-blue-700">
-              {copy.delivery.platformRate(
-                formatAmount(breakdown[0].baseFeeAmount, summary!.currency, locale),
-                formatAmount(breakdown[0].perKmRateAmount, summary!.currency, locale)
-              )}
-            </p>
-          ) : null}
-        </div>
-      </div>
-
+    <div className="space-y-7">
       {hasThirdPartyProducts ? (
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-gray-700">{copy.deliveryMethod.title}</p>
+        <div className="space-y-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+            {copy.deliveryMethod.title}
+          </p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {([
               ["PICKUP", copy.deliveryMethod.pickup],
@@ -839,10 +823,10 @@ function DeliveryCostStep({
                 key={value}
                 type="button"
                 onClick={() => onDeliveryMethodChange(value)}
-                className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                className={`border px-3 py-2.5 text-sm font-semibold transition ${
                   deliveryMethod === value
-                    ? "border-[#0f3460] bg-[#0f3460]/10 text-[#0f3460]"
-                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                    ? "border-[#0F3460] bg-[#0F3460] text-white"
+                    : "border-neutral-300 text-neutral-700 hover:border-neutral-500"
                 }`}
               >
                 {label}
@@ -854,59 +838,46 @@ function DeliveryCostStep({
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="animate-spin text-gray-400" size={32} />
+          <Loader2 className="animate-spin text-neutral-400" size={28} />
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-center space-y-3">
+        <div className="border border-red-200 bg-red-50 px-4 py-4 text-center space-y-3">
           <p className="text-sm text-red-600">{error}</p>
           <button
             type="button"
             onClick={onRetry}
-            className="text-sm font-semibold text-[#0f3460] underline"
+            className="text-sm font-semibold text-[#0F3460] underline"
           >
             {copy.common.tryAgain}
           </button>
         </div>
-      ) : breakdown.length > 0 ? (
-        <div className="space-y-3">
+      ) : summary ? (
+        <div className="space-y-3 border-t border-neutral-200 pt-5">
           {breakdown.map((entry) => (
             <div
               key={entry.vendorProfileId}
-              className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4 space-y-2"
+              className="flex items-center justify-between gap-3 text-sm"
             >
-              <div className="flex justify-between gap-3">
-                <p className="font-semibold text-gray-800">{entry.vendorStoreName ?? copy.common.vendor}</p>
-                <p className="font-bold text-[#0f3460]">
-                  {formatAmount(entry.deliveryAmount, summary!.currency, locale)}
-                </p>
-              </div>
-              <p className="text-sm text-gray-600">
-                {entry.distanceKm > 0
-                  ? copy.delivery.drivingDistance(entry.distanceKm.toFixed(1))
-                  : copy.delivery.methodBasedFee}
+              <p className="truncate text-neutral-600">
+                {entry.vendorStoreName ?? copy.common.vendor}
               </p>
-              {entry.baseFeeAmount > 0 || entry.perKmRateAmount > 0 ? (
-                <p className="text-xs text-gray-500">
-                  {copy.delivery.basePlusKm(
-                    formatAmount(entry.baseFeeAmount, summary!.currency, locale),
-                    formatAmount(entry.perKmRateAmount, summary!.currency, locale)
-                  )}
-                </p>
-              ) : null}
+              <p className="shrink-0 font-semibold text-neutral-900">
+                {formatAmount(entry.deliveryAmount, summary.currency, locale)}
+              </p>
             </div>
           ))}
-          <div className="flex justify-between rounded-xl border border-[#0f3460]/15 bg-[#0f3460]/5 px-4 py-3 text-sm font-semibold text-[#0f3460]">
+          <div className="flex justify-between border-t border-neutral-200 pt-3 text-sm font-semibold text-neutral-900">
             <span>{copy.delivery.totalDelivery}</span>
-            <span>{formatAmount(summary!.deliveryAmount, summary!.currency, locale)}</span>
+            <span>{formatAmount(summary.deliveryAmount, summary.currency, locale)}</span>
           </div>
         </div>
       ) : null}
 
-      <div className="flex gap-3 pt-1">
+      <div className="flex gap-3 border-t border-neutral-200 pt-6">
         <button
           type="button"
           onClick={onBack}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-200 text-gray-600 font-semibold py-3.5 hover:bg-gray-50 transition-colors"
+          className="flex flex-1 items-center justify-center gap-2 border border-neutral-300 py-3.5 text-sm font-semibold text-neutral-700 transition hover:border-neutral-400"
         >
           <ArrowLeft size={17} className="shrink-0" strokeWidth={2} />
           {copy.common.back}
@@ -915,7 +886,7 @@ function DeliveryCostStep({
           type="button"
           disabled={!canContinue}
           onClick={onNext}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors disabled:opacity-50"
+          className="flex flex-1 items-center justify-center gap-2 bg-[#0F3460] py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-50"
         >
           <ArrowRight size={17} className="shrink-0" strokeWidth={2} />
           {copy.delivery.continueToPayment}
@@ -1001,8 +972,16 @@ function PaymentMethodStep({
 }) {
   return (
     <div className="space-y-6">
-      <p className="text-sm text-gray-600">{copy.payment.cardRequired}</p>
-      <PaymentMethodSelector copy={copy} stripeAvailable={stripeAvailable} />
+      <div className="space-y-1">
+        <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+          {copy.payment.card}
+        </p>
+        <p className="text-sm text-neutral-600">
+          {stripeAvailable
+            ? copy.payment.cardSub(STRIPE_CHECKOUT_CURRENCY_LABEL)
+            : copy.payment.cardUnavailable}
+        </p>
+      </div>
 
       {couponEligibleVendors.length > 0 ? (
         <div className="space-y-4">
@@ -1034,17 +1013,17 @@ function PaymentMethodStep({
 
       {quoteLoading ? (
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="animate-spin text-gray-400" size={28} />
+          <Loader2 className="animate-spin text-neutral-400" size={28} />
         </div>
       ) : null}
 
       {quoteError && !quoteLoading ? (
-        <div className="text-center py-6 space-y-3">
-          <p className="text-sm text-red-500">{quoteError}</p>
+        <div className="space-y-3 py-6 text-center">
+          <p className="text-sm text-red-600">{quoteError}</p>
           <button
             type="button"
             onClick={onRetryQuote}
-            className="text-sm text-[#0f3460] underline"
+            className="text-sm font-semibold text-[#0F3460] underline"
           >
             {copy.common.tryAgain}
           </button>
@@ -1052,9 +1031,7 @@ function PaymentMethodStep({
       ) : null}
 
       {hasUnappliedCouponInput && !quoteLoading ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          {copy.payment.applyCouponFirst}
-        </div>
+        <p className="text-sm text-neutral-600">{copy.payment.applyCouponFirst}</p>
       ) : null}
 
       {canPlaceOrder && quote && stripeOptions && stripePromise ? (
@@ -1077,59 +1054,6 @@ function PaymentMethodStep({
           />
         </Elements>
       ) : null}
-    </div>
-  );
-}
-
-/* ─── Payment method selector ────────────────────────────────────────── */
-
-function PaymentMethodSelector({
-  copy,
-  stripeAvailable,
-}: {
-  copy: CheckoutCopy;
-  stripeAvailable: boolean;
-}) {
-  const cardOption = {
-    id: "card" as const,
-    label: copy.payment.card,
-    sub: stripeAvailable
-      ? copy.payment.cardSub(STRIPE_CHECKOUT_CURRENCY_LABEL)
-      : copy.payment.cardUnavailable,
-    icon: <CreditCard size={22} className="text-blue-600" />,
-    disabled: !stripeAvailable,
-  };
-  const options = [cardOption];
-
-  return (
-    <div className="space-y-3">
-      {options.map((opt) => (
-        <button
-          key={opt.id}
-          type="button"
-          disabled={opt.disabled}
-          className={`w-full flex items-center gap-4 rounded-xl border-2 px-5 py-4 text-left transition-all ${
-            opt.disabled
-              ? "opacity-40 cursor-not-allowed border-gray-100 bg-gray-50"
-              : "border-[#0f3460] bg-[#0f3460]/5"
-          }`}
-        >
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-            opt.disabled ? "bg-gray-100" : "bg-white shadow-sm"
-          }`}>
-            {opt.icon}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-gray-800">{opt.label}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{opt.sub}</p>
-          </div>
-          <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-            "border-[#0f3460] bg-[#0f3460]"
-          }`}>
-            <div className="w-2 h-2 rounded-full bg-white" />
-          </div>
-        </button>
-      ))}
     </div>
   );
 }
@@ -1256,7 +1180,7 @@ function StripePayForm({
 
   return (
     <form onSubmit={handlePay} className="space-y-5">
-      <div className="rounded-xl border border-gray-200 p-4">
+      <div className="border border-neutral-200 p-4">
         <PaymentElement
           onReady={onPaymentElementReady}
           options={{
@@ -1265,22 +1189,34 @@ function StripePayForm({
           }}
         />
       </div>
-      <div className="flex gap-3 pt-1">
-        <button type="button" onClick={onBack} disabled={paying}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-200 text-gray-600 font-semibold py-3.5 hover:bg-gray-50 transition-colors disabled:opacity-50">
+      <div className="flex gap-3 border-t border-neutral-200 pt-6">
+        <button
+          type="button"
+          onClick={onBack}
+          disabled={paying}
+          className="flex flex-1 items-center justify-center gap-2 border border-neutral-300 py-3.5 text-sm font-semibold text-neutral-700 transition hover:border-neutral-400 disabled:opacity-50"
+        >
           <ArrowLeft size={17} className="shrink-0" strokeWidth={2} />
           {copy.common.back}
         </button>
-        <button type="submit" disabled={!stripe || !elements || paying}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-green-600 text-white font-semibold py-3.5 hover:bg-green-700 transition-colors disabled:opacity-60">
-          {paying
-            ? <><Loader2 size={17} className="animate-spin" /> {copy.common.processing}</>
-            : <><CreditCard size={17} /> {copy.payment.pay(formatAmount(quote.grandTotalAmount, quote.currency, locale))}</>}
+        <button
+          type="submit"
+          disabled={!stripe || !elements || paying}
+          className="flex flex-1 items-center justify-center gap-2 bg-[#0F3460] py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-60"
+        >
+          {paying ? (
+            <>
+              <Loader2 size={17} className="animate-spin" /> {copy.common.processing}
+            </>
+          ) : (
+            <>
+              <CreditCard size={17} />{" "}
+              {copy.payment.pay(formatAmount(quote.grandTotalAmount, quote.currency, locale))}
+            </>
+          )}
         </button>
       </div>
-      <p className="text-center text-xs text-gray-400">
-        {copy.payment.securedByStripe}
-      </p>
+      <p className="text-center text-xs text-neutral-400">{copy.payment.securedByStripe}</p>
     </form>
   );
 }
@@ -1315,100 +1251,84 @@ function OrderSummary({
   const hasDeliveryBreakdown = (summary.deliveryBreakdown?.length ?? 0) > 0;
 
   return (
-    <div className="relative space-y-4">
+    <div className="relative space-y-5">
       {loading ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/70">
-          <Loader2 className="animate-spin text-gray-400" size={24} />
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
+          <Loader2 className="animate-spin text-neutral-400" size={22} />
         </div>
       ) : null}
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{copy.summary.title}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-900">
+        {copy.summary.title}
+      </p>
       <div className="space-y-3">
         {summary.lineItems.map((item, idx) => (
           <div key={idx} className="flex items-start gap-3">
             {item.productImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={item.productImage} alt={item.productName}
-                className="w-12 h-12 rounded-xl object-cover border border-gray-100 flex-shrink-0" />
+              <img
+                src={item.productImage}
+                alt={item.productName}
+                className="h-12 w-12 shrink-0 object-contain bg-neutral-50"
+              />
             ) : (
-              <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                <Package size={16} className="text-gray-400" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-neutral-50">
+                <Package size={16} className="text-neutral-400" />
               </div>
             )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-800 truncate">{item.productName}</p>
-              <p className="text-xs text-gray-400">{copy.summary.qty}: {item.quantity}</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-neutral-800">{item.productName}</p>
+              <p className="text-xs text-neutral-400">
+                {copy.summary.qty}: {item.quantity}
+              </p>
             </div>
-            <p className="text-sm font-semibold text-gray-900 flex-shrink-0">
+            <p className="shrink-0 text-sm font-semibold text-neutral-900">
               {formatAmount(item.lineTotalAmount, item.currency, locale)}
             </p>
           </div>
         ))}
       </div>
-      <div className="border-t border-gray-100 pt-3 space-y-1.5 text-sm">
-        <div className="flex justify-between text-gray-500">
+      <div className="space-y-2 border-t border-neutral-200 pt-4 text-sm">
+        <div className="flex justify-between text-neutral-500">
           <span>{copy.summary.subtotal}</span>
           <span>{formatAmount(summary.subtotalAmount, summary.currency, locale)}</span>
         </div>
         {hasDeliveryBreakdown ? (
-          <div className="space-y-2">
-            <div className="flex justify-between text-gray-500">
-              <span>{copy.summary.delivery}</span>
-              <span>{formatAmount(summary.deliveryAmount, summary.currency, locale)}</span>
-            </div>
-            <div className="rounded-xl bg-gray-50 px-3 py-2.5 space-y-2 text-xs text-gray-600">
-              {summary.deliveryBreakdown!.map((entry) => (
-                <div key={entry.vendorProfileId} className="space-y-0.5">
-                  <div className="flex justify-between gap-3">
-                    <span className="font-medium text-gray-700 truncate">
-                      {entry.vendorStoreName ?? copy.common.vendor}
-                    </span>
-                    <span className="font-semibold text-gray-800 flex-shrink-0">
-                      {formatAmount(entry.deliveryAmount, summary.currency, locale)}
-                    </span>
-                  </div>
-                  <p>
-                    {entry.distanceKm > 0
-                      ? copy.summary.drivingDistance(entry.distanceKm.toFixed(1))
-                      : copy.summary.methodBasedFee}
-                    {entry.baseFeeAmount > 0 || entry.perKmRateAmount > 0
-                      ? ` · ${copy.summary.basePlusKm(
-                          formatAmount(entry.baseFeeAmount, summary.currency, locale),
-                          formatAmount(entry.perKmRateAmount, summary.currency, locale)
-                        )}`
-                      : ""}
-                  </p>
-                </div>
-              ))}
-            </div>
+          <div className="flex justify-between text-neutral-500">
+            <span>{copy.summary.delivery}</span>
+            <span>{formatAmount(summary.deliveryAmount, summary.currency, locale)}</span>
           </div>
         ) : deliveryError ? (
-          <div className="space-y-2">
-            <div className="flex justify-between text-gray-500">
+          <div className="space-y-1">
+            <div className="flex justify-between text-neutral-500">
               <span>{copy.summary.delivery}</span>
               <span className="text-red-500">{copy.summary.unavailable}</span>
             </div>
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-              {deliveryError}
-            </p>
+            <p className="text-xs text-red-600">{deliveryError}</p>
           </div>
         ) : isPaymentStep && (loading || !hasPricedDelivery) ? (
-          <div className="flex justify-between text-gray-500">
+          <div className="flex justify-between text-neutral-500">
             <span>{copy.summary.delivery}</span>
-            <span className="text-gray-400">{loading ? copy.summary.calculatingDistance : copy.summary.waitingForAddress}</span>
+            <span className="text-neutral-400">
+              {loading ? copy.summary.calculatingDistance : copy.summary.waitingForAddress}
+            </span>
           </div>
         ) : (
-          <div className="flex justify-between text-gray-500">
+          <div className="flex justify-between text-neutral-500">
             <span>{copy.summary.delivery}</span>
-            <span>{summary.deliveryAmount === 0 ? copy.summary.calculatedAtPayment : formatAmount(summary.deliveryAmount, summary.currency, locale)}</span>
+            <span>
+              {summary.deliveryAmount === 0
+                ? copy.summary.calculatedAtPayment
+                : formatAmount(summary.deliveryAmount, summary.currency, locale)}
+            </span>
           </div>
         )}
         {summary.discountAmount > 0 ? (
-          <div className="flex justify-between text-green-600">
+          <div className="flex justify-between text-emerald-700">
             <span>{copy.summary.discount}</span>
             <span>-{formatAmount(summary.discountAmount, summary.currency, locale)}</span>
           </div>
         ) : null}
-        <div className="flex justify-between font-bold text-base text-[#0f3460] pt-2 border-t border-gray-100">
+        <div className="flex justify-between border-t border-neutral-200 pt-3 text-base font-bold text-neutral-900">
           <span>{copy.summary.total}</span>
           <span>{formatAmount(summary.grandTotalAmount, summary.currency, locale)}</span>
         </div>
@@ -1447,57 +1367,56 @@ function SuccessScreen({
       role="dialog"
       aria-modal="true"
       aria-labelledby="checkout-success-title"
-      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-gray-50/95 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-white/95 p-4"
     >
-      <div className="bg-white rounded-3xl shadow-xl p-10 max-w-md w-full text-center space-y-6">
-        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto">
-          <CheckCircle size={40} className="text-green-500" />
-        </div>
+      <div className="w-full max-w-md space-y-6 border border-neutral-200 bg-white px-6 py-10 text-center sm:px-10">
+        <CheckCircle size={40} className="mx-auto text-emerald-600" strokeWidth={1.5} />
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-green-600">{copy.success.confirmation}</p>
-          <h1 id="checkout-success-title" className="text-2xl font-bold text-gray-900 mt-1">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
+            {copy.success.confirmation}
+          </p>
+          <h1 id="checkout-success-title" className="mt-2 text-2xl font-bold text-neutral-900">
             {copy.success.title}
           </h1>
-          <p className="text-gray-500 mt-2 text-sm">
-            {copy.success.cardMessage}
-          </p>
+          <p className="mt-2 text-sm text-neutral-500">{copy.success.cardMessage}</p>
           {guestEmail ? (
-            <p className="text-gray-500 mt-2 text-sm">
-              {copy.success.emailSent(guestEmail)}
-            </p>
+            <p className="mt-2 text-sm text-neutral-500">{copy.success.emailSent(guestEmail)}</p>
           ) : null}
         </div>
 
-        <div className="bg-gray-50 rounded-2xl px-6 py-4">
-          <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">{copy.success.orderNumber}</p>
-          <p className="text-xl font-black text-[#0f3460] mt-1">{orderNumber}</p>
+        <div className="border-y border-neutral-200 py-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+            {copy.success.orderNumber}
+          </p>
+          <p className="mt-1 text-xl font-bold text-[#0F3460]">{orderNumber}</p>
         </div>
 
-        <p className="text-xs text-gray-400">{copy.success.keepOrderNumber}</p>
+        <p className="text-xs text-neutral-400">{copy.success.keepOrderNumber}</p>
 
         {!isAuthenticated ? (
-          <div className="rounded-2xl border border-[#0f3460]/15 bg-[#0f3460]/5 px-5 py-4 text-left space-y-3">
-            <p className="text-sm font-semibold text-[#0f3460]">{copy.success.trackOrder}</p>
-            <p className="text-sm text-gray-600">
-              {copy.success.trackOrderHint}
-            </p>
+          <div className="space-y-3 border border-neutral-200 px-5 py-4 text-left">
+            <p className="text-sm font-semibold text-neutral-900">{copy.success.trackOrder}</p>
+            <p className="text-sm text-neutral-600">{copy.success.trackOrderHint}</p>
             <Link
               href={signupHref}
-              className="inline-flex w-full items-center justify-center rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+              className="inline-flex w-full items-center justify-center bg-[#0F3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
             >
               {copy.success.createAccount}
             </Link>
             <Link
               href="/auth/login"
-              className="inline-flex w-full items-center justify-center rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              className="inline-flex w-full items-center justify-center border border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:border-neutral-400"
             >
               {copy.success.signIn}
             </Link>
           </div>
         ) : null}
 
-        <button onClick={() => router.push("/")}
-          className="w-full rounded-xl bg-[#0f3460] text-white font-semibold py-3.5 hover:bg-[#0a2540] transition-colors">
+        <button
+          type="button"
+          onClick={() => router.push("/")}
+          className="w-full bg-[#0F3460] py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+        >
           {copy.success.continueShopping}
         </button>
       </div>
@@ -1815,7 +1734,7 @@ export default function CheckoutPage() {
             locale: getStripeCheckoutLocale(locale),
             appearance: {
               theme: "stripe" as const,
-              variables: { colorPrimary: "#0f3460", borderRadius: "12px", fontFamily: "inherit" },
+              variables: { colorPrimary: "#0F3460", borderRadius: "0px", fontFamily: "inherit" },
             },
           }
         : null,
@@ -1984,170 +1903,201 @@ export default function CheckoutPage() {
   }
 
   const stepIcons = [
-    <MapPin key="s" size={18} />,
-    <Truck key="d" size={18} />,
-    <CreditCard key="p" size={18} />,
-    <ClipboardList key="r" size={18} />,
+    <MapPin key="s" size={16} />,
+    <Truck key="d" size={16} />,
+    <CreditCard key="p" size={16} />,
   ];
+  const isRtl = locale !== "en";
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top bar */}
-      <div className="bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-          <button onClick={() => router.back()}
-            className="p-2 rounded-xl hover:bg-gray-100 transition text-gray-500">
-            <ArrowLeft size={18} />
-          </button>
-          <ShoppingBag size={20} className="text-[#0f3460]" />
-          <span className="font-bold text-[#0f3460] text-lg">{copy.title}</span>
-        </div>
-      </div>
+    <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-white">
+      <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-5 flex flex-wrap items-center gap-1.5 text-sm text-neutral-400"
+        >
+          <Link href="/" className="transition hover:text-[#0F3460] hover:underline">
+            {copy.home}
+          </Link>
+          <ChevronRight className={`h-3.5 w-3.5 shrink-0 ${isRtl ? "rotate-180" : ""}`} />
+          <Link href="/cart" className="transition hover:text-[#0F3460] hover:underline">
+            {copy.cart}
+          </Link>
+          <ChevronRight className={`h-3.5 w-3.5 shrink-0 ${isRtl ? "rotate-180" : ""}`} />
+          <span className="text-neutral-800">{copy.title}</span>
+        </nav>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_min(100%,360px)] gap-6 lg:gap-8">
-        {/* Left: steps */}
-        <div className="space-y-6 min-w-0">
-          {/* Step indicators */}
-          <div className="overflow-x-auto no-scrollbar -mx-1 px-1 sm:mx-0 sm:px-0">
-            <div className="flex min-w-max items-center gap-0 sm:min-w-0 sm:w-full">
-            {stepLabels.map((label, idx) => (
-              <div key={label} className="flex items-center flex-1 last:flex-none min-w-[4.5rem] sm:min-w-0">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-sm font-bold transition-colors shrink-0 ${
-                    idx < step ? "bg-green-500 text-white" : idx === step ? "bg-[#0f3460] text-white" : "bg-gray-100 text-gray-400"
-                  }`}>
-                    {idx < step ? <CheckCircle size={18} /> : stepIcons[idx]}
+        <header className="mb-8 border-b border-neutral-200 pb-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">
+                {copy.title}
+              </h1>
+              <p className="mt-1.5 text-sm text-neutral-500">{copy.subtitle}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push("/cart")}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0F3460] hover:underline"
+            >
+              <ArrowLeft size={16} className={isRtl ? "rotate-180" : ""} />
+              {copy.common.back}
+            </button>
+          </div>
+        </header>
+
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_min(100%,300px)] lg:gap-14">
+          <div className="min-w-0 space-y-6">
+            <div className="flex items-center gap-0">
+              {stepLabels.map((label, idx) => (
+                <div key={label} className="flex flex-1 items-center last:flex-none">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center text-xs font-bold ${
+                        idx < step
+                          ? "bg-emerald-600 text-white"
+                          : idx === step
+                            ? "bg-[#0F3460] text-white"
+                            : "bg-neutral-100 text-neutral-400"
+                      }`}
+                    >
+                      {idx < step ? <CheckCircle size={16} /> : stepIcons[idx]}
+                    </div>
+                    <span
+                      className={`hidden text-sm font-medium sm:block ${
+                        idx === step ? "text-neutral-900" : "text-neutral-400"
+                      }`}
+                    >
+                      {label}
+                    </span>
                   </div>
-                  <span className={`text-xs sm:text-sm font-medium hidden sm:block ${idx === step ? "text-[#0f3460]" : "text-gray-400"}`}>
-                    {label}
-                  </span>
+                  {idx < stepLabels.length - 1 ? (
+                    <div
+                      className={`mx-2 h-px flex-1 sm:mx-3 ${
+                        idx < step ? "bg-emerald-500" : "bg-neutral-200"
+                      }`}
+                    />
+                  ) : null}
                 </div>
-                {idx < stepLabels.length - 1 && (
-                  <div className={`h-px flex-1 mx-1.5 sm:mx-3 ${idx < step ? "bg-green-300" : "bg-gray-200"}`} />
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
+            <p className="text-sm font-medium text-neutral-700 sm:hidden">
+              {copy.stepOf(step + 1, stepLabels.length, stepLabels[step])}
+            </p>
+
+            <div
+              ref={stepPanelRef}
+              className="scroll-mt-28 border border-neutral-200 bg-white px-4 py-6 shadow-[0_20px_50px_-28px_rgba(15,52,96,0.28)] sm:px-7 sm:py-8 sm:scroll-mt-32"
+            >
+              <h2 className="mb-6 text-lg font-bold text-neutral-900">
+                {stepLabels[step]}
+                <span className="ms-2 text-sm font-normal text-neutral-400">
+                  {copy.stepHeading(step + 1, stepLabels.length)}
+                </span>
+              </h2>
+
+              {step === 0 && (
+                <ShippingAddressStep
+                  copy={copy}
+                  validators={validators}
+                  locale={locale}
+                  contact={contact}
+                  address={address}
+                  addressRequired={addressRequired}
+                  hasThirdPartyProducts={hasThirdPartyProducts}
+                  deliveryMethod={deliveryMethod}
+                  onDeliveryMethodChange={handleDeliveryMethodChange}
+                  savedAddresses={savedAddresses}
+                  onContactChange={(f) => setContact((prev) => ({ ...prev, ...f }))}
+                  onAddressChange={(f) => setAddress((prev) => ({ ...prev, ...f }))}
+                  onSelectSavedAddress={handleSelectSavedAddress}
+                  onNext={() => setStep(1)}
+                />
+              )}
+
+              {step === 1 && (
+                <DeliveryCostStep
+                  copy={copy}
+                  locale={locale}
+                  summary={priceSummary}
+                  hasThirdPartyProducts={hasThirdPartyProducts}
+                  deliveryMethod={deliveryMethod}
+                  onDeliveryMethodChange={(method) => {
+                    handleDeliveryMethodChange(method);
+                    setPriceSummary(null);
+                    setQuote(null);
+                    setQuoteError(null);
+                  }}
+                  loading={quoteLoading}
+                  error={quoteError}
+                  onRetry={() => void fetchPricing(vendorCoupons)}
+                  onNext={() => setStep(2)}
+                  onBack={() => setStep(0)}
+                />
+              )}
+
+              {step === 2 && (
+                <PaymentMethodStep
+                  copy={copy}
+                  locale={locale}
+                  stripeAvailable={stripeAvailable}
+                  quoteLoading={quoteLoading}
+                  quoteError={quoteError}
+                  canPlaceOrder={canPlaceOrder}
+                  priceSummary={priceSummary}
+                  quote={quote}
+                  stripeOptions={stripeOptions}
+                  stripePromise={stripePromise}
+                  contact={contact}
+                  address={address}
+                  deliveryMethod={deliveryMethod}
+                  addressRequired={addressRequired}
+                  cartItems={cartItemsPayload}
+                  vendorCoupons={vendorCoupons}
+                  checkoutApiBase={checkoutApiBase}
+                  useAuthCheckout={isCustomerCheckout}
+                  couponEligibleVendors={couponEligibleVendors}
+                  checkoutOffers={checkoutOffers}
+                  couponInputs={couponInputs}
+                  couponFieldErrors={couponFieldErrors}
+                  applyingCouponVendorId={applyingCouponVendorId}
+                  hasUnappliedCouponInput={hasUnappliedCouponInput}
+                  onCouponInputChange={(vendorProfileId, value) => {
+                    setCouponInputs((current) => ({
+                      ...current,
+                      [vendorProfileId]: value,
+                    }));
+                    setCouponFieldErrors((current) => ({
+                      ...current,
+                      [vendorProfileId]: "",
+                    }));
+                  }}
+                  onApplyCoupon={(vendorProfileId) => void handleApplyCoupon(vendorProfileId)}
+                  onRemoveCoupon={(code, vendorProfileId) =>
+                    void handleRemoveCoupon(code, vendorProfileId)
+                  }
+                  onRetryQuote={() => void refreshPricing(vendorCoupons)}
+                  onBack={() => setStep(1)}
+                  onSuccess={handleSuccess}
+                  onPaymentElementReady={scrollToCheckoutStep}
+                />
+              )}
             </div>
           </div>
-          <p className="text-sm font-medium text-[#0f3460] sm:hidden">
-            {copy.stepOf(step + 1, stepLabels.length, stepLabels[step])}
-          </p>
 
-          {/* Step card */}
-          <div
-            ref={stepPanelRef}
-            className="scroll-mt-28 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 sm:scroll-mt-32"
-          >
-            <h2 className="text-lg font-bold text-[#0f3460] mb-6">
-              {stepLabels[step]}
-              <span className="ml-2 text-sm font-normal text-gray-400">
-                {copy.stepHeading(step + 1, stepLabels.length)}
-              </span>
-            </h2>
-
-            {step === 0 && (
-              <ShippingAddressStep
-                copy={copy}
-                validators={validators}
-                locale={locale}
-                contact={contact}
-                address={address}
-                addressRequired={addressRequired}
-                hasThirdPartyProducts={hasThirdPartyProducts}
-                deliveryMethod={deliveryMethod}
-                onDeliveryMethodChange={handleDeliveryMethodChange}
-                savedAddresses={savedAddresses}
-                onContactChange={(f) => setContact((prev) => ({ ...prev, ...f }))}
-                onAddressChange={(f) => setAddress((prev) => ({ ...prev, ...f }))}
-                onSelectSavedAddress={handleSelectSavedAddress}
-                onNext={() => setStep(1)}
-              />
-            )}
-
-            {step === 1 && (
-              <DeliveryCostStep
+          <aside className="min-w-0 self-start lg:sticky lg:top-28">
+            <div className="border-t border-neutral-900 bg-white pt-5">
+              <OrderSummary
                 copy={copy}
                 locale={locale}
-                summary={priceSummary}
-                hasThirdPartyProducts={hasThirdPartyProducts}
-                deliveryMethod={deliveryMethod}
-                onDeliveryMethodChange={(method) => {
-                  handleDeliveryMethodChange(method);
-                  setPriceSummary(null);
-                  setQuote(null);
-                  setQuoteError(null);
-                }}
-                loading={quoteLoading}
-                error={quoteError}
-                onRetry={() => void fetchPricing(vendorCoupons)}
-                onNext={() => setStep(2)}
-                onBack={() => setStep(0)}
+                summary={displaySummary}
+                loading={(step === 1 || step === 2) && quoteLoading}
+                deliveryError={step >= 1 ? quoteError : null}
+                isPaymentStep={step >= 1}
+                hasPricedDelivery={Boolean(priceSummary)}
               />
-            )}
-
-            {step === 2 && (
-              <PaymentMethodStep
-                copy={copy}
-                locale={locale}
-                stripeAvailable={stripeAvailable}
-                quoteLoading={quoteLoading}
-                quoteError={quoteError}
-                canPlaceOrder={canPlaceOrder}
-                priceSummary={priceSummary}
-                quote={quote}
-                stripeOptions={stripeOptions}
-                stripePromise={stripePromise}
-                contact={contact}
-                address={address}
-                deliveryMethod={deliveryMethod}
-                addressRequired={addressRequired}
-                cartItems={cartItemsPayload}
-                vendorCoupons={vendorCoupons}
-                checkoutApiBase={checkoutApiBase}
-                useAuthCheckout={isCustomerCheckout}
-                couponEligibleVendors={couponEligibleVendors}
-                checkoutOffers={checkoutOffers}
-                couponInputs={couponInputs}
-                couponFieldErrors={couponFieldErrors}
-                applyingCouponVendorId={applyingCouponVendorId}
-                hasUnappliedCouponInput={hasUnappliedCouponInput}
-                onCouponInputChange={(vendorProfileId, value) => {
-                  setCouponInputs((current) => ({
-                    ...current,
-                    [vendorProfileId]: value,
-                  }));
-                  setCouponFieldErrors((current) => ({
-                    ...current,
-                    [vendorProfileId]: "",
-                  }));
-                }}
-                onApplyCoupon={(vendorProfileId) => void handleApplyCoupon(vendorProfileId)}
-                onRemoveCoupon={(code, vendorProfileId) =>
-                  void handleRemoveCoupon(code, vendorProfileId)
-                }
-                onRetryQuote={() => void refreshPricing(vendorCoupons)}
-                onBack={() => setStep(1)}
-                onSuccess={handleSuccess}
-                onPaymentElementReady={scrollToCheckoutStep}
-              />
-            )}
-          </div>
-
-        </div>
-
-        {/* Right: order summary */}
-        <div className="lg:sticky lg:top-8 self-start min-w-0">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <OrderSummary
-              copy={copy}
-              locale={locale}
-              summary={displaySummary}
-              loading={(step === 1 || step === 2) && quoteLoading}
-              deliveryError={step >= 1 ? quoteError : null}
-              isPaymentStep={step >= 1}
-              hasPricedDelivery={Boolean(priceSummary)}
-            />
-          </div>
+            </div>
+          </aside>
         </div>
       </div>
     </div>

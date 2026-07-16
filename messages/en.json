@@ -1658,6 +1658,9 @@
   },
   "Checkout": {
     "title": "Checkout",
+    "home": "Home",
+    "cart": "Cart",
+    "subtitle": "Enter your details and complete payment securely.",
     "loading": "Loading checkout...",
     "stepOf": "Step {current} of {total}: {label}",
     "stepHeading": "Step {current} of {total}",
@@ -1666,6 +1669,22 @@
       "delivery": "Delivery",
       "payment": "Payment",
       "review": "Review"
+    },
+    "complete": {
+      "finalizing": "Finalizing your payment…",
+      "missingContext": "Missing payment context. Please return to checkout and try again.",
+      "stripeMissing": "Stripe is not configured. Please contact support.",
+      "retrieveFailed": "Could not retrieve payment details.",
+      "stillProcessing": "Payment is still processing. Please refresh this page in a moment.",
+      "notCompleted": "Payment is not completed yet. Please return to checkout.",
+      "paymentReceived": "Payment received",
+      "trackOrder": "Track order",
+      "viewOrders": "View my orders",
+      "finalizeFailed": "Could not finalize your order.",
+      "errorTitle": "Checkout could not be completed",
+      "returnCheckout": "Return to checkout",
+      "successTitle": "Payment completed",
+      "successBody": "Your order has been recorded: {orderNumber}"
     },
     "common": {
       "tryAgain": "Try again",
@@ -1676,7 +1695,7 @@
       "processing": "Processing…"
     },
     "deliveryMethod": {
-      "title": "Third-party delivery method",
+      "title": "Delivery method",
       "pickup": "Pickup",
       "express": "Express",
       "standard": "Standard"

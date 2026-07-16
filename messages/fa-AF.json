@@ -1658,6 +1658,9 @@
   },
   "Checkout": {
     "title": "تسویه‌حساب",
+    "home": "خانه",
+    "cart": "سبد",
+    "subtitle": "جزئیات خود را وارد کنید و پرداخت را به‌صورت امن تمام کنید.",
     "loading": "بارگذاری تسویه‌حساب...",
     "stepOf": "گام {current} از {total}: {label}",
     "stepHeading": "گام {current} از {total}",
@@ -1666,6 +1669,22 @@
       "delivery": "تحویل",
       "payment": "پرداخت",
       "review": "بازبینی"
+    },
+    "complete": {
+      "finalizing": "در حال نهایی‌کردن پرداخت…",
+      "missingContext": "اطلاعات پرداخت موجود نیست. لطفاً به تسویه‌حساب برگردید.",
+      "stripeMissing": "Stripe تنظیم نشده است. لطفاً با پشتیبانی تماس بگیرید.",
+      "retrieveFailed": "جزئیات پرداخت دریافت نشد.",
+      "stillProcessing": "پرداخت هنوز در حال پردازش است. لطفاً صفحه را کمی بعد تازه کنید.",
+      "notCompleted": "پرداخت هنوز کامل نشده است. لطفاً به تسویه‌حساب برگردید.",
+      "paymentReceived": "پرداخت دریافت شد",
+      "trackOrder": "پیگیری سفارش",
+      "viewOrders": "مشاهده سفارش‌های من",
+      "finalizeFailed": "نهایی‌کردن سفارش ممکن نشد.",
+      "errorTitle": "تسویه‌حساب کامل نشد",
+      "returnCheckout": "بازگشت به تسویه‌حساب",
+      "successTitle": "پرداخت کامل شد",
+      "successBody": "سفارش شما ثبت شد: {orderNumber}"
     },
     "common": {
       "tryAgain": "دوباره تلاش کنید",
@@ -1676,7 +1695,7 @@
       "processing": "در حال پردازش…"
     },
     "deliveryMethod": {
-      "title": "روش تحویل شخص ثالث",
+      "title": "روش تحویل",
       "pickup": "دریافت حضوری",
       "express": "فوری",
       "standard": "معمولی"
