@@ -479,7 +479,7 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
           <div className="grid gap-5 sm:grid-cols-2">
             <FormField label={copy.occasion}>
               <select
-                className={fieldClassName(errors.occasion)}
+                className={fieldClassName()}
                 value={form.occasion}
                 onChange={(event) => updateField("occasion", event.target.value)}
               >
