@@ -48,6 +48,7 @@ import { LanguageSelector } from "@/components/layout/header/LanguageSelector";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
 import { MobileNavMenu } from "@/components/layout/header/MobileNavMenu";
 import { resolveCategoryLabel } from "@/lib/categories/category-labels";
+import { isVendorShopPathname } from "@/lib/routing/vendor-storefront-routes";
 import {
   localizeDelivery,
   localizeVendor,
@@ -227,11 +228,13 @@ export default function Header() {
   );
   const isVendorRegisterPage = pathname.includes("/vendor/register");
   const isAuthSignupPage = pathname.includes("/auth/signup");
-  const hideSecondaryNav =
+  const hideUtilityBar =
     pathname.includes("/auth/login") ||
     pathname.includes("/auth/forgot-password") ||
     isAuthSignupPage ||
     isVendorRegisterPage;
+  const hideSecondaryNavStrip =
+    hideUtilityBar || isVendorShopPathname(pathname);
   const { isAuthenticated, user, logout } = useAuth();
   const { cart, itemCount, displayTotal, removeItem, updateQuantity, refreshCart } = useCart();
   const { currency, formatPrice, availableCurrencies } = useCurrency();
@@ -341,7 +344,7 @@ export default function Header() {
       observer.disconnect();
       window.removeEventListener("resize", syncHeaderHeight);
     };
-  }, [hideSecondaryNav]);
+  }, [hideSecondaryNavStrip]);
 
   useEffect(() => {
     let mounted = true;
@@ -460,7 +463,7 @@ export default function Header() {
     <>
       <div ref={headerWrapRef} className="sticky top-0 z-[9998] shrink-0">
         {/* Utility bar */}
-        {!hideSecondaryNav ? (
+        {!hideUtilityBar ? (
           <div
             dir={isRtl ? "rtl" : "ltr"}
             className="hidden border-b border-gray-200 bg-[#f7f8fa] sm:block"
@@ -723,7 +726,7 @@ export default function Header() {
           </div>
         </header>
 
-        {hideSecondaryNav ? null : (
+        {hideSecondaryNavStrip ? null : (
           <nav
             ref={categoriesRef}
             dir={isRtl ? "rtl" : "ltr"}

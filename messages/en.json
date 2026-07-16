@@ -2343,5 +2343,40 @@
         }
       ]
     }
+  },
+  "VendorsPages": {
+    "listing": {
+      "eyebrow": "Marketplace",
+      "home": "Home",
+      "title": "Browse Vendors",
+      "subtitle": "Discover trusted stores by industry — bakery, clothing, electronics, florists, and more.",
+      "allIndustries": "All industries",
+      "featuredIndustries": "Popular industries",
+      "moreIndustries": "More industries",
+      "results": "{count} vendors",
+      "noVendors": "No vendors found",
+      "noVendorsHint": "Try another industry or check back as new stores join the marketplace.",
+      "viewStore": "Visit store",
+      "products": "products",
+      "product": "product",
+      "clearFilter": "Show all vendors",
+      "loading": "Loading vendors..."
+    },
+    "store": {
+      "home": "Home",
+      "vendors": "Vendors",
+      "verified": "Verified store",
+      "productsTitle": "In this store",
+      "productsCount": "{count} products",
+      "noProducts": "No products in this store yet.",
+      "noProductsHint": "Check back soon — this vendor is still stocking the shelves.",
+      "notFound": "Store not found",
+      "notFoundHint": "This vendor may have moved or is no longer available.",
+      "backToVendors": "Browse all vendors",
+      "loading": "Opening store...",
+      "useCode": "Use code",
+      "joined": "Joined {year}",
+      "defaultDescription": "Browse products from this store."
+    }
   }
 }

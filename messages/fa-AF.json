@@ -717,23 +717,23 @@
           "businessTypeRegistered": "Registered business",
           "selectIndustry": "Select industry",
           "industryTypes": {
-            "BAKERY": "Bakery",
-            "CLOTHING": "Clothing & Apparel",
-            "ELECTRONICS": "Electronics",
-            "FLORISTS": "Florists",
-            "DRIED_FRUITS": "Dried Fruits & Nuts",
-            "CARPETS": "Carpets & Rugs",
-            "FOOD_BEVERAGES": "Food & Beverages",
-            "JEWELRY": "Jewelry & Accessories",
-            "HEALTH_BEAUTY": "Health & Beauty",
-            "HOME_FURNITURE": "Home & Furniture",
-            "SPORTS_OUTDOORS": "Sports & Outdoors",
-            "BOOKS_STATIONERY": "Books & Stationery",
-            "TOYS_GAMES": "Toys & Games",
-            "AUTOMOTIVE": "Automotive",
-            "HANDICRAFTS": "Handicrafts & Artisan",
-            "AGRICULTURE": "Agriculture & Farming",
-            "OTHER": "Other"
+            "BAKERY": "نانوایی",
+            "CLOTHING": "پوشاک و لباس",
+            "ELECTRONICS": "الکترونیک",
+            "FLORISTS": "گل‌فروشی",
+            "DRIED_FRUITS": "میوه‌های خشک و مغزها",
+            "CARPETS": "قالین و فرش",
+            "FOOD_BEVERAGES": "مواد غذایی و نوشیدنی",
+            "JEWELRY": "جواهرات و لوازم",
+            "HEALTH_BEAUTY": "سلامت و زیبایی",
+            "HOME_FURNITURE": "خانه و مبلمان",
+            "SPORTS_OUTDOORS": "ورزش و فضای باز",
+            "BOOKS_STATIONERY": "کتاب و لوازم‌التحریر",
+            "TOYS_GAMES": "اسباب‌بازی و بازی",
+            "AUTOMOTIVE": "خودرو و قطعات",
+            "HANDICRAFTS": "صنایع‌دستی و هنری",
+            "AGRICULTURE": "کشاورزی و دامداری",
+            "OTHER": "سایر"
           },
           "logoUpload": "Logo Upload",
           "logoHint": "JPG, PNG, or WebP. Max 10MB.",
@@ -2342,6 +2342,41 @@
           ]
         }
       ]
+    }
+  },
+  "VendorsPages": {
+    "listing": {
+      "eyebrow": "بازار",
+      "home": "خانه",
+      "title": "مرور فروشندگان",
+      "subtitle": "فروشگاه‌های معتبر را بر اساس صنعت کشف کنید — نانوایی، پوشاک، الکترونیک، گل‌فروشی و بیشتر.",
+      "allIndustries": "همه صنایع",
+      "featuredIndustries": "صنایع پرطرفدار",
+      "moreIndustries": "صنایع بیشتر",
+      "results": "{count} فروشنده",
+      "noVendors": "فروشنده‌ای یافت نشد",
+      "noVendorsHint": "صنعت دیگری را امتحان کنید یا بعداً دوباره سر بزنید.",
+      "viewStore": "مشاهده فروشگاه",
+      "products": "محصولات",
+      "product": "محصول",
+      "clearFilter": "نمایش همه فروشندگان",
+      "loading": "در حال بارگذاری فروشندگان..."
+    },
+    "store": {
+      "home": "خانه",
+      "vendors": "فروشندگان",
+      "verified": "فروشگاه تأییدشده",
+      "productsTitle": "در این فروشگاه",
+      "productsCount": "{count} محصول",
+      "noProducts": "هنوز محصولی در این فروشگاه نیست.",
+      "noProductsHint": "به‌زودی برگردید — این فروشنده هنوز قفسه‌ها را پر می‌کند.",
+      "notFound": "فروشگاه پیدا نشد",
+      "notFoundHint": "این فروشنده ممکن است منتقل شده یا دیگر در دسترس نباشد.",
+      "backToVendors": "مشاهده همه فروشندگان",
+      "loading": "در حال باز کردن فروشگاه...",
+      "useCode": "کد را استفاده کنید",
+      "joined": "پیوسته در {year}",
+      "defaultDescription": "محصولات این فروشگاه را ببینید."
     }
   }
 }

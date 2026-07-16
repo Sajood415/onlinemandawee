@@ -717,23 +717,23 @@
           "businessTypeRegistered": "Registered business",
           "selectIndustry": "Select industry",
           "industryTypes": {
-            "BAKERY": "Bakery",
-            "CLOTHING": "Clothing & Apparel",
-            "ELECTRONICS": "Electronics",
-            "FLORISTS": "Florists",
-            "DRIED_FRUITS": "Dried Fruits & Nuts",
-            "CARPETS": "Carpets & Rugs",
-            "FOOD_BEVERAGES": "Food & Beverages",
-            "JEWELRY": "Jewelry & Accessories",
-            "HEALTH_BEAUTY": "Health & Beauty",
-            "HOME_FURNITURE": "Home & Furniture",
-            "SPORTS_OUTDOORS": "Sports & Outdoors",
-            "BOOKS_STATIONERY": "Books & Stationery",
-            "TOYS_GAMES": "Toys & Games",
-            "AUTOMOTIVE": "Automotive",
-            "HANDICRAFTS": "Handicrafts & Artisan",
-            "AGRICULTURE": "Agriculture & Farming",
-            "OTHER": "Other"
+            "BAKERY": "بیکري",
+            "CLOTHING": "جامې او پوښاک",
+            "ELECTRONICS": "بریښنایی توکي",
+            "FLORISTS": "ګل پلورونکي",
+            "DRIED_FRUITS": "وچې میوې او مغز لرونکي",
+            "CARPETS": "غالۍ او فرشونه",
+            "FOOD_BEVERAGES": "خواړه او څښاک",
+            "JEWELRY": "زیورات او لوازم",
+            "HEALTH_BEAUTY": "روغتیا او ښکلا",
+            "HOME_FURNITURE": "کور او فرنیچر",
+            "SPORTS_OUTDOORS": "سپورت او بهرني",
+            "BOOKS_STATIONERY": "کتابونه او دفتري توکي",
+            "TOYS_GAMES": "لوبې او لوبتکې",
+            "AUTOMOTIVE": "موټر او پرزې",
+            "HANDICRAFTS": "لاسي صنایع او هنري توکي",
+            "AGRICULTURE": "کرنه او مالدارۍ",
+            "OTHER": "نور"
           },
           "logoUpload": "Logo Upload",
           "logoHint": "JPG, PNG, or WebP. Max 10MB.",
@@ -2342,6 +2342,41 @@
           ]
         }
       ]
+    }
+  },
+  "VendorsPages": {
+    "listing": {
+      "eyebrow": "پلورنځي",
+      "home": "کور",
+      "title": "پلورونکي وګورئ",
+      "subtitle": "د صنعت له مخې باوري پلورنځي ومومئ — بیکري، جامې، بریښنایی توکي، ګلان او نور.",
+      "allIndustries": "ټول صنعتونه",
+      "featuredIndustries": "مشهور صنعتونه",
+      "moreIndustries": "نور صنعتونه",
+      "results": "{count} پلورونکي",
+      "noVendors": "هیڅ پلورونکی ونه موندل شو",
+      "noVendorsHint": "بل صنعت وکارېږئ یا وروسته بیا راشئ.",
+      "viewStore": "پلورنځی وګورئ",
+      "products": "محصولات",
+      "product": "محصول",
+      "clearFilter": "ټول پلورونکي وښایئ",
+      "loading": "پلورونکي پورته کېږي..."
+    },
+    "store": {
+      "home": "کور",
+      "vendors": "پلورونکي",
+      "verified": "تایید شوی پلورنځی",
+      "productsTitle": "په دې پلورنځي کې",
+      "productsCount": "{count} محصولات",
+      "noProducts": "په دې پلورنځي کې تر اوسه محصولات نشته.",
+      "noProductsHint": "وروسته بیا راشئ — دا پلورونکی لا هم المارۍ ډکوي.",
+      "notFound": "پلورنځی ونه موندل شو",
+      "notFoundHint": "دا پلورونکی ممکن لیږدول شوی یا نور شتون نلري.",
+      "backToVendors": "ټول پلورونکي وګورئ",
+      "loading": "پلورنځی پرانیستل کېږي...",
+      "useCode": "کوډ وکاروئ",
+      "joined": "په {year} کې یوځای شوی",
+      "defaultDescription": "د دې پلورنځي محصولات وګورئ."
     }
   }
 }
