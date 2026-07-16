@@ -6,6 +6,7 @@ import { HomeCategoryCarousel } from "./HomeCategoryCarousel";
 import { HomeDuoBanners } from "./HomeDuoBanners";
 import { HomeSeasonalBanners } from "./HomeSeasonalBanners";
 import { HomeCouponDealsRail } from "./HomeCouponDealsRail";
+import { HomeCategoryShowcaseGrid } from "./HomeCategoryShowcaseGrid";
 import { HomeStackedSections } from "./HomeStackedSections";
 
 export function HomePage() {
@@ -20,6 +21,7 @@ export function HomePage() {
         <HomeSeasonalBanners />
         <HomeCategoryCarousel />
         <HomeDuoBanners />
+        <HomeCategoryShowcaseGrid />
       </div>
       <HomeStackedSections />
     </div>

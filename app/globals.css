@@ -9,6 +9,7 @@
   --green: #428445;
   --yellow: #E0B252;
   --header-height: 7rem;
+  --promo-banner-height: clamp(6.5rem, 18vw, 14rem);
 }
 
 @theme inline {
@@ -101,6 +102,10 @@ body {
       padding-inline: max(2rem, env(safe-area-inset-left, 0px))
         max(2rem, env(safe-area-inset-right, 0px));
     }
+  }
+
+  .promo-banner-height {
+    height: var(--promo-banner-height);
   }
 }
 

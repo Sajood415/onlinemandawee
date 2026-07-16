@@ -1,13 +1,13 @@
 "use client";
 
-import Image from "next/image";
-import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 
 import {
   fetchActiveHomeBanners,
   type PublicHomeBanner,
 } from "@/lib/home/fetch-home-banners";
+
+import { PromoBannerTile } from "./PromoBannerTile";
 
 export function HomeSeasonalBanners() {
   const [banners, setBanners] = useState<PublicHomeBanner[]>([]);
@@ -22,22 +22,9 @@ export function HomeSeasonalBanners() {
 
   return (
     <section className="w-full min-w-0 pb-4">
-      <div className="grid grid-cols-4 gap-2 sm:gap-3">
+      <div className="grid grid-cols-4 items-stretch gap-2 sm:gap-3">
         {banners.map((banner) => (
-          <Link
-            key={banner.id}
-            href={banner.href}
-            aria-label={banner.title}
-            className="relative block h-[clamp(6.5rem,18vw,14rem)] overflow-hidden rounded-2xl bg-neutral-100 outline-none ring-offset-2 transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-[#ec1b23]/40"
-          >
-            <Image
-              src={banner.imageUrl}
-              alt={banner.title}
-              fill
-              className="object-cover object-center"
-              sizes="25vw"
-            />
-          </Link>
+          <PromoBannerTile key={banner.id} banner={banner} sizes="25vw" />
         ))}
       </div>
     </section>

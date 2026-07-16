@@ -1,13 +1,14 @@
 "use client";
 
-import Image from "next/image";
-import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 
+import { Link } from "@/i18n/navigation";
 import {
   fetchActiveHomeBanners,
   type PublicHomeBanner,
 } from "@/lib/home/fetch-home-banners";
+
+import { PROMO_BANNER_HEIGHT } from "./PromoBannerTile";
 
 export function HomeDuoBanners() {
   const [banners, setBanners] = useState<PublicHomeBanner[]>([]);
@@ -22,20 +23,27 @@ export function HomeDuoBanners() {
 
   return (
     <section className="w-full min-w-0 pb-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+      <div
+        className="flex w-full gap-2 sm:gap-3"
+        style={{
+          height: PROMO_BANNER_HEIGHT,
+          minHeight: PROMO_BANNER_HEIGHT,
+          maxHeight: PROMO_BANNER_HEIGHT,
+        }}
+      >
         {banners.slice(0, 2).map((banner) => (
           <Link
             key={banner.id}
             href={banner.href}
             aria-label={banner.title}
-            className="relative block h-[clamp(6.5rem,18vw,14rem)] overflow-hidden rounded-2xl bg-neutral-100 outline-none ring-offset-2 transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-[#ec1b23]/40"
+            className="relative block h-full min-h-0 min-w-0 flex-1 basis-0 overflow-hidden rounded-2xl bg-neutral-100 outline-none ring-offset-2 transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-[#ec1b23]/40"
           >
-            <Image
+            <img
               src={banner.imageUrl}
               alt={banner.title}
-              fill
-              className="object-cover object-center"
-              sizes="(max-width: 640px) 100vw, 50vw"
+              className="block h-full w-full object-cover object-center"
+              loading="lazy"
+              decoding="async"
             />
           </Link>
         ))}
