@@ -263,11 +263,6 @@ export default function ProductDetailPage() {
     return formatPrice((unitPriceMinor * quantity) / 100, productCurrency);
   }, [product, activeVariant?.id, formatPrice, productCurrency, locale, quantity]);
 
-  const compareAtPrice = useMemo(() => {
-    if (!product || product.price <= 50 || activeVariant) return null;
-    return formatPrice(product.price * 1.15, productCurrency);
-  }, [product, activeVariant, formatPrice, productCurrency]);
-
   const availableStock = useMemo(() => {
     if (!product) return 0;
     return resolveAvailableStockQty(product, activeVariant?.id);
@@ -525,12 +520,6 @@ export default function ProductDetailPage() {
                 <span className="text-3xl font-bold text-gray-900">
                   {displayPrice}
                 </span>
-                {compareAtPrice ? (
-                  <span className="text-sm text-gray-500">
-                    {locale === "en" ? "Was" : locale === "ps" ? "و" : "بود"}{" "}
-                    <span className="line-through">{compareAtPrice}</span>
-                  </span>
-                ) : null}
               </div>
               {selectedLineTotal ? (
                 <p className="mt-2 text-sm font-medium text-gray-700">

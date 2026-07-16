@@ -1,6 +1,8 @@
-import { getDepartmentImage } from "@/lib/categories/storefront-departments";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
-import type { CategoryTranslations } from "@/lib/localization/category-content";
+import {
+  parseCategoryImageUrl,
+  type CategoryTranslations,
+} from "@/lib/localization/category-content";
 
 type CategoryRecord = {
   id: string;
@@ -34,7 +36,7 @@ export function serializePublicCategoryNode(
     slug: category.slug,
     sortOrder: category.sortOrder,
     translations: (category.translations as CategoryTranslations | null | undefined) ?? null,
-    image: options?.image ?? getDepartmentImage(category.slug),
+    image: parseCategoryImageUrl(category.translations) ?? options?.image,
   };
 }
 

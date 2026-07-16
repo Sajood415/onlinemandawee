@@ -13,7 +13,10 @@ import {
   emptyCategoryTranslationFields,
   type CategoryTranslationFormFields,
 } from "@/components/categories/category-translation-form";
-import type { CategoryTranslations } from "@/lib/localization/category-content";
+import {
+  parseCategoryImageUrl,
+  type CategoryTranslations,
+} from "@/lib/localization/category-content";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { toast } from "@/lib/utils/toast";
@@ -60,6 +63,8 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
   const [formTranslations, setFormTranslations] = useState<CategoryTranslationFormFields>(
     emptyCategoryTranslationFields()
   );
+  const [formImageUrl, setFormImageUrl] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [formSortOrder, setFormSortOrder] = useState("0");
   const [formParentId, setFormParentId] = useState("");
   const [formIsActive, setFormIsActive] = useState(true);
@@ -109,6 +114,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
     setEditingId(null);
     setFormName("");
     setFormTranslations(emptyCategoryTranslationFields());
+    setFormImageUrl("");
     setFormSortOrder("0");
     setFormParentId("");
     setFormIsActive(true);
@@ -118,12 +124,32 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
     setEditingId(cat.id);
     setFormName(cat.name);
     setFormTranslations(categoryTranslationFieldsFromRecord(cat.translations));
+    setFormImageUrl(parseCategoryImageUrl(cat.translations) ?? "");
     setFormSortOrder(String(cat.sortOrder));
     setFormParentId(cat.parentId ?? "");
     setFormIsActive(cat.isActive);
     requestAnimationFrame(() => {
       formSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+  };
+
+  const onUploadCategoryImage = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetchWithAuth("/api/admin/categories/upload", {
+        method: "POST",
+        body: form,
+      });
+      const data = await parseApiResponse<{ url: string }>(res);
+      setFormImageUrl(data.url);
+      toast.success("Uploaded", "Category image uploaded.");
+    } catch (err) {
+      toast.error("Upload failed", err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   /* ── Submit (create or update) ──────────────────────────────────── */
@@ -143,6 +169,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
 
     const payload: Record<string, unknown> = {
       name: formName.trim(),
+      imageUrl: formImageUrl.trim() || (editingId ? null : undefined),
       sortOrder: Number(formSortOrder) || 0,
       isActive: formIsActive,
     };
@@ -494,6 +521,37 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
                 onChange={(e) => setFormSortOrder(e.target.value)}
                 placeholder="0"
               />
+            </div>
+
+            {/* Category image */}
+            <div className="flex flex-col gap-1.5 lg:col-span-2">
+              <label className={LABEL}>Category image</label>
+              <div className="flex flex-col gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">
+                  {uploadingImage ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  Upload image
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    disabled={uploadingImage}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        void onUploadCategoryImage(file);
+                      }
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+                {formImageUrl ? (
+                  <p className="text-xs text-emerald-700">Image uploaded.</p>
+                ) : null}
+              </div>
             </div>
           </div>
 

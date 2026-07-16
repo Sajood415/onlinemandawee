@@ -2,6 +2,11 @@ import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import type { HomeBannerPlacement } from "@/domain/home/home-banner-placement";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import {
+  toPublicBannerPlacement,
+  toPublicBannerSortOrder,
+  toStoredBannerPlacement,
+} from "@/lib/home/banner-placement";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { HomeBannerRepository } from "@/repositories/home-banner.repository";
 
@@ -36,16 +41,21 @@ export class AdminHomeBannerService {
   }
 
   async create(admin: AuthenticatedUser, input: BannerInput) {
+    const stored = toStoredBannerPlacement({
+      placement: input.placement,
+      sortOrder: input.sortOrder,
+    });
+
     const banner = await this.homeBannerRepository.create({
       title: input.title.trim(),
       subtitle: input.subtitle?.trim() || null,
-      placement: input.placement ?? "HERO",
+      placement: stored.placement,
       imageUrl: input.imageUrl,
       imageMobileUrl: input.imageMobileUrl ?? null,
       href: input.href.trim(),
       ctaLabel: input.ctaLabel?.trim() || null,
       isActive: input.isActive ?? true,
-      sortOrder: input.sortOrder ?? 0,
+      sortOrder: stored.sortOrder,
       startsAt: input.startsAt ? new Date(input.startsAt) : null,
       expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
     });
@@ -72,10 +82,23 @@ export class AdminHomeBannerService {
       });
     }
 
+    const stored =
+      input.placement !== undefined || input.sortOrder !== undefined
+        ? toStoredBannerPlacement({
+            placement: input.placement ?? toPublicBannerPlacement(banner),
+            sortOrder:
+              input.sortOrder ??
+              toPublicBannerSortOrder({
+                placement: banner.placement,
+                sortOrder: banner.sortOrder,
+              }),
+          })
+        : null;
+
     const updated = await this.homeBannerRepository.update(bannerId, {
       ...(input.title !== undefined ? { title: input.title.trim() } : {}),
       ...(input.subtitle !== undefined ? { subtitle: input.subtitle?.trim() || null } : {}),
-      ...(input.placement !== undefined ? { placement: input.placement } : {}),
+      ...(stored ? { placement: stored.placement, sortOrder: stored.sortOrder } : {}),
       ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
       ...(input.imageMobileUrl !== undefined
         ? { imageMobileUrl: input.imageMobileUrl }
@@ -83,7 +106,6 @@ export class AdminHomeBannerService {
       ...(input.href !== undefined ? { href: input.href.trim() } : {}),
       ...(input.ctaLabel !== undefined ? { ctaLabel: input.ctaLabel?.trim() || null } : {}),
       ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
-      ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
       ...(input.startsAt !== undefined
         ? { startsAt: input.startsAt ? new Date(input.startsAt) : null }
         : {}),
@@ -129,7 +151,7 @@ export class AdminHomeBannerService {
     id: string;
     title: string;
     subtitle: string | null;
-    placement: HomeBannerPlacement;
+    placement: string;
     imageUrl: string;
     imageMobileUrl: string | null;
     href: string;
@@ -145,13 +167,13 @@ export class AdminHomeBannerService {
       id: banner.id,
       title: banner.title,
       subtitle: banner.subtitle,
-      placement: banner.placement,
+      placement: toPublicBannerPlacement(banner),
       imageUrl: banner.imageUrl,
       imageMobileUrl: banner.imageMobileUrl,
       href: banner.href,
       ctaLabel: banner.ctaLabel,
       isActive: banner.isActive,
-      sortOrder: banner.sortOrder,
+      sortOrder: toPublicBannerSortOrder(banner),
       startsAt: banner.startsAt?.toISOString() ?? null,
       expiresAt: banner.expiresAt?.toISOString() ?? null,
       createdAt: banner.createdAt.toISOString(),

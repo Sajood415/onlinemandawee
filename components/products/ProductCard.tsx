@@ -6,6 +6,11 @@ import { Heart, Loader2, ShoppingBag, Truck } from "lucide-react";
 
 import { CatalogImage } from "@/components/catalog/CatalogImage";
 import { QuantitySelector } from "@/components/cart/QuantitySelector";
+import {
+  getPrimaryProductCoupon,
+  ProductCouponImageBadge,
+  ProductCouponPriceHint,
+} from "@/components/products/ProductCouponOffer";
 import { StarRating } from "@/components/products/StarRating";
 import { getProductsCopy } from "@/components/products/copy";
 import type { CatalogRow } from "@/components/products/types";
@@ -50,6 +55,9 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
     "description" in product && product.description
       ? product.description[locale]
       : "";
+  const primaryCoupon = getPrimaryProductCoupon(
+    "availableCoupons" in product ? product.availableCoupons : undefined
+  );
 
   const handleAddToCart = async (event: React.MouseEvent) => {
     event.preventDefault();
@@ -71,9 +79,6 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
       setIsAdding(false);
     }
   };
-
-  const compareAt =
-    product.price > 50 ? formatPrice(product.price * 1.15, productCurrency) : null;
 
   return (
     <article className="group flex h-full min-w-0 flex-col">
@@ -107,6 +112,8 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
               </span>
             </div>
           ) : null}
+
+          {primaryCoupon ? <ProductCouponImageBadge coupon={primaryCoupon} /> : null}
 
           <button
             type="button"
@@ -150,12 +157,10 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
               <span className="text-base font-bold tracking-tight text-[#0f3460] sm:text-lg">
                 {priceLabel}
               </span>
-              {compareAt ? (
-                <span className="max-w-full truncate text-[10px] text-neutral-400 line-through sm:text-xs">
-                  {compareAt}
-                </span>
-              ) : null}
             </div>
+            {primaryCoupon ? (
+              <ProductCouponPriceHint coupon={primaryCoupon} locale={locale} />
+            ) : null}
             <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-emerald-600">
               <Truck className="h-3 w-3 shrink-0" />
               {localizeDelivery(product.delivery, locale)}

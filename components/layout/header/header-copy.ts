@@ -30,7 +30,17 @@ export type HeaderCopy = {
   viewFullBasket: string;
   languageSelect: string;
   login: string;
+  loginRegister: string;
+  account: string;
+  helloSignIn: string;
+  cart: string;
+  wishlist: string;
+  welcome: string;
+  trackOrder: string;
+  contact: string;
   becomeVendor: string;
+  sellOnPlatform: string;
+  categories: string;
 };
 
 export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
@@ -71,7 +81,17 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     viewFullBasket: "View Full Basket",
     languageSelect: "Language Select",
     login: "Login",
+    loginRegister: "Login | Register",
+    account: "Account",
+    helloSignIn: "Hello, Sign In",
+    cart: "Cart",
+    wishlist: "Wishlist",
+    welcome: "Welcome to Mandawee!",
+    trackOrder: "Track Order",
+    contact: "Contact",
     becomeVendor: "Become a Vendor",
+    sellOnPlatform: "Sell on Mandawee!",
+    categories: "Categories",
   },
   ps: {
     searchSuggestions: [
@@ -110,7 +130,17 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     viewFullBasket: "بشپړ باسکټ وګورئ",
     languageSelect: "ژبه وټاکئ",
     login: "ننوتل",
+    loginRegister: "ننوتل | ثبت‌نام",
+    account: "حساب",
+    helloSignIn: "سلام، ننوتل",
+    cart: "سبد",
+    wishlist: "خوښې لیست",
+    welcome: "منداوی ته ښه راغلاست!",
+    trackOrder: "امر تعقیب",
+    contact: "اړیکه",
     becomeVendor: "پلورونکی شئ",
+    sellOnPlatform: "په منداوی کې وپلورئ!",
+    categories: "کټګورۍ",
   },
   "fa-AF": {
     searchSuggestions: [
@@ -149,10 +179,21 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     viewFullBasket: "مشاهده سبد کامل",
     languageSelect: "انتخاب زبان",
     login: "ورود",
+    loginRegister: "ورود | ثبت‌نام",
+    account: "حساب",
+    helloSignIn: "سلام، وارد شوید",
+    cart: "سبد",
+    wishlist: "علاقه‌مندی‌ها",
+    welcome: "به منداوی خوش آمدید!",
+    trackOrder: "پیگیری سفارش",
+    contact: "تماس",
     becomeVendor: "فروشنده شوید",
+    sellOnPlatform: "در منداوی بفروشید!",
+    categories: "دسته‌بندی‌ها",
   },
 };
 
 export const HEADER_LOGO_SRC =
   "https://onlinemandawee.com/cdn/shop/files/ON_4_150x.png?v=1763220040";
-export const HEADER_BAR_CLASS = "bg-[#0f3460]";
+export const HEADER_BRAND_COLOR = "#ec1b23";
+export const HEADER_BAR_CLASS = "bg-[#ec1b23]";

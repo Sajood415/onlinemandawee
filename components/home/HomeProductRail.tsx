@@ -1,17 +1,25 @@
 "use client";
 
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, ShoppingCart } from "lucide-react";
 import { CatalogImage } from "@/components/catalog/CatalogImage";
-import { useCart } from "@/store/cart-context";
-import { toast } from "@/lib/utils/toast";
-import { localizeVendor } from "@/lib/localization/product-vendor";
+import { StarRating } from "@/components/products/StarRating";
+import {
+  getCouponAdjustedPrices,
+  getPrimaryProductCoupon,
+  ProductCouponImageBadge,
+} from "@/components/products/ProductCouponOffer";
 import {
   fetchPublicCatalogProducts,
   type PublicCatalogProduct,
 } from "@/lib/products/public-catalog";
+import { toast } from "@/lib/utils/toast";
+import { useCart } from "@/store/cart-context";
+import { useCurrency } from "@/store/currency-context";
+
+const BRAND_RED = "#ec1b23";
 
 type LocaleKey = "en" | "ps" | "fa-AF";
 
@@ -19,11 +27,12 @@ type Row = {
   id: string;
   slug: string;
   price: number;
-  priceDisplay: string;
   image: string;
   name: Record<LocaleKey, string>;
-  vendor: string;
-  vendorSlug: string;
+  rating: number;
+  reviews: number;
+  currency: string;
+  availableCoupons?: PublicCatalogProduct["availableCoupons"];
 };
 
 function toRow(product: PublicCatalogProduct): Row {
@@ -31,89 +40,126 @@ function toRow(product: PublicCatalogProduct): Row {
     id: product.id,
     slug: product.slug,
     price: product.price,
-    priceDisplay: product.priceDisplay,
     image: product.image,
     name: product.name,
-    vendor: product.vendor,
-    vendorSlug: product.vendorSlug,
+    rating: product.rating,
+    reviews: product.reviews,
+    currency: product.currency,
+    availableCoupons: product.availableCoupons,
   };
 }
 
-function ProductCard({ p, locale }: { p: Row; locale: LocaleKey }) {
-  const router = useRouter();
-  const { addItem } = useCart();
-  const [busy, setBusy] = useState(false);
+function HomeRailProductCard({ product, locale }: { product: Row; locale: LocaleKey }) {
   const t = useTranslations("Homepage.store");
+  const { formatPrice } = useCurrency();
+  const { addItem } = useCart();
+  const [isAdding, setIsAdding] = useState(false);
+  const primaryCoupon = getPrimaryProductCoupon(product.availableCoupons);
+  const prices = getCouponAdjustedPrices(
+    product.price,
+    product.currency,
+    primaryCoupon,
+    formatPrice
+  );
 
-  const onAdd = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setBusy(true);
+  const handleAddToCart = async (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsAdding(true);
     try {
-      await addItem(p.id, 1);
+      await addItem(product.id, 1);
       toast.success(t("addedToCart"));
     } catch {
       toast.error(t("addError"));
     } finally {
-      setBusy(false);
+      setIsAdding(false);
     }
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-white">
-      <Link href={`/products/${p.id}`} className="flex min-h-0 flex-1 flex-col text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">
-        <div className="relative aspect-square w-full min-w-0 overflow-hidden rounded-md bg-neutral-50">
+    <div className="group flex h-full flex-col rounded-lg border-2 border-transparent p-1.5 transition-colors duration-200 hover:border-[#ec1b23] sm:p-2">
+      <div className="relative aspect-square w-full shrink-0 overflow-hidden">
+        <Link
+          href={`/products/${product.id}`}
+          className="absolute inset-0 z-0 block outline-none"
+        >
           <CatalogImage
-            src={p.image}
-            alt={p.name[locale]}
+            src={product.image}
+            alt={product.name[locale]}
             fill
-            className="object-cover object-center"
-            sizes="(max-width: 767px) 45vw, 23vw"
+            className="object-contain object-center"
+            sizes="(max-width: 640px) 42vw, 220px"
           />
-        </div>
-        <div className="mt-3 flex min-h-0 flex-1 flex-col">
+        </Link>
+
+        {primaryCoupon ? <ProductCouponImageBadge coupon={primaryCoupon} /> : null}
+
+        <div className="absolute bottom-2 left-2 z-20 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
           <button
             type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              router.push(`/vendors/${p.vendorSlug}`);
-            }}
-            className="w-fit cursor-pointer text-left text-[11px] font-medium text-gray-500 hover:text-primary hover:underline"
+            onClick={handleAddToCart}
+            disabled={isAdding}
+            aria-label={t("addToCart")}
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-sm bg-[#2563eb] text-white shadow-sm transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <bdi dir="ltr">{localizeVendor(p.vendor, locale)}</bdi>
+            {isAdding ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+            ) : (
+              <ShoppingCart className="h-3.5 w-3.5" aria-hidden />
+            )}
           </button>
-          <h3 className="line-clamp-2 text-[13px] font-normal leading-snug text-black sm:text-sm">
-            {p.name[locale]}
-          </h3>
-          <p className="mt-2 text-sm font-semibold tracking-tight text-black">{p.priceDisplay}</p>
         </div>
-      </Link>
-      <button
-        type="button"
-        onClick={onAdd}
-        disabled={busy}
-        className="mt-3 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-sm border border-neutral-900 bg-white py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-900 transition-colors duration-200 hover:bg-neutral-100 active:bg-neutral-200/70 disabled:cursor-not-allowed disabled:opacity-60 sm:text-[11px]"
+      </div>
+
+      <Link
+        href={`/products/${product.id}`}
+        className="mt-3 block px-1 pb-1 outline-none sm:mt-3.5 sm:px-2 sm:pb-1.5"
       >
-        {busy ? (
-          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+        <h3 className="line-clamp-2 text-left text-[13px] font-normal leading-snug text-[#2563eb] sm:text-sm">
+          {product.name[locale]}
+        </h3>
+
+        <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 sm:mt-2">
+          <span className="text-sm font-bold text-neutral-900">{prices.current}</span>
+          {prices.original ? (
+            <span className="text-xs text-neutral-400 line-through">{prices.original}</span>
+          ) : null}
+        </div>
+
+        {product.reviews > 0 ? (
+          <div className="mt-1.5 flex items-center gap-1 sm:mt-2">
+            <StarRating rating={product.rating} showValue={false} />
+            <span className="text-xs text-neutral-500">({product.reviews})</span>
+          </div>
         ) : null}
-        {t("addToCart")}
-      </button>
+      </Link>
     </div>
   );
 }
 
 type Props = {
+  title: string;
+  viewAllHref: string;
   productIds?: readonly string[];
-  showTitle?: boolean;
-  /** When set (including `[]`), skips fetching the full catalog — use on homepage sections. */
   sharedVendorProducts?: PublicCatalogProduct[];
 };
 
+const CELL_CLASS =
+  "relative box-border w-[46%] shrink-0 grow-0 px-3 py-4 sm:w-[31%] sm:px-4 sm:py-5 md:w-[23%] lg:w-[20%]";
+
+function CellDivider() {
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute left-0 top-1/2 h-[60%] w-px -translate-y-1/2 bg-neutral-200"
+    />
+  );
+}
+
 export function HomeProductRail({
+  title,
+  viewAllHref,
   productIds,
-  showTitle = true,
   sharedVendorProducts,
 }: Props) {
   const locale = useLocale() as LocaleKey;
@@ -136,86 +182,80 @@ export function HomeProductRail({
   const rows = productIds?.length
     ? vendorRows.filter(
         (product) =>
-          productIds.includes(product.id) ||
-          productIds.includes(product.slug)
+          productIds.includes(product.id) || productIds.includes(product.slug)
       )
     : vendorRows;
   const isLoading = sharedVendorProducts === undefined && vendorRows.length === 0;
-  const skeletonCount = 4;
-
+  const skeletonCount = 5;
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollByPage = useCallback((dir: -1 | 1) => {
     const el = scrollRef.current;
     if (!el) return;
-    const w = el.clientWidth;
-    el.scrollBy({ left: dir * Math.max(1, Math.round(w)), behavior: "smooth" });
+    const cardWidth = el.querySelector<HTMLElement>("[data-rail-item]")?.offsetWidth ?? 220;
+    el.scrollBy({ left: dir * cardWidth * 2, behavior: "smooth" });
   }, []);
 
   return (
-    <section className="mb-0 w-full min-w-0">
-      {showTitle ? (
-        <h2 className="mb-5 text-center text-lg font-bold uppercase tracking-wide text-slate-900 sm:mb-7 sm:text-xl">
-          {t("featuredTitle")}
-        </h2>
-      ) : null}
+    <section className="w-full min-w-0">
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h2 className="text-lg font-bold text-neutral-900 sm:text-xl">{title}</h2>
+        <Link
+          href={viewAllHref}
+          className="shrink-0 rounded px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+          style={{ backgroundColor: BRAND_RED }}
+        >
+          {t("viewAll")}
+        </Link>
+      </div>
 
-      <div className="relative w-full min-w-0">
-        {!isLoading ? (
+      <div className="relative overflow-hidden rounded-lg border border-neutral-200/80 bg-white shadow-sm">
+        {!isLoading && rows.length > 0 ? (
           <>
             <button
               type="button"
               onClick={() => scrollByPage(-1)}
-              className="pointer-events-auto absolute left-1 top-[92px] z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white/95 text-neutral-700 shadow-sm backdrop-blur-sm transition hover:bg-neutral-50 active:scale-95 sm:left-2 sm:top-[100px] md:left-3 md:h-10 md:w-10 md:top-[108px]"
-              aria-label="prev"
+              className="absolute left-0 top-1/2 z-30 hidden h-10 w-9 -translate-y-1/2 items-center justify-center border border-neutral-200 bg-white text-neutral-500 transition hover:bg-neutral-50 sm:flex"
+              aria-label="Previous products"
             >
-              <ChevronLeft className="h-4 w-4 stroke-[1.6] md:h-[18px] md:w-[18px]" />
+              <ChevronLeft className="h-5 w-5" />
             </button>
             <button
               type="button"
               onClick={() => scrollByPage(1)}
-              className="pointer-events-auto absolute right-1 top-[92px] z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white/95 text-neutral-700 shadow-sm backdrop-blur-sm transition hover:bg-neutral-50 active:scale-95 sm:right-2 sm:top-[100px] md:right-3 md:h-10 md:w-10 md:top-[108px]"
-              aria-label="next"
+              className="absolute right-0 top-1/2 z-30 hidden h-10 w-9 -translate-y-1/2 items-center justify-center border border-neutral-200 bg-white text-neutral-500 transition hover:bg-neutral-50 sm:flex"
+              aria-label="Next products"
             >
-              <ChevronRight className="h-4 w-4 stroke-[1.6] md:h-[18px] md:w-[18px]" />
+              <ChevronRight className="h-5 w-5" />
             </button>
           </>
         ) : null}
 
         {isLoading ? (
-          <div
-            dir="ltr"
-            className="flex w-full min-w-0 gap-3 overflow-x-hidden overflow-y-hidden py-0.5"
-          >
+          <div className="flex">
             {Array.from({ length: skeletonCount }).map((_, index) => (
-              <div
-                key={`home-rail-skeleton-${index}`}
-                className="box-border min-w-0 shrink-0 basis-[calc((100%-2.25rem)/4)] px-1 sm:px-2 md:px-[15px]"
-              >
-                <div className="animate-pulse">
-                  <div className="aspect-square w-full rounded-md bg-neutral-200" />
-                  <div className="mt-3 h-3 w-20 rounded bg-neutral-200" />
-                  <div className="mt-2 h-4 w-full rounded bg-neutral-200" />
-                  <div className="mt-2 h-4 w-2/3 rounded bg-neutral-200" />
-                  <div className="mt-3 h-9 w-full rounded-sm bg-neutral-200" />
+              <div key={`home-rail-skeleton-${index}`} className={`${CELL_CLASS} animate-pulse`}>
+                {index > 0 ? <CellDivider /> : null}
+                <div className="aspect-square bg-neutral-100" />
+                <div className="mt-3 space-y-2">
+                  <div className="h-4 w-full rounded bg-neutral-100" />
+                  <div className="h-4 w-3/4 rounded bg-neutral-100" />
                 </div>
               </div>
             ))}
           </div>
+        ) : rows.length === 0 ? (
+          <p className="px-4 py-10 text-center text-sm text-neutral-500">No products yet.</p>
         ) : (
           <div
             ref={scrollRef}
             dir="ltr"
-            className="flex w-full min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth touch-pan-x [&::-webkit-scrollbar]:hidden"
+            className="flex overflow-x-auto overscroll-x-contain scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            {rows.map((p) => (
-              <div
-                key={p.id}
-                className="box-border min-w-0 shrink-0 snap-start basis-[calc((100%-0.75rem)/2)] md:basis-[calc((100%-2.25rem)/4)]"
-              >
-                <div className="h-full px-1 sm:px-2 md:px-[15px]">
-                  <ProductCard p={p} locale={locale} />
-                </div>
+            {rows.map((product, index) => (
+              <div key={product.id} data-rail-item className={CELL_CLASS}>
+                {index > 0 ? <CellDivider /> : null}
+                <HomeRailProductCard product={product} locale={locale} />
               </div>
             ))}
           </div>

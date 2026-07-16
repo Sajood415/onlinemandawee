@@ -9,12 +9,12 @@ import {
   type PublicHomeBanner,
 } from "@/lib/home/fetch-home-banners";
 
-export function HomeSeasonalBanners() {
+export function HomeDuoBanners() {
   const [banners, setBanners] = useState<PublicHomeBanner[]>([]);
 
   useEffect(() => {
     void fetchActiveHomeBanners()
-      .then((items) => setBanners(items.filter((item) => item.placement === "SECTION")))
+      .then((items) => setBanners(items.filter((item) => item.placement === "DUO")))
       .catch(() => setBanners([]));
   }, []);
 
@@ -22,8 +22,8 @@ export function HomeSeasonalBanners() {
 
   return (
     <section className="w-full min-w-0 pb-4">
-      <div className="grid grid-cols-4 gap-2 sm:gap-3">
-        {banners.map((banner) => (
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+        {banners.slice(0, 2).map((banner) => (
           <Link
             key={banner.id}
             href={banner.href}
@@ -35,7 +35,7 @@ export function HomeSeasonalBanners() {
               alt={banner.title}
               fill
               className="object-cover object-center"
-              sizes="25vw"
+              sizes="(max-width: 640px) 100vw, 50vw"
             />
           </Link>
         ))}

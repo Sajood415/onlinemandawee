@@ -13,8 +13,7 @@ import Link from "next/link";
 import {
   Search,
   ShoppingBasket,
-  ChevronDown,
-  Menu,
+  ShoppingCart,
   X,
   Cookie,
   ArrowRight,
@@ -22,14 +21,18 @@ import {
   ShoppingBag,
   Wine,
   Cherry,
-  Carrot,
-  GlassWater,
-  SprayCanIcon,
   Baby,
-  Heart,
-  Dumbbell,
-  PenTool,
   UserCircle,
+  User,
+  LogIn,
+  Store,
+  Phone,
+  LayoutGrid,
+  Percent,
+  Flame,
+  Gift,
+  Banknote,
+  PackageSearch,
 } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -38,7 +41,6 @@ import {
   HEADER_LOGO_SRC,
   headerCopy,
 } from "@/components/layout/header/header-copy";
-import { IconButton } from "@/components/layout/header/IconButton";
 import { CurrencySelector } from "@/components/layout/header/CurrencySelector";
 import { LanguageSelector } from "@/components/layout/header/LanguageSelector";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
@@ -53,14 +55,13 @@ import { buildLoginRedirectPath } from "@/lib/auth/client-auth-routing";
 
 // --- Framer Motion Configuration ---
 const dropdownVariants: Variants = {
-  hidden: { opacity: 0, y: 15, scale: 0.97 },
+  hidden: { opacity: 0, y: 8 },
   visible: {
     opacity: 1,
     y: 0,
-    scale: 1,
-    transition: { type: "spring", stiffness: 400, damping: 30 },
+    transition: { duration: 0.18, ease: "easeOut" },
   },
-  exit: { opacity: 0, y: 10, scale: 0.97, transition: { duration: 0.15 } },
+  exit: { opacity: 0, y: 6, transition: { duration: 0.12 } },
 };
 
 const sheetVariants: Variants = {
@@ -74,6 +75,35 @@ const sheetVariants: Variants = {
     transition: { type: "spring", damping: 30, stiffness: 300 },
   },
 };
+
+function getCategoryIcon(slug: string, size = 15) {
+  const icons: Record<string, ReactNode> = {
+    breakfast: <Croissant size={size} />,
+    grocery: <ShoppingBag size={size} />,
+    snacks: <Cookie size={size} />,
+    beverages: <Wine size={size} />,
+    fruits: <Cherry size={size} />,
+    "baby-care": <Baby size={size} />,
+  };
+  return icons[slug] ?? <ShoppingBag size={size} />;
+}
+
+function getFallbackCategories(locale: SupportedLocale) {
+  const labels: Record<string, Record<SupportedLocale, string>> = {
+    breakfast: { en: "Breakfast Items", ps: "د ناشتې توکي", "fa-AF": "اقلام صبحانه" },
+    grocery: { en: "Edible Grocery", ps: "خوراکي توکي", "fa-AF": "مواد خوراکی" },
+    snacks: { en: "Snack Bar", ps: "سنک بار", "fa-AF": "اسنک بار" },
+    beverages: { en: "Beverages", ps: "مشروبات", "fa-AF": "نوشیدنی‌ها" },
+    fruits: { en: "Fruits", ps: "مېوې", "fa-AF": "میوه‌ها" },
+  };
+
+  return Object.entries(labels).map(([slug, localeLabels]) => ({
+    id: slug,
+    slug,
+    href: `/category/${slug}`,
+    label: localeLabels[locale],
+  }));
+}
 
 function getCartSheetVariants(isRtl: boolean): Variants {
   if (!isRtl) return sheetVariants;
@@ -98,8 +128,6 @@ const localizeProductName = (
   return fallbackName;
 };
 
-type NavLinkSize = "mobile" | "tablet" | "desktop";
-
 function isNavLinkActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   if (href === "/products") {
@@ -108,46 +136,70 @@ function isNavLinkActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function getNavLinkClassName(pathname: string, href: string, size: NavLinkSize) {
-  const active = isNavLinkActive(pathname, href);
-  const padding =
-    size === "mobile" ? "px-2 min-[360px]:px-2.5" : size === "tablet" ? "px-3" : "px-4";
-  const text =
-    size === "mobile"
-      ? "text-[10px] min-[360px]:text-[11px]"
-      : size === "tablet"
-        ? "text-[13px]"
-        : "text-[13px] lg:text-[14px]";
-
-  const base = `inline-flex h-full min-h-12 sm:min-h-14 items-center ${padding} ${text} whitespace-nowrap shrink-0 transition-colors`;
-
-  if (active) {
-    return `${base} font-extrabold text-primary`;
-  }
-
-  return `${base} font-bold text-gray-900 hover:text-primary`;
+function NavDivider() {
+  return <span className="mx-0.5 hidden h-4 w-px shrink-0 bg-gray-300 md:block" aria-hidden />;
 }
 
-function HeaderNavLink({
+function SecondaryNavLink({
   href,
   pathname,
-  size,
+  label,
+  icon,
+  badge,
   className = "",
-  children,
 }: {
   href: string;
   pathname: string;
-  size: NavLinkSize;
+  label: string;
+  icon?: ReactNode;
+  badge?: string;
   className?: string;
-  children: ReactNode;
 }) {
+  const active = isNavLinkActive(pathname, href);
+
   return (
     <Link
       href={href}
-      aria-current={isNavLinkActive(pathname, href) ? "page" : undefined}
-      className={`${getNavLinkClassName(pathname, href, size)} ${className}`}
+      aria-current={active ? "page" : undefined}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-2 text-[13px] font-medium whitespace-nowrap transition-colors sm:px-3 ${
+        active
+          ? "font-semibold text-[#ec1b23]"
+          : "text-gray-600 hover:text-[#ec1b23]"
+      } ${className}`}
     >
-      {children}
+      {icon ? <span className="shrink-0 opacity-80">{icon}</span> : null}
+      {label}
+      {badge ? (
+        <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[9px] font-bold uppercase text-gray-900">
+          {badge}
+        </span>
+      ) : null}
+    </Link>
+  );
+}
+
+function SecondaryNavLinkMobile({
+  href,
+  pathname,
+  label,
+}: {
+  href: string;
+  pathname: string;
+  label: string;
+}) {
+  const active = isNavLinkActive(pathname, href);
+
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={`relative inline-flex px-2 py-2 text-[11px] font-medium whitespace-nowrap transition-colors after:absolute after:inset-x-1 after:bottom-0.5 after:h-[2px] after:rounded-full after:bg-[#ec1b23] after:transition-transform after:duration-200 ${
+        active
+          ? "font-semibold text-[#ec1b23] after:scale-x-100"
+          : "text-gray-600 after:scale-x-0 hover:text-gray-900 hover:after:scale-x-100"
+      }`}
+    >
+      {label}
     </Link>
   );
 }
@@ -180,7 +232,7 @@ export default function Header() {
     isVendorRegisterPage;
   const { isAuthenticated, user, logout } = useAuth();
   const { cart, itemCount, displayTotal, removeItem, updateQuantity, refreshCart } = useCart();
-  const { currency, formatPrice } = useCurrency();
+  const { currency, formatPrice, availableCurrencies } = useCurrency();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -191,6 +243,23 @@ export default function Header() {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
+
+  const categoryItems = useMemo(() => {
+    if (catalogCategories.length > 0) {
+      return catalogCategories.map((category) => ({
+        id: category.id,
+        slug: category.slug,
+        href: `/category/${category.slug}`,
+        label: resolveCategoryLabel(
+          category.slug,
+          category.name,
+          safeLocale,
+          category.translations,
+        ),
+      }));
+    }
+    return getFallbackCategories(safeLocale);
+  }, [catalogCategories, safeLocale]);
 
   const cartSheetVariants = useMemo(() => getCartSheetVariants(isRtl), [isRtl]);
 
@@ -211,6 +280,29 @@ export default function Header() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const categoriesRef = useRef<HTMLDivElement>(null);
+  const headerWrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = headerWrapRef.current;
+    if (!el) return;
+
+    const syncHeaderHeight = () => {
+      document.documentElement.style.setProperty(
+        "--header-height",
+        `${el.offsetHeight}px`,
+      );
+    };
+
+    syncHeaderHeight();
+    const observer = new ResizeObserver(syncHeaderHeight);
+    observer.observe(el);
+    window.addEventListener("resize", syncHeaderHeight);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", syncHeaderHeight);
+    };
+  }, [hideSecondaryNav]);
 
   useEffect(() => {
     let mounted = true;
@@ -321,454 +413,446 @@ export default function Header() {
 
   return (
     <>
-      {/* TOP BAR + category nav — pinned together while the page scrolls */}
-      <div className="sticky top-0 z-[9998] shrink-0">
-      <header
-        dir={isRtl ? "rtl" : "ltr"}
-        className={`relative z-[9999] overflow-x-clip overflow-y-visible border-b border-white/15 shadow-[0_4px_20px_rgba(15,52,96,0.35)] ${HEADER_BAR_CLASS}`}
-      >
-        <div className="mx-auto w-full min-w-0 max-w-7xl py-2 sm:py-3 ps-[max(0.375rem,env(safe-area-inset-left,0px))] pe-[max(0.375rem,env(safe-area-inset-right,0px))] sm:ps-[max(1rem,env(safe-area-inset-left,0px))] sm:pe-[max(1rem,env(safe-area-inset-right,0px))]">
-          <div className="flex min-w-0 flex-nowrap items-center justify-between gap-2 sm:gap-3 md:max-lg:gap-2 lg:gap-4">
-            {/* LOGO */}
-            <Link href="/" className="flex-shrink-0 order-1">
-              <Image
-                src={HEADER_LOGO_SRC}
-                alt="Mandawee"
-                width={220}
-                height={60}
-                className="h-8 w-auto sm:h-9 md:h-10 lg:h-11 transition-opacity hover:opacity-90"
-                priority
-              />
-            </Link>
-
-            {/* SEARCH - Desktop & Tablet */}
-            <form
-              onSubmit={handleSearch}
-              className={`group hidden md:flex order-2 h-11 min-w-0 max-w-3xl flex-1 items-center gap-2 rounded-full border border-gray-200 bg-white p-1 shadow-sm transition-all duration-300 hover:bg-gray-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 ${isRtl ? "pr-3 pl-1" : "pl-3 pr-1"}`}
-            >
-              <Search
-                className="shrink-0 text-gray-400 transition-colors group-focus-within:text-primary"
-                size={18}
-              />
-              <input
-                value={searchQuery}
-                onChange={(e) => handleSearchInputChange(e.target.value)}
-                onFocus={() => setIsSearchFocused(true)}
-                onBlur={() => setIsSearchFocused(false)}
-                placeholder={
-                  isSearchFocused || searchQuery
-                    ? t("searchPlaceholder")
-                    : placeholderText
-                }
-                className="min-w-0 flex-1 bg-transparent text-[15px] font-medium outline-none placeholder:text-gray-400"
-              />
-              <button
-                type="submit"
-                className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-xs font-bold text-white shadow-sm transition-all hover:brightness-110 active:scale-[0.98] lg:px-5 lg:text-sm"
-              >
-                <span>{copy.searchButton}</span>
-                <Search className="h-4 w-4 text-white" strokeWidth={2.5} />
-              </button>
-            </form>
-
-            {/* RIGHT ICONS - Integrated Professional Row */}
-            <div className="flex shrink-0 items-center gap-1 sm:gap-2 md:max-lg:gap-1.5 lg:gap-3 order-3">
-              {/* Mobile Search Toggle */}
-              <button
-                onClick={() => setShowMobileSearch(!showMobileSearch)}
-                className="md:hidden h-9 w-9 shrink-0 flex items-center justify-center rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer"
-              >
-                <Search size={19} />
-              </button>
-
-              {/* Cart - prioritized before locale selectors on mobile */}
-              <IconButton
-                onClick={() => setIsCartOpen(true)}
-                badge={itemCount > 0 ? itemCount.toString() : undefined}
-                aria-label={t("cartLabel")}
-                accent="primary"
-                surface="dark"
-                size="sm"
-              >
-                <ShoppingBasket size={18} />
-              </IconButton>
-
-              {/* Language + currency selectors */}
-              <div className="hidden min-[380px]:flex shrink-0 items-center gap-1 sm:gap-1.5">
-                {languageOptions.length > 1 ? (
-                  <LanguageSelector
-                    locale={locale}
-                    label={tAuth("languages.select")}
-                    isRtl={isRtl}
-                    variant="dark"
-                    languages={languageOptions}
-                  />
-                ) : null}
-                <CurrencySelector isRtl={isRtl} variant="dark" />
+      <div ref={headerWrapRef} className="sticky top-0 z-[9998] shrink-0">
+        {/* Utility bar */}
+        {!hideSecondaryNav ? (
+          <div
+            dir={isRtl ? "rtl" : "ltr"}
+            className="hidden border-b border-gray-200 bg-[#f7f8fa] sm:block"
+          >
+            <div className="mx-auto flex h-9 w-full max-w-7xl items-center justify-between px-4 text-[11px] text-gray-600 lg:px-6">
+              <div className="flex items-center gap-2 font-medium">
+                <span className="text-gray-800">{copy.welcome}</span>
+                <span className="hidden text-gray-300 lg:inline">|</span>
+                <a
+                  href="tel:+93799899856"
+                  className="hidden items-center gap-1.5 text-gray-600 transition-colors hover:text-primary lg:inline-flex"
+                >
+                  <Phone size={12} />
+                  <span>(+93) 799 899856</span>
+                </a>
               </div>
+              <div className="flex items-center gap-1">
+                {languageOptions.length > 1 || availableCurrencies.length > 1 ? (
+                  <div className="flex items-center gap-1">
+                    {languageOptions.length > 1 ? (
+                      <LanguageSelector
+                        locale={locale}
+                        label={tAuth("languages.select")}
+                        isRtl={isRtl}
+                        variant="default"
+                        languages={languageOptions}
+                      />
+                    ) : null}
+                    <CurrencySelector isRtl={isRtl} variant="default" />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        ) : null}
 
-              {/* Login / Account */}
-              {isAuthenticated ? (
-                <div className="relative" ref={accountMenuRef}>
+        {/* Main header */}
+        <header
+          dir={isRtl ? "rtl" : "ltr"}
+          className={`relative z-[9999] overflow-x-clip overflow-y-visible border-b border-black/10 shadow-[0_2px_12px_rgba(0,0,0,0.15)] ${HEADER_BAR_CLASS}`}
+        >
+          <div className="mx-auto w-full min-w-0 max-w-7xl px-3 py-2.5 sm:px-4 sm:py-3 lg:px-6">
+            <div className="flex min-w-0 flex-nowrap items-center gap-2 sm:gap-3 lg:gap-4">
+              <Link href="/" className="order-1 shrink-0">
+                <Image
+                  src={HEADER_LOGO_SRC}
+                  alt="Mandawee"
+                  width={220}
+                  height={60}
+                  className="h-8 w-auto sm:h-9 md:h-10 transition-opacity hover:opacity-90"
+                  priority
+                />
+              </Link>
+
+              <form
+                onSubmit={handleSearch}
+                className={`group order-2 hidden h-11 min-w-0 max-w-3xl flex-1 items-center rounded-lg border border-gray-200 bg-[#f0f0f1] transition-all duration-200 focus-within:border-primary/40 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/10 md:flex ${isRtl ? "pr-4 pl-1.5" : "pl-4 pr-1.5"}`}
+              >
+                <input
+                  value={searchQuery}
+                  onChange={(e) => handleSearchInputChange(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setIsSearchFocused(false)}
+                  placeholder={
+                    isSearchFocused || searchQuery
+                      ? t("searchPlaceholder")
+                      : placeholderText
+                  }
+                  className="min-w-0 flex-1 bg-transparent text-[14px] font-medium outline-none placeholder:text-gray-400"
+                />
+                <button
+                  type="submit"
+                  className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-white hover:text-primary"
+                  aria-label={copy.searchButton}
+                >
+                  <Search size={18} />
+                </button>
+              </form>
+
+              <div className="order-3 flex shrink-0 items-center gap-1 sm:gap-2 lg:gap-3">
+                <button
+                  onClick={() => setShowMobileSearch(!showMobileSearch)}
+                  className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20 md:hidden"
+                  aria-label={copy.searchButton}
+                >
+                  <Search size={19} />
+                </button>
+
+                <div className="hidden min-[380px]:flex sm:hidden items-center gap-1">
+                  {languageOptions.length > 1 ? (
+                    <LanguageSelector
+                      locale={locale}
+                      label={tAuth("languages.select")}
+                      isRtl={isRtl}
+                      variant="dark"
+                      languages={languageOptions}
+                    />
+                  ) : null}
+                  <CurrencySelector isRtl={isRtl} variant="dark" />
+                </div>
+
+                <div className="hidden h-8 w-px bg-white/25 sm:block" />
+
+                {isAuthenticated ? (
+                  <div className="relative" ref={accountMenuRef}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAccountMenu((v) => !v)}
+                      className={`group flex min-w-0 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-white/10 sm:px-2 ${showAccountMenu ? "bg-white/10" : ""}`}
+                      aria-label={tAuth("accountMenu.label")}
+                      aria-expanded={showAccountMenu}
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition-colors group-hover:bg-white/20">
+                        <User size={18} />
+                      </div>
+                      <div className="hidden min-w-0 text-start lg:block">
+                        <p className="truncate text-xs font-bold text-white">
+                          {user?.fullName?.split(" ")[0] ?? copy.account}
+                        </p>
+                        <p className="truncate text-[11px] text-white/75">
+                          {copy.account}
+                        </p>
+                      </div>
+                    </button>
+                    {showAccountMenu ? (
+                      <div className="absolute end-0 top-full z-[10001] mt-2 w-52 rounded-xl border border-neutral-200 bg-white py-1 shadow-xl">
+                        {user?.role === "ADMIN" ? (
+                          <LocaleLink
+                            href="/admin/dashboard"
+                            onClick={() => setShowAccountMenu(false)}
+                            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
+                          >
+                            <Store size={16} />
+                            {tAuth("accountMenu.adminDashboard")}
+                          </LocaleLink>
+                        ) : null}
+                        {user?.role === "VENDOR" ? (
+                          <LocaleLink
+                            href="/vendor/dashboard"
+                            onClick={() => setShowAccountMenu(false)}
+                            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
+                          >
+                            <Store size={16} />
+                            {tAuth("accountMenu.vendorDashboard")}
+                          </LocaleLink>
+                        ) : null}
+                        {user?.role === "CUSTOMER" ? (
+                          <LocaleLink
+                            href="/account"
+                            onClick={() => setShowAccountMenu(false)}
+                            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
+                          >
+                            <UserCircle size={16} />
+                            {tAuth("accountMenu.myAccount")}
+                          </LocaleLink>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            logout();
+                            setShowAccountMenu(false);
+                          }}
+                          className="flex w-full items-center px-4 py-2.5 text-sm text-red-600 hover:bg-neutral-50"
+                        >
+                          {tAuth("accountMenu.signOut")}
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
                   <button
                     type="button"
-                    onClick={() => setShowAccountMenu((v) => !v)}
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 text-white transition-colors hover:bg-white/20 md:w-auto md:px-3 ${
-                      showAccountMenu ? "bg-white/20" : ""
-                    }`}
-                    aria-label={tAuth("accountMenu.label")}
-                    aria-expanded={showAccountMenu}
+                    onClick={handleLogin}
+                    className="group hidden min-w-0 cursor-pointer items-center gap-2 rounded-lg border border-white/90 bg-white px-3 py-2 shadow-sm transition-all hover:bg-white/95 sm:inline-flex"
+                    aria-label={copy.loginRegister}
                   >
-                    <UserCircle size={18} className="shrink-0" />
-                    <span className="hidden max-w-[7rem] truncate text-xs font-semibold md:inline">
-                      {user?.fullName?.split(" ")[0] ?? tAuth("accountMenu.account")}
+                    <LogIn size={15} className="shrink-0 text-[#ec1b23]" />
+                    <span className="truncate text-xs font-bold text-[#ec1b23]">
+                      {copy.loginRegister}
                     </span>
                   </button>
-                  {showAccountMenu && (
-                    <div className="absolute end-0 top-full z-[10001] mt-2 w-48 rounded-xl border border-neutral-200 bg-white py-1 shadow-xl">
-                      {user?.role === "ADMIN" && (
-                        <LocaleLink
-                          href="/admin/dashboard"
-                          onClick={() => setShowAccountMenu(false)}
-                          className="flex w-full items-center px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
-                        >
-                          {tAuth("accountMenu.adminDashboard")}
-                        </LocaleLink>
-                      )}
-                      {user?.role === "VENDOR" && (
-                        <LocaleLink
-                          href="/vendor/dashboard"
-                          onClick={() => setShowAccountMenu(false)}
-                          className="flex w-full items-center px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
-                        >
-                          {tAuth("accountMenu.vendorDashboard")}
-                        </LocaleLink>
-                      )}
-                      {user?.role === "CUSTOMER" && (
-                        <LocaleLink
-                          href="/account"
-                          onClick={() => setShowAccountMenu(false)}
-                          className="flex w-full items-center px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
-                        >
-                          {tAuth("accountMenu.myAccount")}
-                        </LocaleLink>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          logout();
-                          setShowAccountMenu(false);
-                        }}
-                        className="flex w-full items-center px-4 py-2.5 text-sm text-red-600 hover:bg-neutral-50"
-                      >
-                        {tAuth("accountMenu.signOut")}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
+                )}
+
+                {!isAuthenticated ? (
+                  <button
+                    type="button"
+                    onClick={handleLogin}
+                    className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg text-white transition-colors hover:bg-white/10 sm:hidden"
+                    aria-label={copy.loginRegister}
+                  >
+                    <User size={18} />
+                  </button>
+                ) : null}
+
+                <div className="hidden h-8 w-px bg-white/25 sm:block" />
+
                 <button
                   type="button"
-                  onClick={handleLogin}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition-colors hover:bg-white/20 md:w-auto md:px-3 md:text-xs md:font-semibold lg:px-4 lg:text-sm"
-                  aria-label={copy.login}
+                  onClick={() => setIsCartOpen(true)}
+                  className="group relative flex min-w-0 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-white/10 sm:px-2"
+                  aria-label={t("cartLabel")}
                 >
-                  <UserCircle size={18} className="md:hidden" />
-                  <span className="hidden whitespace-nowrap md:inline">{copy.login}</span>
+                  <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition-colors group-hover:bg-white/20">
+                    <ShoppingCart size={18} />
+                    {itemCount > 0 ? (
+                      <span className="absolute -end-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-bold text-[#ec1b23]">
+                        {itemCount}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="hidden min-w-0 text-start lg:block">
+                    <p className="truncate text-xs font-bold text-white">
+                      {copy.cart}
+                    </p>
+                    <p className="truncate text-[11px] text-white/75">
+                      {itemCount > 0
+                        ? `${itemCount} ${copy.itemsReady}`
+                        : copy.startShopping}
+                    </p>
+                  </div>
                 </button>
-              )}
-
-              {/* Become a Vendor Button - Fourth */}
-              <LocaleLink
-                href="/vendor/register"
-                className="hidden md:flex h-9 shrink-0 px-3 whitespace-nowrap lg:px-4 rounded-full text-white text-xs lg:text-sm font-semibold items-center justify-center transition-all shadow-sm bg-primary hover:brightness-110"
-              >
-                {copy.becomeVendor}
-              </LocaleLink>
+              </div>
             </div>
-          </div>
-
-          {/* Mobile Search Bar Expansion */}
-          <AnimatePresence>
-            {showMobileSearch && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="md:hidden mt-3 overflow-hidden pb-1"
-              >
-                <form
-                  onSubmit={handleSearch}
-                  className="relative flex h-11 items-center gap-2 rounded-full border border-gray-200 bg-white p-1 shadow-sm"
-                >
-                  <Search className="ms-2 shrink-0 text-gray-400" size={18} />
-                  <input
-                    value={searchQuery}
-                    onChange={(e) => handleSearchInputChange(e.target.value)}
-                    onFocus={() => setIsSearchFocused(true)}
-                    onBlur={() => setIsSearchFocused(false)}
-                    placeholder={
-                      isSearchFocused || searchQuery
-                        ? copy.mobileSearchPlaceholder
-                        : placeholderText
-                    }
-                    className="min-w-0 flex-1 bg-transparent text-[15px] font-medium outline-none placeholder:text-gray-400"
-                  />
-                  <button
-                    type="submit"
-                    className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-xs font-bold text-white shadow-sm transition-all hover:brightness-110 active:scale-[0.98]"
-                  >
-                    <span>{copy.searchButton}</span>
-                    <Search className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
-                  </button>
-                </form>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </header>
-
-      {hideSecondaryNav ? null : (
-      <nav
-        dir={isRtl ? "rtl" : "ltr"}
-        className="relative z-[9997] overflow-x-clip border-b border-gray-200 bg-white text-gray-900 shadow-[0_2px_8px_rgba(15,23,42,0.06)]"
-      >
-        <div className="mx-auto flex h-12 w-full min-w-0 max-w-7xl items-stretch sm:h-14 ps-[max(0.375rem,env(safe-area-inset-left,0px))] pe-[max(0.375rem,env(safe-area-inset-right,0px))] sm:ps-[max(0.75rem,env(safe-area-inset-left,0px))] sm:pe-[max(0.75rem,env(safe-area-inset-right,0px))] md:ps-[max(1rem,env(safe-area-inset-left,0px))] md:pe-[max(1rem,env(safe-area-inset-right,0px))]">
-          <div className="relative flex-shrink-0" ref={categoriesRef}>
-            <button
-              onClick={() => setShowCategoriesDropdown(!showCategoriesDropdown)}
-              className={`flex items-center gap-1.5 sm:gap-2.5 font-bold h-12 sm:h-14 px-2 sm:px-5 lg:px-6 transition-all duration-300 cursor-pointer text-white border-gray-200 ${isRtl ? "border-l" : "border-r"} ${
-                showCategoriesDropdown
-                  ? "bg-primary/90 text-white shadow-inner"
-                  : "bg-primary hover:brightness-110"
-              }`}
-            >
-              <Menu size={18} />
-              <span className="hidden leading-none sm:inline mt-0.5 tracking-tight">
-                {copy.exploreCategories}
-              </span>
-              <ChevronDown
-                size={14}
-                className={`hidden sm:block transition-transform duration-300 opacity-90 text-white ${showCategoriesDropdown ? "rotate-180" : ""}`}
-              />
-            </button>
 
             <AnimatePresence>
-              {showCategoriesDropdown && (
+              {showMobileSearch ? (
                 <motion.div
-                  variants={dropdownVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  className={`absolute top-full w-[min(92vw,380px)] bg-white text-gray-800 rounded-b-[2rem] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] z-[9999] border-x border-b border-gray-100 overflow-hidden max-h-[70vh] overflow-y-auto ${isRtl ? "right-0" : "left-0"}`}
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden pb-1 pt-2 md:hidden"
                 >
-                  <div className="p-4 grid gap-1">
-                    <p className="px-4 py-2 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">
-                      {copy.storeDepartments}
-                    </p>
-
-                    {catalogCategories.length > 0 ? (
-                      <>
-                        {catalogCategories.map((category, idx) => (
-                          <CategoryItem
-                            key={category.id}
-                            href={`/category/${category.slug}`}
-                            icon={<ShoppingBag size={18} />}
-                            label={resolveCategoryLabel(
-                              category.slug,
-                              category.name,
-                              safeLocale,
-                              category.translations
-                            )}
-                            onClick={closeAll}
-                            showSeparator={idx > 0 && idx % 6 === 0}
-                          />
-                        ))}
-                      </>
-                    ) : (
-                      <>
-                        {/* Fallback categories */}
-                        <CategoryItem
-                          href="/category/breakfast"
-                          icon={<Croissant size={18} />}
-                          label={
-                            safeLocale === "en"
-                              ? "Breakfast Items"
-                              : safeLocale === "ps"
-                                ? "د ناشتې توکي"
-                                : "اقلام صبحانه"
-                          }
-                          onClick={closeAll}
-                        />
-                        <CategoryItem
-                          href="/category/grocery"
-                          icon={<ShoppingBag size={18} />}
-                          label={
-                            safeLocale === "en"
-                              ? "Edible Grocery"
-                              : safeLocale === "ps"
-                                ? "خوراکي توکي"
-                                : "مواد خوراکی"
-                          }
-                          onClick={closeAll}
-                        />
-                        <CategoryItem
-                          href="/category/snacks"
-                          icon={<Cookie size={18} />}
-                          label={
-                            safeLocale === "en"
-                              ? "Snack Bar"
-                              : safeLocale === "ps"
-                                ? "سنک بار"
-                                : "اسنک بار"
-                          }
-                          onClick={closeAll}
-                        />
-                        <CategoryItem
-                          href="/category/beverages"
-                          icon={<Wine size={18} />}
-                          label={
-                            safeLocale === "en"
-                              ? "Beverages"
-                              : safeLocale === "ps"
-                                ? "مشروبات"
-                                : "نوشیدنی‌ها"
-                          }
-                          onClick={closeAll}
-                        />
-                        <CategoryItem
-                          href="/category/fruits"
-                          icon={<Cherry size={18} />}
-                          label={
-                            safeLocale === "en"
-                              ? "Fruits"
-                              : safeLocale === "ps"
-                                ? "مېوې"
-                                : "میوه‌ها"
-                          }
-                          onClick={closeAll}
-                        />
-                      </>
-                    )}
-
-                    <div className="h-px bg-gray-100 my-2 mx-4" />
-                    <Link
-                      href="/products"
-                      onClick={closeAll}
-                      className="mx-2 px-5 py-4 text-sm font-black text-primary hover:bg-primary/5 rounded-2xl flex items-center justify-between group transition-all"
+                  <form
+                    onSubmit={handleSearch}
+                    className="relative flex h-11 items-center rounded-lg border border-gray-200 bg-[#f0f0f1] px-3 focus-within:border-primary/40 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/10"
+                  >
+                    <Search className="shrink-0 text-gray-400" size={18} />
+                    <input
+                      value={searchQuery}
+                      onChange={(e) => handleSearchInputChange(e.target.value)}
+                      onFocus={() => setIsSearchFocused(true)}
+                      onBlur={() => setIsSearchFocused(false)}
+                      placeholder={
+                        isSearchFocused || searchQuery
+                          ? copy.mobileSearchPlaceholder
+                          : placeholderText
+                      }
+                      className="min-w-0 flex-1 bg-transparent px-2 text-[15px] font-medium outline-none placeholder:text-gray-400"
+                    />
+                    <button
+                      type="submit"
+                      className="inline-flex h-8 shrink-0 cursor-pointer items-center justify-center rounded-md px-2 text-xs font-bold text-primary"
                     >
-                      {copy.discoverEverything}{" "}
-                      <ArrowRight
-                        size={18}
-                        className="group-hover:translate-x-1.5 transition-transform"
-                      />
-                    </Link>
-                  </div>
+                      {copy.searchButton}
+                    </button>
+                  </form>
                 </motion.div>
-              )}
+              ) : null}
             </AnimatePresence>
           </div>
+        </header>
 
-          {/* NAV LINKS */}
-          {/* Desktop - All Links */}
-          <div className="hidden lg:flex flex-1 items-stretch gap-0 px-2 text-gray-900 lg:px-4">
-            <HeaderNavLink href="/" pathname={pathname} size="desktop">
-              {copy.home}
-            </HeaderNavLink>
-            <HeaderNavLink href="/products" pathname={pathname} size="desktop">
-              {copy.products}
-            </HeaderNavLink>
-            <HeaderNavLink href="/vendors" pathname={pathname} size="desktop">
-              {copy.vendors}
-            </HeaderNavLink>
-            <HeaderNavLink
-              href="/gifts"
-              pathname={pathname}
-              size="desktop"
-              className="relative gap-2"
-            >
-              {copy.giftSets}
-              <span
-                className="text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter shadow-sm text-gray-900"
-                style={{ backgroundColor: "var(--yellow)" }}
+        {hideSecondaryNav ? null : (
+          <nav
+            ref={categoriesRef}
+            dir={isRtl ? "rtl" : "ltr"}
+            className="relative z-[9997] border-b border-gray-200 bg-white"
+          >
+            <div className="mx-auto flex h-11 w-full max-w-7xl items-center gap-2 px-3 sm:px-4 lg:px-6">
+              <LocaleLink
+                href="/orders"
+                className="hidden shrink-0 items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-600 transition-colors hover:bg-orange-100 lg:inline-flex"
               >
-                {copy.new}
-              </span>
-            </HeaderNavLink>
-            <HeaderNavLink href="/category/baby-care" pathname={pathname} size="desktop">
-              {copy.babyCare}
-            </HeaderNavLink>
-            <HeaderNavLink href="/hawala" pathname={pathname} size="desktop">
-              {copy.hawala}
-            </HeaderNavLink>
-            <HeaderNavLink href="/contact" pathname={pathname} size="desktop">
-              {copy.support}
-            </HeaderNavLink>
-          </div>
+                <PackageSearch size={14} />
+                <span>{copy.trackOrder}</span>
+              </LocaleLink>
 
-          {/* Tablet - Limited Links */}
-          <div className="hidden md:flex lg:hidden min-w-0 flex-1 items-stretch overflow-x-auto no-scrollbar px-1">
-            <div className="flex min-w-max items-stretch gap-0 whitespace-nowrap text-gray-900">
-              <HeaderNavLink href="/" pathname={pathname} size="tablet">
-                {copy.home}
-              </HeaderNavLink>
-              <HeaderNavLink href="/products" pathname={pathname} size="tablet">
-                {copy.products}
-              </HeaderNavLink>
-              <HeaderNavLink href="/vendors" pathname={pathname} size="tablet">
-                {copy.vendors}
-              </HeaderNavLink>
-              <HeaderNavLink
-                href="/gifts"
-                pathname={pathname}
-                size="tablet"
-                className="relative gap-1"
-              >
-                {copy.gifts}
-                <span
-                  className="text-gray-900 text-[8px] px-1 py-0.5 rounded-full font-black uppercase tracking-tighter"
-                  style={{ backgroundColor: "var(--yellow)" }}
+              <div className="hidden min-w-0 flex-1 items-center md:flex">
+                <button
+                  type="button"
+                  onClick={() => setShowCategoriesDropdown(!showCategoriesDropdown)}
+                  className={`inline-flex shrink-0 cursor-pointer items-center gap-2 px-2 py-2 text-sm font-bold transition-colors sm:px-3 ${
+                    showCategoriesDropdown
+                      ? "text-[#ec1b23]"
+                      : "text-gray-800 hover:text-[#ec1b23]"
+                  }`}
                 >
-                  {copy.new}
-                </span>
-              </HeaderNavLink>
-              <MobileNavMenu closeAll={closeAll} isRtl={isRtl} surface="light" />
-            </div>
-          </div>
+                  <LayoutGrid size={17} />
+                  <span>{copy.categories}</span>
+                </button>
 
-          {/* Mobile - Limited Links + More Button */}
-          <div className="flex md:hidden flex-1 min-w-0 items-stretch overflow-visible px-0.5">
-            <div className="flex w-full min-w-0 items-stretch justify-between gap-0 pr-1 whitespace-nowrap text-gray-900">
-              <HeaderNavLink href="/" pathname={pathname} size="mobile">
-                {copy.home}
-              </HeaderNavLink>
-              <HeaderNavLink href="/products" pathname={pathname} size="mobile">
-                {copy.products}
-              </HeaderNavLink>
-              <HeaderNavLink href="/vendors" pathname={pathname} size="mobile">
-                {copy.vendors}
-              </HeaderNavLink>
-              <HeaderNavLink
-                href="/gifts"
-                pathname={pathname}
-                size="mobile"
-                className="relative gap-1"
-              >
-                {copy.gifts}
-                <span
-                  className="hidden min-[360px]:inline-flex text-gray-900 text-[8px] px-1 py-0.5 rounded-full font-black uppercase tracking-tighter"
-                  style={{ backgroundColor: "var(--yellow)" }}
+                <NavDivider />
+
+                <SecondaryNavLink
+                  href="/deals"
+                  pathname={pathname}
+                  label={copy.hot}
+                  icon={<Percent size={15} />}
+                />
+                <NavDivider />
+                <SecondaryNavLink
+                  href="/products"
+                  pathname={pathname}
+                  label={copy.products}
+                  icon={<ShoppingBag size={15} />}
+                />
+                <NavDivider />
+                <SecondaryNavLink
+                  href="/vendors"
+                  pathname={pathname}
+                  label={copy.vendors}
+                  icon={<Store size={15} />}
+                />
+                <NavDivider />
+                <SecondaryNavLink
+                  href="/gifts"
+                  pathname={pathname}
+                  label={copy.gifts}
+                  icon={<Gift size={15} />}
+                  badge={copy.new}
+                />
+                <NavDivider />
+                <SecondaryNavLink
+                  href="/category/baby-care"
+                  pathname={pathname}
+                  label={copy.babyCare}
+                  icon={<Baby size={15} />}
+                  className="hidden lg:inline-flex"
+                />
+                <NavDivider />
+                <SecondaryNavLink
+                  href="/hawala"
+                  pathname={pathname}
+                  label={copy.hawalaShort}
+                  icon={<Banknote size={15} />}
+                  className="hidden xl:inline-flex"
+                />
+
+                <div className="ms-auto hidden items-center xl:flex">
+                  <NavDivider />
+                  <LocaleLink
+                    href="/vendor/register"
+                    className="inline-flex items-center px-3 py-2 text-[13px] font-semibold text-[#ec1b23] transition-colors hover:text-[#c4161d]"
+                  >
+                    {copy.sellOnPlatform}
+                  </LocaleLink>
+                </div>
+
+                <div className="ms-auto xl:hidden">
+                  <MobileNavMenu closeAll={closeAll} isRtl={isRtl} surface="light" />
+                </div>
+              </div>
+
+              <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto px-1 md:hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowCategoriesDropdown(!showCategoriesDropdown)}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#ec1b23] px-2.5 py-1.5 text-[11px] font-bold text-white"
                 >
-                  {copy.new}
-                </span>
-              </HeaderNavLink>
-              <MobileNavMenu closeAll={closeAll} isRtl={isRtl} surface="light" />
+                  <LayoutGrid size={14} />
+                  {copy.categories}
+                </button>
+                <SecondaryNavLinkMobile href="/deals" pathname={pathname} label={copy.hot} />
+                <SecondaryNavLinkMobile href="/products" pathname={pathname} label={copy.products} />
+                <SecondaryNavLinkMobile href="/vendors" pathname={pathname} label={copy.vendors} />
+                <MobileNavMenu closeAll={closeAll} isRtl={isRtl} surface="light" />
+              </div>
             </div>
-          </div>
 
-          </div>
-        </nav>
-      )}
+            <AnimatePresence>
+              {showCategoriesDropdown ? (
+                <>
+                  <motion.button
+                    type="button"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    aria-label="Close categories"
+                    onClick={closeAll}
+                    className="fixed inset-0 z-[9994] cursor-default bg-black/40"
+                  />
+                  <motion.div
+                    variants={dropdownVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="absolute inset-x-0 top-full z-[9999] border-t border-gray-200 bg-white shadow-2xl"
+                  >
+                    <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">
+                      <div className="mb-4 flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                            {copy.storeDepartments}
+                          </p>
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {copy.exploreCategories}
+                          </h3>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={closeAll}
+                          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200"
+                          aria-label="Close"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                        {categoryItems.map((category) => (
+                          <CategoryTile
+                            key={category.id}
+                            href={category.href}
+                            slug={category.slug}
+                            label={category.label}
+                            onClick={closeAll}
+                          />
+                        ))}
+                      </div>
+
+                      <div className="mt-5 flex justify-center border-t border-gray-100 pt-4">
+                        <Link
+                          href="/products"
+                          onClick={closeAll}
+                          className="inline-flex items-center gap-2 rounded-lg bg-[#ec1b23] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#d41920]"
+                        >
+                          {copy.discoverEverything}
+                          <ArrowRight size={16} />
+                        </Link>
+                      </div>
+                    </div>
+                  </motion.div>
+                </>
+              ) : null}
+            </AnimatePresence>
+          </nav>
+        )}
       </div>
 
       {/* ================= CART SHEET (MODERN SIDEBAR) ================= */}
@@ -998,39 +1082,30 @@ export default function Header() {
 
 /* ================= COMPONENT HELPERS ================= */
 
-function CategoryItem({
+function CategoryTile({
   href,
-  icon,
+  slug,
   label,
   onClick,
-  showSeparator = false,
 }: {
   href: string;
-  icon: ReactNode;
+  slug: string;
   label: string;
   onClick: () => void;
-  showSeparator?: boolean;
 }) {
   return (
-    <>
-      {showSeparator ? <div className="h-px bg-gray-100 my-2 mx-4" /> : null}
-      <Link
-        href={href}
-        onClick={onClick}
-        className="flex items-center gap-4 px-4 py-4 rounded-[1.25rem] hover:bg-primary/5 group transition-all duration-300"
-      >
-        <div className="w-11 h-11 flex items-center justify-center bg-gray-50 rounded-2xl group-hover:bg-white shadow-sm border border-gray-100 group-hover:border-primary/30 transition-all text-gray-400 group-hover:text-primary group-hover:scale-110 group-hover:rotate-3 shadow-inner">
-          {icon}
-        </div>
-        <span className="font-bold text-gray-700 group-hover:text-gray-950 transition-colors text-[15px] tracking-tight">
-          {label}
-        </span>
-        <ArrowRight
-          size={16}
-          className="ml-auto opacity-0 group-hover:opacity-100 transition-all text-primary translate-x-[-10px] group-hover:translate-x-0"
-        />
-      </Link>
-    </>
+    <Link
+      href={href}
+      onClick={onClick}
+      className="group flex flex-col items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50 p-4 text-center transition-all hover:border-[#ec1b23]/20 hover:bg-white hover:shadow-md"
+    >
+      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#ec1b23] shadow-sm ring-1 ring-gray-100 transition-transform group-hover:scale-105">
+        {getCategoryIcon(slug, 20)}
+      </span>
+      <span className="line-clamp-2 text-xs font-medium leading-snug text-gray-700 group-hover:text-gray-900">
+        {label}
+      </span>
+    </Link>
   );
 }
 

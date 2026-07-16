@@ -1,6 +1,8 @@
 import { serializePublicCategoryDetail } from "@/lib/categories/public-category";
+import { parseCategoryImageUrl } from "@/lib/localization/category-content";
 import {
   listPublicCouponsForProduct,
+  listPublicCouponsForProducts,
   listPublicStorefrontOffers,
 } from "@/lib/checkout/list-public-vendor-offers";
 import { isMongoObjectId } from "@/lib/db/object-id";
@@ -18,8 +20,17 @@ export class CatalogQueryService {
     private readonly vendorProfileRepository = new VendorProfileRepository()
   ) {}
 
-  listCategories() {
-    return this.categoryRepository.listActive();
+  async listCategories() {
+    const categories = await this.categoryRepository.listActive();
+
+    return categories.map((category) => ({
+      ...category,
+      image: parseCategoryImageUrl(category.translations) ?? undefined,
+      children: category.children.map((child) => ({
+        ...child,
+        image: parseCategoryImageUrl(child.translations) ?? undefined,
+      })),
+    }));
   }
 
   async getCategoryBySlug(slug: string) {
@@ -59,6 +70,20 @@ export class CatalogQueryService {
       categoryIds,
       vendorStoreSlug: filters.vendor,
       search: filters.search,
+    }).then(async (products) => {
+      if (products.length === 0) return [];
+
+      const couponMap = await listPublicCouponsForProducts(
+        products.map((product) => ({
+          productId: product.id,
+          vendorProfileId: product.vendorProfileId,
+        }))
+      );
+
+      return products.map((product) => ({
+        ...product,
+        availableCoupons: couponMap.get(product.id) ?? [],
+      }));
     });
   }
 
@@ -120,11 +145,21 @@ export class CatalogQueryService {
       vendorStoreSlug: storeSlug,
     });
 
+    const couponMap = await listPublicCouponsForProducts(
+      products.map((product) => ({
+        productId: product.id,
+        vendorProfileId: product.vendorProfileId,
+      }))
+    );
+
     const offers = await listPublicStorefrontOffers(storeSlug);
 
     return {
       vendor,
-      products,
+      products: products.map((product) => ({
+        ...product,
+        availableCoupons: couponMap.get(product.id) ?? [],
+      })),
       promoBanners: offers?.banners ?? [],
       publicCoupons: offers?.coupons ?? [],
     };

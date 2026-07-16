@@ -1,12 +1,11 @@
 import { prisma } from "@/lib/db/prisma";
-import type { CategoryTranslations } from "@/lib/localization/category-content";
 import { Prisma } from "@prisma/client";
 
 export class CategoryRepository {
   create(input: {
     name: string;
     slug: string;
-    translations?: CategoryTranslations;
+    translations?: unknown;
     parentId?: string;
     isActive?: boolean;
     sortOrder?: number;
@@ -29,7 +28,7 @@ export class CategoryRepository {
     id: string;
     name: string;
     slug: string;
-    translations?: CategoryTranslations | null;
+    translations?: unknown | null;
     parentId?: string | null;
     isActive?: boolean;
     sortOrder?: number;

@@ -120,36 +120,60 @@ export async function listPublicVendorOffers(vendorProfileIds: string[]) {
   });
 }
 
-export async function listPublicCouponsForProduct(productId: string, vendorProfileId: string) {
+function serializePublicCoupon(coupon: {
+  code: string;
+  discountType: "PERCENTAGE" | "FIXED_AMOUNT";
+  discountValue: number;
+  minOrderAmount: number | null;
+  appliesToAllProducts: boolean;
+}) {
+  const { discountLabel, scopeLabel } = formatCouponLabel(coupon);
+  return {
+    code: coupon.code,
+    discountType: coupon.discountType,
+    discountValue: coupon.discountValue,
+    minOrderAmount: coupon.minOrderAmount,
+    appliesToAllProducts: coupon.appliesToAllProducts,
+    scopeLabel,
+    label: discountLabel,
+  };
+}
+
+export async function listPublicCouponsForProducts(
+  items: Array<{ productId: string; vendorProfileId: string }>
+) {
+  const couponMap = new Map<string, PublicVendorCouponOffer[]>();
+  if (items.length === 0) return couponMap;
+
+  const vendorProfileIds = [...new Set(items.map((item) => item.vendorProfileId))];
   const coupons = await prisma.vendorCoupon.findMany({
-    where: { vendorProfileId, isActive: true },
+    where: { vendorProfileId: { in: vendorProfileIds }, isActive: true },
     orderBy: { createdAt: "desc" },
   });
+  const validCoupons = coupons.filter(isCouponCurrentlyValid);
 
-  return coupons
-    .filter(
-      (coupon) =>
-        isCouponCurrentlyValid(coupon) &&
+  for (const item of items) {
+    const productCoupons = validCoupons
+      .filter((coupon) => coupon.vendorProfileId === item.vendorProfileId)
+      .filter((coupon) =>
         couponAppliesToProduct(
           {
             appliesToAllProducts: coupon.appliesToAllProducts ?? true,
             productIds: coupon.productIds ?? [],
           },
-          productId
+          item.productId
         )
-    )
-    .map((coupon) => {
-      const { discountLabel, scopeLabel } = formatCouponLabel(coupon);
-      return {
-        code: coupon.code,
-        discountType: coupon.discountType,
-        discountValue: coupon.discountValue,
-        minOrderAmount: coupon.minOrderAmount,
-        appliesToAllProducts: coupon.appliesToAllProducts,
-        scopeLabel,
-        label: discountLabel,
-      };
-    });
+      )
+      .map(serializePublicCoupon);
+
+    couponMap.set(item.productId, productCoupons);
+  }
+
+  return couponMap;
+}
+export async function listPublicCouponsForProduct(productId: string, vendorProfileId: string) {
+  const couponMap = await listPublicCouponsForProducts([{ productId, vendorProfileId }]);
+  return couponMap.get(productId) ?? [];
 }
 
 export async function listPublicStorefrontOffers(storeSlug: string) {

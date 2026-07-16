@@ -9,6 +9,9 @@
       "promo": "د $100 پورته فرمایشونو لپاره وړیا تحویل",
       "tagline": "هر ورځ اړین توکي د کورنۍ لپاره اسانه پلورنځی.",
       "shopByCategory": "د کټګورۍ له مخې پلورنځی",
+      "amazingOffer": "حیرانونکی وړاندیز",
+      "viewAllCategories": "ټول وګورئ",
+      "viewAll": "ټول وګورئ",
       "featuredTitle": "ستاسو د خوراکي غوره انتخابونه",
       "addToCart": "کارټ ته اضافه کړئ",
       "addedToCart": "کارټ ته اضافه شو",
@@ -17,12 +20,25 @@
       "per": "/ له",
       "heroSlides": [
         {
-          "image": "https://onlinemandawee.com/cdn/shop/files/Add_a_heading.png?v=1766240466&width=2048",
-          "imageMobile": "https://onlinemandawee.com/cdn/shop/files/FRESH_FOOD_5b8d8a57-2d79-47bc-89e6-230b2298a9d9.png?v=1766240466&width=750",
+          "image": "/banners/banner-1.webp",
           "headline": "",
           "sub": "",
           "cta": "",
           "href": "/products"
+        },
+        {
+          "image": "/banners/banner-2.webp",
+          "headline": "",
+          "sub": "",
+          "cta": "",
+          "href": "/deals"
+        },
+        {
+          "image": "/banners/banner-3.webp",
+          "headline": "",
+          "sub": "",
+          "cta": "",
+          "href": "/category/grocery"
         }
       ],
       "midPromoSlides": [
@@ -46,90 +62,18 @@
         }
       ],
       "categoryTiles": [
-        {
-          "slug": "breakfast",
-          "href": "/category/breakfast",
-          "image": "/categories/breakfastItems.webp",
-          "label": "د ناشتې توکي",
-          "tint": "#fff8e7"
-        },
-        {
-          "slug": "grocery",
-          "href": "/category/grocery",
-          "image": "/categories/edibleGrocery.webp",
-          "label": "خوراکي / خوراکي توکي",
-          "tint": "#efe6d8"
-        },
-        {
-          "slug": "snacks",
-          "href": "/category/snacks",
-          "image": "/categories/snackBar.webp",
-          "label": "سنک بار",
-          "tint": "#fffbeb"
-        },
-        {
-          "slug": "beverages",
-          "href": "/category/beverages",
-          "image": "/categories/beverages.webp",
-          "label": "مشروبات",
-          "tint": "#ffe4d4"
-        },
-        {
-          "slug": "fruits",
-          "href": "/category/fruits",
-          "image": "/categories/fruits.webp",
-          "label": "مېوې",
-          "tint": "#ffedd5"
-        },
-        {
-          "slug": "vegetables",
-          "href": "/category/vegetables",
-          "image": "/categories/vegetables.webp",
-          "label": "سبزیجات",
-          "tint": "#fef9c3"
-        },
-        {
-          "slug": "dairy",
-          "href": "/category/dairy",
-          "image": "/categories/dairyProducts.webp",
-          "label": "لبنیات",
-          "tint": "#f1f5f9"
-        },
-        {
-          "slug": "cleaning-products",
-          "href": "/category/cleaning-products",
-          "image": "/categories/cleaningProducts.webp",
-          "label": "د پاکولو توکي",
-          "tint": "#e0f2fe"
-        },
-        {
-          "slug": "baby-care",
-          "href": "/category/baby-care",
-          "image": "/categories/babyCare.webp",
-          "label": "د ماشوم پاملرنه",
-          "tint": "#fce7f3"
-        },
-        {
-          "slug": "personal-care",
-          "href": "/category/personal-care",
-          "image": "/categories/personalCare.webp",
-          "label": "شخصي پاملرنه",
-          "tint": "#fae8ff"
-        },
-        {
-          "slug": "whey-proteins",
-          "href": "/category/whey-proteins",
-          "image": "/categories/wheyProteins.webp",
-          "label": "وی پروټین",
-          "tint": "#ecfdf5"
-        },
-        {
-          "slug": "stationery-items",
-          "href": "/category/stationery-items",
-          "image": "/categories/stationaryItems.webp",
-          "label": "د قرطاسیه توکي",
-          "tint": "#f3f4f6"
-        }
+        { "slug": "breakfast", "label": "د ناشتې توکي" },
+        { "slug": "grocery", "label": "خوراکي / خوراکي توکي" },
+        { "slug": "snacks", "label": "سنک بار" },
+        { "slug": "beverages", "label": "مشروبات" },
+        { "slug": "fruits", "label": "مېوې" },
+        { "slug": "vegetables", "label": "سبزیجات" },
+        { "slug": "dairy", "label": "لبنیات" },
+        { "slug": "cleaning-products", "label": "د پاکولو توکي" },
+        { "slug": "baby-care", "label": "د ماشوم پاملرنه" },
+        { "slug": "personal-care", "label": "شخصي پاملرنه" },
+        { "slug": "whey-proteins", "label": "وی پروټین" },
+        { "slug": "stationery-items", "label": "د قرطاسیه توکي" }
       ]
     },
     "footer": {

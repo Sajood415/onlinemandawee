@@ -13,6 +13,7 @@ export const categoryTranslationsSchema = z
 export const createCategorySchema = z.object({
   name: z.string().trim().min(2).max(120),
   translations: categoryTranslationsSchema,
+  imageUrl: z.string().trim().max(2048).optional(),
   parentId: z.string().min(1).optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().min(0).max(10000).optional(),
@@ -21,6 +22,7 @@ export const createCategorySchema = z.object({
 export const updateCategorySchema = z.object({
   name: z.string().trim().min(2).max(120),
   translations: categoryTranslationsSchema,
+  imageUrl: z.string().trim().max(2048).nullable().optional(),
   parentId: z.string().min(1).optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().min(0).max(10000).optional(),

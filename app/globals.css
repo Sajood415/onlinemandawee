@@ -8,6 +8,7 @@
   --footerBg: #F2F2F2;
   --green: #428445;
   --yellow: #E0B252;
+  --header-height: 7rem;
 }
 
 @theme inline {

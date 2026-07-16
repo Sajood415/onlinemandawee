@@ -3,7 +3,9 @@
 import { useLocale } from "next-intl";
 import { HomeHeroCarousel } from "./HomeHeroCarousel";
 import { HomeCategoryCarousel } from "./HomeCategoryCarousel";
+import { HomeDuoBanners } from "./HomeDuoBanners";
 import { HomeSeasonalBanners } from "./HomeSeasonalBanners";
+import { HomeCouponDealsRail } from "./HomeCouponDealsRail";
 import { HomeStackedSections } from "./HomeStackedSections";
 
 export function HomePage() {
@@ -13,10 +15,12 @@ export function HomePage() {
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-0 w-full min-w-0 bg-white">
       <HomeHeroCarousel />
-      <div className="w-full min-w-0 px-0 pt-9 sm:px-4 sm:pt-11 lg:px-6 xl:px-8">
+      <div className="w-full min-w-0 bg-white px-3 py-6 sm:px-4 sm:py-8">
+        <HomeCouponDealsRail />
+        <HomeSeasonalBanners />
         <HomeCategoryCarousel />
+        <HomeDuoBanners />
       </div>
-      <HomeSeasonalBanners />
       <HomeStackedSections />
     </div>
   );

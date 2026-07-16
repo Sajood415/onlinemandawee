@@ -8,7 +8,10 @@
     "store": {
       "promo": "Free Delivery on Orders Above $100",
       "tagline": "Delivering everyday essentials with convenience your family deserves.",
-      "shopByCategory": "Shop By Category",
+      "shopByCategory": "Shopping by category",
+      "amazingOffer": "Amazing Offer",
+      "viewAllCategories": "View all",
+      "viewAll": "View All",
       "featuredTitle": "Popular picks for your pantry",
       "addToCart": "Add to cart",
       "addedToCart": "Added to your cart",
@@ -17,12 +20,25 @@
       "per": "/ per",
       "heroSlides": [
         {
-          "image": "https://onlinemandawee.com/cdn/shop/files/Add_a_heading.png?v=1766240466&width=2048",
-          "imageMobile": "https://onlinemandawee.com/cdn/shop/files/FRESH_FOOD_5b8d8a57-2d79-47bc-89e6-230b2298a9d9.png?v=1766240466&width=750",
+          "image": "/banners/banner-1.webp",
           "headline": "",
           "sub": "",
           "cta": "",
           "href": "/products"
+        },
+        {
+          "image": "/banners/banner-2.webp",
+          "headline": "",
+          "sub": "",
+          "cta": "",
+          "href": "/deals"
+        },
+        {
+          "image": "/banners/banner-3.webp",
+          "headline": "",
+          "sub": "",
+          "cta": "",
+          "href": "/category/grocery"
         }
       ],
       "midPromoSlides": [
@@ -46,90 +62,18 @@
         }
       ],
       "categoryTiles": [
-        {
-          "slug": "breakfast",
-          "href": "/category/breakfast",
-          "image": "/categories/breakfastItems.webp",
-          "label": "Breakfast Items",
-          "tint": "#fff8e7"
-        },
-        {
-          "slug": "grocery",
-          "href": "/category/grocery",
-          "image": "/categories/edibleGrocery.webp",
-          "label": "Food / Edible Grocery",
-          "tint": "#efe6d8"
-        },
-        {
-          "slug": "snacks",
-          "href": "/category/snacks",
-          "image": "/categories/snackBar.webp",
-          "label": "Snack Bar",
-          "tint": "#fffbeb"
-        },
-        {
-          "slug": "beverages",
-          "href": "/category/beverages",
-          "image": "/categories/beverages.webp",
-          "label": "Beverages",
-          "tint": "#ffe4d4"
-        },
-        {
-          "slug": "fruits",
-          "href": "/category/fruits",
-          "image": "/categories/fruits.webp",
-          "label": "Fruits",
-          "tint": "#ffedd5"
-        },
-        {
-          "slug": "vegetables",
-          "href": "/category/vegetables",
-          "image": "/categories/vegetables.webp",
-          "label": "Vegetables",
-          "tint": "#fef9c3"
-        },
-        {
-          "slug": "dairy",
-          "href": "/category/dairy",
-          "image": "/categories/dairyProducts.webp",
-          "label": "Dairy Products",
-          "tint": "#f1f5f9"
-        },
-        {
-          "slug": "cleaning-products",
-          "href": "/category/cleaning-products",
-          "image": "/categories/cleaningProducts.webp",
-          "label": "Cleaning Products",
-          "tint": "#e0f2fe"
-        },
-        {
-          "slug": "baby-care",
-          "href": "/category/baby-care",
-          "image": "/categories/babyCare.webp",
-          "label": "Baby Care",
-          "tint": "#fce7f3"
-        },
-        {
-          "slug": "personal-care",
-          "href": "/category/personal-care",
-          "image": "/categories/personalCare.webp",
-          "label": "Personal Care",
-          "tint": "#fae8ff"
-        },
-        {
-          "slug": "whey-proteins",
-          "href": "/category/whey-proteins",
-          "image": "/categories/wheyProteins.webp",
-          "label": "Whey Protein",
-          "tint": "#ecfdf5"
-        },
-        {
-          "slug": "stationery-items",
-          "href": "/category/stationery-items",
-          "image": "/categories/stationaryItems.webp",
-          "label": "Stationery Items",
-          "tint": "#f3f4f6"
-        }
+        { "slug": "breakfast", "label": "Breakfast Items" },
+        { "slug": "grocery", "label": "Food / Edible Grocery" },
+        { "slug": "snacks", "label": "Snack Bar" },
+        { "slug": "beverages", "label": "Beverages" },
+        { "slug": "fruits", "label": "Fruits" },
+        { "slug": "vegetables", "label": "Vegetables" },
+        { "slug": "dairy", "label": "Dairy Products" },
+        { "slug": "cleaning-products", "label": "Cleaning Products" },
+        { "slug": "baby-care", "label": "Baby Care" },
+        { "slug": "personal-care", "label": "Personal Care" },
+        { "slug": "whey-proteins", "label": "Whey Protein" },
+        { "slug": "stationery-items", "label": "Stationery Items" }
       ]
     },
     "footer": {

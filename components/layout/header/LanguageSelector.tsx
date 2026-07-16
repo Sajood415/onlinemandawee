@@ -7,14 +7,13 @@ import { ChevronDown } from "lucide-react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 
 const dropdownVariants: Variants = {
-  hidden: { opacity: 0, y: 15, scale: 0.97 },
+  hidden: { opacity: 0, y: 6 },
   visible: {
     opacity: 1,
     y: 0,
-    scale: 1,
-    transition: { type: "spring", stiffness: 400, damping: 30 },
+    transition: { duration: 0.15 },
   },
-  exit: { opacity: 0, y: 10, scale: 0.97, transition: { duration: 0.15 } },
+  exit: { opacity: 0, y: 4, transition: { duration: 0.1 } },
 };
 
 type LanguageSelectorProps = {
@@ -25,11 +24,23 @@ type LanguageSelectorProps = {
   variant?: "default" | "dark";
 };
 
-const localeRegionCode: Record<string, string> = {
-  en: "US",
-  ps: "AF",
-  "fa-AF": "AF",
+const localeShortCode: Record<string, string> = {
+  en: "EN",
+  ps: "PS",
+  "fa-AF": "FA",
 };
+
+function getTriggerClass(open: boolean, variant: "default" | "dark") {
+  if (variant === "dark") {
+    return `inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-white transition-colors hover:bg-white/10 ${
+      open ? "bg-white/10" : ""
+    }`;
+  }
+
+  return `inline-flex h-7 items-center gap-1 rounded px-1.5 text-[11px] font-medium text-gray-600 transition-colors hover:bg-gray-200/60 hover:text-gray-900 ${
+    open ? "bg-gray-200/60 text-gray-900" : ""
+  }`;
+}
 
 export function LanguageSelector({
   locale,
@@ -43,6 +54,8 @@ export function LanguageSelector({
   const pathname = usePathname();
   const ref = useRef<HTMLDivElement>(null);
   const current = languages.find((l) => l.code === locale) || languages[0];
+  const shortCode =
+    localeShortCode[current.code] ?? current.code.slice(0, 2).toUpperCase();
 
   useEffect(() => {
     function click(e: MouseEvent) {
@@ -61,64 +74,50 @@ export function LanguageSelector({
         aria-expanded={open}
         aria-haspopup="listbox"
         onClick={() => setOpen(!open)}
-        className={`group inline-flex h-9 min-h-9 items-center gap-1 rounded-full border px-2 text-xs font-bold shadow-sm transition-all cursor-pointer sm:gap-2 sm:px-2.5 sm:ps-2 sm:pe-3 ${
-          variant === "dark"
-            ? open
-              ? "border-white bg-white text-primary shadow-md ring-2 ring-white/70"
-              : "border-white bg-white text-gray-900 hover:border-gray-100 hover:bg-gray-50"
-            : open
-              ? "border-primary/30 bg-white text-primary shadow-lg"
-              : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
-        }`}
+        className={`${getTriggerClass(open, variant)} cursor-pointer`}
       >
-        <span
-          className={`grid size-7 shrink-0 place-items-center rounded-full border ${
-            variant === "dark"
-              ? "border-gray-200 bg-gray-50"
-              : "border-gray-100 bg-gray-50"
-          }`}
-          aria-hidden
-        >
-          <span className="text-[10px] font-extrabold leading-none tracking-tight text-gray-800">
-            {localeRegionCode[current.code] ??
-              current.code.slice(0, 2).toUpperCase()}
-          </span>
+        <span className="text-sm leading-none" aria-hidden>
+          {current.flag}
         </span>
-        <span className="hidden min-w-0 truncate text-left text-[12px] font-extrabold leading-none tracking-tight text-gray-900 sm:block">
-          {current.label}
-        </span>
+        <span>{shortCode}</span>
         <ChevronDown
-          size={14}
-          strokeWidth={2.25}
-          className={`shrink-0 text-gray-600 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+          size={12}
+          strokeWidth={2.5}
+          className={`opacity-60 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
         />
       </button>
       <AnimatePresence>
-        {open && (
+        {open ? (
           <motion.div
             variants={dropdownVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
-            className={`absolute mt-3 w-56 bg-white rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-gray-100 z-[10000] overflow-hidden p-2 ${isRtl ? "left-0" : "right-0"}`}
+            className={`absolute z-[10000] mt-1.5 min-w-[10rem] overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg ${isRtl ? "left-0" : "right-0"}`}
           >
-            <p className="px-5 py-3 text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] mb-1">
+            <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
               {label}
             </p>
             {languages.map((l) => (
               <button
                 key={l.code}
+                type="button"
                 onClick={() => {
                   setOpen(false);
                   router.replace(pathname, { locale: l.code });
                 }}
-                className={`w-full px-5 py-3.5 rounded-xl text-sm font-bold flex items-center gap-4 transition-all cursor-pointer ${isRtl ? "text-right" : "text-left"} ${locale === l.code ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-50"}`}
+                className={`flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-sm transition-colors ${isRtl ? "text-right" : "text-left"} ${
+                  locale === l.code
+                    ? "bg-gray-50 font-semibold text-gray-900"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
               >
-                <span className="text-xl">{l.flag}</span> {l.label}
+                <span className="text-base leading-none">{l.flag}</span>
+                <span>{l.label}</span>
               </button>
             ))}
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>
   );

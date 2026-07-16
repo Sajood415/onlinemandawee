@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Baby, Banknote, ChevronDown, HelpCircle, LogOut, UserCircle } from "lucide-react";
+import { Baby, Banknote, ChevronDown, Flame, Gift, HelpCircle, LogOut, PackageSearch, Store, UserCircle } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { headerCopy } from "@/components/layout/header/header-copy";
@@ -51,9 +51,12 @@ export function MobileNavMenu({
       href: "/category/baby-care",
       label: copy.babyCare,
       icon: <Baby size={18} />,
-      highlight: true,
     },
     { href: "/hawala", label: copy.hawalaShort, icon: <Banknote size={18} /> },
+    { href: "/deals", label: copy.hot, icon: <Flame size={18} />, highlight: true },
+    { href: "/gifts", label: copy.giftSets, icon: <Gift size={18} /> },
+    { href: "/vendor/register", label: copy.sellOnPlatform, icon: <Store size={18} /> },
+    { href: "/orders", label: copy.trackOrder, icon: <PackageSearch size={18} /> },
     { href: "/contact", label: copy.support, icon: <HelpCircle size={18} /> },
   ];
 
@@ -72,21 +75,21 @@ export function MobileNavMenu({
         : tAuth("accountMenu.myAccount");
 
   return (
-    <div className="relative flex h-full min-h-12 shrink-0 items-center sm:min-h-14" ref={menuRef}>
+    <div className="relative flex h-9 shrink-0 items-center" ref={menuRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 min-[360px]:px-2 py-1.5 transition-all ${
+        className={`relative inline-flex cursor-pointer items-center gap-1.5 px-3 py-2 text-[12px] font-medium whitespace-nowrap transition-colors after:absolute after:inset-x-2 after:bottom-0.5 after:h-[2px] after:rounded-full after:bg-[#ec1b23] after:transition-transform after:duration-200 ${
           surface === "light"
             ? isOpen
-              ? "bg-primary border-primary text-white shadow-md"
-              : "bg-gray-100 border-gray-200 text-gray-800 hover:bg-gray-200"
+              ? "font-semibold text-[#ec1b23] after:scale-x-100"
+              : "text-gray-600 after:scale-x-0 hover:text-gray-900 hover:after:scale-x-100"
             : isOpen
-              ? "bg-white border-white text-primary shadow-lg"
-              : "bg-white/10 border-white/20 text-white hover:bg-white/20"
+              ? "text-white after:scale-x-100"
+              : "text-white/90 after:scale-x-0 hover:text-white hover:after:scale-x-100"
         }`}
       >
-        <span className="text-[10px] min-[360px]:text-[11px] sm:text-[13px] font-bold">{copy.more}</span>
+        <span>{copy.more}</span>
         <ChevronDown
           size={12}
           className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}

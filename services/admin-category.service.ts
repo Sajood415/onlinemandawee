@@ -2,7 +2,7 @@ import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { slugify } from "@/lib/utils/slug";
 import {
-  sanitizeCategoryTranslations,
+  mergeCategoryTranslationsWithImage,
   type CategoryTranslations,
 } from "@/lib/localization/category-content";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
@@ -20,6 +20,7 @@ export class AdminCategoryService {
     input: {
       name: string;
       translations?: CategoryTranslations;
+      imageUrl?: string;
       parentId?: string;
       isActive?: boolean;
       sortOrder?: number;
@@ -43,7 +44,10 @@ export class AdminCategoryService {
     const category = await this.categoryRepository.create({
       name: input.name,
       slug,
-      translations: sanitizeCategoryTranslations(input.translations),
+      translations: mergeCategoryTranslationsWithImage({
+        translations: input.translations,
+        imageUrl: input.imageUrl,
+      }),
       parentId: input.parentId,
       isActive: input.isActive,
       sortOrder: input.sortOrder,
@@ -65,6 +69,7 @@ export class AdminCategoryService {
     input: {
       name: string;
       translations?: CategoryTranslations;
+      imageUrl?: string | null;
       parentId?: string;
       isActive?: boolean;
       sortOrder?: number;
@@ -112,7 +117,11 @@ export class AdminCategoryService {
       id: categoryId,
       name: input.name,
       slug,
-      translations: sanitizeCategoryTranslations(input.translations),
+      translations: mergeCategoryTranslationsWithImage({
+        translations: input.translations,
+        imageUrl: input.imageUrl,
+        existing: category.translations,
+      }),
       ...(input.parentId !== undefined ? { parentId: input.parentId } : {}),
       isActive: input.isActive,
       sortOrder: input.sortOrder,

@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import {
@@ -13,13 +12,36 @@ import {
 import { HomeBannerContentOverlay } from "./HomeBannerContentOverlay";
 import type { HeroSlide } from "./types";
 
-const HERO_IMG_SIZES =
-  "(max-width: 639px) 100vw, (max-width: 1023px) calc(100vw - 32px), 100vw";
+const HERO_IMG_SIZES = "100vw";
 
-const sectionClass = "w-full min-w-0 bg-white lg:bg-[#004795]";
-const shellClass = "w-full min-w-0 px-0 sm:px-4 lg:px-0";
+const DEFAULT_HERO_SLIDES: HeroSlide[] = [
+  {
+    image: "/banners/banner-1.webp",
+    headline: "",
+    sub: "",
+    cta: "",
+    href: "/products",
+  },
+  {
+    image: "/banners/banner-2.webp",
+    headline: "",
+    sub: "",
+    cta: "",
+    href: "/deals",
+  },
+  {
+    image: "/banners/banner-3.webp",
+    headline: "",
+    sub: "",
+    cta: "",
+    href: "/category/grocery",
+  },
+];
+
+const sectionClass = "w-full min-w-0 bg-white";
+const shellClass = "h-full w-full min-w-0";
 const linkClass =
-  "relative block w-full min-w-0 overflow-hidden rounded-none bg-[#004795] outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-white sm:rounded-2xl sm:shadow-[0_2px_12px_rgba(15,52,96,0.12)] lg:rounded-none lg:shadow-none";
+  "relative block h-[clamp(168px,24vw,380px)] w-full min-w-0 overflow-hidden bg-neutral-100 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#ec1b23]/40";
 
 function mobileHeroSources(url: string): { src: string; srcSet: string } {
   const normalized = url.trim().startsWith("//") ? `https:${url.trim()}` : url.trim();
@@ -46,40 +68,35 @@ function HeroSlideMedia({ slide, label }: { slide: HeroSlide; label: string }) {
   if (slide.imageMobile) {
     const m = mobileHeroSources(slide.imageMobile);
     return (
-      <div className="relative aspect-[100/66] w-full sm:aspect-[2048/820]">
-        <picture className="absolute inset-0">
-          <source media="(min-width: 640px)" srcSet={slide.image} />
-          <img
-            src={m.src}
-            srcSet={m.srcSet}
-            sizes={HERO_IMG_SIZES}
-            alt={label}
-            className="absolute inset-0 h-full w-full object-contain object-center"
-            fetchPriority="high"
-            decoding="async"
-          />
-        </picture>
-      </div>
+      <picture className="absolute inset-0 block h-full w-full">
+        <source media="(min-width: 640px)" srcSet={slide.image} />
+        <img
+          src={m.src}
+          srcSet={m.srcSet}
+          sizes={HERO_IMG_SIZES}
+          alt={label}
+          className="h-full w-full object-cover object-center"
+          fetchPriority="high"
+          decoding="async"
+        />
+      </picture>
     );
   }
 
   return (
-    <div className="relative aspect-[2048/820] w-full">
-      <Image
-        src={slide.image}
-        alt={label}
-        fill
-        className="object-contain object-center"
-        sizes={HERO_IMG_SIZES}
-        priority
-        draggable={false}
-      />
-    </div>
+    <Image
+      src={slide.image}
+      alt={label}
+      fill
+      className="object-cover object-center"
+      sizes={HERO_IMG_SIZES}
+      priority
+      draggable={false}
+    />
   );
 }
 
 export function HomeHeroCarousel() {
-  const t = useTranslations("Homepage.store");
   const [dynamicBanners, setDynamicBanners] = useState<PublicHomeBanner[] | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -89,12 +106,12 @@ export function HomeHeroCarousel() {
       .catch(() => setDynamicBanners([]));
   }, []);
 
-  const fallbackSlides = (t.raw("heroSlides") as HeroSlide[]) ?? [];
   const dynamicSlides = useMemo(
     () => (dynamicBanners ?? []).map(bannerToSlide),
     [dynamicBanners]
   );
-  const slides = dynamicSlides.length > 0 ? dynamicSlides : fallbackSlides;
+  const slides =
+    dynamicSlides.length > 0 ? dynamicSlides : DEFAULT_HERO_SLIDES;
 
   useEffect(() => {
     if (slides.length <= 1) return;
@@ -104,7 +121,6 @@ export function HomeHeroCarousel() {
     return () => window.clearInterval(timer);
   }, [slides.length]);
 
-  if (dynamicBanners === null && fallbackSlides.length === 0) return null;
   if (slides.length === 0) return null;
 
   const slide = slides[activeIndex] ?? slides[0];
@@ -117,7 +133,7 @@ export function HomeHeroCarousel() {
         {label}
       </h1>
       <div className={shellClass}>
-        <div className="relative">
+        <div className="relative h-full">
           <Link href={slide.href} className={linkClass}>
             <HeroSlideMedia slide={slide} label={label} />
             <HomeBannerContentOverlay
@@ -130,36 +146,44 @@ export function HomeHeroCarousel() {
 
           {slides.length > 1 ? (
             <>
-              <button
-                type="button"
-                onClick={() =>
-                  setActiveIndex((current) => (current - 1 + slides.length) % slides.length)
-                }
-                className="absolute left-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow sm:left-4"
-                aria-label="Previous slide"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveIndex((current) => (current + 1) % slides.length)}
-                className="absolute right-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow sm:right-4"
-                aria-label="Next slide"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-              <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
-                {slides.map((item, index) => (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between px-3 pb-3 sm:px-5 sm:pb-4">
+                <div className="pointer-events-auto flex items-center gap-1.5">
+                  {slides.map((item, index) => (
+                    <button
+                      key={`${item.href}-${index}`}
+                      type="button"
+                      aria-label={`Go to slide ${index + 1}`}
+                      aria-current={index === activeIndex ? "true" : undefined}
+                      onClick={() => setActiveIndex(index)}
+                      className={`rounded-full transition-all duration-300 ${
+                        index === activeIndex
+                          ? "h-1.5 w-5 bg-white shadow-sm"
+                          : "h-1.5 w-1.5 bg-white/50 hover:bg-white/75"
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                <div className="pointer-events-auto flex items-center gap-1">
                   <button
-                    key={`${item.href}-${index}`}
                     type="button"
-                    aria-label={`Go to slide ${index + 1}`}
-                    onClick={() => setActiveIndex(index)}
-                    className={`h-2 w-2 rounded-full transition ${
-                      index === activeIndex ? "bg-white" : "bg-white/50"
-                    }`}
-                  />
-                ))}
+                    onClick={() =>
+                      setActiveIndex((current) => (current - 1 + slides.length) % slides.length)
+                    }
+                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-neutral-200/90 bg-white/95 text-neutral-600 shadow-sm transition hover:bg-white"
+                    aria-label="Previous slide"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveIndex((current) => (current + 1) % slides.length)}
+                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-neutral-200/90 bg-white/95 text-neutral-600 shadow-sm transition hover:bg-white"
+                    aria-label="Next slide"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </>
           ) : null}

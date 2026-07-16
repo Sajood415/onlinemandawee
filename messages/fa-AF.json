@@ -9,6 +9,9 @@
       "promo": "تحویل رایگان برای سفارش‌های بالای $100",
       "tagline": "ارسال نیازهای روزانه خانواده با راحتی بیشتر.",
       "shopByCategory": "خرید بر اساس دسته",
+      "amazingOffer": "پیشنهاد شگفت‌انگیز",
+      "viewAllCategories": "مشاهده همه",
+      "viewAll": "مشاهده همه",
       "featuredTitle": "منتخب محبوب برای آشپزخانه شما",
       "addToCart": "افزودن به سبد",
       "addedToCart": "به سبد اضافه شد",
@@ -17,12 +20,25 @@
       "per": "/ برای هر",
       "heroSlides": [
         {
-          "image": "https://onlinemandawee.com/cdn/shop/files/Add_a_heading.png?v=1766240466&width=2048",
-          "imageMobile": "https://onlinemandawee.com/cdn/shop/files/FRESH_FOOD_5b8d8a57-2d79-47bc-89e6-230b2298a9d9.png?v=1766240466&width=750",
+          "image": "/banners/banner-1.webp",
           "headline": "",
           "sub": "",
           "cta": "",
           "href": "/products"
+        },
+        {
+          "image": "/banners/banner-2.webp",
+          "headline": "",
+          "sub": "",
+          "cta": "",
+          "href": "/deals"
+        },
+        {
+          "image": "/banners/banner-3.webp",
+          "headline": "",
+          "sub": "",
+          "cta": "",
+          "href": "/category/grocery"
         }
       ],
       "midPromoSlides": [
@@ -46,90 +62,18 @@
         }
       ],
       "categoryTiles": [
-        {
-          "slug": "breakfast",
-          "href": "/category/breakfast",
-          "image": "/categories/breakfastItems.webp",
-          "label": "اقلام صبحانه",
-          "tint": "#fff8e7"
-        },
-        {
-          "slug": "grocery",
-          "href": "/category/grocery",
-          "image": "/categories/edibleGrocery.webp",
-          "label": "خوراکی / مواد خوراکی",
-          "tint": "#efe6d8"
-        },
-        {
-          "slug": "snacks",
-          "href": "/category/snacks",
-          "image": "/categories/snackBar.webp",
-          "label": "اسنک بار",
-          "tint": "#fffbeb"
-        },
-        {
-          "slug": "beverages",
-          "href": "/category/beverages",
-          "image": "/categories/beverages.webp",
-          "label": "نوشیدنی‌ها",
-          "tint": "#ffe4d4"
-        },
-        {
-          "slug": "fruits",
-          "href": "/category/fruits",
-          "image": "/categories/fruits.webp",
-          "label": "میوه‌ها",
-          "tint": "#ffedd5"
-        },
-        {
-          "slug": "vegetables",
-          "href": "/category/vegetables",
-          "image": "/categories/vegetables.webp",
-          "label": "سبزیجات",
-          "tint": "#fef9c3"
-        },
-        {
-          "slug": "dairy",
-          "href": "/category/dairy",
-          "image": "/categories/dairyProducts.webp",
-          "label": "لبنیات",
-          "tint": "#f1f5f9"
-        },
-        {
-          "slug": "cleaning-products",
-          "href": "/category/cleaning-products",
-          "image": "/categories/cleaningProducts.webp",
-          "label": "محصولات نظافتی",
-          "tint": "#e0f2fe"
-        },
-        {
-          "slug": "baby-care",
-          "href": "/category/baby-care",
-          "image": "/categories/babyCare.webp",
-          "label": "مراقبت نوزاد",
-          "tint": "#fce7f3"
-        },
-        {
-          "slug": "personal-care",
-          "href": "/category/personal-care",
-          "image": "/categories/personalCare.webp",
-          "label": "مراقبت شخصی",
-          "tint": "#fae8ff"
-        },
-        {
-          "slug": "whey-proteins",
-          "href": "/category/whey-proteins",
-          "image": "/categories/wheyProteins.webp",
-          "label": "پروتئین وی",
-          "tint": "#ecfdf5"
-        },
-        {
-          "slug": "stationery-items",
-          "href": "/category/stationery-items",
-          "image": "/categories/stationaryItems.webp",
-          "label": "اقلام قرطاسیه",
-          "tint": "#f3f4f6"
-        }
+        { "slug": "breakfast", "label": "اقلام صبحانه" },
+        { "slug": "grocery", "label": "خوراکی / مواد خوراکی" },
+        { "slug": "snacks", "label": "اسنک بار" },
+        { "slug": "beverages", "label": "نوشیدنی‌ها" },
+        { "slug": "fruits", "label": "میوه‌ها" },
+        { "slug": "vegetables", "label": "سبزیجات" },
+        { "slug": "dairy", "label": "لبنیات" },
+        { "slug": "cleaning-products", "label": "محصولات نظافتی" },
+        { "slug": "baby-care", "label": "مراقبت نوزاد" },
+        { "slug": "personal-care", "label": "مراقبت شخصی" },
+        { "slug": "whey-proteins", "label": "پروتئین وی" },
+        { "slug": "stationery-items", "label": "اقلام قرطاسیه" }
       ]
     },
     "footer": {
