@@ -79,7 +79,7 @@ export function HomeStackedSections() {
     <div className="w-full min-w-0 bg-[#F5F5F5]">
       {HOME_STACKED_SECTIONS.map((section) => (
         <div key={section.id} className="w-full min-w-0">
-          <div className="w-full min-w-0 px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
+          <div className="home-content-padding mx-auto w-full min-w-0 max-w-[1600px] py-4 sm:py-6 lg:py-8">
             <HomeProductRail
               title={t(section.titleKey)}
               viewAllHref={section.href}

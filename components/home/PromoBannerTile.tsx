@@ -18,8 +18,7 @@ export function PromoBannerTile({ banner, sizes }: PromoBannerTileProps) {
     <Link
       href={banner.href}
       aria-label={banner.title}
-      className="relative block w-full min-w-0 overflow-hidden rounded-2xl bg-neutral-100 outline-none ring-offset-2 transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-[#ec1b23]/40"
-      style={{ height: PROMO_BANNER_HEIGHT }}
+      className="relative block w-full min-w-0 overflow-hidden rounded-xl bg-neutral-100 outline-none ring-offset-2 transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-[#ec1b23]/40 sm:rounded-2xl [height:var(--promo-banner-height-mobile)] sm:[height:var(--promo-banner-height)]"
     >
       <Image
         src={banner.imageUrl}

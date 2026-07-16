@@ -16,7 +16,7 @@ export function HomePage() {
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-0 w-full min-w-0 bg-white">
       <HomeHeroCarousel />
-      <div className="w-full min-w-0 bg-white px-3 py-6 sm:px-4 sm:py-8">
+      <div className="home-content-padding mx-auto w-full min-w-0 max-w-[1600px] bg-white py-4 sm:py-6 lg:py-8">
         <HomeCouponDealsRail />
         <HomeSeasonalBanners />
         <HomeCategoryCarousel />

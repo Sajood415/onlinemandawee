@@ -42,7 +42,7 @@ const DEFAULT_HERO_SLIDES: HeroSlide[] = [
 const sectionClass = "w-full min-w-0 bg-white";
 const shellClass = "h-full w-full min-w-0";
 const linkClass =
-  "relative block h-[clamp(168px,24vw,380px)] w-full min-w-0 overflow-hidden bg-neutral-100 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#ec1b23]/40";
+  "hero-banner-height relative block w-full min-w-0 overflow-hidden bg-neutral-100 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#ec1b23]/40";
 
 function mobileHeroSources(url: string): { src: string; srcSet: string } {
   const normalized = url.trim().startsWith("//") ? `https:${url.trim()}` : url.trim();
@@ -149,8 +149,8 @@ export function HomeHeroCarousel() {
 
           {slides.length > 1 ? (
             <>
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between px-3 pb-3 sm:px-5 sm:pb-4">
-                <div className="pointer-events-auto flex items-center gap-1.5">
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 sm:pb-4">
+                <div className="pointer-events-auto flex items-center gap-1 sm:gap-1.5">
                   {slides.map((item, index) => (
                     <button
                       key={`${item.href}-${index}`}
@@ -173,7 +173,7 @@ export function HomeHeroCarousel() {
                     onClick={() =>
                       setActiveIndex((current) => (current - 1 + slides.length) % slides.length)
                     }
-                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-neutral-200/90 bg-white/95 text-neutral-600 shadow-sm transition hover:bg-white"
+                    className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-neutral-200/90 bg-white/95 text-neutral-600 shadow-sm transition hover:bg-white sm:h-8 sm:w-8"
                     aria-label={t("hero.previousSlide")}
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -181,7 +181,7 @@ export function HomeHeroCarousel() {
                   <button
                     type="button"
                     onClick={() => setActiveIndex((current) => (current + 1) % slides.length)}
-                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-neutral-200/90 bg-white/95 text-neutral-600 shadow-sm transition hover:bg-white"
+                    className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-neutral-200/90 bg-white/95 text-neutral-600 shadow-sm transition hover:bg-white sm:h-8 sm:w-8"
                     aria-label={t("hero.nextSlide")}
                   >
                     <ChevronRight className="h-4 w-4" />

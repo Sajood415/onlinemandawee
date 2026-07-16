@@ -94,7 +94,7 @@ function HomeRailProductCard({ product, locale }: { product: Row; locale: Locale
 
         {primaryCoupon ? <ProductCouponImageBadge coupon={primaryCoupon} /> : null}
 
-        <div className="absolute bottom-2 left-2 z-20 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+        <div className="absolute bottom-2 left-2 z-20 opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100">
           <button
             type="button"
             onClick={handleAddToCart}
@@ -145,7 +145,7 @@ type Props = {
 };
 
 const CELL_CLASS =
-  "relative box-border w-[46%] shrink-0 grow-0 px-3 py-4 sm:w-[31%] sm:px-4 sm:py-5 md:w-[23%] lg:w-[20%]";
+  "relative box-border w-[44%] shrink-0 grow-0 px-2 py-3 min-[390px]:w-[46%] min-[390px]:px-3 sm:w-[31%] sm:px-4 sm:py-5 md:w-[23%] lg:w-[20%]";
 
 function CellDivider() {
   return (
@@ -198,11 +198,11 @@ export function HomeProductRail({
 
   return (
     <section className="w-full min-w-0">
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="text-lg font-bold text-neutral-900 sm:text-xl">{title}</h2>
+      <div className="mb-3 flex items-center justify-between gap-2 sm:mb-4 sm:gap-4">
+        <h2 className="min-w-0 text-base font-bold text-neutral-900 sm:text-lg lg:text-xl">{title}</h2>
         <Link
           href={viewAllHref}
-          className="shrink-0 rounded px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+          className="shrink-0 rounded px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 sm:px-4 sm:py-2 sm:text-sm"
           style={{ backgroundColor: BRAND_RED }}
         >
           {t("viewAll")}

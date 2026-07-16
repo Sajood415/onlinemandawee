@@ -9,7 +9,10 @@
   --green: #428445;
   --yellow: #E0B252;
   --header-height: 7rem;
+  --hero-banner-height: clamp(168px, 24vw, 380px);
   --promo-banner-height: clamp(6.5rem, 18vw, 14rem);
+  --promo-banner-height-mobile: clamp(4.75rem, 22vw, 6.5rem);
+  --home-inline-padding: max(0.75rem, env(safe-area-inset-left, 0px));
 }
 
 @theme inline {
@@ -106,6 +109,36 @@ body {
 
   .promo-banner-height {
     height: var(--promo-banner-height);
+  }
+
+  .hero-banner-height {
+    height: var(--hero-banner-height);
+  }
+
+  .home-content-padding {
+    padding-inline: max(0.75rem, env(safe-area-inset-left, 0px))
+      max(0.75rem, env(safe-area-inset-right, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .home-content-padding {
+      padding-inline: max(1rem, env(safe-area-inset-left, 0px))
+        max(1rem, env(safe-area-inset-right, 0px));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .home-content-padding {
+      padding-inline: max(1.5rem, env(safe-area-inset-left, 0px))
+        max(1.5rem, env(safe-area-inset-right, 0px));
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .home-content-padding {
+      padding-inline: max(2rem, env(safe-area-inset-left, 0px))
+        max(2rem, env(safe-area-inset-right, 0px));
+    }
   }
 }
 

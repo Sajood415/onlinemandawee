@@ -43,7 +43,7 @@ function useEndOfDayCountdown() {
 
 function CountdownUnit({ value }: { value: number }) {
   return (
-    <span className="inline-flex min-w-8 items-center justify-center rounded-lg bg-white px-2 py-1.5 text-base font-bold tabular-nums leading-none text-neutral-900">
+    <span className="inline-flex min-w-7 items-center justify-center rounded-md bg-white px-1.5 py-1 text-sm font-bold tabular-nums leading-none text-neutral-900 sm:min-w-8 sm:rounded-lg sm:px-2 sm:py-1.5 sm:text-base">
       {String(value).padStart(2, "0")}
     </span>
   );
@@ -51,7 +51,7 @@ function CountdownUnit({ value }: { value: number }) {
 
 function OfferSmileyIcon() {
   return (
-    <svg viewBox="0 0 64 64" className="h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem]" aria-hidden>
+    <svg viewBox="0 0 64 64" className="h-10 w-10 sm:h-[4.5rem] sm:w-[4.5rem]" aria-hidden>
       <text x="14" y="28" fill="white" fontSize="22" fontWeight="700">
         %
       </text>
@@ -94,7 +94,7 @@ function DealProductCard({
   return (
     <Link
       href={`/products/${product.id}`}
-      className="group relative flex h-[17.5rem] w-[10.5rem] shrink-0 flex-col bg-white px-4 py-5 sm:w-[11.75rem]"
+      className="group relative flex h-[15.5rem] w-[9.25rem] shrink-0 flex-col bg-white px-3 py-4 min-[390px]:w-[10rem] sm:h-[17.5rem] sm:w-[11.75rem] sm:px-4 sm:py-5"
     >
       {showDivider ? (
         <span
@@ -103,7 +103,7 @@ function DealProductCard({
         />
       ) : null}
 
-      <div className="relative mx-auto h-[7.5rem] w-full max-w-[8.5rem] shrink-0">
+      <div className="relative mx-auto h-[6.5rem] w-full max-w-[7.5rem] shrink-0 sm:h-[7.5rem] sm:max-w-[8.5rem]">
         <CatalogImage
           src={product.image}
           alt={product.name[locale]}
@@ -146,29 +146,34 @@ function PromoAside({
   isRtl: boolean;
 }) {
   return (
-    <aside className="flex w-[8.75rem] shrink-0 flex-col items-center justify-between px-3 py-5 text-white sm:w-[10.5rem] sm:px-4 sm:py-6">
-      <div className="flex w-full flex-col items-center text-center">
-        <p className="text-sm font-bold leading-snug sm:text-[15px]">{title}</p>
-        <div className="mt-4 flex items-center gap-1.5">
+    <aside className="flex w-full shrink-0 flex-row items-center justify-between gap-2 border-b border-white/15 px-3 py-3 text-white sm:w-[10.5rem] sm:flex-col sm:justify-between sm:border-b-0 sm:px-4 sm:py-6">
+      <div className="flex min-w-0 flex-1 flex-col items-start text-start sm:w-full sm:items-center sm:text-center">
+        <p className="text-xs font-bold leading-snug sm:text-[15px]">{title}</p>
+        <div className="mt-2 flex items-center gap-1 sm:mt-4 sm:gap-1.5">
           <CountdownUnit value={countdown.hours} />
-          <span className="text-sm font-bold">:</span>
+          <span className="text-xs font-bold sm:text-sm">:</span>
           <CountdownUnit value={countdown.minutes} />
-          <span className="text-sm font-bold">:</span>
+          <span className="text-xs font-bold sm:text-sm">:</span>
           <CountdownUnit value={countdown.seconds} />
         </div>
-        <div className="mt-5">
+        <div className="mt-2 hidden sm:mt-5 sm:block">
           <OfferSmileyIcon />
         </div>
       </div>
 
-      <Link
-        href="/deals"
-        className="mt-5 inline-flex items-center gap-1 text-xs font-semibold text-white transition hover:text-white/90 sm:text-sm"
-      >
-        {isRtl ? <ChevronLeft className="h-4 w-4" /> : null}
-        <span>{viewAllLabel}</span>
-        {!isRtl ? <ChevronRight className="h-4 w-4" /> : null}
-      </Link>
+      <div className="flex shrink-0 flex-col items-end gap-2 sm:w-full sm:items-center">
+        <div className="sm:hidden">
+          <OfferSmileyIcon />
+        </div>
+        <Link
+          href="/deals"
+          className="inline-flex items-center gap-1 text-[11px] font-semibold text-white transition hover:text-white/90 sm:mt-5 sm:text-sm"
+        >
+          {isRtl ? <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : null}
+          <span>{viewAllLabel}</span>
+          {!isRtl ? <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : null}
+        </Link>
+      </div>
     </aside>
   );
 }
@@ -250,7 +255,7 @@ export function HomeCouponDealsRail() {
   if (products === null) {
     return (
       <section className="w-full min-w-0 pb-4">
-        <div className="h-[17.5rem] animate-pulse rounded-2xl bg-neutral-100" />
+        <div className="h-[14.5rem] animate-pulse rounded-xl bg-neutral-100 sm:h-[17.5rem] sm:rounded-2xl" />
       </section>
     );
   }
@@ -279,19 +284,10 @@ export function HomeCouponDealsRail() {
 
   return (
     <section className="w-full min-w-0 pb-4">
-      <div className="overflow-hidden rounded-2xl bg-[#ec1b23] p-2 sm:p-2.5">
-        <div className="flex overflow-hidden rounded-xl">
-          {isRtl ? (
-            <>
-              {promoAside}
-              {productRail}
-            </>
-          ) : (
-            <>
-              {productRail}
-              {promoAside}
-            </>
-          )}
+      <div className="overflow-hidden rounded-xl bg-[#ec1b23] p-1.5 sm:rounded-2xl sm:p-2.5">
+        <div className="flex flex-col overflow-hidden rounded-lg sm:flex-row sm:rounded-xl">
+          <div className={`order-1 ${isRtl ? "sm:order-1" : "sm:order-2"}`}>{promoAside}</div>
+          <div className={`order-2 ${isRtl ? "sm:order-2" : "sm:order-1"}`}>{productRail}</div>
         </div>
       </div>
     </section>

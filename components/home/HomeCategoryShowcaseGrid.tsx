@@ -102,14 +102,14 @@ export function HomeCategoryShowcaseGrid() {
   if (cards.length === 0) return null;
 
   return (
-    <section className="w-full min-w-0 py-2 sm:py-3">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="w-full min-w-0 py-1 sm:py-3">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
         {cards.map((card) => (
           <article
             key={card.categoryId}
-            className="rounded-2xl border border-neutral-200 bg-white p-3 sm:p-4"
+            className="rounded-xl border border-neutral-200 bg-white p-2.5 sm:rounded-2xl sm:p-4"
           >
-            <h3 className="line-clamp-2 text-center text-sm font-semibold text-neutral-800 sm:text-base">
+            <h3 className="line-clamp-2 text-center text-[13px] font-semibold text-neutral-800 sm:text-base">
               {card.categoryLabel}
             </h3>
             <div className="mt-3 grid grid-cols-2 gap-2">

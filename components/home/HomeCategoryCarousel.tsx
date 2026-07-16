@@ -37,11 +37,11 @@ function CategoryCircle({ tile, noImageLabel }: { tile: DisplayCategoryTile; noI
     <Link
       href={tile.href}
       aria-label={tile.label}
-      className="group flex w-[104px] shrink-0 flex-col items-center gap-2.5 outline-none sm:w-[116px]"
+      className="group flex w-[92px] shrink-0 flex-col items-center gap-2 outline-none min-[390px]:w-[104px] sm:w-[116px] sm:gap-2.5"
     >
-      <div className="relative flex h-[96px] w-[96px] items-center justify-center sm:h-[106px] sm:w-[106px]">
+      <div className="relative flex h-[84px] w-[84px] items-center justify-center min-[390px]:h-[96px] min-[390px]:w-[96px] sm:h-[106px] sm:w-[106px]">
         <div className="absolute inset-0 rounded-full bg-[#f0f0f1]" aria-hidden />
-        <div className="relative z-1 flex h-[80px] w-[80px] items-center justify-center overflow-hidden rounded-full bg-white sm:h-[88px] sm:w-[88px]">
+        <div className="relative z-1 flex h-[70px] w-[70px] items-center justify-center overflow-hidden rounded-full bg-white min-[390px]:h-[80px] min-[390px]:w-[80px] sm:h-[88px] sm:w-[88px]">
           {tile.image ? (
             <Image
               src={tile.image}
@@ -117,8 +117,8 @@ export function HomeCategoryCarousel() {
   if (tiles.length === 0) return null;
 
   return (
-    <section className="w-full min-w-0 py-6 sm:py-8">
-      <h2 className="mb-6 text-center text-base font-bold text-neutral-900 sm:mb-8 sm:text-lg">
+    <section className="w-full min-w-0 py-4 sm:py-6 lg:py-8">
+      <h2 className="mb-4 text-center text-sm font-bold text-neutral-900 sm:mb-6 sm:text-base lg:mb-8 lg:text-lg">
         {t("shopByCategory")}
       </h2>
 
@@ -142,7 +142,7 @@ export function HomeCategoryCarousel() {
 
         <div
           ref={ref}
-          className="flex gap-4 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-6 [&::-webkit-scrollbar]:hidden"
+          className="flex gap-3 overflow-x-auto px-0.5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] min-[390px]:gap-4 sm:gap-6 sm:px-1 [&::-webkit-scrollbar]:hidden"
         >
           {tiles.map((tile) => (
             <CategoryCircle key={tile.slug} tile={tile} noImageLabel={t("categories.noImage")} />

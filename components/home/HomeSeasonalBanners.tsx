@@ -22,7 +22,7 @@ export function HomeSeasonalBanners() {
 
   return (
     <section className="w-full min-w-0 pb-4">
-      <div className="grid grid-cols-4 items-stretch gap-2 sm:gap-3">
+      <div className="grid grid-cols-2 items-stretch gap-2 sm:grid-cols-4 sm:gap-3">
         {banners.map((banner) => (
           <PromoBannerTile key={banner.id} banner={banner} sizes="25vw" />
         ))}

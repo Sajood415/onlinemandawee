@@ -8,8 +8,6 @@ import {
   type PublicHomeBanner,
 } from "@/lib/home/fetch-home-banners";
 
-import { PROMO_BANNER_HEIGHT } from "./PromoBannerTile";
-
 export function HomeDuoBanners() {
   const [banners, setBanners] = useState<PublicHomeBanner[]>([]);
 
@@ -21,22 +19,17 @@ export function HomeDuoBanners() {
 
   if (banners.length === 0) return null;
 
+  const duoItems = banners.slice(0, 2);
+
   return (
     <section className="w-full min-w-0 pb-4">
-      <div
-        className="flex w-full gap-2 sm:gap-3"
-        style={{
-          height: PROMO_BANNER_HEIGHT,
-          minHeight: PROMO_BANNER_HEIGHT,
-          maxHeight: PROMO_BANNER_HEIGHT,
-        }}
-      >
-        {banners.slice(0, 2).map((banner) => (
+      <div className="flex w-full flex-col gap-2 sm:flex-row sm:gap-3 sm:[height:var(--promo-banner-height)] sm:[max-height:var(--promo-banner-height)] sm:[min-height:var(--promo-banner-height)]">
+        {duoItems.map((banner) => (
           <Link
             key={banner.id}
             href={banner.href}
             aria-label={banner.title}
-            className="relative block h-full min-h-0 min-w-0 flex-1 basis-0 overflow-hidden rounded-2xl bg-neutral-100 outline-none ring-offset-2 transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-[#ec1b23]/40"
+            className="relative block min-h-0 min-w-0 flex-1 basis-0 overflow-hidden rounded-xl bg-neutral-100 outline-none ring-offset-2 transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-[#ec1b23]/40 sm:h-full sm:rounded-2xl [height:var(--promo-banner-height-mobile)] sm:[height:unset]"
           >
             <img
               src={banner.imageUrl}
