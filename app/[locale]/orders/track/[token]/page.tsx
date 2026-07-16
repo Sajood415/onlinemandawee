@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useLocale } from "next-intl";
 import { Loader2 } from "lucide-react";
 
-import {
-  GuestOrderTrackingShell,
-  GuestOrderTrackingView,
-} from "@/components/orders/GuestOrderTrackingView";
+import { GuestOrderTrackingShell } from "@/components/orders/GuestOrderTrackingShell";
+import { GuestOrderTrackingView } from "@/components/orders/GuestOrderTrackingView";
 import { getGuestOrderTrackingCopy } from "@/components/orders/guest-order-tracking-copy";
+import { Link } from "@/i18n/navigation";
 import type { GuestPublicOrder } from "@/lib/orders/guest-public-order-types";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -56,18 +54,18 @@ export default function GuestOrderTrackPage({
   }, [copy.loadError, params]);
 
   return (
-    <GuestOrderTrackingShell title={copy.trackOrder} subtitle={copy.lookupSubtitle}>
+    <GuestOrderTrackingShell title={copy.trackOrder} subtitle={copy.orderDetails}>
       {loading ? (
-        <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-white py-16 text-slate-500">
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+        <div className="flex min-h-[200px] items-center justify-center bg-white px-5 py-10 text-sm text-neutral-500 shadow-[0_20px_50px_-28px_rgba(15,52,96,0.35)]">
+          <Loader2 className="me-2 h-5 w-5 animate-spin text-[#0F3460]/40" />
           {copy.loading}
         </div>
       ) : error || !order ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-sm text-red-700">{error ?? copy.invalidLink}</p>
+        <div className="bg-white px-5 py-10 text-center shadow-[0_20px_50px_-28px_rgba(15,52,96,0.35)] sm:px-8">
+          <p className="text-sm text-neutral-700">{error ?? copy.invalidLink}</p>
           <Link
             href="/orders"
-            className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+            className="mt-6 inline-flex items-center justify-center bg-[#0F3460] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
           >
             {copy.findOrder}
           </Link>

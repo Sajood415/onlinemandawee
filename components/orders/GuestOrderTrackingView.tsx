@@ -1,24 +1,19 @@
 "use client";
 
-import Link from "next/link";
+import { useMemo } from "react";
 import { useLocale } from "next-intl";
-import { ChevronRight, MapPin, Package, Phone, Mail } from "lucide-react";
+import { Mail, MapPin, Package, Phone } from "lucide-react";
 
 import {
   GUEST_VENDOR_STATUS_LABELS,
   getGuestOrderTrackingCopy,
 } from "@/components/orders/guest-order-tracking-copy";
+import { CatalogImage } from "@/components/catalog/CatalogImage";
+import { Link } from "@/i18n/navigation";
 import type { GuestPublicOrder } from "@/lib/orders/guest-public-order-types";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 
-const STATUS_COLORS: Record<string, string> = {
-  NEW: "bg-blue-50 text-blue-700 border border-blue-200",
-  PREPARING: "bg-yellow-50 text-yellow-700 border border-yellow-200",
-  SHIPPED: "bg-cyan-50 text-cyan-700 border border-cyan-200",
-  DELIVERED: "bg-green-50 text-green-700 border border-green-200",
-  CANCELLED: "bg-red-50 text-red-700 border border-red-200",
-  CREATED: "bg-slate-50 text-slate-700 border border-slate-200",
-};
+type ProgressStep = "placed" | "preparing" | "shipped" | "delivered";
 
 function formatMoney(amount: number, currency: string, locale: string) {
   try {
@@ -34,70 +29,46 @@ function formatMoney(amount: number, currency: string, locale: string) {
 }
 
 function overallOrderStatus(order: GuestPublicOrder) {
-  const statuses = order.vendorOrders.map((vendorOrder) => vendorOrder.status);
-  if (statuses.every((status) => status === "CANCELLED")) return "CANCELLED";
-  if (statuses.every((status) => status === "DELIVERED")) return "DELIVERED";
-  if (statuses.some((status) => status === "SHIPPED")) return "SHIPPED";
-  if (statuses.some((status) => status === "PREPARING")) return "PREPARING";
+  const facing = order.vendorOrders.map(customerFacingVendorStatus);
+  if (facing.length === 0) return order.status || "NEW";
+  if (facing.every((status) => status === "CANCELLED")) return "CANCELLED";
+  if (facing.every((status) => status === "DELIVERED")) return "DELIVERED";
+  if (facing.some((status) => status === "SHIPPED")) return "SHIPPED";
+  if (facing.some((status) => status === "PREPARING")) return "PREPARING";
   return "NEW";
 }
 
-function formatDateTime(value: string | null, locale: SupportedLocale) {
-  if (!value) return "—";
-  return new Date(value).toLocaleString(
-    locale === "fa-AF" ? "fa-AF" : locale === "ps" ? "ps-AF" : "en-US"
-  );
+function progressIndex(status: string): number {
+  if (status === "CANCELLED") return -1;
+  if (status === "DELIVERED") return 3;
+  if (status === "SHIPPED") return 2;
+  if (status === "PREPARING" || status === "INBOUND_SHIPPED" || status === "RECEIVED_AT_WAREHOUSE")
+    return 1;
+  return 0;
 }
 
-function warehouseCustomerStatus(vendorOrder: GuestPublicOrder["vendorOrders"][number]) {
-  if (vendorOrder.deliveryMethod !== "STANDARD") return null;
+function customerFacingVendorStatus(vendorOrder: GuestPublicOrder["vendorOrders"][number]) {
   const outbound = vendorOrder.warehouse.outboundShipment;
-  const batch = vendorOrder.warehouse.batch;
-  const inbound = vendorOrder.warehouse.inboundShipment;
-  if (outbound?.status === "DELIVERED" || vendorOrder.status === "DELIVERED") return "Delivered";
-  if (outbound?.status === "OUTBOUND_SHIPPED") return "Out For Delivery";
-  if (outbound?.status === "CONSOLIDATED" || batch?.status === "CONSOLIDATED") return "Consolidated";
-  if (batch?.status === "READY_TO_CONSOLIDATE") return "Waiting For Remaining Vendors";
-  if (inbound?.status === "RECEIVED" || vendorOrder.status === "RECEIVED_AT_WAREHOUSE")
-    return "Received At Warehouse";
-  if (inbound?.status === "INBOUND_SHIPPED" || vendorOrder.status === "INBOUND_SHIPPED")
-    return "Sent To Warehouse";
-  if (vendorOrder.status === "PREPARING") return "Preparing";
-  return "Order Placed";
+  if (vendorOrder.status === "CANCELLED") return "CANCELLED";
+  if (vendorOrder.status === "DELIVERED" || outbound?.status === "DELIVERED") return "DELIVERED";
+  if (vendorOrder.status === "SHIPPED" || outbound?.status === "OUTBOUND_SHIPPED") return "SHIPPED";
+  if (
+    ["PREPARING", "INBOUND_SHIPPED", "RECEIVED_AT_WAREHOUSE"].includes(vendorOrder.status) ||
+    outbound?.status === "CONSOLIDATED"
+  ) {
+    return "PREPARING";
+  }
+  return "NEW";
 }
 
-function warehouseTimeline(
-  order: GuestPublicOrder,
-  vendorOrder: GuestPublicOrder["vendorOrders"][number]
+function deliveryMethodLabel(
+  method: GuestPublicOrder["vendorOrders"][number]["deliveryMethod"],
+  copy: ReturnType<typeof getGuestOrderTrackingCopy>
 ) {
-  const inbound = vendorOrder.warehouse.inboundShipment;
-  const batch = vendorOrder.warehouse.batch;
-  const outbound = vendorOrder.warehouse.outboundShipment;
-  return [
-    { label: "Order Placed", at: order.createdAt },
-    {
-      label: "Preparing",
-      at:
-        vendorOrder.status === "PREPARING" ||
-        vendorOrder.status === "INBOUND_SHIPPED" ||
-        vendorOrder.status === "RECEIVED_AT_WAREHOUSE" ||
-        vendorOrder.status === "DELIVERED"
-          ? order.updatedAt
-          : null,
-    },
-    { label: "Sent To Warehouse", at: inbound?.shippedAt ?? null },
-    { label: "Received At Warehouse", at: inbound?.receivedAt ?? null },
-    {
-      label: "Waiting For Remaining Vendors",
-      at:
-        batch?.status === "PARTIALLY_RECEIVED" || batch?.status === "READY_TO_CONSOLIDATE"
-          ? order.updatedAt
-          : null,
-    },
-    { label: "Consolidated", at: outbound?.consolidatedAt ?? null },
-    { label: "Out For Delivery", at: outbound?.shippedAt ?? null },
-    { label: "Delivered", at: outbound?.deliveredAt ?? vendorOrder.deliveredAt },
-  ];
+  if (method === "STANDARD") return copy.methodStandard;
+  if (method === "EXPRESS") return copy.methodExpress;
+  if (method === "PICKUP") return copy.methodPickup;
+  return "—";
 }
 
 type GuestOrderTrackingViewProps = {
@@ -113,64 +84,115 @@ export function GuestOrderTrackingView({
   const isRtl = locale !== "en";
   const copy = getGuestOrderTrackingCopy(locale);
   const summaryStatus = overallOrderStatus(order);
+  const activeStep = progressIndex(summaryStatus);
   const signupHref = `/auth/signup?redirect=${encodeURIComponent("/account")}`;
 
+  const placedLabel = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale === "fa-AF" ? "fa-AF" : locale === "ps" ? "ps-AF" : "en-US", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(order.createdAt)),
+    [locale, order.createdAt]
+  );
+
+  const steps: { key: ProgressStep; label: string }[] = [
+    { key: "placed", label: copy.stepPlaced },
+    { key: "preparing", label: copy.stepPreparing },
+    { key: "shipped", label: copy.stepShipped },
+    { key: "delivered", label: copy.stepDelivered },
+  ];
+
   return (
-    <div dir={isRtl ? "rtl" : "ltr"} className="space-y-6">
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div dir={isRtl ? "rtl" : "ltr"} className="space-y-5">
+      <section className="border border-neutral-200/80 bg-white px-5 py-5 sm:px-6 sm:py-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-              {copy.placed}{" "}
-              {new Intl.DateTimeFormat(locale === "fa-AF" ? "fa-AF" : locale === "ps" ? "ps-AF" : "en-US", {
-                dateStyle: "medium",
-                timeStyle: "short",
-              }).format(new Date(order.createdAt))}
+            <p className="text-sm text-neutral-500">
+              {copy.placed} · {placedLabel}
             </p>
-            <h1 className="mt-2 text-2xl font-bold text-[#0f3460] sm:text-3xl">{order.orderNumber}</h1>
-            <p className="mt-2 text-sm text-slate-500">
-              {copy.customer}: <span className="font-medium text-slate-800">{order.customerName}</span>
+            <h2 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900">
+              {order.orderNumber}
+            </h2>
+            <p className="mt-1 text-sm text-neutral-600">
+              {copy.customer}: <span className="font-medium text-neutral-900">{order.customerName}</span>
             </p>
           </div>
-          <span
-            className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${STATUS_COLORS[summaryStatus] ?? STATUS_COLORS.CREATED}`}
-          >
+          <span className="inline-flex w-fit border border-[#0F3460]/20 bg-[#0F3460]/5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-[#0F3460]">
             {GUEST_VENDOR_STATUS_LABELS[summaryStatus]?.[locale] ?? summaryStatus}
           </span>
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{copy.orderTotal}</p>
-            <p className="mt-1 text-lg font-bold text-slate-900">
+        {summaryStatus === "CANCELLED" ? (
+          <p className="mt-5 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {copy.cancelledNote}
+          </p>
+        ) : (
+          <div className="mt-6">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">
+              {copy.progress}
+            </p>
+            <ol className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {steps.map((step, index) => {
+                const done = activeStep >= index;
+                const current = activeStep === index;
+                return (
+                  <li key={step.key} className="min-w-0">
+                    <div
+                      className={`h-1 w-full ${done ? "bg-[#0F3460]" : "bg-neutral-200"}`}
+                      aria-hidden
+                    />
+                    <p
+                      className={`mt-2 text-sm font-medium ${
+                        current
+                          ? "text-[#0F3460]"
+                          : done
+                            ? "text-neutral-800"
+                            : "text-neutral-400"
+                      }`}
+                    >
+                      {step.label}
+                    </p>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        )}
+
+        <div className="mt-6 grid gap-4 border-t border-neutral-100 pt-5 sm:grid-cols-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+              {copy.orderTotal}
+            </p>
+            <p className="mt-1 text-lg font-bold text-neutral-900">
               {formatMoney(order.grandTotalAmount, order.currency, locale)}
             </p>
+            <p className="mt-0.5 text-sm text-neutral-500">{copy.cardPaid}</p>
           </div>
-          <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{copy.payment}</p>
-            <p className="mt-1 text-sm font-semibold text-slate-800">
-              {copy.cardPaid}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+              {copy.contact}
             </p>
-          </div>
-          <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{copy.contact}</p>
-            <div className="mt-2 space-y-1 text-sm text-slate-700">
+            <div className="mt-1.5 space-y-1 text-sm text-neutral-700">
               {order.contact.email ? (
                 <p className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-slate-400" />
+                  <Mail className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
                   <bdi>{order.contact.email}</bdi>
                 </p>
               ) : null}
               <p className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-slate-400" />
+                <Phone className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
                 <bdi>{order.contact.phone}</bdi>
               </p>
             </div>
           </div>
-          <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{copy.delivery}</p>
-            <p className="mt-2 flex items-start gap-2 text-sm text-slate-700">
-              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+              {copy.shippingTo}
+            </p>
+            <p className="mt-1.5 flex items-start gap-2 text-sm leading-relaxed text-neutral-700">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-400" />
               <span>
                 {order.shippingAddress.addressLine1}
                 <br />
@@ -181,159 +203,120 @@ export function GuestOrderTrackingView({
           </div>
         </div>
 
-        <p className="mt-4 text-xs text-slate-500">{copy.privacyNote}</p>
+        <p className="mt-4 text-xs text-neutral-400">{copy.privacyNote}</p>
       </section>
 
-      {order.vendorOrders.map((vendorOrder) => (
-        <section
-          key={`${vendorOrder.storeName}-${vendorOrder.status}-${vendorOrder.grandTotalAmount}`}
-          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
-        >
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{copy.vendor}</p>
-              <h2 className="text-lg font-bold text-slate-900">
-                {vendorOrder.storeName ?? copy.vendor}
-              </h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-700">
-                {vendorOrder.deliveryMethod ?? "—"}
-              </span>
-              <span
-                className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${STATUS_COLORS[vendorOrder.status] ?? STATUS_COLORS.NEW}`}
-              >
-                {GUEST_VENDOR_STATUS_LABELS[vendorOrder.status]?.[locale] ?? vendorOrder.status}
-              </span>
-            </div>
-          </div>
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-neutral-400">
+          {copy.shipments}
+        </h3>
 
-          {vendorOrder.deliveryMethod === "STANDARD" ? (
-            <div className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                Warehouse status
-              </p>
-              <p className="mt-1 text-sm font-semibold text-indigo-900">
-                {warehouseCustomerStatus(vendorOrder)}
-              </p>
-              <p className="mt-1 text-xs text-indigo-900/80">
-                Inbound: {vendorOrder.warehouse.inboundShipment?.status ?? "PENDING_SHIPMENT"} ·
-                Consolidation: {vendorOrder.warehouse.batch?.status ?? "OPEN"} · Outbound:{" "}
-                {vendorOrder.warehouse.outboundShipment?.status ?? "Not created"}
-              </p>
+        {order.vendorOrders.map((vendorOrder, vendorIndex) => {
+          const facingStatus = customerFacingVendorStatus(vendorOrder);
+          return (
+            <section
+              key={`${vendorOrder.storeName ?? "vendor"}-${vendorIndex}`}
+              className="border border-neutral-200/80 bg-white px-5 py-5 sm:px-6"
+            >
+              <div className="flex flex-col gap-2 border-b border-neutral-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                    {copy.vendor}
+                  </p>
+                  <h4 className="text-base font-bold text-neutral-900">
+                    {vendorOrder.storeName ?? copy.vendor}
+                  </h4>
+                  <p className="mt-0.5 text-sm text-neutral-500">
+                    {deliveryMethodLabel(vendorOrder.deliveryMethod, copy)}
+                  </p>
+                </div>
+                <span className="inline-flex w-fit border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-neutral-700">
+                  {GUEST_VENDOR_STATUS_LABELS[facingStatus]?.[locale] ?? facingStatus}
+                </span>
+              </div>
 
-              <ol className="mt-3 space-y-1.5">
-                {warehouseTimeline(order, vendorOrder).map((stage) => (
+              <ul className="divide-y divide-neutral-100">
+                {vendorOrder.items.map((item, itemIndex) => (
                   <li
-                    key={`${vendorOrder.storeName ?? "vendor"}-${stage.label}`}
-                    className="flex items-center justify-between rounded-md bg-white/70 px-2 py-1.5 text-xs text-slate-700"
+                    key={`${item.productName}-${itemIndex}`}
+                    className="flex items-center gap-3 py-3"
                   >
-                    <span className="font-medium text-slate-800">{stage.label}</span>
-                    <span>{formatDateTime(stage.at, locale)}</span>
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden bg-neutral-50">
+                      {item.productImage ? (
+                        <CatalogImage
+                          src={item.productImage}
+                          alt={item.productName}
+                          fill
+                          className="object-contain p-1"
+                          sizes="56px"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-neutral-300">
+                          <Package className="h-5 w-5" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-neutral-900">
+                        {item.productName}
+                      </p>
+                      <p className="text-xs text-neutral-500">
+                        {copy.qty}: {item.quantity}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-sm font-semibold text-neutral-900">
+                      {formatMoney(item.lineTotalAmount, item.currency, locale)}
+                    </p>
                   </li>
                 ))}
-              </ol>
-            </div>
-          ) : null}
+              </ul>
 
-          <div className="space-y-3">
-            {vendorOrder.items.map((item) => (
-              <div
-                key={`${item.productName}-${item.quantity}-${item.lineTotalAmount}`}
-                className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3 last:border-b-0 last:pb-0"
-              >
-                <div className="flex min-w-0 items-start gap-3">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
-                    <Package className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-slate-900">{item.productName}</p>
-                    <p className="text-sm text-slate-500">
-                      {copy.qty}: {item.quantity}
-                    </p>
-                  </div>
+              <div className="mt-3 space-y-1 border-t border-neutral-100 pt-3 text-sm text-neutral-600">
+                <div className="flex justify-between">
+                  <span>{copy.subtotal}</span>
+                  <span>{formatMoney(vendorOrder.subtotalAmount, vendorOrder.currency, locale)}</span>
                 </div>
-                <p className="shrink-0 text-sm font-semibold text-slate-900">
-                  {formatMoney(item.lineTotalAmount, item.currency, locale)}
-                </p>
+                <div className="flex justify-between">
+                  <span>{copy.delivery}</span>
+                  <span>{formatMoney(vendorOrder.deliveryAmount, vendorOrder.currency, locale)}</span>
+                </div>
+                {vendorOrder.discountAmount > 0 ? (
+                  <div className="flex justify-between">
+                    <span>{copy.discount}</span>
+                    <span>
+                      −{formatMoney(vendorOrder.discountAmount, vendorOrder.currency, locale)}
+                    </span>
+                  </div>
+                ) : null}
+                <div className="flex justify-between pt-1 font-semibold text-neutral-900">
+                  <span>{copy.orderTotal}</span>
+                  <span>
+                    {formatMoney(vendorOrder.grandTotalAmount, vendorOrder.currency, locale)}
+                  </span>
+                </div>
               </div>
-            ))}
-          </div>
+            </section>
+          );
+        })}
+      </div>
 
-          <div className="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-600">
-            <div className="flex justify-between">
-              <span>{copy.subtotal}</span>
-              <span>{formatMoney(vendorOrder.subtotalAmount, vendorOrder.currency, locale)}</span>
-            </div>
-            <div className="mt-1 flex justify-between">
-              <span>{copy.delivery}</span>
-              <span>{formatMoney(vendorOrder.deliveryAmount, vendorOrder.currency, locale)}</span>
-            </div>
-            {vendorOrder.discountAmount > 0 ? (
-              <div className="mt-1 flex justify-between">
-                <span>{copy.discount}</span>
-                <span>-{formatMoney(vendorOrder.discountAmount, vendorOrder.currency, locale)}</span>
-              </div>
-            ) : null}
-            <div className="mt-2 flex justify-between font-semibold text-slate-900">
-              <span>{copy.orderTotal}</span>
-              <span>{formatMoney(vendorOrder.grandTotalAmount, vendorOrder.currency, locale)}</span>
-            </div>
-          </div>
-        </section>
-      ))}
-
-      <section className="rounded-2xl border border-[#0f3460]/10 bg-[#0f3460]/5 p-5 sm:p-6">
-        <h2 className="text-lg font-bold text-[#0f3460]">{copy.accountPrompt}</h2>
-        <p className="mt-2 text-sm text-slate-600">{copy.lookupHelp}</p>
+      <div className="flex flex-col items-start justify-between gap-3 border border-neutral-200/80 bg-white px-5 py-4 text-sm sm:flex-row sm:items-center sm:px-6">
+        <p className="text-neutral-600">{copy.accountPrompt}</p>
         <Link
           href={signupHref}
-          className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+          className="shrink-0 font-semibold text-[#0F3460] underline-offset-4 hover:underline"
         >
           {copy.accountCta}
         </Link>
-      </section>
+      </div>
 
       {showLookupPrompt ? (
-        <p className="text-center text-sm text-slate-500">
-          <Link href="/orders" className="font-medium text-[#0f3460] hover:underline">
-            {copy.trackOrder}
+        <p className="text-center text-sm text-neutral-500">
+          <Link href="/orders" className="font-medium text-[#0F3460] hover:underline">
+            {copy.anotherOrder}
           </Link>
         </p>
       ) : null}
-    </div>
-  );
-}
-
-export function GuestOrderTrackingShell({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) {
-  const locale = useLocale() as SupportedLocale;
-  const isRtl = locale !== "en";
-  const copy = getGuestOrderTrackingCopy(locale);
-
-  return (
-    <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-[#f6f8fc]">
-      <section className="border-b border-[#0f3460]/10 bg-linear-to-br from-[#0f3460] via-[#123f74] to-[#0f3460] text-white">
-        <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-          <nav className="mb-5 flex items-center gap-2 text-sm text-white/70">
-            <Link href="/" className="transition hover:text-white hover:underline">
-              {copy.home}
-            </Link>
-            <ChevronRight className={`h-4 w-4 shrink-0 ${isRtl ? "rotate-180" : ""}`} />
-            <span className="font-medium text-white">{copy.trackOrder}</span>
-          </nav>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{title}</h1>
-          {subtitle ? <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75 sm:text-base">{subtitle}</p> : null}
-        </div>
-      </section>
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">{children}</div>
     </div>
   );
 }

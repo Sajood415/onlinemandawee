@@ -1504,28 +1504,29 @@
       "browseAll": "Browse all products",
       "notFound": "Category not found"
     },
-    "babyCare": {
-      "eyebrow": "MandawEE · Baby Care",
-      "subtitle": "Gentle essentials for little ones — soft care, everyday comfort, and trusted brands in one place.",
+    "showcase": {
+      "eyebrow": "MandawEE · {category}",
+      "subtitle": "Trusted products from local vendors — shop this category with clear prices and fast delivery options.",
+      "babyCareSubtitle": "Gentle essentials for little ones — soft care, everyday comfort, and trusted brands in one place.",
       "shopProducts": "Shop products",
       "viewPackages": "Baby packages",
       "duo": {
-        "leftAlt": "Soft baby care essentials for everyday comfort",
-        "rightAlt": "Happy moments with baby and family care",
-        "leftLabel": "Soft care picks",
-        "rightLabel": "Baby packages"
+        "leftAlt": "Featured picks in this category",
+        "rightAlt": "More products to explore",
+        "leftLabel": "Top picks",
+        "rightLabel": "More to explore"
       },
       "promos": {
-        "oneAlt": "Baby bath and skincare must-haves",
-        "twoAlt": "Cozy baby essentials for home",
-        "threeAlt": "Playtime and nursery comforts",
-        "fourAlt": "Parent-approved baby care staples",
-        "oneLabel": "Bath & soft skin",
-        "twoLabel": "Everyday comfort",
-        "threeLabel": "Nursery vibes",
+        "oneAlt": "Popular products in this category",
+        "twoAlt": "Everyday essentials from this category",
+        "threeAlt": "Fresh finds for your cart",
+        "fourAlt": "Vendor favorites in this category",
+        "oneLabel": "Popular now",
+        "twoLabel": "Everyday picks",
+        "threeLabel": "Fresh finds",
         "fourLabel": "Trusted picks"
       },
-      "catalogTitle": "Shop Baby Care",
+      "catalogTitle": "Shop {category}",
       "catalogSubtitle": "Browse products in this category."
     }
   },
