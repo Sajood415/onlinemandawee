@@ -589,6 +589,107 @@
         "transactionFee": "I agree to the transaction fee: {fee} per order (allocated from each customer order; not applied to shipping).",
         "disputes": "I agree Online Mandawee has final decision on escalated disputes/refunds.",
         "delivery": "I agree to follow platform delivery rules."
+      },
+      "landing": {
+        "eyebrow": "Grow with Online Mandawee",
+        "title": "Open your store and start selling with confidence",
+        "subtitle": "Use one vendor workflow to set up your account, manage products, handle orders, and receive payouts in one place.",
+        "startButton": "Start vendor application",
+        "processButton": "See onboarding process",
+        "features": {
+          "dashboard": {
+            "title": "Vendor dashboard",
+            "description": "Track orders, product status, and store activity from one panel."
+          },
+          "promotions": {
+            "title": "Promotion tools",
+            "description": "Create coupons and promotions to run structured offers for customers."
+          },
+          "payouts": {
+            "title": "Payout profile",
+            "description": "Keep payout details updated and review your payment history."
+          },
+          "orders": {
+            "title": "Order control",
+            "description": "Manage incoming orders and update statuses from your vendor area."
+          }
+        },
+        "process": {
+          "title": "How vendor onboarding works",
+          "subtitle": "This is the exact flow you will complete after pressing start.",
+          "steps": {
+            "account": {
+              "title": "Account setup",
+              "description": "Verify email and create your vendor login credentials."
+            },
+            "store": {
+              "title": "Store profile",
+              "description": "Add store name, business type, and optional branding details."
+            },
+            "kyc": {
+              "title": "Identity verification",
+              "description": "Upload your ID documents for compliance review."
+            },
+            "address": {
+              "title": "Address details",
+              "description": "Provide your operating address and optional proof document."
+            },
+            "payout": {
+              "title": "Payout setup",
+              "description": "Enter your bank information so approved sales can be settled."
+            },
+            "agreements": {
+              "title": "Policies and submission",
+              "description": "Accept required policies, then submit for review."
+            }
+          }
+        },
+        "requirements": {
+          "title": "What to prepare before you begin",
+          "subtitle": "Having these ready makes onboarding faster.",
+          "items": {
+            "identity": "A valid identity document (passport, national ID, or approved alternative).",
+            "business": "Business details for your store profile (if you register as a company).",
+            "address": "Your operating address and optional proof of address document.",
+            "bank": "Bank account details for payouts."
+          }
+        },
+        "trust": {
+          "title": "How we keep the process fair",
+          "subtitle": "Each application goes through a review based on submitted information and platform policies.",
+          "items": {
+            "review": "Every application is reviewed before activation.",
+            "policies": "Policy acceptance is required before submission.",
+            "support": "You can continue from your saved draft if you return later."
+          }
+        },
+        "faq": {
+          "title": "Frequently asked questions",
+          "items": {
+            "approval": {
+              "question": "When can I start selling?",
+              "answer": "You can start listing and selling after your application is reviewed and approved."
+            },
+            "cost": {
+              "question": "Will I see platform charges before submission?",
+              "answer": "Yes. Relevant fee and agreement details are shown inside the onboarding flow before final submit."
+            },
+            "edit": {
+              "question": "Can I continue later if I cannot finish now?",
+              "answer": "Yes. Your onboarding draft can be resumed so you can complete remaining steps later."
+            },
+            "publish": {
+              "question": "Do products go live immediately?",
+              "answer": "Product visibility depends on your vendor status and platform review rules."
+            }
+          }
+        },
+        "finalCta": {
+          "title": "Ready to create your vendor account?",
+          "subtitle": "Start the onboarding flow and submit your store for review.",
+          "button": "Continue to onboarding"
+        },
+        "flowLocked": "Your onboarding flow appears here after you click the start button."
       }
     }
   },

@@ -286,8 +286,10 @@ export function HomeCouponDealsRail() {
     <section className="w-full min-w-0 pb-4">
       <div className="overflow-hidden rounded-xl bg-[#ec1b23] p-1.5 sm:rounded-2xl sm:p-2.5">
         <div className="flex flex-col overflow-hidden rounded-lg sm:flex-row sm:rounded-xl">
-          <div className={`order-1 ${isRtl ? "sm:order-1" : "sm:order-2"}`}>{promoAside}</div>
-          <div className={`order-2 ${isRtl ? "sm:order-2" : "sm:order-1"}`}>{productRail}</div>
+          <div className={`order-1 shrink-0 ${isRtl ? "sm:order-1" : "sm:order-2"}`}>{promoAside}</div>
+          <div className={`order-2 min-w-0 sm:flex-1 ${isRtl ? "sm:order-2" : "sm:order-1"}`}>
+            {productRail}
+          </div>
         </div>
       </div>
     </section>

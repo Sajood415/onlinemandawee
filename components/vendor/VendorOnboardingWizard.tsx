@@ -92,7 +92,7 @@ const stepsMeta = [
   "Agreements",
 ] as const;
 
-export function VendorOnboardingWizard() {
+export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: boolean }) {
   const locale = useLocale();
   const t = useTranslations("VendorPages.register.agreements");
   const [ready, setReady] = useState(false);
@@ -678,7 +678,8 @@ export function VendorOnboardingWizard() {
 
   return (
     <div className="min-w-0 w-full bg-neutral-50 pb-24">
-      <div className={VENDOR_HERO}>
+      {showTopHero ? (
+        <div className={VENDOR_HERO}>
         <div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_95%_60%_at_50%_-15%,rgba(255,255,255,0.14),transparent_52%)]"
           aria-hidden
@@ -752,7 +753,8 @@ export function VendorOnboardingWizard() {
             <span className="text-white">{stepsMeta[step - 1]}</span>
           </p>
         </div>
-      </div>
+        </div>
+      ) : null}
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
         <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-lg sm:p-10 lg:p-12">

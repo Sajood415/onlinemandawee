@@ -1,5 +1,5 @@
-import { VendorOnboardingWizard } from "@/components/vendor/VendorOnboardingWizard";
+import { VendorRegisterShowcase } from "@/components/vendor/VendorRegisterShowcase";
 
 export default function VendorRegisterPage() {
-  return <VendorOnboardingWizard />;
+  return <VendorRegisterShowcase />;
 }
