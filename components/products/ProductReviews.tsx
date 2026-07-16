@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, MessageSquareText, Star } from "lucide-react";
 
-import { Link } from "@/i18n/navigation";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -212,8 +211,8 @@ export function ProductReviews({ productId, locale }: ProductReviewsProps) {
         </h2>
       </div>
 
-      <div className="mb-8 rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
-        {canReview ? (
+      {canReview ? (
+        <div className="mb-8 rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
               <p className="mb-1.5 text-sm font-medium text-neutral-700">{copy.yourRating}</p>
@@ -239,14 +238,8 @@ export function ProductReviews({ productId, locale }: ProductReviewsProps) {
               {submitting ? copy.submitting : copy.submit}
             </button>
           </form>
-        ) : (
-          <p className="text-sm text-neutral-600">
-            <Link href="/auth/login" className="font-semibold text-[#0f3460] hover:underline">
-              {copy.loginPrompt}
-            </Link>
-          </p>
-        )}
-      </div>
+        </div>
+      ) : null}
 
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-neutral-500">
