@@ -581,6 +581,11 @@
     },
     "currencies": {
       "select": "ارز"
+    },
+    "shell": {
+      "home": "خانه",
+      "backToStore": "بازگشت به فروشگاه",
+      "continueShopping": "ادامه خرید"
     }
   },
   "VendorPages": {

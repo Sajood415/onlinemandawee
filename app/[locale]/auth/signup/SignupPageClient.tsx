@@ -2,8 +2,15 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 
+import {
+  AuthShell,
+  AUTH_BUTTON_CLASS,
+  AUTH_INPUT_CLASS,
+  AUTH_SECONDARY_BUTTON_CLASS,
+} from "@/components/auth/AuthShell";
 import { PasswordRequirements } from "@/components/vendor/onboarding/PasswordRequirements";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { getPasswordValidationMessage } from "@/components/vendor/onboarding/validation";
@@ -40,6 +47,7 @@ export function SignupPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { establishSession } = useAuth();
+  const t = useTranslations("Auth.signup");
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -229,161 +237,156 @@ export function SignupPageClient() {
     }
   };
 
+  const title = step === "otp" ? t("otpTitle") : t("title");
+  const subtitle =
+    step === "otp"
+      ? t("otpSubtitle", { email: otpIdentifier ?? normalizeEmailForAuth(email) })
+      : t("subtitle");
+
   return (
-    <div className="bg-neutral-50 px-4 py-12 sm:py-16">
-      <div className="mx-auto max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
-        <h1 className="text-2xl font-bold text-[#0f3460]">Create account</h1>
-        <p className="mt-2 text-sm text-neutral-600">
-          Create a free account to track orders, save addresses, and check out faster.
-        </p>
-
-        {step === "details" ? (
-          <form className="mt-6 space-y-4" onSubmit={sendOtpFromCreate}>
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-neutral-700">
-                Full name
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-neutral-700">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-neutral-700">
-                Phone
-              </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-                placeholder="+93701234567"
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-neutral-700">
-                Password
-              </label>
-              <PasswordInput
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-                required
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                aria-describedby="signup-password-requirements"
-              />
-              <div id="signup-password-requirements" className="mt-2">
-                <PasswordRequirements password={password} />
-              </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-neutral-700">
-                Confirm password
-              </label>
-              <PasswordInput
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
-                required
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-
-            {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-            <button
-              type="submit"
-              disabled={busyAction !== null}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              {busyAction === "send" ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              ) : null}
-              Create account
-            </button>
-          </form>
-        ) : null}
-
-        {step === "otp" ? (
-          <form className="mt-6 space-y-4" onSubmit={verifyOtpAndCreateAccount}>
-            <p className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
-              Check your email — we sent a verification code to{" "}
-              <span className="font-semibold">{otpIdentifier ?? normalizeEmailForAuth(email)}</span>.
-            </p>
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-neutral-700">
-                Verification code
-              </label>
-              <input
-                type="text"
-                value={code}
-                maxLength={6}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                required
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-
-            {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-            <button
-              type="submit"
-              disabled={busyAction !== null}
-              className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              {busyAction === "verify" ? "Verifying..." : "Verify"}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => void resendOtp()}
-              disabled={busyAction !== null}
-              className="inline-flex w-full items-center justify-center rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-neutral-400 disabled:opacity-50"
-            >
-              Resend code
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setStep("details");
-                setCode("");
-                setOtpIdentifier(null);
-                setMessage(null);
-                setError(null);
-              }}
-              className="inline-flex w-full items-center justify-center text-sm font-semibold text-[#0f3460] hover:underline"
-            >
-              Edit account details
-            </button>
-          </form>
-        ) : null}
-
-        <p className="mt-4 text-sm text-neutral-600">
-          Already have an account?{" "}
-          <Link href="/auth/login" className="font-semibold text-[#0f3460] hover:underline">
-            Sign in
+    <AuthShell
+      title={title}
+      subtitle={subtitle}
+      footer={
+        <p className="text-sm text-neutral-600">
+          {t("alreadyHave")}{" "}
+          <Link href="/auth/login" className="font-semibold text-[#0F3460] underline-offset-4 hover:underline">
+            {t("signIn")}
           </Link>
         </p>
-      </div>
-    </div>
+      }
+    >
+      {step === "details" ? (
+        <form className="space-y-5" onSubmit={sendOtpFromCreate}>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+              {t("fullName")}
+            </label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              autoComplete="name"
+              className={AUTH_INPUT_CLASS}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+              {t("email")}
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              className={AUTH_INPUT_CLASS}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+              {t("phone")}
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+              placeholder="+93701234567"
+              autoComplete="tel"
+              className={AUTH_INPUT_CLASS}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+              {t("password")}
+            </label>
+            <PasswordInput
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+              required
+              className={AUTH_INPUT_CLASS}
+              aria-describedby="signup-password-requirements"
+            />
+            <div id="signup-password-requirements" className="mt-2">
+              <PasswordRequirements password={password} />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+              {t("confirmPassword")}
+            </label>
+            <PasswordInput
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+              required
+              className={AUTH_INPUT_CLASS}
+            />
+          </div>
+
+          {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
+          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
+          <button type="submit" disabled={busyAction !== null} className={AUTH_BUTTON_CLASS}>
+            {busyAction === "send" ? (
+              <span className="me-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : null}
+            {busyAction === "send" ? t("creating") : t("create")}
+          </button>
+        </form>
+      ) : null}
+
+      {step === "otp" ? (
+        <form className="space-y-5" onSubmit={verifyOtpAndCreateAccount}>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+              {t("verificationCode")}
+            </label>
+            <input
+              type="text"
+              value={code}
+              maxLength={6}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              required
+              inputMode="numeric"
+              className={AUTH_INPUT_CLASS}
+            />
+          </div>
+
+          {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
+          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
+          <button type="submit" disabled={busyAction !== null} className={AUTH_BUTTON_CLASS}>
+            {busyAction === "verify" ? t("verifying") : t("verify")}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => void resendOtp()}
+            disabled={busyAction !== null}
+            className={AUTH_SECONDARY_BUTTON_CLASS}
+          >
+            {t("resendCode")}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setStep("details");
+              setCode("");
+              setOtpIdentifier(null);
+              setMessage(null);
+              setError(null);
+            }}
+            className="inline-flex w-full items-center justify-center text-sm font-semibold text-[#0F3460] underline-offset-4 hover:underline"
+          >
+            {t("editDetails")}
+          </button>
+        </form>
+      ) : null}
+    </AuthShell>
   );
 }

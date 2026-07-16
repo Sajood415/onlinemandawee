@@ -581,6 +581,11 @@
     },
     "currencies": {
       "select": "اسعار"
+    },
+    "shell": {
+      "home": "کور",
+      "backToStore": "بېرته پلورنځي ته",
+      "continueShopping": "پیرود ته دوام ورکړئ"
     }
   },
   "VendorPages": {

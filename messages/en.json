@@ -581,6 +581,11 @@
     },
     "currencies": {
       "select": "Currency"
+    },
+    "shell": {
+      "home": "Home",
+      "backToStore": "Back to store",
+      "continueShopping": "Continue shopping"
     }
   },
   "VendorPages": {

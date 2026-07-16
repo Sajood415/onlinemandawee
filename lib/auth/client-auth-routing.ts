@@ -97,3 +97,8 @@ export function isPortalPathname(pathname: string) {
   }
   return false;
 }
+
+/** Login / signup / forgot-password — hide storefront header + footer. */
+export function isAuthPathname(pathname: string) {
+  return pathMatchesPrefix(pathname, "/auth");
+}

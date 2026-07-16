@@ -4,6 +4,11 @@ import { FormEvent, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 
+import {
+  AuthShell,
+  AUTH_BUTTON_CLASS,
+  AUTH_INPUT_CLASS,
+} from "@/components/auth/AuthShell";
 import { PasswordRequirements } from "@/components/vendor/onboarding/PasswordRequirements";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { usePasswordRules } from "@/lib/i18n/use-password-rules";
@@ -38,9 +43,7 @@ export default function ForgotPasswordPage() {
       const data = await parseApiResponse<{ debugCode?: string }>(res);
       setPhase("verify");
       setMessage(
-        data.debugCode
-          ? t("codeSentDev", { code: data.debugCode })
-          : t("codeSent")
+        data.debugCode ? t("codeSentDev", { code: data.debugCode }) : t("codeSent")
       );
       toast.success(t("sendCode"), t("codeSent"));
     } catch (err) {
@@ -125,118 +128,107 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="bg-neutral-50 px-4 py-12 sm:py-16">
-      <div className="mx-auto max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
-        <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
-        <p className="mt-2 text-sm text-neutral-600">{t("subtitle")}</p>
-
-        {phase === "request" ? (
-          <form className="mt-6 space-y-4" onSubmit={requestReset}>
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-neutral-700">
-                {t("email")}
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={busy}
-              className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              {busy ? t("sending") : t("sendCode")}
-            </button>
-          </form>
-        ) : null}
-
-        {phase === "verify" ? (
-          <form className="mt-6 space-y-4" onSubmit={verifyCode}>
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-neutral-700">
-                {t("verificationCode")}
-              </label>
-              <input
-                type="text"
-                value={code}
-                maxLength={6}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                required
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={busy}
-              className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              {busy ? t("verifying") : t("verifyCode")}
-            </button>
-          </form>
-        ) : null}
-
-        {phase === "reset" ? (
-          <form className="mt-6 space-y-4" onSubmit={submitReset}>
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-neutral-700">
-                {t("newPassword")}
-              </label>
-              <PasswordInput
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                aria-describedby="forgot-password-requirements"
-              />
-              <div id="forgot-password-requirements" className="mt-2">
-                <PasswordRequirements password={newPassword} />
-              </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-neutral-700">
-                {t("confirmPassword")}
-              </label>
-              <PasswordInput
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                aria-invalid={
-                  confirmPassword.length > 0 && newPassword !== confirmPassword
-                }
-              />
-              {confirmPassword.length > 0 && newPassword !== confirmPassword ? (
-                <p className="mt-1 text-xs text-red-600" role="alert">
-                  {t("passwordMismatch")}
-                </p>
-              ) : null}
-            </div>
-            <button
-              type="submit"
-              disabled={busy}
-              className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              {busy ? t("saving") : t("resetPassword")}
-            </button>
-          </form>
-        ) : null}
-
-        {message ? <p className="mt-4 text-sm text-emerald-700">{message}</p> : null}
-        {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
-
+    <AuthShell
+      title={t("title")}
+      subtitle={t("subtitle")}
+      footer={
         <Link
           href="/auth/login"
-          className="mt-5 inline-block text-sm font-semibold text-[#0f3460] hover:underline"
+          className="text-sm font-semibold text-[#0F3460] underline-offset-4 hover:underline"
         >
           {t("backToLogin")}
         </Link>
-      </div>
-    </div>
+      }
+    >
+      {phase === "request" ? (
+        <form className="space-y-5" onSubmit={requestReset}>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+              {t("email")}
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              className={AUTH_INPUT_CLASS}
+            />
+          </div>
+          <button type="submit" disabled={busy} className={AUTH_BUTTON_CLASS}>
+            {busy ? t("sending") : t("sendCode")}
+          </button>
+        </form>
+      ) : null}
+
+      {phase === "verify" ? (
+        <form className="space-y-5" onSubmit={verifyCode}>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+              {t("verificationCode")}
+            </label>
+            <input
+              type="text"
+              value={code}
+              maxLength={6}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              required
+              inputMode="numeric"
+              className={AUTH_INPUT_CLASS}
+            />
+          </div>
+          <button type="submit" disabled={busy} className={AUTH_BUTTON_CLASS}>
+            {busy ? t("verifying") : t("verifyCode")}
+          </button>
+        </form>
+      ) : null}
+
+      {phase === "reset" ? (
+        <form className="space-y-5" onSubmit={submitReset}>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+              {t("newPassword")}
+            </label>
+            <PasswordInput
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+              className={AUTH_INPUT_CLASS}
+              aria-describedby="forgot-password-requirements"
+            />
+            <div id="forgot-password-requirements" className="mt-2">
+              <PasswordRequirements password={newPassword} />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+              {t("confirmPassword")}
+            </label>
+            <PasswordInput
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+              className={AUTH_INPUT_CLASS}
+              aria-invalid={
+                confirmPassword.length > 0 && newPassword !== confirmPassword
+              }
+            />
+            {confirmPassword.length > 0 && newPassword !== confirmPassword ? (
+              <p className="mt-1 text-xs text-red-600" role="alert">
+                {t("passwordMismatch")}
+              </p>
+            ) : null}
+          </div>
+          <button type="submit" disabled={busy} className={AUTH_BUTTON_CLASS}>
+            {busy ? t("saving") : t("resetPassword")}
+          </button>
+        </form>
+      ) : null}
+
+      {message ? <p className="mt-4 text-sm text-emerald-700">{message}</p> : null}
+      {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
+    </AuthShell>
   );
 }
