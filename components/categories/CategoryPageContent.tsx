@@ -4,11 +4,12 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, Search } from "lucide-react";
 
-import { resolveCategoryLabel } from "@/lib/categories/category-labels";
+import { BabyCareCategoryShowcase } from "@/components/categories/BabyCareCategoryShowcase";
 import { getCategoryCopy } from "@/components/categories/copy";
 import { ProductCard } from "@/components/products/ProductCard";
 import { ProductsGridSkeleton } from "@/components/products/ProductsGridSkeleton";
 import { Link } from "@/i18n/navigation";
+import { resolveCategoryLabel } from "@/lib/categories/category-labels";
 import type { PublicCategoryDetail } from "@/lib/categories/public-category";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { filterCatalogProducts, sortCatalogProducts } from "@/lib/products/catalog-filters";
@@ -120,6 +121,22 @@ export function CategoryPageContent({ slug, locale, isRtl }: CategoryPageContent
         category.parent.translations
       )
     : null;
+
+  if (slug === "baby-care") {
+    return (
+      <BabyCareCategoryShowcase
+        category={category}
+        categoryTitle={categoryTitle}
+        parentTitle={parentTitle}
+        locale={locale}
+        isRtl={isRtl}
+        products={filteredProducts}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        hasActiveSearch={Boolean(debouncedSearch.trim())}
+      />
+    );
+  }
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-[#f6f8fc]">

@@ -1188,6 +1188,42 @@
       }
     }
   },
+  "CategoryPages": {
+    "common": {
+      "home": "Home",
+      "allProducts": "All Products",
+      "subcategories": "Shop by type",
+      "searchPlaceholder": "Search in this category...",
+      "noProducts": "No products in this category yet.",
+      "noSearchResults": "No matching products in this category.",
+      "results": "{count, plural, one {# product} other {# products}}",
+      "browseAll": "Browse all products",
+      "notFound": "Category not found"
+    },
+    "babyCare": {
+      "eyebrow": "MandawEE · Baby Care",
+      "subtitle": "Gentle essentials for little ones — soft care, everyday comfort, and trusted brands in one place.",
+      "shopProducts": "Shop products",
+      "duo": {
+        "leftAlt": "Soft baby care essentials for everyday comfort",
+        "rightAlt": "Happy moments with baby and family care",
+        "leftLabel": "Soft care picks",
+        "rightLabel": "Family favorites"
+      },
+      "promos": {
+        "oneAlt": "Baby bath and skincare must-haves",
+        "twoAlt": "Cozy baby essentials for home",
+        "threeAlt": "Playtime and nursery comforts",
+        "fourAlt": "Parent-approved baby care staples",
+        "oneLabel": "Bath & soft skin",
+        "twoLabel": "Everyday comfort",
+        "threeLabel": "Nursery vibes",
+        "fourLabel": "Trusted picks"
+      },
+      "catalogTitle": "Shop Baby Care",
+      "catalogSubtitle": "Browse products in this category."
+    }
+  },
   "AdminPages": {
     "orders": "Orders",
     "users": "Users",
