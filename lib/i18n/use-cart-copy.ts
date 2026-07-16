@@ -30,6 +30,8 @@ export function useCartCopy() {
     remove: t("remove"),
     each: t("each"),
     lineTotal: t("lineTotal"),
+    columnProduct: t("columnProduct"),
+    columnQty: t("columnQty"),
     recommended: t("recommended"),
     loading: tc("loadingCart"),
   };

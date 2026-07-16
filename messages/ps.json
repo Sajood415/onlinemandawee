@@ -1641,6 +1641,8 @@
     "remove": "لرې کړئ",
     "each": "هرو",
     "lineTotal": "د کرښې مجموعه",
+    "columnProduct": "محصول",
+    "columnQty": "شمېر",
     "recommended": "ښايي خوښ کړئ",
     "recommendedSubtitle": "د خپل فرمایش بشپړولو لپاره مشهور انتخابونه",
     "viewAll": "ټول وګورئ",

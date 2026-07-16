@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowRight, Lock, Truck } from "lucide-react";
+import { ArrowRight, Lock } from "lucide-react";
 
+import { Link } from "@/i18n/navigation";
 import { useCartCopy } from "@/lib/i18n/use-cart-copy";
 import { useCurrency } from "@/store/currency-context";
 
@@ -17,63 +17,49 @@ export function CartOrderSummary({ subtotal, itemCount }: CartOrderSummaryProps)
   const fmt = (amount: number) => formatPrice(amount, currency);
 
   return (
-    <aside className="lg:sticky lg:top-24">
-      <div className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_16px_50px_rgba(15,52,96,0.08)]">
-        <div className="border-b border-neutral-100 bg-gradient-to-r from-[#0f3460]/5 to-transparent px-5 py-4">
-          <h2 className="text-lg font-bold tracking-tight text-[#0f3460]">
-            {copy.orderSummary}
-          </h2>
-          <p className="mt-1 text-xs text-neutral-500">
-            {itemCount} {itemCount === 1 ? copy.item : copy.items}
-          </p>
-        </div>
+    <aside className="lg:sticky lg:top-28 lg:self-start">
+      <div className="border-t border-neutral-900 pt-5">
+        <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-neutral-900">
+          {copy.orderSummary}
+        </h2>
+        <p className="mt-1 text-sm text-neutral-500">
+          {itemCount} {itemCount === 1 ? copy.item : copy.items}
+        </p>
 
-        <div className="space-y-3 px-5 py-4 text-sm">
-          <div className="flex items-center justify-between text-neutral-600">
-            <span>{copy.subtotal}</span>
-            <span className="font-semibold text-neutral-900">{fmt(subtotal)}</span>
+        <dl className="mt-6 space-y-3 text-sm">
+          <div className="flex items-center justify-between gap-4">
+            <dt className="text-neutral-500">{copy.subtotal}</dt>
+            <dd className="font-medium tabular-nums text-neutral-900">{fmt(subtotal)}</dd>
           </div>
-          <p className="text-xs text-neutral-500">{copy.shippingCalculated}</p>
-        </div>
-
-        <div className="border-t border-neutral-100 px-5 py-4">
-          <div className="flex items-end justify-between">
-            <span className="text-sm font-semibold text-neutral-700">{copy.total}</span>
-            <span className="text-2xl font-bold tracking-tight text-[#0f3460]">
-              {fmt(subtotal)}
-            </span>
+          <div className="flex items-center justify-between gap-4">
+            <dt className="text-neutral-500">{copy.shipping}</dt>
+            <dd className="text-neutral-500">{copy.shippingCalculated}</dd>
           </div>
+        </dl>
+
+        <div className="mt-5 flex items-baseline justify-between gap-4 border-t border-neutral-200 pt-5">
+          <span className="text-sm font-semibold text-neutral-900">{copy.total}</span>
+          <span className="text-xl font-bold tabular-nums tracking-tight text-neutral-900">
+            {fmt(subtotal)}
+          </span>
         </div>
 
-        <div className="border-t border-neutral-100 px-5 py-4">
-          <div className="rounded-xl bg-neutral-50 p-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0f3460]/10 text-[#0f3460]">
-                <Truck className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-neutral-900">{copy.deliveryEstimate}</p>
-                <p className="mt-0.5 text-sm text-neutral-600">{copy.deliveryWindow}</p>
-                <p className="mt-1 text-xs text-neutral-500">{copy.deliveryNote}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <p className="mt-2 text-xs text-neutral-400">
+          {copy.deliveryWindow}
+        </p>
 
-        <div className="border-t border-neutral-100 px-5 py-5">
-          <Link
-            href="/checkout"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-[0_12px_30px_rgba(220,53,69,0.28)] transition hover:bg-primary/90"
-          >
-            {copy.checkout}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+        <Link
+          href="/checkout"
+          className="mt-6 inline-flex w-full items-center justify-center gap-2 bg-[#0F3460] px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+        >
+          {copy.checkout}
+          <ArrowRight className="h-4 w-4" />
+        </Link>
 
-          <div className="mt-4 flex items-center justify-center gap-2 text-xs font-semibold text-neutral-700">
-            <Lock className="h-3.5 w-3.5 text-[#0f3460]" />
-            {copy.secureCheckout}
-          </div>
-        </div>
+        <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-neutral-400">
+          <Lock className="h-3 w-3" />
+          {copy.secureCheckout}
+        </p>
       </div>
     </aside>
   );

@@ -1641,6 +1641,8 @@
     "remove": "حذف",
     "each": "هر",
     "lineTotal": "جمع ردیف",
+    "columnProduct": "محصول",
+    "columnQty": "تعداد",
     "recommended": "شاید دوست داشته باشید",
     "recommendedSubtitle": "انتخاب‌های محبوب برای تکمیل سفارش",
     "viewAll": "مشاهده همه",

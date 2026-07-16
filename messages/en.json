@@ -1641,6 +1641,8 @@
     "remove": "Remove",
     "each": "each",
     "lineTotal": "Line total",
+    "columnProduct": "Product",
+    "columnQty": "Qty",
     "recommended": "You may also like",
     "recommendedSubtitle": "Popular picks to complete your order",
     "viewAll": "View all",
