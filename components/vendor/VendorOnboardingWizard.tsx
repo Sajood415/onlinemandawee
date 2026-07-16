@@ -1,23 +1,33 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import Image from "next/image";
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Landmark,
+  Loader2,
+  LockKeyhole,
+  Mail,
+  User,
+  UploadCloud,
+  X,
+} from "lucide-react";
 
 import {
   businessTypes,
   industryTypes,
-  industryTypeLabels,
   kycDocumentTypes,
 } from "@/domain/vendor/vendor-types";
 import type { BusinessType, IndustryType, KycDocumentType } from "@/domain/vendor/vendor-types";
 import type { VendorUploadKind } from "@/domain/vendor/vendor-upload-kind";
-import { AddressAutocompleteInput } from "@/components/address/AddressAutocompleteInput";
-import { FileAttachmentField } from "@/components/vendor/onboarding/FileAttachmentField";
 import type { OnboardingStatusPayload } from "@/components/vendor/onboarding/types";
 import { PasswordRequirements } from "@/components/vendor/onboarding/PasswordRequirements";
-import { PasswordInput } from "@/components/ui/PasswordInput";
 import { PhoneNumberField } from "@/components/vendor/onboarding/PhoneNumberField";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import {
@@ -44,63 +54,640 @@ import { vendorOnboardingResumeStep } from "@/lib/vendor/vendor-onboarding-wizar
 import { slugify } from "@/lib/utils/slug";
 import { toast } from "@/lib/utils/toast";
 
-/** Matches vendor store step schema (`validators/vendor.validator.ts`) */
+const AddressAutocompleteInput = dynamic(
+  () => import("@/components/address/AddressAutocompleteInput").then((mod) => mod.AddressAutocompleteInput),
+  { ssr: false }
+);
+
 const STORE_DESCRIPTION_MAX_CHARS = 500;
+const LOCAL_DRAFT_KEY = "vendor_onboarding_ui_draft_v3";
+const STEP_COUNT = 6;
 
-const FIELD = "flex flex-col gap-2.5 sm:gap-3";
+const INPUT_BASE =
+  "peer h-13 w-full rounded-xl border border-neutral-300 bg-white px-4 pt-4 pb-2 text-sm text-neutral-900 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.35)] outline-none transition placeholder:text-transparent focus:border-primary/70 focus:ring-4 focus:ring-primary/12";
 
-const CONTROL =
-  "w-full min-h-11 rounded-lg border border-neutral-300 bg-white px-3.5 py-2.5 text-sm leading-snug text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/20";
+const textAreaBase =
+  "peer min-h-32 w-full rounded-xl border border-neutral-300 bg-white px-4 pt-5 pb-3 text-sm text-neutral-900 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.35)] outline-none transition placeholder:text-transparent focus:border-primary/70 focus:ring-4 focus:ring-primary/12";
 
-const LABEL = "text-[11px] font-semibold uppercase tracking-wider text-neutral-600";
+type UploadZoneProps = {
+  id: string;
+  title: string;
+  hint: string;
+  accept: string;
+  file: File | null;
+  onChange: (file: File | null) => void;
+  savedUrl?: string;
+  required?: boolean;
+  disabled?: boolean;
+};
 
-const HINT = "text-xs leading-relaxed text-neutral-500";
+type StepHeaderProps = {
+  title: string;
+  description: string;
+};
 
-function RequiredMark() {
+type FloatingInputProps = {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: "text" | "email" | "password" | "tel";
+  autoComplete?: string;
+  required?: boolean;
+  error?: string | null;
+  success?: boolean;
+  placeholder?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  maxLength?: number;
+  icon?: React.ReactNode;
+};
+
+type AgreementAccordionProps = {
+  id: string;
+  title: string;
+  summary: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+};
+
+type OtpCodeInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+};
+
+const stepIndexes = [1, 2, 3, 4, 5, 6] as const;
+
+function OtpCodeInput({ value, onChange, disabled = false }: OtpCodeInputProps) {
+  const tWizard = useTranslations("VendorPages.register.wizard");
+  const refs = useRef<Array<HTMLInputElement | null>>([]);
+  const digits = useMemo(() => {
+    const clean = value.replace(/\D/g, "").slice(0, 6);
+    return Array.from({ length: 6 }, (_, index) => clean[index] ?? "");
+  }, [value]);
+
+  const updateDigit = (index: number, raw: string) => {
+    const digit = raw.replace(/\D/g, "").slice(-1);
+    const next = [...digits];
+    next[index] = digit;
+    onChange(next.join(""));
+    if (digit && index < 5) refs.current[index + 1]?.focus();
+  };
+
   return (
-    <>
-      {" "}
-      <abbr className="font-semibold text-red-600 no-underline" title="Required" aria-label="required">
-        *
-      </abbr>
-    </>
+    <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+      {digits.map((digit, index) => (
+        <input
+          key={`otp-${index}`}
+          ref={(node) => {
+            refs.current[index] = node;
+          }}
+          value={digit}
+          onChange={(event) => updateDigit(index, event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Backspace" && !digits[index] && index > 0) {
+              refs.current[index - 1]?.focus();
+            }
+            if (event.key === "ArrowLeft" && index > 0) refs.current[index - 1]?.focus();
+            if (event.key === "ArrowRight" && index < 5) refs.current[index + 1]?.focus();
+          }}
+          onPaste={(event) => {
+            event.preventDefault();
+            const pasted = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+            if (!pasted) return;
+            onChange(pasted);
+            refs.current[Math.min(pasted.length, 6) - 1]?.focus();
+          }}
+          inputMode="numeric"
+          autoComplete={index === 0 ? "one-time-code" : "off"}
+          maxLength={1}
+          disabled={disabled}
+          aria-label={tWizard("otp.codeDigitAria", { number: index + 1 })}
+          className="h-12 w-11 rounded-xl border border-neutral-300 bg-white text-center text-lg font-semibold text-neutral-900 shadow-[0_6px_18px_-14px_rgba(15,23,42,0.35)] outline-none transition focus:border-primary/70 focus:ring-4 focus:ring-primary/12 sm:h-14 sm:w-12"
+        />
+      ))}
+    </div>
   );
 }
 
-const STEP_STACK = "flex flex-col gap-8 sm:gap-10";
+function StepIndicator({
+  label,
+  state,
+}: {
+  label: string;
+  state: "valid" | "invalid" | "idle";
+}) {
+  if (state === "idle") return null;
+  return (
+    <p
+      className={`mt-2 inline-flex items-center gap-1 text-xs ${state === "valid" ? "text-emerald-600" : "text-rose-600"}`}
+      role={state === "invalid" ? "alert" : "status"}
+    >
+      {state === "valid" ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+      {label}
+    </p>
+  );
+}
 
-const SECTION =
-  "rounded-xl border border-neutral-200 bg-neutral-50/50 p-6 sm:p-8 lg:p-9";
+function FloatingInput({
+  id,
+  label,
+  value,
+  onChange,
+  type = "text",
+  autoComplete,
+  required = false,
+  error,
+  success = false,
+  placeholder = label,
+  inputMode,
+  maxLength,
+  icon,
+}: FloatingInputProps) {
+  return (
+    <div>
+      <div className="relative">
+        {icon ? (
+          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400">
+            {icon}
+          </span>
+        ) : null}
+        <input
+          id={id}
+          type={type}
+          className={`${INPUT_BASE} ${icon ? "pl-11" : ""} ${error ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/15" : ""} ${success ? "border-emerald-300" : ""}`}
+          value={value}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          onChange={(event) => onChange(event.target.value)}
+          aria-invalid={Boolean(error)}
+          required={required}
+          inputMode={inputMode}
+          maxLength={maxLength}
+        />
+        <label
+          htmlFor={id}
+          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 bg-white px-1 text-sm text-neutral-500 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-0 peer-focus:text-xs peer-focus:font-medium peer-focus:text-primary peer-not-placeholder-shown:top-0 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:font-medium"
+        >
+          {label}
+          {required ? <span className="text-rose-500"> *</span> : null}
+        </label>
+      </div>
+      {error ? <p className="mt-2 text-xs text-rose-600">{error}</p> : null}
+    </div>
+  );
+}
 
-const SECTION_HEADING = "text-base font-semibold text-neutral-900";
+function ProgressBar({ percent }: { percent: number }) {
+  return (
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200">
+      <motion.div
+        className="h-full rounded-full bg-primary"
+        initial={false}
+        animate={{ width: `${Math.max(2, Math.min(percent, 100))}%` }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+      />
+    </div>
+  );
+}
 
-const SECTION_LEAD = "mt-2 max-w-xl text-sm leading-relaxed text-neutral-600";
+function VendorStepper({ step }: { step: number }) {
+  const tWizard = useTranslations("VendorPages.register.wizard");
+  const stepLabels = [
+    tWizard("steps.account"),
+    tWizard("steps.store"),
+    tWizard("steps.identity"),
+    tWizard("steps.address"),
+    tWizard("steps.payout"),
+    tWizard("steps.agreements"),
+  ];
 
-const CALLOUT = "rounded-xl border border-amber-200/90 bg-amber-50/90 px-4 py-3 text-sm text-amber-950";
+  return (
+    <div className="sticky top-0 z-30 border-b border-neutral-200/80 bg-white/95 py-5 backdrop-blur">
+      <div className="mx-auto hidden max-w-[850px] items-center px-4 md:flex">
+        {stepIndexes.map((item, index) => {
+          const isDone = item < step;
+          const isCurrent = item === step;
+          return (
+            <div key={`step-${item}`} className="flex min-w-0 flex-1 items-center">
+              <div className="flex flex-col items-center gap-2">
+                <motion.div
+                  initial={false}
+                  animate={{
+                    backgroundColor: isDone ? "rgb(22 163 74)" : isCurrent ? "var(--color-primary)" : "rgb(229 229 229)",
+                    color: isDone || isCurrent ? "rgb(255 255 255)" : "rgb(82 82 82)",
+                    scale: isCurrent ? 1.04 : 1,
+                  }}
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold shadow-sm"
+                >
+                  {isDone ? <Check className="h-4 w-4" /> : item}
+                </motion.div>
+                <span className={`text-xs font-medium ${isCurrent ? "text-neutral-900" : "text-neutral-500"}`}>
+                  {stepLabels[index]}
+                </span>
+              </div>
+              {index !== stepIndexes.length - 1 ? (
+                <div className="mx-3 h-[2px] flex-1 overflow-hidden rounded-full bg-neutral-200">
+                  <motion.div
+                    className="h-full rounded-full bg-emerald-500"
+                    initial={false}
+                    animate={{ width: step > item ? "100%" : "0%" }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                  />
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
 
-const CHECK_ROW =
-  "flex items-start gap-4 rounded-xl border border-neutral-200 bg-neutral-50/40 px-4 py-4 text-sm leading-relaxed text-neutral-800 sm:px-5 sm:py-4";
+      <div className="mx-auto max-w-[850px] px-4 md:hidden">
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+          {tWizard("stepOf", { current: step, total: STEP_COUNT })}
+        </p>
+        <p className="mt-1 text-sm font-semibold text-neutral-900">{stepLabels[step - 1]}</p>
+        <div className="mt-3">
+          <ProgressBar percent={(step / STEP_COUNT) * 100} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
-const VENDOR_HERO =
-  "relative overflow-hidden bg-[#0a2847] text-white shadow-[0_8px_30px_rgba(5,20,40,0.35)]";
-const stepsMeta = [
-  "Account",
-  "Store",
-  "Identity",
-  "Address",
-  "Payout",
-  "Agreements",
-] as const;
+function StepHeader({ title, description }: StepHeaderProps) {
+  return (
+    <div className="space-y-2.5">
+      <h2 className="text-2xl font-bold tracking-tight text-neutral-950 sm:text-[1.95rem]">{title}</h2>
+      <p className="max-w-2xl text-sm leading-relaxed text-neutral-600">{description}</p>
+    </div>
+  );
+}
 
-export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: boolean }) {
+function StepFooter({
+  canGoBack,
+  busy,
+  onBack,
+  onNext,
+  finalStep,
+  disabled,
+}: {
+  canGoBack: boolean;
+  busy: boolean;
+  onBack: () => void;
+  onNext: () => void;
+  finalStep: boolean;
+  disabled: boolean;
+}) {
+  const tCommon = useTranslations("Common");
+  const tWizard = useTranslations("VendorPages.register.wizard");
+  return (
+    <div className="mt-8 border-t border-neutral-200 pt-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <button
+          type="button"
+          onClick={onBack}
+          disabled={!canGoBack || busy}
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-neutral-300 bg-white px-5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          {tCommon("back")}
+        </button>
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={disabled}
+          className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 ${finalStep ? "w-full" : "w-full sm:w-auto"}`}
+        >
+          {finalStep ? tWizard("actions.submitApplication") : tWizard("actions.next")}
+          {!finalStep ? <ChevronRight className="h-4 w-4" /> : null}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PasswordStrength({ password }: { password: string }) {
+  const tWizard = useTranslations("VendorPages.register.wizard");
+  const rules = [
+    { label: tWizard("password.rules.length"), ok: password.length >= 8 },
+    { label: tWizard("password.rules.number"), ok: /\d/.test(password) },
+    { label: tWizard("password.rules.uppercase"), ok: /[A-Z]/.test(password) },
+    { label: tWizard("password.rules.special"), ok: /[^A-Za-z0-9]/.test(password) },
+  ];
+  const score = rules.filter((rule) => rule.ok).length;
+  const tone =
+    score <= 1
+      ? tWizard("password.strength.weak")
+      : score <= 3
+        ? tWizard("password.strength.medium")
+        : tWizard("password.strength.strong");
+  const color = score <= 1 ? "bg-rose-500" : score <= 3 ? "bg-amber-500" : "bg-emerald-500";
+  const percent = (score / rules.length) * 100;
+
+  return (
+    <div className="rounded-2xl border border-neutral-200 bg-white p-4">
+      <div className="mb-3 flex items-center justify-between text-xs">
+        <span className="font-semibold text-neutral-700">{tWizard("password.title")}</span>
+        <span className="font-semibold text-neutral-600">{tone}</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-neutral-200">
+        <motion.div className={`h-full ${color}`} initial={false} animate={{ width: `${percent}%` }} transition={{ duration: 0.2 }} />
+      </div>
+      <div className="mt-3">
+        <PasswordRequirements password={password} />
+      </div>
+    </div>
+  );
+}
+
+function UploadZone({
+  id,
+  title,
+  hint,
+  accept,
+  file,
+  onChange,
+  savedUrl,
+  required = false,
+  disabled = false,
+}: UploadZoneProps) {
+  const tCommon = useTranslations("Common");
+  const tWizard = useTranslations("VendorPages.register.wizard");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const progress = file ? 100 : 0;
+
+  const previewUrl = useMemo(() => {
+    if (!file) return null;
+    if (!file.type.startsWith("image/")) return null;
+    return URL.createObjectURL(file);
+  }, [file]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  return (
+    <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-4 sm:p-5">
+      <p className="text-sm font-semibold text-neutral-900">
+        {title}
+        {required ? <span className="text-rose-500"> *</span> : null}
+      </p>
+      <p className="mt-1 text-xs text-neutral-500">{hint}</p>
+
+      <div
+        className="mt-4 flex min-h-36 items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-50/70 p-4 text-center"
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          if (disabled) return;
+          const dropped = event.dataTransfer.files?.[0];
+          if (!dropped) return;
+          onChange(dropped);
+        }}
+      >
+        {file ? (
+          <div className="w-full space-y-3 text-left">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-neutral-900">{file.name}</p>
+                <p className="text-xs text-neutral-500">
+                  {tWizard("upload.fileSizeKb", { size: Math.ceil(file.size / 1024) })}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="rounded-lg border border-neutral-200 px-2.5 py-1 text-xs font-medium text-neutral-600 hover:bg-neutral-100"
+                onClick={() => onChange(null)}
+              >
+                {tCommon("remove")}
+              </button>
+            </div>
+            <ProgressBar percent={progress} />
+            {previewUrl ? (
+              <Image
+                src={previewUrl}
+                alt={`${title} preview`}
+                width={640}
+                height={360}
+                unoptimized
+                className="max-h-40 w-auto rounded-xl border border-neutral-200 object-cover"
+              />
+            ) : (
+              <p className="text-xs text-neutral-500">{tWizard("upload.previewUnavailable")}</p>
+            )}
+          </div>
+        ) : savedUrl ? (
+          <div className="w-full text-left">
+            <p className="text-sm font-medium text-neutral-900">{tWizard("upload.savedFileTitle")}</p>
+            <p className="mt-1 text-xs text-neutral-500">{tWizard("upload.savedFileHint")}</p>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={disabled}
+            className="inline-flex h-12 items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <UploadCloud className="h-4 w-4" />
+            {tWizard("upload.browse")}
+          </button>
+        )}
+      </div>
+
+      <input
+        id={id}
+        ref={inputRef}
+        type="file"
+        className="sr-only"
+        accept={accept}
+        disabled={disabled}
+        onChange={(event) => {
+          const selected = event.target.files?.[0];
+          event.target.value = "";
+          onChange(selected ?? null);
+        }}
+      />
+    </div>
+  );
+}
+
+function AgreementAccordion({ id, title, summary, checked, onChange }: AgreementAccordionProps) {
+  const tWizard = useTranslations("VendorPages.register.wizard");
+  return (
+    <details className="group rounded-2xl border border-neutral-200 bg-white" open>
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-4 px-4 py-4 sm:px-5">
+        <div>
+          <p className="text-sm font-semibold text-neutral-900">{title}</p>
+          <p className="mt-1 text-xs leading-relaxed text-neutral-600">{summary}</p>
+        </div>
+        <span className="mt-1 text-xs text-neutral-500 group-open:rotate-180 transition">⌄</span>
+      </summary>
+      <div className="border-t border-neutral-100 px-4 py-4 sm:px-5">
+        <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-neutral-800">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={(event) => onChange(event.target.checked)}
+            className="h-4 w-4 rounded border-neutral-300 text-primary focus:ring-primary/30"
+            id={id}
+          />
+          {tWizard("agreements.iAgree")}
+        </label>
+      </div>
+    </details>
+  );
+}
+
+function AddressSection({
+  addressLine1,
+  setAddressLine1,
+  city,
+  setCity,
+  country,
+  setCountry,
+  postalCode,
+  setPostalCode,
+  shippingCountryIsoCodes,
+  countryOptions,
+  cityOptions,
+  postalOptions,
+  proofOfAddressFile,
+  setProofOfAddressFile,
+  proofOfAddressUrl,
+  uploadBusy,
+  province,
+  setProvince,
+}: {
+  addressLine1: string;
+  setAddressLine1: (value: string) => void;
+  city: string;
+  setCity: (value: string) => void;
+  country: string;
+  setCountry: (value: string) => void;
+  postalCode: string;
+  setPostalCode: (value: string) => void;
+  shippingCountryIsoCodes: string[];
+  countryOptions: { value: string; label: string }[];
+  cityOptions: { value: string; label: string }[];
+  postalOptions: { value: string; label: string }[];
+  proofOfAddressFile: File | null;
+  setProofOfAddressFile: (file: File | null) => void;
+  proofOfAddressUrl: string;
+  uploadBusy: boolean;
+  province: string;
+  setProvince: (value: string) => void;
+}) {
+  const tWizard = useTranslations("VendorPages.register.wizard");
+  return (
+    <div className="space-y-6">
+      <div>
+        <label className="mb-2 block text-sm font-medium text-neutral-700">
+          {tWizard("address.streetAddress")} *
+        </label>
+        <AddressAutocompleteInput
+          className={INPUT_BASE}
+          value={addressLine1}
+          countryCodes={shippingCountryIsoCodes}
+          onTextChange={setAddressLine1}
+          onPlaceSelect={(place) => {
+            setAddressLine1(place.addressLine1);
+            if (place.country) {
+              const matchedCountry = normalizeCountryName(place.country);
+              setCountry(matchedCountry);
+              const matchedCity = place.city ? normalizeCityNameForCountry(matchedCountry, place.city) : "";
+              setCity(matchedCity);
+              setPostalCode(
+                matchedCity && place.postalCode
+                  ? normalizePostalCodeForCity(matchedCountry, matchedCity, place.postalCode)
+                  : ""
+              );
+            }
+          }}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <SearchableSelect
+          label={tWizard("address.country")}
+          required
+          value={country}
+          options={countryOptions}
+          placeholder={tWizard("address.selectCountry")}
+          searchPlaceholder={tWizard("address.searchCountries")}
+          onChange={(value) => {
+            setCountry(value);
+            setCity("");
+            setPostalCode("");
+          }}
+          emptyMessage={tWizard("address.noCountries")}
+        />
+        <FloatingInput
+          id="vendor-province"
+          label={tWizard("address.provinceState")}
+          value={province}
+          onChange={setProvince}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <SearchableSelect
+          label={tWizard("address.city")}
+          required
+          value={city}
+          options={cityOptions}
+          placeholder={country ? tWizard("address.selectCity") : tWizard("address.selectCountryFirst")}
+          searchPlaceholder={tWizard("address.searchCities")}
+          disabled={!country}
+          allowCustom
+          onChange={(value) => {
+            setCity(sanitizeCityCountryInput(value));
+            setPostalCode("");
+          }}
+          emptyMessage={country ? tWizard("address.noCities") : tWizard("address.chooseCountryFirst")}
+        />
+        <SearchableSelect
+          label={tWizard("address.postalCode")}
+          required
+          value={postalCode}
+          options={postalOptions}
+          placeholder={city ? tWizard("address.selectPostalCode") : tWizard("address.selectCityFirst")}
+          searchPlaceholder={tWizard("address.searchPostalCodes")}
+          disabled={!city}
+          allowCustom
+          onChange={(value) => setPostalCode(sanitizePostalCodeInput(value))}
+          emptyMessage={city ? tWizard("address.noPostalCodes") : tWizard("address.chooseCityFirst")}
+        />
+      </div>
+
+      <UploadZone
+        id="proof-of-address"
+        title={tWizard("address.proofOfAddressOptional")}
+        hint={tWizard("address.proofOfAddressHint")}
+        accept="image/jpeg,image/png,image/webp,application/pdf"
+        file={proofOfAddressFile}
+        onChange={setProofOfAddressFile}
+        savedUrl={proofOfAddressUrl}
+        disabled={uploadBusy}
+      />
+    </div>
+  );
+}
+
+export function VendorOnboardingWizard() {
   const locale = useLocale();
-  const t = useTranslations("VendorPages.register.agreements");
+  const tAgreements = useTranslations("VendorPages.register.agreements");
+  const tWizard = useTranslations("VendorPages.register.wizard");
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [ready, setReady] = useState(false);
   const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState(1);
   const [busy, setBusy] = useState(false);
   const [uploadKey, setUploadKey] = useState<VendorUploadKind | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [draftHydrated, setDraftHydrated] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -111,22 +698,15 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
   const [verificationToken, setVerificationToken] = useState<string | null>(null);
   const [otpUiPhase, setOtpUiPhase] = useState<"email" | "code">("email");
   const [sendingEmailOtp, setSendingEmailOtp] = useState(false);
-  /** Set when the API returns debugCode (SMTP not configured in development). */
-  const [devVerificationCode, setDevVerificationCode] = useState<string | null>(
-    null
-  );
+  const [devVerificationCode, setDevVerificationCode] = useState<string | null>(null);
 
   const [storeName, setStoreName] = useState("");
   const [businessType, setBusinessType] = useState<BusinessType>("INDIVIDUAL");
   const [industryType, setIndustryType] = useState<IndustryType | "">("");
   const [logoUrl, setLogoUrl] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [description, setDescription] = useState("");
-  const slugPreview = useMemo(() => slugify(storeName || "your-store"), [storeName]);
-
-  const descriptionTrimLen = description.trim().length;
-  const descriptionOverLimit =
-    descriptionTrimLen > STORE_DESCRIPTION_MAX_CHARS;
 
   const [documentType, setDocumentType] = useState<KycDocumentType>("PASSPORT");
   const [documentUrl, setDocumentUrl] = useState("");
@@ -140,42 +720,12 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
   const [postalCode, setPostalCode] = useState("");
   const [proofOfAddressUrl, setProofOfAddressUrl] = useState("");
   const [proofOfAddressFile, setProofOfAddressFile] = useState<File | null>(null);
-
-  const countryOptions = useMemo(
-    () =>
-      SHIPPING_COUNTRIES.map((entry) => ({
-        value: entry.name,
-        label: `${entry.flag} ${entry.name}`,
-      })),
-    []
-  );
-
-  const shippingCountryIsoCodes = useMemo(
-    () => SHIPPING_COUNTRIES.map((entry) => entry.iso),
-    []
-  );
-
-  const cityOptions = useMemo(
-    () =>
-      getCitiesForCountryName(country).map((entry) => ({
-        value: entry.name,
-        label: entry.name,
-      })),
-    [country]
-  );
-
-  const postalOptions = useMemo(
-    () =>
-      getPostalCodesForCity(country, city).map((code) => ({
-        value: code,
-        label: code,
-      })),
-    [country, city]
-  );
+  const [province, setProvince] = useState("");
 
   const [accountName, setAccountName] = useState("");
   const [accountNumberOrIban, setAccountNumberOrIban] = useState("");
   const [bankName, setBankName] = useState("");
+  const [paypalEmail, setPaypalEmail] = useState("");
 
   const [ag1, setAg1] = useState(false);
   const [ag2, setAg2] = useState(false);
@@ -187,20 +737,200 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
   const [membershipCurrency, setMembershipCurrency] = useState("USD");
   const [membershipTrialDays, setMembershipTrialDays] = useState(180);
 
+  const slugPreview = useMemo(() => slugify(storeName || tWizard("store.defaultSlug")), [storeName, tWizard]);
+  const descriptionTrimLen = description.trim().length;
+  const descriptionOverLimit = descriptionTrimLen > STORE_DESCRIPTION_MAX_CHARS;
+
   const membershipFeeLabel = useMemo(
     () => formatMoneyMinor(membershipFeeAmount, membershipCurrency, locale),
     [locale, membershipCurrency, membershipFeeAmount]
   );
-
   const transactionFeeLabel = useMemo(
     () => formatMoneyMinor(transactionFeeAmountMinor, "USD", locale),
     [locale, transactionFeeAmountMinor]
+  );
+
+  const countryOptions = useMemo(
+    () =>
+      SHIPPING_COUNTRIES.map((entry) => ({
+        value: entry.name,
+        label: `${entry.flag} ${entry.name}`,
+      })),
+    []
+  );
+  const shippingCountryIsoCodes = useMemo(() => SHIPPING_COUNTRIES.map((entry) => entry.iso), []);
+  const cityOptions = useMemo(
+    () =>
+      getCitiesForCountryName(country).map((entry) => ({
+        value: entry.name,
+        label: entry.name,
+      })),
+    [country]
+  );
+  const postalOptions = useMemo(
+    () =>
+      getPostalCodesForCity(country, city).map((code) => ({
+        value: code,
+        label: code,
+      })),
+    [country, city]
   );
 
   const authHeaders = useCallback((): Record<string, string> => {
     if (!accessToken) return {};
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
+
+  const emailError = email.length > 0 && !EMAIL_REGEX.test(email.trim()) ? tWizard("validation.email") : null;
+  const phoneError = phone.length > 0 ? getPhoneValidationMessage(phone) : null;
+  const passwordError = password.length > 0 ? getPasswordValidationMessage(password) : null;
+  const confirmPasswordError =
+    confirmPassword.length > 0 && password !== confirmPassword ? tWizard("validation.passwordMismatch") : null;
+  const accountNameError =
+    accountName.length > 0 && accountName.trim().length < 2 ? tWizard("validation.minTwoCharacters") : null;
+  const accountNumberError =
+    accountNumberOrIban.length > 0 && accountNumberOrIban.trim().length < 5
+      ? tWizard("validation.minFiveCharacters")
+      : null;
+  const bankNameError =
+    bankName.length > 0 && bankName.trim().length < 2 ? tWizard("validation.minTwoCharacters") : null;
+
+  useEffect(() => {
+    const raw = localStorage.getItem(LOCAL_DRAFT_KEY);
+    if (!raw) {
+      setTimeout(() => setDraftHydrated(true), 0);
+      return;
+    }
+    try {
+      const draft = JSON.parse(raw) as Record<string, unknown>;
+      setTimeout(() => {
+        setStep(typeof draft.step === "number" ? Math.min(Math.max(draft.step, 1), STEP_COUNT) : 1);
+        setFullName(String(draft.fullName ?? ""));
+        setEmail(String(draft.email ?? ""));
+        setPhone(String(draft.phone ?? ""));
+        setPassword(String(draft.password ?? ""));
+        setConfirmPassword(String(draft.confirmPassword ?? ""));
+        setEmailCode(String(draft.emailCode ?? ""));
+        setVerificationToken(typeof draft.verificationToken === "string" ? draft.verificationToken : null);
+        setOtpUiPhase(draft.otpUiPhase === "code" ? "code" : "email");
+        setStoreName(String(draft.storeName ?? ""));
+        setBusinessType(draft.businessType === "REGISTERED_BUSINESS" ? "REGISTERED_BUSINESS" : "INDIVIDUAL");
+        setIndustryType(typeof draft.industryType === "string" ? (draft.industryType as IndustryType) : "");
+        setLogoUrl(String(draft.logoUrl ?? ""));
+        setDescription(String(draft.description ?? ""));
+        setDocumentType(
+          typeof draft.documentType === "string" &&
+            kycDocumentTypes.includes(draft.documentType as KycDocumentType)
+            ? (draft.documentType as KycDocumentType)
+            : "PASSPORT"
+        );
+        setDocumentUrl(String(draft.documentUrl ?? ""));
+        setSelfieWithIdUrl(String(draft.selfieWithIdUrl ?? ""));
+        setAddressLine1(String(draft.addressLine1 ?? ""));
+        setCity(String(draft.city ?? ""));
+        setCountry(String(draft.country ?? ""));
+        setPostalCode(String(draft.postalCode ?? ""));
+        setProofOfAddressUrl(String(draft.proofOfAddressUrl ?? ""));
+        setProvince(String(draft.province ?? ""));
+        setAccountName(String(draft.accountName ?? ""));
+        setAccountNumberOrIban(String(draft.accountNumberOrIban ?? ""));
+        setBankName(String(draft.bankName ?? ""));
+        setPaypalEmail(String(draft.paypalEmail ?? ""));
+        setAg1(Boolean(draft.ag1));
+        setAg2(Boolean(draft.ag2));
+        setAg3(Boolean(draft.ag3));
+        setAg4(Boolean(draft.ag4));
+        setAg5(Boolean(draft.ag5));
+      }, 0);
+    } catch {
+      localStorage.removeItem(LOCAL_DRAFT_KEY);
+    } finally {
+      setTimeout(() => setDraftHydrated(true), 0);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!draftHydrated || submitted || !ready) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      localStorage.setItem(
+        LOCAL_DRAFT_KEY,
+        JSON.stringify({
+          step,
+          fullName,
+          email,
+          phone,
+          password,
+          confirmPassword,
+          emailCode,
+          verificationToken,
+          otpUiPhase,
+          storeName,
+          businessType,
+          industryType,
+          logoUrl,
+          description,
+          documentType,
+          documentUrl,
+          selfieWithIdUrl,
+          addressLine1,
+          city,
+          country,
+          postalCode,
+          proofOfAddressUrl,
+          province,
+          accountName,
+          accountNumberOrIban,
+          bankName,
+          paypalEmail,
+          ag1,
+          ag2,
+          ag3,
+          ag4,
+          ag5,
+        })
+      );
+    }, 350);
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, [
+    draftHydrated,
+    ready,
+    submitted,
+    step,
+    fullName,
+    email,
+    phone,
+    password,
+    confirmPassword,
+    emailCode,
+    verificationToken,
+    otpUiPhase,
+    storeName,
+    businessType,
+    industryType,
+    logoUrl,
+    description,
+    documentType,
+    documentUrl,
+    selfieWithIdUrl,
+    addressLine1,
+    city,
+    country,
+    postalCode,
+    proofOfAddressUrl,
+    province,
+    accountName,
+    accountNumberOrIban,
+    bankName,
+    paypalEmail,
+    ag1,
+    ag2,
+    ag3,
+    ag4,
+    ag5,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -221,7 +951,6 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
           setMembershipTrialDays(data.membershipTrialDays);
         }
       } catch {
-        // Keep default label
       }
     })();
     return () => {
@@ -230,6 +959,7 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
   }, []);
 
   useEffect(() => {
+    if (!draftHydrated) return;
     let cancelled = false;
     (async () => {
       try {
@@ -253,14 +983,11 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
         setEmail(data.user.email);
         setPhone(data.user.phone ?? "");
         setVerificationToken("resumed");
+        setOtpUiPhase("code");
 
         setStoreName(draft.storeName);
-        if (draft.businessType && businessTypes.includes(draft.businessType)) {
-          setBusinessType(draft.businessType);
-        }
-        if (draft.industryType && industryTypes.includes(draft.industryType)) {
-          setIndustryType(draft.industryType);
-        }
+        if (draft.businessType && businessTypes.includes(draft.businessType)) setBusinessType(draft.businessType);
+        if (draft.industryType && industryTypes.includes(draft.industryType)) setIndustryType(draft.industryType);
         setLogoUrl(draft.logoUrl);
         setDescription(draft.description);
 
@@ -271,10 +998,7 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
         }
         if (draft.address) {
           const normalizedCountry = normalizeCountryName(draft.address.country);
-          const normalizedCity = normalizeCityNameForCountry(
-            normalizedCountry,
-            draft.address.city
-          );
+          const normalizedCity = normalizeCityNameForCountry(normalizedCountry, draft.address.city);
           const normalizedPostal = normalizePostalCodeForCity(
             normalizedCountry,
             normalizedCity,
@@ -290,6 +1014,7 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
           setAccountName(draft.payout.accountName);
           setAccountNumberOrIban(draft.payout.accountNumberOrIban);
           setBankName(draft.payout.bankName);
+          setPaypalEmail(draft.payout.stripeEmail ?? "");
         }
         if (draft.agreements) {
           setAg1(draft.agreements.agreedToVendorTerms);
@@ -315,17 +1040,17 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [draftHydrated]);
 
-  /** Success view is shorter than the wizard; keep prior scroll from leaving the viewport on the footer */
   useLayoutEffect(() => {
     if (!submitted) return;
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    localStorage.removeItem(LOCAL_DRAFT_KEY);
   }, [submitted]);
 
   const uploadVendorFile = async (kind: VendorUploadKind, file: File) => {
     if (!accessToken) {
-      toast.error("Session", "Start again from step 1.");
+      toast.error(tWizard("toasts.sessionTitle"), tWizard("toasts.sessionStartAgain"));
       throw new Error("No session");
     }
     const fd = new FormData();
@@ -351,11 +1076,11 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
   const sendEmailCode = async () => {
     const normalizedEmail = email.trim();
     if (!normalizedEmail) {
-      toast.error("Email required", "Enter your email first.");
+      toast.error(tWizard("toasts.emailRequiredTitle"), tWizard("toasts.emailFirst"));
       return;
     }
     if (!EMAIL_REGEX.test(normalizedEmail)) {
-      toast.error("Email required", "Enter a valid email address.");
+      toast.error(tWizard("toasts.emailRequiredTitle"), tWizard("toasts.emailInvalid"));
       return;
     }
     setSendingEmailOtp(true);
@@ -365,28 +1090,24 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: normalizedEmail }),
       });
-      const payload = await parseApiResponse<{
-        email: string;
-        expiresAt: string;
-        debugCode?: string;
-      }>(res);
+      const payload = await parseApiResponse<{ email: string; expiresAt: string; debugCode?: string }>(res);
       setEmail(payload.email);
       setOtpUiPhase("code");
       if (payload.debugCode) {
         setDevVerificationCode(payload.debugCode);
         toast.success(
-          "Verification code ready",
-          "Email is not set up on this machine. Use the code shown on this page."
+          tWizard("toasts.verificationCodeReadyTitle"),
+          tWizard("toasts.verificationCodeReadyDesc")
         );
       } else {
         setDevVerificationCode(null);
         toast.success(
-          "Email sent",
-          `We sent a 6-digit code to ${payload.email}. Check your inbox and spam folder.`
+          tWizard("toasts.emailSentTitle"),
+          tWizard("toasts.emailSentDesc", { email: payload.email })
         );
       }
     } catch (e) {
-      toast.error("Could not send code", e instanceof Error ? e.message : "Error");
+      toast.error(tWizard("toasts.couldNotSendCodeTitle"), e instanceof Error ? e.message : tWizard("toasts.error"));
     } finally {
       setSendingEmailOtp(false);
     }
@@ -394,11 +1115,11 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
 
   const verifyEmailCode = async () => {
     if (!EMAIL_REGEX.test(email.trim())) {
-      toast.error("Email", "Enter a valid email address.");
+      toast.error(tWizard("toasts.emailTitle"), tWizard("toasts.emailInvalid"));
       return;
     }
     if (!/^\d{6}$/.test(emailCode.trim())) {
-      toast.error("Invalid code", "Enter the 6-digit code.");
+      toast.error(tWizard("toasts.invalidCodeTitle"), tWizard("toasts.enterSixDigitCode"));
       return;
     }
     setBusy(true);
@@ -410,9 +1131,9 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
       });
       const data = await parseApiResponse<{ verificationToken: string }>(res);
       setVerificationToken(data.verificationToken);
-      toast.success("Email verified", "Continue to the next step.");
+      toast.success(tWizard("toasts.emailVerifiedTitle"), tWizard("toasts.emailVerifiedDesc"));
     } catch (e) {
-      toast.error("Verification failed", e instanceof Error ? e.message : "Error");
+      toast.error(tWizard("toasts.verificationFailedTitle"), e instanceof Error ? e.message : tWizard("toasts.error"));
     } finally {
       setBusy(false);
     }
@@ -420,29 +1141,29 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
 
   const runStart = async () => {
     if (!verificationToken) {
-      toast.error("Verify email", "Send and confirm your email code first.");
+      toast.error(tWizard("toasts.verifyEmailTitle"), tWizard("toasts.verifyEmailFirst"));
       return;
     }
     if (fullName.trim().length < 2) {
-      toast.error("Name", "Enter your full name.");
+      toast.error(tWizard("toasts.nameTitle"), tWizard("toasts.enterFullName"));
       return;
     }
     if (!EMAIL_REGEX.test(email.trim())) {
-      toast.error("Email", "Enter a valid email address.");
+      toast.error(tWizard("toasts.emailTitle"), tWizard("toasts.emailInvalid"));
       return;
     }
-    const phoneError = getPhoneValidationMessage(phone);
-    if (phoneError) {
-      toast.error("Phone number", phoneError);
+    const nextPhoneError = getPhoneValidationMessage(phone);
+    if (nextPhoneError) {
+      toast.error(tWizard("toasts.phoneTitle"), nextPhoneError);
       return;
     }
-    const passwordError = getPasswordValidationMessage(password);
-    if (passwordError) {
-      toast.error("Password requirements", passwordError);
+    const nextPasswordError = getPasswordValidationMessage(password);
+    if (nextPasswordError) {
+      toast.error(tWizard("toasts.passwordRequirementsTitle"), nextPasswordError);
       return;
     }
     if (password !== confirmPassword) {
-      toast.error("Password", "Password and confirm password must match.");
+      toast.error(tWizard("toasts.passwordTitle"), tWizard("toasts.passwordMismatch"));
       return;
     }
     setBusy(true);
@@ -476,10 +1197,11 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
       setAccessToken(data.tokens.accessToken);
       localStorage.setItem("accessToken", data.tokens.accessToken);
       localStorage.setItem("refreshToken", data.tokens.refreshToken);
+      setDirection(1);
       setStep(2);
-      toast.success("Account created", "Continue with your store details.");
+      toast.success(tWizard("toasts.accountCreatedTitle"), tWizard("toasts.accountCreatedDesc"));
     } catch (e) {
-      toast.error("Could not start", e instanceof Error ? e.message : "Error");
+      toast.error(tWizard("toasts.couldNotStartTitle"), e instanceof Error ? e.message : tWizard("toasts.error"));
     } finally {
       setBusy(false);
     }
@@ -500,6 +1222,7 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
   const goNext = async () => {
     if (step === 1) {
       if (accessToken) {
+        setDirection(1);
         setStep(2);
         return;
       }
@@ -507,22 +1230,25 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
       return;
     }
     if (!accessToken) {
-      toast.error("Session", "Start again from step 1.");
+      toast.error(tWizard("toasts.sessionTitle"), tWizard("toasts.sessionStartAgain"));
       return;
     }
     setBusy(true);
     try {
       if (step === 2) {
         if (storeName.trim().length < 2) {
-          toast.error("Store name", "Enter at least 2 characters.");
+          toast.error(tWizard("toasts.storeNameTitle"), tWizard("toasts.storeNameMin"));
           setBusy(false);
           return;
         }
         const descTrimmed = description.trim();
         if (descTrimmed.length > STORE_DESCRIPTION_MAX_CHARS) {
           toast.error(
-            "Store description too long",
-            `Use ${STORE_DESCRIPTION_MAX_CHARS} characters or fewer. You entered ${descTrimmed.length}.`
+            tWizard("toasts.storeDescriptionTooLongTitle"),
+            tWizard("toasts.storeDescriptionTooLongDesc", {
+              max: STORE_DESCRIPTION_MAX_CHARS,
+              count: descTrimmed.length,
+            })
           );
           setBusy(false);
           return;
@@ -541,6 +1267,7 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
           ...(nextLogoUrl ? { logoUrl: nextLogoUrl } : {}),
           ...(descTrimmed ? { description: descTrimmed } : {}),
         });
+        setDirection(1);
         setStep(3);
       } else if (step === 3) {
         let nextDocumentUrl = documentUrl.trim();
@@ -558,7 +1285,7 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
           setSelfieWithIdFile(null);
         }
         if (!nextDocumentUrl) {
-          toast.error("KYC", "Attach your ID document to continue.");
+          toast.error(tWizard("toasts.kycTitle"), tWizard("toasts.attachIdDocument"));
           setBusy(false);
           return;
         }
@@ -567,6 +1294,7 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
           documentUrl: nextDocumentUrl,
           ...(nextSelfieUrl ? { selfieWithIdUrl: nextSelfieUrl } : {}),
         });
+        setDirection(1);
         setStep(4);
       } else if (step === 4) {
         if (
@@ -575,7 +1303,7 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
           country.trim().length < 2 ||
           postalCode.trim().length < 2
         ) {
-          toast.error("Address", "Fill in all required address fields.");
+          toast.error(tWizard("toasts.addressTitle"), tWizard("toasts.addressRequiredFields"));
           setBusy(false);
           return;
         }
@@ -593,10 +1321,11 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
           postalCode: postalCode.trim(),
           ...(nextProofOfAddressUrl ? { proofOfAddressUrl: nextProofOfAddressUrl } : {}),
         });
+        setDirection(1);
         setStep(5);
       } else if (step === 5) {
         if (!accountName.trim() || !accountNumberOrIban.trim() || !bankName.trim()) {
-          toast.error("Payout", "Fill in all bank fields.");
+          toast.error(tWizard("toasts.payoutTitle"), tWizard("toasts.payoutRequiredFields"));
           setBusy(false);
           return;
         }
@@ -605,11 +1334,13 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
           accountName: accountName.trim(),
           accountNumberOrIban: accountNumberOrIban.trim(),
           bankName: bankName.trim(),
+          ...(paypalEmail.trim() ? { stripeEmail: paypalEmail.trim() } : {}),
         });
+        setDirection(1);
         setStep(6);
       } else if (step === 6) {
         if (!ag1 || !ag2 || !ag3 || !ag4 || !ag5) {
-          toast.error("Agreements", "Accept all required policies.");
+          toast.error(tWizard("toasts.agreementsTitle"), tWizard("toasts.agreementsRequired"));
           setBusy(false);
           return;
         }
@@ -622,13 +1353,11 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
         });
         const subRes = await fetch("/api/vendor/onboarding/submit", {
           method: "POST",
-          headers: {
-            ...authHeaders(),
-          },
+          headers: { ...authHeaders() },
         });
         await parseApiResponse(subRes);
         setSubmitted(true);
-        toast.success("Submitted", "We will review your application.");
+        toast.success(tWizard("toasts.submittedTitle"), tWizard("toasts.submittedDesc"));
       }
     } catch (e) {
       const msg =
@@ -636,8 +1365,8 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
           ? e.message
           : typeof e === "string"
             ? e
-            : "Something went wrong. Please try again.";
-      toast.error("Could not save", msg);
+            : tWizard("toasts.genericError");
+      toast.error(tWizard("toasts.couldNotSaveTitle"), msg);
     } finally {
       setBusy(false);
     }
@@ -645,31 +1374,37 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
 
   const goBack = () => {
     if (step <= 1) return;
+    setDirection(-1);
     setStep((s) => s - 1);
   };
 
   if (!ready) {
     return (
-      <div className="flex min-h-[50vh] w-full items-center justify-center px-4 py-16">
-        <p className="text-sm text-neutral-600">Loading…</p>
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm text-neutral-600 shadow-sm">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {tWizard("loading")}
+        </div>
       </div>
     );
   }
 
   if (submitted) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-16 text-center sm:py-20">
-        <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
-          <h1 className="text-xl font-bold text-neutral-900 sm:text-2xl">Application received</h1>
-          <p className="mt-3 text-sm leading-relaxed text-neutral-600">
-            Your vendor application is <strong>pending admin approval</strong>. We will email you when
-            there is an update.
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+        <div className="rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm sm:p-10">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+            <Check className="h-7 w-7" />
+          </div>
+          <h1 className="text-2xl font-bold text-neutral-900">{tWizard("success.title")}</h1>
+          <p className="mt-3 text-sm leading-relaxed text-neutral-600 sm:text-base">
+            {tWizard("success.description")}
           </p>
           <Link
             href="/"
-            className="mt-8 inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white hover:opacity-95"
+            className="mt-7 inline-flex h-12 items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-white"
           >
-            Back to home
+            {tWizard("success.backHome")}
           </Link>
         </div>
       </div>
@@ -677,635 +1412,445 @@ export function VendorOnboardingWizard({ showTopHero = true }: { showTopHero?: b
   }
 
   return (
-    <div className="min-w-0 w-full bg-neutral-50 pb-24">
-      {showTopHero ? (
-        <div className={VENDOR_HERO}>
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_95%_60%_at_50%_-15%,rgba(255,255,255,0.14),transparent_52%)]"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-black/15 to-transparent"
-          aria-hidden
-        />
-        <div className="relative z-1 mx-auto max-w-3xl px-4 pb-10 pt-6 sm:px-6 sm:pb-12 sm:pt-8">
-          <div className="flex flex-col items-center text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.28em] text-white/90 shadow-sm backdrop-blur-sm sm:text-[11px]">
-              <Sparkles className="h-3.5 w-3.5 text-amber-200/95" aria-hidden />
-              Become a vendor
-            </span>
-            <h1 className="mt-4 max-w-md text-2xl font-bold leading-tight tracking-tight text-white sm:mt-5 sm:max-w-lg sm:text-3xl sm:leading-tight">
-              Vendor registration
-            </h1>
-            <p className="mt-2 max-w-md text-sm leading-relaxed text-white/75 sm:mt-3 sm:text-[15px]">
-              Complete all steps — we&apos;ll review your application and email you when it&apos;s approved.
-            </p>
-          </div>
+    <div className="w-full bg-[#f7f8fc] pb-20">
+      <VendorStepper step={step} />
 
-          <div
-            className="mt-8 flex h-2.5 overflow-hidden rounded-full bg-black/20 p-0.5 ring-1 ring-white/10 sm:mt-9"
-            role="progressbar"
-            aria-valuenow={step}
-            aria-valuemin={1}
-            aria-valuemax={6}
-            aria-label={`Step ${step} of 6`}
+      <div className="mx-auto mt-4 w-full max-w-[850px] px-4 sm:mt-5">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.section
+            key={`step-${step}`}
+            initial={{ x: direction > 0 ? 45 : -45, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: direction > 0 ? -40 : 40, opacity: 0 }}
+            transition={{ duration: 0.23, ease: "easeOut" }}
+            className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)] sm:p-6 md:p-7"
           >
-            <div
-              className="h-full rounded-full bg-linear-to-r from-white/95 via-white to-white/90 shadow-[0_0_12px_rgba(255,255,255,0.35)] transition-[width] duration-500 ease-out"
-              style={{ width: `${(step / 6) * 100}%` }}
-            />
-          </div>
-
-          <ol className="mt-5 flex flex-wrap items-center justify-center gap-x-1 gap-y-2 sm:mt-6 sm:gap-x-2">
-            {stepsMeta.map((label, i) => {
-              const n = i + 1;
-              const active = n === step;
-              const done = n < step;
-              return (
-                <li key={label}>
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold sm:gap-2 sm:px-3 sm:py-1.5 sm:text-xs ${
-                      active
-                        ? "border-white/40 bg-white/15 text-white shadow-md ring-1 ring-white/20"
-                        : done
-                          ? "border-white/20 bg-white/10 text-white/95"
-                          : "border-white/10 bg-black/15 text-white/45"
-                    }`}
-                  >
-                    <span
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] tabular-nums ${
-                        done ? "bg-emerald-400/25 text-emerald-100" : active ? "bg-white/25 text-white" : "bg-white/10 text-white/50"
-                      }`}
-                    >
-                      {n}
-                    </span>
-                    <span className="hidden sm:inline">{label}</span>
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-
-          <p className="mt-4 text-center text-xs font-medium text-white/80 sm:mt-5 sm:text-sm">
-            Step <span className="tabular-nums text-white">{step}</span> of{" "}
-            <span className="tabular-nums">6</span>
-            <span className="text-white/50"> · </span>
-            <span className="text-white">{stepsMeta[step - 1]}</span>
-          </p>
-        </div>
-        </div>
-      ) : null}
-
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
-        <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-lg sm:p-10 lg:p-12">
-          {step === 1 && (
-            <div className={STEP_STACK}>
-              {!verificationToken ? (
-                <section className={SECTION}>
-                  {otpUiPhase === "email" ? (
-                    <div className="flex flex-col gap-8">
-                      <div>
-                        <h2 className={SECTION_HEADING}>Verify your email</h2>
-                        <p className={SECTION_LEAD}>
-                          We&apos;ll send a one-time code. Use the same address you&apos;ll use to log in.
-                        </p>
-                      </div>
-                      <div className={FIELD}>
-                        <label className={LABEL} htmlFor="vo-email">
-                          Email
-                          <RequiredMark />
-                        </label>
-                        <input
-                          id="vo-email"
-                          type="email"
-                          autoComplete="email"
-                          className={CONTROL}
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="you@example.com"
-                        />
-                      </div>
-                      <div>
-                        <button
-                          type="button"
-                          onClick={sendEmailCode}
-                          disabled={sendingEmailOtp || !email.trim()}
-                          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-95 disabled:opacity-50 sm:w-auto"
-                        >
-                          {sendingEmailOtp ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
-                              Sending…
-                            </>
-                          ) : (
-                            "Send code"
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-6 sm:gap-8">
-                      <div>
-                        <h2 className={SECTION_HEADING}>Enter your code</h2>
-                        <p className={SECTION_LEAD}>
-                          {devVerificationCode ? (
-                            <>
-                              Use the verification code shown below for{" "}
-                              <span className="font-semibold text-neutral-900">
-                                {email.trim()}
-                              </span>
-                              . No email was sent because SMTP is not configured.
-                            </>
-                          ) : (
-                            <>
-                              We sent a 6-digit code to{" "}
-                              <span className="font-semibold text-neutral-900">
-                                {email.trim()}
-                              </span>
-                              . Check your inbox and spam folder.
-                            </>
-                          )}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={sendEmailCode}
-                          disabled={sendingEmailOtp}
-                          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-800 shadow-sm hover:bg-neutral-50 disabled:opacity-50"
-                        >
-                          {sendingEmailOtp ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
-                              Sending…
-                            </>
-                          ) : (
-                            "Resend code"
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setOtpUiPhase("email");
-                            setEmailCode("");
-                            setDevVerificationCode(null);
-                          }}
-                          className="text-sm font-semibold text-primary hover:underline"
-                        >
-                          Change email
-                        </button>
-                      </div>
-                      {devVerificationCode ? (
-                        <div
-                          className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-4 sm:px-5 sm:py-5"
-                          role="status"
-                          aria-live="polite"
-                        >
-                          <p className="text-sm font-semibold text-amber-950">
-                            Development mode — no email was sent
-                          </p>
-                          <p className="mt-1.5 text-sm leading-relaxed text-amber-900/90">
-                            Add SMTP settings to <code className="text-xs">.env.local</code> to
-                            receive codes by email. For now, enter this code:
-                          </p>
-                          <p
-                            className="mt-4 text-center font-mono text-3xl font-bold tracking-[0.35em] text-amber-950 tabular-nums sm:text-4xl"
-                            aria-label={`Verification code ${devVerificationCode.split("").join(" ")}`}
-                          >
-                            {devVerificationCode}
-                          </p>
-                        </div>
-                      ) : null}
-                      <div className={FIELD}>
-                        <label className={LABEL} htmlFor="vo-code">
-                          Verification code
-                          <RequiredMark />
-                        </label>
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-stretch">
-                          <input
-                            id="vo-code"
-                            inputMode="numeric"
-                            maxLength={6}
-                            autoComplete="one-time-code"
-                            placeholder="••••••"
-                            className={`${CONTROL} text-center font-mono text-lg tracking-[0.2em] sm:max-w-52 sm:text-left sm:tracking-widest`}
-                            value={emailCode}
-                            onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, ""))}
-                            disabled={sendingEmailOtp}
-                          />
-                          <button
-                            type="button"
-                            onClick={verifyEmailCode}
-                            disabled={busy || sendingEmailOtp}
-                            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-neutral-300 bg-white px-6 py-2.5 text-sm font-semibold text-neutral-900 shadow-sm hover:bg-neutral-50 disabled:opacity-50"
-                          >
-                            Verify code
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </section>
-              ) : null}
-
-              {verificationToken ? (
-                <section className={SECTION}>
-                  <h2 className={SECTION_HEADING}>Your account</h2>
-                  <p className={SECTION_LEAD}>Legal name, phone, and password for your vendor login.</p>
-
-                  <fieldset className="mt-8 min-w-0 space-y-0 border-0 p-0">
-                    <legend className="sr-only">Profile and password</legend>
-                    <div className="flex flex-col gap-6 sm:gap-8">
-                      <div className={FIELD}>
-                        <label className={LABEL} htmlFor="vo-name">
-                          Full name
-                          <RequiredMark />
-                        </label>
-                        <input
-                          id="vo-name"
-                          className={CONTROL}
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                          autoComplete="name"
-                        />
-                      </div>
-                      <PhoneNumberField
-                        id="vo-phone"
-                        required
-                        value={phone}
-                        onChange={setPhone}
-                        hint="Pick the flag and dial code, then enter your mobile number using digits only (no leading 0)."
-                      />
-                      <div className={FIELD}>
-                        <label className={LABEL} htmlFor="vo-pass">
-                          Password
-                          <RequiredMark />
-                        </label>
-                        <PasswordInput
-                          id="vo-pass"
-                          className={CONTROL}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          autoComplete="new-password"
-                          placeholder="Create a strong password"
-                          aria-describedby="vo-pass-requirements"
-                        />
-                        <div id="vo-pass-requirements">
-                          <PasswordRequirements password={password} />
-                        </div>
-                      </div>
-                      <div className={FIELD}>
-                        <label className={LABEL} htmlFor="vo-pass2">
-                          Confirm password
-                          <RequiredMark />
-                        </label>
-                        <PasswordInput
-                          id="vo-pass2"
-                          className={CONTROL}
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          autoComplete="new-password"
-                          placeholder="Re-enter your password"
-                          aria-invalid={
-                            confirmPassword.length > 0 && password !== confirmPassword
-                          }
-                        />
-                        {confirmPassword.length > 0 && password !== confirmPassword ? (
-                          <p className={HINT} role="alert">
-                            Passwords do not match.
-                          </p>
-                        ) : null}
-                      </div>
-                    </div>
-                  </fieldset>
-                </section>
-              ) : null}
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className={STEP_STACK}>
-              <div className={FIELD}>
-                <label className={LABEL}>Store name
-                  <RequiredMark />
-                </label>
-                <input className={CONTROL} value={storeName} onChange={(e) => setStoreName(e.target.value)} />
-              </div>
-              <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 px-4 py-4 text-sm text-neutral-600 sm:px-5 sm:py-4">
-                <span className="font-semibold text-neutral-900">Store URL preview</span>
-                <p className="mt-2 break-all font-mono text-xs text-neutral-700 sm:text-sm">
-                  …/vendors/{slugPreview || "your-store"}
-                </p>
-                <p className={`${HINT} mt-3`}>Saved when you continue; must be unique.</p>
-              </div>
-              <div className={FIELD}>
-                <label className={LABEL}>Business type
-                  <RequiredMark />
-                </label>
-                <select
-                  className={CONTROL}
-                  value={businessType}
-                  onChange={(e) => setBusinessType(e.target.value as BusinessType)}
-                >
-                  {businessTypes.map((b) => (
-                    <option key={b} value={b}>
-                      {b === "INDIVIDUAL" ? "Individual" : "Registered business"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className={FIELD}>
-                <label className={LABEL}>Industry type</label>
-                <select
-                  className={CONTROL}
-                  value={industryType}
-                  onChange={(e) => setIndustryType(e.target.value as IndustryType | "")}
-                >
-                  <option value="">— Select industry —</option>
-                  {industryTypes.map((t) => (
-                    <option key={t} value={t}>
-                      {industryTypeLabels[t]}
-                    </option>
-                  ))}
-                </select>
-                <p className={HINT}>Optional. Helps customers find your store.</p>
-              </div>
-              <FileAttachmentField
-                label="Logo (optional)"
-                accept="image/jpeg,image/png,image/webp"
-                disabled={Boolean(uploadKey)}
-                hint="JPG, PNG, or WebP — max 10 MB."
-                attachedFileName={logoFile?.name ?? null}
-                hasSavedFile={Boolean(logoUrl)}
-                savedText="A logo is already saved for this draft."
-                onSelect={setLogoFile}
-              />
-              <div className={FIELD}>
-                <label className={LABEL} htmlFor="vendor-store-description">
-                  Description (optional)
-                </label>
-                <textarea
-                  id="vendor-store-description"
-                  className={`${CONTROL} min-h-28 resize-y ${
-                    descriptionOverLimit
-                      ? "border-red-400 focus:border-red-500 focus:ring-red-500/25"
-                      : ""
-                  }`}
-                  value={description}
-                  maxLength={STORE_DESCRIPTION_MAX_CHARS}
-                  onChange={(e) => setDescription(e.target.value)}
-                  aria-invalid={descriptionOverLimit}
-                  aria-describedby="vendor-store-description-hint vendor-store-description-count"
+            {step === 1 ? (
+              <div className="space-y-6">
+                <StepHeader
+                  title={tWizard("stepContent.account.title")}
+                  description={tWizard("stepContent.account.description")}
                 />
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p id="vendor-store-description-hint" className={`${HINT}`}>
-                    Optional. Maximum {STORE_DESCRIPTION_MAX_CHARS} characters; longer text is not accepted.
-                  </p>
-                  <p
-                    id="vendor-store-description-count"
-                    className={`text-xs tabular-nums ${
-                      descriptionOverLimit ? "font-medium text-red-600" : "text-neutral-500"
-                    }`}
-                  >
-                    {descriptionTrimLen} / {STORE_DESCRIPTION_MAX_CHARS}
-                  </p>
-                </div>
-                {descriptionOverLimit ? (
-                  <p className="text-xs font-medium text-red-600" role="alert">
-                    Please shorten your description to {STORE_DESCRIPTION_MAX_CHARS} characters or fewer.
-                  </p>
+
+                {otpUiPhase === "email" && !verificationToken ? (
+                  <div className="grid gap-3 sm:grid-cols-[1fr_140px] sm:items-end">
+                    <FloatingInput
+                      id="vendor-email"
+                      label={tWizard("fields.email")}
+                      type="email"
+                      icon={<Mail className="h-4 w-4" />}
+                      value={email}
+                      onChange={setEmail}
+                      required
+                      autoComplete="email"
+                      error={emailError}
+                      success={Boolean(email.length > 0 && !emailError)}
+                    />
+                    <button
+                      type="button"
+                      onClick={sendEmailCode}
+                      disabled={sendingEmailOtp || Boolean(emailError) || !email.trim()}
+                      className="inline-flex h-13 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-white disabled:opacity-50"
+                    >
+                      {sendingEmailOtp ? tWizard("actions.sending") : tWizard("actions.sendCode")}
+                    </button>
+                  </div>
+                ) : null}
+
+                {otpUiPhase === "code" && !verificationToken ? (
+                  <div className="mx-auto mt-3 w-full max-w-2xl space-y-6 py-3 sm:py-4">
+                    <div className="space-y-2 text-center">
+                      <p className="text-xl font-semibold text-neutral-900">{tWizard("otp.verifyTitle")}</p>
+                      <p className="text-sm text-neutral-600 sm:text-base">
+                        {tWizard("otp.codeSentTo", { email: email.trim() })}
+                      </p>
+                    </div>
+                    {devVerificationCode ? (
+                      <p className="text-center text-xs text-amber-700">{tWizard("otp.devCode", { code: devVerificationCode })}</p>
+                    ) : null}
+                    <div className="space-y-4 text-center">
+                      <p className="text-sm font-medium text-neutral-700">
+                        {tWizard("otp.verificationCode")}<span className="text-rose-500"> *</span>
+                      </p>
+                      <OtpCodeInput
+                        value={emailCode}
+                        onChange={(value) => setEmailCode(value.replace(/\D/g, "").slice(0, 6))}
+                        disabled={sendingEmailOtp}
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-3 pt-1">
+                      <button
+                        type="button"
+                        onClick={verifyEmailCode}
+                        disabled={busy || sendingEmailOtp}
+                        className="inline-flex h-10 items-center justify-center rounded-xl border border-neutral-300 bg-white px-4 text-sm font-semibold"
+                      >
+                        {tWizard("actions.verifyCode")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={sendEmailCode}
+                        disabled={sendingEmailOtp}
+                        className="text-sm font-medium text-primary"
+                      >
+                        {sendingEmailOtp ? tWizard("actions.resending") : tWizard("actions.resendCode")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOtpUiPhase("email");
+                          setEmailCode("");
+                        }}
+                        className="text-sm font-medium text-primary"
+                      >
+                        {tWizard("actions.changeEmail")}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {verificationToken ? (
+                  <>
+                    <FloatingInput
+                      id="vendor-full-name"
+                      label={tWizard("fields.fullName")}
+                      icon={<User className="h-4 w-4" />}
+                      value={fullName}
+                      onChange={setFullName}
+                      required
+                      autoComplete="name"
+                      error={fullName.length > 0 && fullName.trim().length < 2 ? tWizard("validation.fullName") : null}
+                      success={fullName.trim().length >= 2}
+                    />
+
+                    <PhoneNumberField
+                      id="vendor-phone"
+                      label={tWizard("fields.phone")}
+                      required
+                      value={phone}
+                      onChange={setPhone}
+                      hint={tWizard("fields.phoneHint")}
+                    />
+                    <StepIndicator
+                      label={phoneError ? phoneError : tWizard("validation.phoneLooksGood")}
+                      state={phone.length === 0 ? "idle" : phoneError ? "invalid" : "valid"}
+                    />
+
+                    <FloatingInput
+                      id="vendor-password"
+                      label={tWizard("fields.password")}
+                      type="password"
+                      icon={<LockKeyhole className="h-4 w-4" />}
+                      value={password}
+                      onChange={setPassword}
+                      required
+                      autoComplete="new-password"
+                      error={passwordError}
+                      success={Boolean(password.length > 0 && !passwordError)}
+                    />
+                    <PasswordStrength password={password} />
+
+                    <FloatingInput
+                      id="vendor-confirm-password"
+                      label={tWizard("fields.confirmPassword")}
+                      type="password"
+                      icon={<LockKeyhole className="h-4 w-4" />}
+                      value={confirmPassword}
+                      onChange={setConfirmPassword}
+                      required
+                      autoComplete="new-password"
+                      error={confirmPasswordError}
+                      success={Boolean(confirmPassword.length > 0 && !confirmPasswordError)}
+                    />
+                  </>
                 ) : null}
               </div>
-            </div>
-          )}
+            ) : null}
 
-          {step === 3 && (
-            <div className={STEP_STACK}>
-              <p className="text-sm leading-relaxed text-neutral-600">
-                We use this to verify who is selling on the marketplace.
-              </p>
-              <div className={FIELD}>
-                <label className={LABEL}>ID type
-                  <RequiredMark />
-                </label>
-                <select
-                  className={CONTROL}
-                  value={documentType}
-                  onChange={(e) => setDocumentType(e.target.value as KycDocumentType)}
-                >
-                  {kycDocumentTypes.map((t) => (
-                    <option key={t} value={t}>
-                      {t.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase())}
-                    </option>
-                  ))}
-                </select>
+            {step === 2 ? (
+              <div className="space-y-6">
+                <StepHeader
+                  title={tWizard("stepContent.store.title")}
+                  description={tWizard("stepContent.store.description")}
+                />
+
+                <FloatingInput
+                  id="vendor-store-name"
+                  label={tWizard("fields.storeName")}
+                  value={storeName}
+                  onChange={setStoreName}
+                  required
+                  error={
+                    storeName.length > 0 && storeName.trim().length < 2 ? tWizard("validation.storeName") : null
+                  }
+                  success={storeName.trim().length >= 2}
+                />
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-xs text-neutral-600">
+                  {tWizard("store.urlPreview")}: <span className="font-mono text-neutral-900">/vendors/{slugPreview}</span>
+                </div>
+
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-neutral-700">{tWizard("fields.businessType")} *</label>
+                    <select
+                      className={INPUT_BASE}
+                      value={businessType}
+                      onChange={(event) => setBusinessType(event.target.value as BusinessType)}
+                    >
+                      {businessTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {type === "INDIVIDUAL" ? tWizard("store.businessTypeIndividual") : tWizard("store.businessTypeRegistered")}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-neutral-700">{tWizard("fields.industry")}</label>
+                    <select
+                      className={INPUT_BASE}
+                      value={industryType}
+                      onChange={(event) => setIndustryType(event.target.value as IndustryType | "")}
+                    >
+                      <option value="">{tWizard("store.selectIndustry")}</option>
+                      {industryTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {tWizard(`store.industryTypes.${type}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <UploadZone
+                  id="store-logo"
+                  title={tWizard("store.logoUpload")}
+                  hint={tWizard("store.logoHint")}
+                  accept="image/jpeg,image/png,image/webp"
+                  file={logoFile}
+                  onChange={setLogoFile}
+                  savedUrl={logoUrl}
+                  disabled={Boolean(uploadKey)}
+                />
+                <UploadZone
+                  id="store-banner"
+                  title={tWizard("store.bannerUpload")}
+                  hint={tWizard("store.bannerHint")}
+                  accept="image/jpeg,image/png,image/webp"
+                  file={bannerFile}
+                  onChange={setBannerFile}
+                  disabled={Boolean(uploadKey)}
+                />
+
+                <div>
+                  <div className="relative">
+                    <textarea
+                      id="store-description"
+                      className={`${textAreaBase} ${descriptionOverLimit ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/15" : ""}`}
+                      placeholder={tWizard("fields.storeDescription")}
+                      value={description}
+                      onChange={(event) => setDescription(event.target.value)}
+                    />
+                    <label
+                      htmlFor="store-description"
+                      className="pointer-events-none absolute left-4 top-4 bg-white px-1 text-xs font-medium text-neutral-500"
+                    >
+                      {tWizard("fields.storeDescription")}
+                    </label>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <p className="text-xs text-neutral-500">
+                      {tWizard("store.descriptionMax", { max: STORE_DESCRIPTION_MAX_CHARS })}
+                    </p>
+                    <p className={`text-xs ${descriptionOverLimit ? "text-rose-600" : "text-neutral-500"}`}>
+                      {descriptionTrimLen} / {STORE_DESCRIPTION_MAX_CHARS}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <FileAttachmentField
-                required
-                label="ID document"
-                accept="image/jpeg,image/png,image/webp,application/pdf"
-                disabled={Boolean(uploadKey)}
-                hint="Image or PDF — max 10 MB."
-                attachedFileName={documentFile?.name ?? null}
-                hasSavedFile={Boolean(documentUrl)}
-                savedText="An ID document is already saved for this draft."
-                onSelect={setDocumentFile}
-              />
-              <FileAttachmentField
-                label="Selfie with ID (optional)"
-                accept="image/jpeg,image/png,image/webp"
-                disabled={Boolean(uploadKey)}
-                hint="JPG, PNG, or WebP — max 10 MB."
-                attachedFileName={selfieWithIdFile?.name ?? null}
-                hasSavedFile={Boolean(selfieWithIdUrl)}
-                savedText="A selfie is already saved for this draft."
-                onSelect={setSelfieWithIdFile}
-              />
-            </div>
-          )}
+            ) : null}
 
-          {step === 4 && (
-            <div className={STEP_STACK}>
-              <div className={FIELD}>
-                <label className={LABEL}>Address line 1
-                  <RequiredMark />
-                </label>
-                <AddressAutocompleteInput
-                  className={CONTROL}
-                  value={addressLine1}
-                  countryCodes={shippingCountryIsoCodes}
-                  onTextChange={setAddressLine1}
-                  onPlaceSelect={(place) => {
-                    setAddressLine1(place.addressLine1);
-                    if (place.country) {
-                      const matchedCountry = normalizeCountryName(place.country);
-                      setCountry(matchedCountry);
-                      const matchedCity = place.city
-                        ? normalizeCityNameForCountry(matchedCountry, place.city)
-                        : "";
-                      setCity(matchedCity);
-                      setPostalCode(
-                        matchedCity && place.postalCode
-                          ? normalizePostalCodeForCity(matchedCountry, matchedCity, place.postalCode)
-                          : ""
-                      );
-                    }
-                  }}
+            {step === 3 ? (
+              <div className="space-y-6">
+                <StepHeader
+                  title={tWizard("stepContent.identity.title")}
+                  description={tWizard("stepContent.identity.description")}
+                />
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-neutral-700">{tWizard("fields.nationalIdType")} *</label>
+                  <select
+                    className={INPUT_BASE}
+                    value={documentType}
+                    onChange={(event) => setDocumentType(event.target.value as KycDocumentType)}
+                  >
+                    {kycDocumentTypes.map((value) => (
+                      <option key={value} value={value}>
+                        {tWizard(`identity.documentTypes.${value}`)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <UploadZone
+                  id="kyc-document"
+                  title={tWizard("identity.idDocument")}
+                  hint={tWizard("identity.idDocumentHint")}
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  file={documentFile}
+                  onChange={setDocumentFile}
+                  savedUrl={documentUrl}
+                  required
+                  disabled={Boolean(uploadKey)}
+                />
+                <UploadZone
+                  id="kyc-selfie"
+                  title={tWizard("identity.verificationSelfieOptional")}
+                  hint={tWizard("identity.verificationSelfieHint")}
+                  accept="image/jpeg,image/png,image/webp"
+                  file={selfieWithIdFile}
+                  onChange={setSelfieWithIdFile}
+                  savedUrl={selfieWithIdUrl}
+                  disabled={Boolean(uploadKey)}
                 />
               </div>
-              <SearchableSelect
-                label="Country"
-                required
-                value={country}
-                options={countryOptions}
-                placeholder="Select country"
-                searchPlaceholder="Search countries…"
-                onChange={(value) => {
-                  setCountry(value);
-                  setCity("");
-                  setPostalCode("");
-                }}
-                emptyMessage="No countries match your search"
-              />
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <SearchableSelect
-                  label="City"
+            ) : null}
+
+            {step === 4 ? (
+              <div className="space-y-6">
+                <StepHeader
+                  title={tWizard("stepContent.address.title")}
+                  description={tWizard("stepContent.address.description")}
+                />
+                <AddressSection
+                  addressLine1={addressLine1}
+                  setAddressLine1={setAddressLine1}
+                  city={city}
+                  setCity={setCity}
+                  country={country}
+                  setCountry={setCountry}
+                  postalCode={postalCode}
+                  setPostalCode={setPostalCode}
+                  shippingCountryIsoCodes={shippingCountryIsoCodes}
+                  countryOptions={countryOptions}
+                  cityOptions={cityOptions}
+                  postalOptions={postalOptions}
+                  proofOfAddressFile={proofOfAddressFile}
+                  setProofOfAddressFile={setProofOfAddressFile}
+                  proofOfAddressUrl={proofOfAddressUrl}
+                  uploadBusy={Boolean(uploadKey)}
+                  province={province}
+                  setProvince={setProvince}
+                />
+              </div>
+            ) : null}
+
+            {step === 5 ? (
+              <div className="space-y-6">
+                <StepHeader
+                  title={tWizard("stepContent.payout.title")}
+                  description={tWizard("stepContent.payout.description")}
+                />
+                <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+                  {tWizard("payout.infoBox")}
+                </div>
+
+                <FloatingInput
+                  id="bank-name"
+                  label={tWizard("fields.bankName")}
+                  icon={<Landmark className="h-4 w-4" />}
+                  value={bankName}
+                  onChange={setBankName}
                   required
-                  value={city}
-                  options={cityOptions}
-                  placeholder={country ? "Select or search city" : "Select a country first"}
-                  searchPlaceholder="Search cities…"
-                  disabled={!country}
-                  allowCustom
-                  onChange={(value) => {
-                    setCity(sanitizeCityCountryInput(value));
-                    setPostalCode("");
-                  }}
-                  emptyMessage={
-                    country
-                      ? "No cities match — type to use a custom city"
-                      : "Choose a country first"
+                  error={bankNameError}
+                  success={Boolean(bankName.length > 0 && !bankNameError)}
+                />
+                <FloatingInput
+                  id="account-title"
+                  label={tWizard("fields.accountTitle")}
+                  icon={<User className="h-4 w-4" />}
+                  value={accountName}
+                  onChange={setAccountName}
+                  required
+                  error={accountNameError}
+                  success={Boolean(accountName.length > 0 && !accountNameError)}
+                />
+                <FloatingInput
+                  id="account-number"
+                  label={tWizard("fields.accountNumberOrIban")}
+                  icon={<Landmark className="h-4 w-4" />}
+                  value={accountNumberOrIban}
+                  onChange={setAccountNumberOrIban}
+                  required
+                  error={accountNumberError}
+                  success={Boolean(accountNumberOrIban.length > 0 && !accountNumberError)}
+                />
+                <FloatingInput
+                  id="paypal-email"
+                  label={tWizard("fields.paypalEmailOptional")}
+                  icon={<Mail className="h-4 w-4" />}
+                  value={paypalEmail}
+                  onChange={setPaypalEmail}
+                  type="email"
+                  error={
+                    paypalEmail.length > 0 && !EMAIL_REGEX.test(paypalEmail.trim())
+                      ? tWizard("validation.paypalEmail")
+                      : null
                   }
                 />
-                <SearchableSelect
-                  label="Postal code"
-                  required
-                  value={postalCode}
-                  options={postalOptions}
-                  placeholder={city ? "Select or search postal code" : "Select a city first"}
-                  searchPlaceholder="Search postal codes…"
-                  disabled={!city}
-                  allowCustom
-                  onChange={(value) => setPostalCode(sanitizePostalCodeInput(value))}
-                  emptyMessage={
-                    city
-                      ? "No postal codes match — type to enter manually"
-                      : "Choose a city first"
-                  }
+              </div>
+            ) : null}
+
+            {step === 6 ? (
+              <div className="space-y-6">
+                <StepHeader
+                  title={tWizard("stepContent.agreements.title")}
+                  description={tWizard("stepContent.agreements.description")}
                 />
-              </div>
-              <FileAttachmentField
-                label="Proof of address (optional)"
-                accept="image/jpeg,image/png,image/webp,application/pdf"
-                disabled={Boolean(uploadKey)}
-                hint="Image or PDF — max 10 MB."
-                attachedFileName={proofOfAddressFile?.name ?? null}
-                hasSavedFile={Boolean(proofOfAddressUrl)}
-                savedText="A proof document is already saved for this draft."
-                onSelect={setProofOfAddressFile}
-              />
-            </div>
-          )}
 
-          {step === 5 && (
-            <div className={STEP_STACK}>
-              <p className={CALLOUT}>Account name must match your ID or business name.</p>
-              <div className="flex flex-col gap-6 sm:gap-8">
-                <div className={FIELD}>
-                  <label className={LABEL}>Account name
-                    <RequiredMark />
-                  </label>
-                  <input className={CONTROL} value={accountName} onChange={(e) => setAccountName(e.target.value)} />
-                </div>
-                <div className={FIELD}>
-                  <label className={LABEL}>Account number / IBAN
-                    <RequiredMark />
-                  </label>
-                  <input className={CONTROL} value={accountNumberOrIban} onChange={(e) => setAccountNumberOrIban(e.target.value)} />
-                </div>
-                <div className={FIELD}>
-                  <label className={LABEL}>Bank name
-                    <RequiredMark />
-                  </label>
-                  <input className={CONTROL} value={bankName} onChange={(e) => setBankName(e.target.value)} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 6 && (
-            <div className="flex flex-col gap-3 sm:gap-4">
-              <p className="text-sm font-medium leading-relaxed text-neutral-800">
-                {t("intro")}
-              </p>
-              <label className={CHECK_ROW}>
-                <input type="checkbox" checked={ag1} onChange={(e) => setAg1(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>{t("vendorTerms")}<RequiredMark /></span>
-              </label>
-              <label className={CHECK_ROW}>
-                <input type="checkbox" checked={ag2} onChange={(e) => setAg2(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>
-                  {t("membership", {
+                <AgreementAccordion id="ag-1" title={tWizard("agreements.vendorTerms")} summary={tAgreements("vendorTerms")} checked={ag1} onChange={setAg1} />
+                <AgreementAccordion
+                  id="ag-2"
+                  title={tWizard("agreements.membershipPolicy")}
+                  summary={tAgreements("membership", {
                     fee: membershipFeeLabel,
                     trialDays: membershipTrialDays,
                   })}
-                  <RequiredMark />
-                </span>
-              </label>
-              <label className={CHECK_ROW}>
-                <input type="checkbox" checked={ag3} onChange={(e) => setAg3(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>
-                  {t("transactionFee", { fee: transactionFeeLabel })}
-                  <RequiredMark />
-                </span>
-              </label>
-              <label className={CHECK_ROW}>
-                <input type="checkbox" checked={ag4} onChange={(e) => setAg4(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>{t("disputes")}<RequiredMark /></span>
-              </label>
-              <label className={CHECK_ROW}>
-                <input type="checkbox" checked={ag5} onChange={(e) => setAg5(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-primary" />
-                <span>{t("delivery")}<RequiredMark /></span>
-              </label>
-            </div>
-          )}
+                  checked={ag2}
+                  onChange={setAg2}
+                />
+                <AgreementAccordion
+                  id="ag-3"
+                  title={tWizard("agreements.commissionPolicy")}
+                  summary={tAgreements("transactionFee", { fee: transactionFeeLabel })}
+                  checked={ag3}
+                  onChange={setAg3}
+                />
+                <AgreementAccordion id="ag-4" title={tWizard("agreements.refundDisputePolicy")} summary={tAgreements("disputes")} checked={ag4} onChange={setAg4} />
+                <AgreementAccordion id="ag-5" title={tWizard("agreements.deliveryPolicy")} summary={tAgreements("delivery")} checked={ag5} onChange={setAg5} />
+              </div>
+            ) : null}
+          </motion.section>
+        </AnimatePresence>
 
-          <div className="mt-12 flex flex-col-reverse gap-4 border-t border-neutral-200 pt-10 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-            <button
-              type="button"
-              onClick={goBack}
-              disabled={step === 1 || busy || Boolean(uploadKey) || sendingEmailOtp}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-white px-6 py-2.5 text-sm font-semibold text-neutral-800 shadow-sm hover:bg-neutral-50 disabled:opacity-40"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Back
-            </button>
-            <button
-              type="button"
-              onClick={goNext}
-              disabled={
-                busy ||
-                Boolean(uploadKey) ||
-                sendingEmailOtp ||
-                (step === 1 && (!verificationToken || !fullName.trim() || !isValidPhone(phone)))
-              }
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-8 py-2.5 text-sm font-semibold text-white shadow-md hover:opacity-95 disabled:opacity-45"
-            >
-              {step === 6 ? "Submit application" : "Next"}
-              {step !== 6 ? <ChevronRight className="h-4 w-4" /> : null}
-            </button>
-          </div>
-        </div>
+        <StepFooter
+          canGoBack={step > 1}
+          busy={busy || sendingEmailOtp || Boolean(uploadKey)}
+          onBack={goBack}
+          onNext={goNext}
+          finalStep={step === 6}
+          disabled={
+            busy ||
+            Boolean(uploadKey) ||
+            sendingEmailOtp ||
+            (step === 1 &&
+              (!verificationToken ||
+                !fullName.trim() ||
+                !isValidPhone(phone) ||
+                Boolean(passwordError) ||
+                Boolean(confirmPasswordError))) ||
+            (step === 5 && Boolean(paypalEmail) && !EMAIL_REGEX.test(paypalEmail.trim()))
+          }
+        />
       </div>
     </div>
   );

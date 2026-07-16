@@ -590,6 +590,235 @@
         "disputes": "زه موافق یم چې آنلاین منداوی د پورته شویو شخړو/بیرته ورکولو په اړه وروستی پریکړه کوي.",
         "delivery": "زه موافق یم چې د پلټفارم د لېږد قوانین تعقیب کړم."
       },
+      "wizard": {
+        "loading": "Preparing onboarding...",
+        "stepOf": "Step {current} of {total}",
+        "steps": {
+          "account": "Account",
+          "store": "Store",
+          "identity": "Identity",
+          "address": "Address",
+          "payout": "Payout",
+          "agreements": "Agreements"
+        },
+        "actions": {
+          "next": "Next",
+          "submitApplication": "Submit Application",
+          "sendCode": "Send code",
+          "sending": "Sending...",
+          "verifyCode": "Verify code",
+          "resendCode": "Resend code",
+          "resending": "Resending...",
+          "changeEmail": "Change email"
+        },
+        "fields": {
+          "email": "Email",
+          "fullName": "Full Name",
+          "phone": "Phone",
+          "phoneHint": "Use your active mobile number with country code.",
+          "password": "Password",
+          "confirmPassword": "Confirm Password",
+          "storeName": "Store Name",
+          "businessType": "Business Type",
+          "industry": "Industry",
+          "storeDescription": "Store Description",
+          "nationalIdType": "National ID Type",
+          "bankName": "Bank Name",
+          "accountTitle": "Account Title",
+          "accountNumberOrIban": "Account Number / IBAN",
+          "paypalEmailOptional": "PayPal Email (Optional)"
+        },
+        "stepContent": {
+          "account": {
+            "title": "Create your account",
+            "description": "We'll use this account to manage your products and orders."
+          },
+          "store": {
+            "title": "Store information",
+            "description": "Tell us about your store, business profile, and brand assets."
+          },
+          "identity": {
+            "title": "Identity verification",
+            "description": "Upload your verification documents to complete KYC review."
+          },
+          "address": {
+            "title": "Business address",
+            "description": "Set your operating address. Use map-assisted autocomplete for faster entry."
+          },
+          "payout": {
+            "title": "Payout details",
+            "description": "We'll send your earnings to this account. Payouts are currently processed manually."
+          },
+          "agreements": {
+            "title": "Agreements",
+            "description": "Review and accept all required policies before submitting your application."
+          }
+        },
+        "otp": {
+          "verifyTitle": "Verify your email",
+          "codeSentTo": "Code sent to {email}",
+          "verificationCode": "Verification code",
+          "codeDigitAria": "Verification code digit {number}",
+          "devCode": "Development code: {code}"
+        },
+        "password": {
+          "title": "Password strength",
+          "strength": {
+            "weak": "Weak",
+            "medium": "Medium",
+            "strong": "Strong"
+          },
+          "rules": {
+            "length": "At least 8 characters",
+            "number": "At least one number",
+            "uppercase": "At least one uppercase letter",
+            "special": "At least one special character"
+          }
+        },
+        "store": {
+          "urlPreview": "URL preview",
+          "businessTypeIndividual": "Individual",
+          "businessTypeRegistered": "Registered business",
+          "selectIndustry": "Select industry",
+          "industryTypes": {
+            "BAKERY": "Bakery",
+            "CLOTHING": "Clothing & Apparel",
+            "ELECTRONICS": "Electronics",
+            "FLORISTS": "Florists",
+            "DRIED_FRUITS": "Dried Fruits & Nuts",
+            "CARPETS": "Carpets & Rugs",
+            "FOOD_BEVERAGES": "Food & Beverages",
+            "JEWELRY": "Jewelry & Accessories",
+            "HEALTH_BEAUTY": "Health & Beauty",
+            "HOME_FURNITURE": "Home & Furniture",
+            "SPORTS_OUTDOORS": "Sports & Outdoors",
+            "BOOKS_STATIONERY": "Books & Stationery",
+            "TOYS_GAMES": "Toys & Games",
+            "AUTOMOTIVE": "Automotive",
+            "HANDICRAFTS": "Handicrafts & Artisan",
+            "AGRICULTURE": "Agriculture & Farming",
+            "OTHER": "Other"
+          },
+          "logoUpload": "Logo Upload",
+          "logoHint": "JPG, PNG, or WebP. Max 10MB.",
+          "bannerUpload": "Banner Upload",
+          "bannerHint": "Optional staging banner for your onboarding draft.",
+          "descriptionMax": "Maximum {max} characters.",
+          "defaultSlug": "your-store"
+        },
+        "identity": {
+          "documentTypes": {
+            "PASSPORT": "Passport",
+            "DRIVERS_LICENSE": "Driver's License",
+            "NATIONAL_ID": "National ID"
+          },
+          "idDocument": "License / ID Document",
+          "idDocumentHint": "Image or PDF. Max 10MB.",
+          "verificationSelfieOptional": "Verification Selfie (Optional)",
+          "verificationSelfieHint": "Upload a selfie holding your ID."
+        },
+        "address": {
+          "streetAddress": "Street address",
+          "country": "Country",
+          "selectCountry": "Select country",
+          "searchCountries": "Search countries...",
+          "noCountries": "No countries match your search",
+          "provinceState": "Province / State",
+          "city": "City",
+          "selectCity": "Select or search city",
+          "selectCountryFirst": "Select a country first",
+          "searchCities": "Search cities...",
+          "noCities": "No cities match - type custom city",
+          "chooseCountryFirst": "Choose a country first",
+          "postalCode": "Postal code",
+          "selectPostalCode": "Select or search postal code",
+          "selectCityFirst": "Select city first",
+          "searchPostalCodes": "Search postal codes...",
+          "noPostalCodes": "No results - type manually",
+          "chooseCityFirst": "Choose a city first",
+          "proofOfAddressOptional": "Proof of Address (Optional)",
+          "proofOfAddressHint": "Upload utility bill, bank statement, or similar. PDF, JPG, PNG, WebP."
+        },
+        "upload": {
+          "browse": "Drag & Drop or Browse",
+          "previewUnavailable": "Preview unavailable for this file type.",
+          "savedFileTitle": "A file is already saved for this section.",
+          "savedFileHint": "Upload a new one to replace it.",
+          "fileSizeKb": "{size} KB"
+        },
+        "payout": {
+          "infoBox": "We'll send your earnings to this account after settlement."
+        },
+        "agreements": {
+          "vendorTerms": "Vendor Terms",
+          "membershipPolicy": "Membership Policy",
+          "commissionPolicy": "Commission Policy",
+          "refundDisputePolicy": "Refund & Dispute Policy",
+          "deliveryPolicy": "Delivery Policy",
+          "iAgree": "I agree"
+        },
+        "validation": {
+          "email": "Enter a valid email.",
+          "fullName": "Enter your full name.",
+          "passwordMismatch": "Passwords do not match.",
+          "minTwoCharacters": "Use at least 2 characters.",
+          "minFiveCharacters": "Use at least 5 characters.",
+          "phoneLooksGood": "Phone number looks good",
+          "storeName": "Store name must be at least 2 characters.",
+          "paypalEmail": "Enter a valid PayPal email."
+        },
+        "success": {
+          "title": "Application received",
+          "description": "Your vendor application is pending admin approval. We will email you when there is an update.",
+          "backHome": "Back to home"
+        },
+        "toasts": {
+          "genericError": "Something went wrong. Please try again.",
+          "error": "Error",
+          "sessionTitle": "Session",
+          "sessionStartAgain": "Start again from step 1.",
+          "emailRequiredTitle": "Email required",
+          "emailFirst": "Enter your email first.",
+          "emailInvalid": "Enter a valid email address.",
+          "verificationCodeReadyTitle": "Verification code ready",
+          "verificationCodeReadyDesc": "Email is not set up on this machine. Use the code shown on this page.",
+          "emailSentTitle": "Email sent",
+          "emailSentDesc": "We sent a 6-digit code to {email}.",
+          "couldNotSendCodeTitle": "Could not send code",
+          "emailTitle": "Email",
+          "invalidCodeTitle": "Invalid code",
+          "enterSixDigitCode": "Enter the 6-digit code.",
+          "emailVerifiedTitle": "Email verified",
+          "emailVerifiedDesc": "Continue to the next step.",
+          "verificationFailedTitle": "Verification failed",
+          "verifyEmailTitle": "Verify email",
+          "verifyEmailFirst": "Send and confirm your email code first.",
+          "nameTitle": "Name",
+          "enterFullName": "Enter your full name.",
+          "phoneTitle": "Phone number",
+          "passwordRequirementsTitle": "Password requirements",
+          "passwordTitle": "Password",
+          "passwordMismatch": "Password and confirm password must match.",
+          "accountCreatedTitle": "Account created",
+          "accountCreatedDesc": "Continue with your store details.",
+          "couldNotStartTitle": "Could not start",
+          "storeNameTitle": "Store name",
+          "storeNameMin": "Enter at least 2 characters.",
+          "storeDescriptionTooLongTitle": "Store description too long",
+          "storeDescriptionTooLongDesc": "Use {max} characters or fewer. You entered {count}.",
+          "kycTitle": "KYC",
+          "attachIdDocument": "Attach your ID document to continue.",
+          "addressTitle": "Address",
+          "addressRequiredFields": "Fill in all required address fields.",
+          "payoutTitle": "Payout",
+          "payoutRequiredFields": "Fill in all bank fields.",
+          "agreementsTitle": "Agreements",
+          "agreementsRequired": "Accept all required policies.",
+          "submittedTitle": "Submitted",
+          "submittedDesc": "We will review your application.",
+          "couldNotSaveTitle": "Could not save"
+        }
+      },
       "landing": {
         "eyebrow": "له آنلاین منداوی سره وده وکړئ",
         "title": "خپل پلورنځی پرانیزئ او په باور سره پلور پیل کړئ",
