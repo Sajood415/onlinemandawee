@@ -1135,6 +1135,7 @@ model HawalaTransfer {
 enum HomeBannerPlacement {
   HERO
   SECTION
+  DUO
 }
 
 model HomeBanner {
