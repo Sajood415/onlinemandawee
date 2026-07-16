@@ -1188,6 +1188,91 @@
       }
     }
   },
+  "GiftPages": {
+    "landing": {
+      "eyebrow": "MandawEE · Gift Sets",
+      "title": "Gift Sets",
+      "subtitle": "Send a thoughtful gift to loved ones in Afghanistan — browse ready-made sets or request a personalized gift prepared and delivered your way.",
+      "heroImageAlt": "Wrapped gifts ready to send with care",
+      "cta": {
+        "requestGift": "Request a gift",
+        "browseSets": "Browse gift sets"
+      },
+      "duo": {
+        "leftAlt": "Beautifully wrapped gift boxes",
+        "rightAlt": "Celebration gifts for family moments",
+        "leftLabel": "Personalized requests",
+        "rightLabel": "Ready-made sets"
+      },
+      "promos": {
+        "oneAlt": "Thoughtful gift packaging",
+        "twoAlt": "Celebration-ready gift ideas",
+        "threeAlt": "Festive gifts for loved ones",
+        "fourAlt": "Carefully curated gift moments",
+        "oneLabel": "Wrap & care",
+        "twoLabel": "Celebrate",
+        "threeLabel": "Family first",
+        "fourLabel": "Curated picks"
+      },
+      "howItWorks": {
+        "title": "How gift requests work",
+        "subtitle": "From your ideas to delivery in Afghanistan.",
+        "steps": {
+          "tell": {
+            "title": "Tell us the details",
+            "description": "Share recipient info, occasion, and how you want the gift prepared."
+          },
+          "quote": {
+            "title": "Get a quote",
+            "description": "Our team reviews your request and follows up with pricing and next steps."
+          },
+          "deliver": {
+            "title": "We deliver",
+            "description": "Once confirmed, we prepare and deliver to your loved ones in Afghanistan."
+          }
+        }
+      },
+      "curatedTitle": "Ready-made gift sets",
+      "curatedSubtitle": "Shop curated gift-ready products from trusted vendors.",
+      "results": "{count, plural, one {# gift item} other {# gift items}}",
+      "noGifts": "No gift items yet",
+      "noGiftsHint": "Browse all products or check back as vendors add more gift-ready items.",
+      "browseAll": "Browse all products",
+      "home": "Home"
+    },
+    "form": {
+      "validation": {
+        "required": "{field} is required.",
+        "minLength": "{field} must be at least {min} characters.",
+        "maxLength": "{field} must be at most {max} characters.",
+        "lettersOnly": "{field} must contain letters only.",
+        "numbersOnly": "{field} must contain numbers only.",
+        "minDigits": "{field} must be at least {min} digits.",
+        "maxDigits": "{field} must be at most {max} digits.",
+        "invalidEmail": "Enter a valid email address.",
+        "invalidDate": "Enter a valid delivery date.",
+        "dateInPast": "Delivery date cannot be in the past.",
+        "preparationRequired": "Describe how you want the gift prepared.",
+        "preparationMinLength": "Please add at least {min} characters.",
+        "deliveryRequired": "Describe how you want the gift delivered.",
+        "deliveryMinLength": "Please add at least {min} characters."
+      },
+      "fields": {
+        "senderName": "Your full name",
+        "senderEmail": "Email address",
+        "senderPhone": "Phone number",
+        "recipientName": "Recipient full name",
+        "recipientPhone": "Recipient phone",
+        "recipientCity": "City",
+        "recipientProvince": "Province",
+        "recipientAddress": "Delivery address",
+        "preferredDeliveryDate": "Preferred delivery date",
+        "preparationNotes": "Preparation details",
+        "deliveryInstructions": "Delivery instructions",
+        "budgetNote": "Budget note"
+      }
+    }
+  },
   "CategoryPages": {
     "common": {
       "home": "Home",

@@ -1188,6 +1188,91 @@
       }
     }
   },
+  "GiftPages": {
+    "landing": {
+      "eyebrow": "MandawEE · د ډالۍ بستې",
+      "title": "د ډالۍ بستې",
+      "subtitle": "په افغانستان کې خپلو عزیزانو ته ډالۍ واستوئ — چمتو بستې وګورئ یا د خپلې خوښې ډالۍ غوښتنه وکړئ.",
+      "heroImageAlt": "په پاملرنې سره چمتو شوې ډالۍ",
+      "cta": {
+        "requestGift": "ډالۍ وغواړئ",
+        "browseSets": "د ډالۍ بستې وګورئ"
+      },
+      "duo": {
+        "leftAlt": "ښکلي بسته شوي د ډالۍ بکسونه",
+        "rightAlt": "د کورنۍ شیبو لپاره د جشن ډالۍ",
+        "leftLabel": "ځانګړې غوښتنې",
+        "rightLabel": "چمتو بستې"
+      },
+      "promos": {
+        "oneAlt": "د پاملرنې سره د ډالۍ بسته‌بندي",
+        "twoAlt": "د جشن لپاره د ډالۍ ایډیاز",
+        "threeAlt": "د عزیزانو لپاره جشن ډالۍ",
+        "fourAlt": "غوره شوي د ډالۍ شیبې",
+        "oneLabel": "بسته‌بندي او پاملرنه",
+        "twoLabel": "جشن",
+        "threeLabel": "کورنۍ لومړی",
+        "fourLabel": "غوره انتخابونه"
+      },
+      "howItWorks": {
+        "title": "د ډالۍ غوښتنه څنګه کار کوي",
+        "subtitle": "له ستاسو نظر څخه تر افغانستان کې تحویلۍ پورې.",
+        "steps": {
+          "tell": {
+            "title": "توضیحات راکړئ",
+            "description": "د ترلاسه کوونکي معلومات، مناسبت، او د چمتو کولو طریقه شریک کړئ."
+          },
+          "quote": {
+            "title": "قیمت ترلاسه کړئ",
+            "description": "زموږ ټیم غوښتنه ګوري او د قیمت او راتلونکو ګامونو سره اړیکه نیسي."
+          },
+          "deliver": {
+            "title": "موږ تحویل کوو",
+            "description": "له تایید وروسته موږ ډالۍ چمتو او ستاسو عزیزانو ته په افغانستان کې رسوو."
+          }
+        }
+      },
+      "curatedTitle": "چمتو د ډالۍ بستې",
+      "curatedSubtitle": "د باوري پلورونکو څخه چمتو د ډالۍ توکي واخلئ.",
+      "results": "{count} د ډالۍ توکي",
+      "noGifts": "تر اوسه د ډالۍ توکي نشته",
+      "noGiftsHint": "ټول محصولات وګورئ یا وروسته بیا راشئ.",
+      "browseAll": "ټول محصولات وګورئ",
+      "home": "کور"
+    },
+    "form": {
+      "validation": {
+        "required": "{field} اړین دی.",
+        "minLength": "{field} باید لږ تر لږه {min} توري ولري.",
+        "maxLength": "{field} باید تر ډېره {max} توري ولري.",
+        "lettersOnly": "{field} باید یوازې توري ولري.",
+        "numbersOnly": "{field} باید یوازې شمېرې ولري.",
+        "minDigits": "{field} باید لږ تر لږه {min} شمېرې ولري.",
+        "maxDigits": "{field} باید تر ډېره {max} شمېرې ولري.",
+        "invalidEmail": "سم بریښنالیک ولیکئ.",
+        "invalidDate": "سمه د تحویلي نېټه ولیکئ.",
+        "dateInPast": "د تحویلي نېټه په تېر کې نه شي وي.",
+        "preparationRequired": "ووایاست چې ډالۍ څنګه چمتو شي.",
+        "preparationMinLength": "مهرباني وکړئ لږ تر لږه {min} توري ولیکئ.",
+        "deliveryRequired": "ووایاست چې ډالۍ څنګه ورسول شي.",
+        "deliveryMinLength": "مهرباني وکړئ لږ تر لږه {min} توري ولیکئ."
+      },
+      "fields": {
+        "senderName": "ستاسو بشپړ نوم",
+        "senderEmail": "برېښنالیک",
+        "senderPhone": "د تلیفون شمېره",
+        "recipientName": "د ترلاسه کوونکي بشپړ نوم",
+        "recipientPhone": "د ترلاسه کوونکي تلیفون",
+        "recipientCity": "ښار",
+        "recipientProvince": "ولایت",
+        "recipientAddress": "د تحویلي پته",
+        "preferredDeliveryDate": "غوره د تحویلي نېټه",
+        "preparationNotes": "د چمتو کولو توضیحات",
+        "deliveryInstructions": "د تحویلي لارښوونې",
+        "budgetNote": "د بودیجې یادښت"
+      }
+    }
+  },
   "CategoryPages": {
     "common": {
       "home": "کور",

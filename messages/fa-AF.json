@@ -1188,6 +1188,91 @@
       }
     }
   },
+  "GiftPages": {
+    "landing": {
+      "eyebrow": "MandawEE · بسته‌های هدیه",
+      "title": "بسته‌های هدیه",
+      "subtitle": "هدایای دل‌انگیز برای عزیزان در افغانستان — بسته‌های آماده را ببینید یا درخواست هدیه شخصی‌سازی‌شده ثبت کنید.",
+      "heroImageAlt": "هدایای بسته‌بندی‌شده آماده ارسال",
+      "cta": {
+        "requestGift": "درخواست هدیه",
+        "browseSets": "مشاهده بسته‌ها"
+      },
+      "duo": {
+        "leftAlt": "جعبه‌های هدیه با بسته‌بندی زیبا",
+        "rightAlt": "هدایای جشن برای لحظه‌های خانوادگی",
+        "leftLabel": "درخواست‌های شخصی",
+        "rightLabel": "بسته‌های آماده"
+      },
+      "promos": {
+        "oneAlt": "بسته‌بندی با دقت هدیه",
+        "twoAlt": "ایده‌های هدیه برای جشن",
+        "threeAlt": "هدایای جشن برای عزیزان",
+        "fourAlt": "لحظه‌های هدیه با دقت انتخاب‌شده",
+        "oneLabel": "بسته‌بندی و مراقبت",
+        "twoLabel": "جشن",
+        "threeLabel": "خانواده اول",
+        "fourLabel": "انتخاب‌های منتخب"
+      },
+      "howItWorks": {
+        "title": "درخواست هدیه چگونه کار می‌کند",
+        "subtitle": "از ایده شما تا تحویل در افغانستان.",
+        "steps": {
+          "tell": {
+            "title": "جزئیات را بگویید",
+            "description": "اطلاعات گیرنده، مناسبت و نحوه آماده‌سازی هدیه را به اشتراک بگذارید."
+          },
+          "quote": {
+            "title": "قیمت دریافت کنید",
+            "description": "تیم ما درخواست را بررسی می‌کند و با قیمت و مراحل بعدی تماس می‌گیرد."
+          },
+          "deliver": {
+            "title": "تحویل می‌دهیم",
+            "description": "پس از تأیید، هدیه را آماده و به عزیزان شما در افغانستان می‌رسانیم."
+          }
+        }
+      },
+      "curatedTitle": "بسته‌های هدیه آماده",
+      "curatedSubtitle": "محصولات آماده هدیه از فروشندگان معتبر.",
+      "results": "{count} قلم هدیه",
+      "noGifts": "هنوز قلم هدیه‌ای نیست",
+      "noGiftsHint": "همه محصولات را ببینید یا بعداً دوباره سر بزنید.",
+      "browseAll": "مشاهده همه محصولات",
+      "home": "خانه"
+    },
+    "form": {
+      "validation": {
+        "required": "{field} الزامی است.",
+        "minLength": "{field} باید حداقل {min} نویسه باشد.",
+        "maxLength": "{field} باید حداکثر {max} نویسه باشد.",
+        "lettersOnly": "{field} باید فقط شامل حروف باشد.",
+        "numbersOnly": "{field} باید فقط شامل اعداد باشد.",
+        "minDigits": "{field} باید حداقل {min} رقم باشد.",
+        "maxDigits": "{field} باید حداکثر {max} رقم باشد.",
+        "invalidEmail": "یک ایمیل معتبر وارد کنید.",
+        "invalidDate": "تاریخ تحویل معتبر وارد کنید.",
+        "dateInPast": "تاریخ تحویل نمی‌تواند در گذشته باشد.",
+        "preparationRequired": "توضیح دهید هدیه چگونه آماده شود.",
+        "preparationMinLength": "لطفاً حداقل {min} نویسه بنویسید.",
+        "deliveryRequired": "توضیح دهید هدیه چگونه تحویل شود.",
+        "deliveryMinLength": "لطفاً حداقل {min} نویسه بنویسید."
+      },
+      "fields": {
+        "senderName": "نام کامل شما",
+        "senderEmail": "ایمیل",
+        "senderPhone": "شماره تلفن",
+        "recipientName": "نام کامل گیرنده",
+        "recipientPhone": "تلفن گیرنده",
+        "recipientCity": "شهر",
+        "recipientProvince": "ولایت",
+        "recipientAddress": "آدرس تحویل",
+        "preferredDeliveryDate": "تاریخ تحویل ترجیحی",
+        "preparationNotes": "جزئیات آماده‌سازی",
+        "deliveryInstructions": "دستورات تحویل",
+        "budgetNote": "یادداشت بودجه"
+      }
+    }
+  },
   "CategoryPages": {
     "common": {
       "home": "خانه",

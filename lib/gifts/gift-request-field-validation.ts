@@ -1,9 +1,3 @@
-import {
-  validateGuestEmail,
-  validateGuestName,
-  validateGuestPhone,
-} from "@/lib/checkout/checkout-field-validation";
-
 export type GiftRequestFormFields = {
   senderName: string;
   senderEmail: string;
@@ -29,8 +23,33 @@ export type GiftRequestFormFields = {
   budgetNote: string;
 };
 
-export type GiftRequestFieldErrors = Partial<Record<keyof GiftRequestFormFields, string>>;
+export type GiftValidationErrorCode =
+  | "required"
+  | "minLength"
+  | "maxLength"
+  | "lettersOnly"
+  | "numbersOnly"
+  | "minDigits"
+  | "maxDigits"
+  | "invalidEmail"
+  | "invalidDate"
+  | "dateInPast"
+  | "preparationRequired"
+  | "preparationMinLength"
+  | "deliveryRequired"
+  | "deliveryMinLength";
 
+export type GiftValidationError = {
+  code: GiftValidationErrorCode;
+  min?: number;
+  max?: number;
+};
+
+export type GiftRequestFieldErrors = Partial<
+  Record<keyof GiftRequestFormFields, GiftValidationError>
+>;
+
+const LETTERS_WITH_PUNCT_REGEX = /^[A-Za-z\s'-]+$/;
 const LETTERS_ONLY_REGEX = /^[A-Za-z\s]+$/;
 const DIGITS_ONLY_REGEX = /^\d+$/;
 
@@ -38,113 +57,131 @@ export function sanitizeRecipientPhoneInput(value: string) {
   return value.replace(/\D/g, "");
 }
 
-export function validateRecipientName(value: string): string | null {
+function validateSenderName(value: string): GiftValidationError | null {
   const trimmed = value.trim();
-  if (!trimmed) return "Recipient name is required.";
-  if (trimmed.length < 2) return "Recipient name must be at least 2 characters.";
-  if (trimmed.length > 100) return "Recipient name must be at most 100 characters.";
-  if (!LETTERS_ONLY_REGEX.test(trimmed)) {
-    return "Recipient name must contain letters only.";
-  }
+  if (!trimmed) return { code: "required" };
+  if (trimmed.length < 2) return { code: "minLength", min: 2 };
+  if (!LETTERS_WITH_PUNCT_REGEX.test(trimmed)) return { code: "lettersOnly" };
   return null;
 }
 
-export function validateRecipientPhone(value: string): string | null {
+function validateSenderEmail(value: string): GiftValidationError | null {
   const trimmed = value.trim();
-  if (!trimmed) return "Recipient phone is required.";
-  if (!DIGITS_ONLY_REGEX.test(trimmed)) return "Recipient phone must contain numbers only.";
-  if (trimmed.length < 7) return "Recipient phone must be at least 7 digits.";
-  if (trimmed.length > 15) return "Recipient phone must be at most 15 digits.";
+  if (!trimmed) return { code: "required" };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return { code: "invalidEmail" };
   return null;
 }
 
-export function validateRecipientCity(value: string): string | null {
+function validateSenderPhone(value: string): GiftValidationError | null {
   const trimmed = value.trim();
-  if (!trimmed) return "City is required.";
-  if (trimmed.length < 2) return "City must be at least 2 characters.";
-  if (trimmed.length > 120) return "City must be at most 120 characters.";
-  if (!LETTERS_ONLY_REGEX.test(trimmed)) {
-    return "City must contain letters only.";
-  }
+  if (!trimmed) return { code: "required" };
+  if (!DIGITS_ONLY_REGEX.test(trimmed)) return { code: "numbersOnly" };
+  if (trimmed.length < 7) return { code: "minDigits", min: 7 };
+  if (trimmed.length > 15) return { code: "maxDigits", max: 15 };
   return null;
 }
 
-export function validateRecipientProvince(value: string): string | null {
+export function validateRecipientName(value: string): GiftValidationError | null {
+  const trimmed = value.trim();
+  if (!trimmed) return { code: "required" };
+  if (trimmed.length < 2) return { code: "minLength", min: 2 };
+  if (trimmed.length > 100) return { code: "maxLength", max: 100 };
+  if (!LETTERS_ONLY_REGEX.test(trimmed)) return { code: "lettersOnly" };
+  return null;
+}
+
+export function validateRecipientPhone(value: string): GiftValidationError | null {
+  const trimmed = value.trim();
+  if (!trimmed) return { code: "required" };
+  if (!DIGITS_ONLY_REGEX.test(trimmed)) return { code: "numbersOnly" };
+  if (trimmed.length < 7) return { code: "minDigits", min: 7 };
+  if (trimmed.length > 15) return { code: "maxDigits", max: 15 };
+  return null;
+}
+
+export function validateRecipientCity(value: string): GiftValidationError | null {
+  const trimmed = value.trim();
+  if (!trimmed) return { code: "required" };
+  if (trimmed.length < 2) return { code: "minLength", min: 2 };
+  if (trimmed.length > 120) return { code: "maxLength", max: 120 };
+  if (!LETTERS_ONLY_REGEX.test(trimmed)) return { code: "lettersOnly" };
+  return null;
+}
+
+export function validateRecipientProvince(value: string): GiftValidationError | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
-  if (trimmed.length > 120) return "Province must be at most 120 characters.";
-  if (!LETTERS_ONLY_REGEX.test(trimmed)) {
-    return "Province must contain letters only.";
-  }
+  if (trimmed.length > 120) return { code: "maxLength", max: 120 };
+  if (!LETTERS_ONLY_REGEX.test(trimmed)) return { code: "lettersOnly" };
   return null;
 }
 
-export function validateRecipientAddress(value: string): string | null {
+export function validateRecipientAddress(value: string): GiftValidationError | null {
   const trimmed = value.trim();
-  if (!trimmed) return "Delivery address is required.";
-  if (trimmed.length < 5) return "Delivery address must be at least 5 characters.";
-  if (trimmed.length > 500) return "Delivery address must be at most 500 characters.";
+  if (!trimmed) return { code: "required" };
+  if (trimmed.length < 5) return { code: "minLength", min: 5 };
+  if (trimmed.length > 500) return { code: "maxLength", max: 500 };
   return null;
 }
 
-export function validatePreferredDeliveryDate(value: string): string | null {
+export function validatePreferredDeliveryDate(value: string): GiftValidationError | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    return "Enter a valid delivery date.";
+    return { code: "invalidDate" };
   }
 
   const selected = new Date(`${trimmed}T00:00:00`);
   if (Number.isNaN(selected.getTime())) {
-    return "Enter a valid delivery date.";
+    return { code: "invalidDate" };
   }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   if (selected < today) {
-    return "Delivery date cannot be in the past.";
+    return { code: "dateInPast" };
   }
 
   return null;
 }
 
-export function validatePreparationNotes(value: string): string | null {
+export function validatePreparationNotes(value: string): GiftValidationError | null {
   const trimmed = value.trim();
-  if (!trimmed) return "Describe how you want the gift prepared.";
-  if (trimmed.length < 20) return "Please add at least 20 characters.";
-  if (trimmed.length > 2000) return "Preparation details must be at most 2000 characters.";
+  if (!trimmed) return { code: "preparationRequired" };
+  if (trimmed.length < 20) return { code: "preparationMinLength", min: 20 };
+  if (trimmed.length > 2000) return { code: "maxLength", max: 2000 };
   return null;
 }
 
-export function validateDeliveryInstructions(value: string): string | null {
+export function validateDeliveryInstructions(value: string): GiftValidationError | null {
   const trimmed = value.trim();
-  if (!trimmed) return "Describe how you want the gift delivered.";
-  if (trimmed.length < 10) return "Please add at least 10 characters.";
-  if (trimmed.length > 1000) return "Delivery instructions must be at most 1000 characters.";
+  if (!trimmed) return { code: "deliveryRequired" };
+  if (trimmed.length < 10) return { code: "deliveryMinLength", min: 10 };
+  if (trimmed.length > 1000) return { code: "maxLength", max: 1000 };
   return null;
 }
 
-export function validateBudgetNote(value: string): string | null {
+export function validateBudgetNote(value: string): GiftValidationError | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
-  if (trimmed.length > 200) return "Budget note must be at most 200 characters.";
+  if (trimmed.length > 200) return { code: "maxLength", max: 200 };
   return null;
 }
 
 export function validateGiftRequestField(
   field: keyof GiftRequestFormFields,
   value: string | boolean
-): string | null {
+): GiftValidationError | null {
   if (typeof value === "boolean") return null;
 
   switch (field) {
     case "senderName":
-      return validateGuestName(value);
+      return validateSenderName(value);
     case "senderEmail":
-      return validateGuestEmail(value);
+      return validateSenderEmail(value);
     case "senderPhone":
-      return validateGuestPhone(value);
+      return validateSenderPhone(value);
     case "recipientName":
       return validateRecipientName(value);
     case "recipientPhone":

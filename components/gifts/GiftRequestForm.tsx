@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle, Gift, Loader2, MapPin, Send, User } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { CheckCircle, Loader2, Send } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 
 import {
@@ -24,6 +25,7 @@ import {
   validateGiftRequestForm,
   type GiftRequestFieldErrors,
   type GiftRequestFormFields,
+  type GiftValidationError,
 } from "@/lib/gifts/gift-request-field-validation";
 import {
   sanitizeCityCountryInput,
@@ -35,16 +37,16 @@ import { toast } from "@/lib/utils/toast";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { useAuth } from "@/store/auth-context";
 
-const LABEL_CLASS = "mb-1.5 block text-sm font-medium text-neutral-700";
+const LABEL_CLASS = "mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500";
 const ERROR_CLASS = "mt-1.5 text-xs text-red-600";
 
 function fieldClassName(error?: string, multiline = false) {
-  return `w-full rounded-xl border px-4 py-3 text-sm outline-none transition placeholder:text-neutral-400 disabled:bg-neutral-50 disabled:text-neutral-400 ${
-    multiline ? "min-h-[120px] resize-y" : ""
+  return `w-full border-0 border-b bg-transparent px-0 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 disabled:text-neutral-400 ${
+    multiline ? "min-h-[88px] resize-y" : ""
   } ${
     error
-      ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100"
-      : "border-neutral-200 focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/15"
+      ? "border-red-400 focus:border-red-500"
+      : "border-neutral-300 focus:border-[#0F3460]"
   }`;
 }
 
@@ -63,11 +65,29 @@ function FormField({
     <div data-field-error={error ? "true" : undefined}>
       <label className={LABEL_CLASS}>
         {label}
-        {required ? <span className="ml-0.5 text-red-500">*</span> : null}
+        {required ? <span className="ms-0.5 text-red-500">*</span> : null}
       </label>
       {children}
       {error ? <p className={ERROR_CLASS}>{error}</p> : null}
     </div>
+  );
+}
+
+function FormSection({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="border-t border-neutral-200 pt-7 first:border-t-0 first:pt-0">
+      <h3 className="mb-1 text-sm font-semibold text-neutral-900">{title}</h3>
+      {hint ? <p className="mb-5 text-sm text-neutral-500">{hint}</p> : <div className="mb-5" />}
+      {children}
+    </section>
   );
 }
 
@@ -109,8 +129,23 @@ type GiftRequestFormProps = {
   locale: SupportedLocale;
 };
 
+type FieldLabelKey =
+  | "senderName"
+  | "senderEmail"
+  | "senderPhone"
+  | "recipientName"
+  | "recipientPhone"
+  | "recipientCity"
+  | "recipientProvince"
+  | "recipientAddress"
+  | "preferredDeliveryDate"
+  | "preparationNotes"
+  | "deliveryInstructions"
+  | "budgetNote";
+
 export function GiftRequestForm({ locale }: GiftRequestFormProps) {
   const copy = getGiftRequestFormCopy(locale);
+  const tv = useTranslations("GiftPages.form");
   const formRef = useRef<HTMLFormElement>(null);
   const { user, isAuthenticated } = useAuth();
   const [form, setForm] = useState<GiftRequestFormFields>(EMPTY_FORM);
@@ -120,6 +155,18 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
   const [imageAttachments, setImageAttachments] = useState<GiftMediaAttachment[]>([]);
   const [videoAttachments, setVideoAttachments] = useState<GiftMediaAttachment[]>([]);
   const minDeliveryDate = useMemo(() => getTodayDateInputValue(), []);
+
+  const translateError = (
+    field: FieldLabelKey,
+    error: GiftValidationError | undefined
+  ) => {
+    if (!error) return undefined;
+    return tv(`validation.${error.code}`, {
+      field: tv(`fields.${field}`),
+      min: error.min ?? 0,
+      max: error.max ?? 0,
+    });
+  };
 
   useEffect(() => {
     if (!isAuthenticated || user?.role !== "CUSTOMER") return;
@@ -274,23 +321,21 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
 
   if (requestNumber) {
     return (
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 sm:p-8">
+      <div className="border-t-2 border-emerald-500 bg-white px-5 py-8 sm:px-8">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-            <CheckCircle className="h-6 w-6" />
-          </div>
+          <CheckCircle className="mt-0.5 h-6 w-6 shrink-0 text-emerald-600" />
           <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-bold text-emerald-900">{copy.successTitle}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-emerald-800">{copy.successBody}</p>
-            <p className="mt-4 text-sm text-emerald-900">
+            <h2 className="text-xl font-bold text-neutral-900">{copy.successTitle}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-neutral-600">{copy.successBody}</p>
+            <p className="mt-4 text-sm text-neutral-900">
               <span className="font-semibold">{copy.requestNumber}:</span>{" "}
               <span className="font-mono">{requestNumber}</span>
             </p>
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               {isAuthenticated && user?.role === "CUSTOMER" ? (
                 <Link
                   href="/account/gift-requests"
-                  className="inline-flex rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
+                  className="inline-flex min-h-11 items-center justify-center bg-[#0F3460] px-5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
                 >
                   {copy.trackInAccount}
                 </Link>
@@ -298,7 +343,7 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
               <button
                 type="button"
                 onClick={() => setRequestNumber(null)}
-                className="inline-flex rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100"
+                className="inline-flex min-h-11 items-center justify-center border border-neutral-300 bg-transparent px-5 text-sm font-semibold text-neutral-800 transition hover:border-neutral-400"
               >
                 {copy.submitAnother}
               </button>
@@ -314,31 +359,32 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
       ref={formRef}
       onSubmit={handleSubmit}
       noValidate
-      className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-8"
+      className="bg-white px-5 py-7 shadow-[0_20px_50px_-28px_rgba(15,52,96,0.35)] sm:px-8 sm:py-9"
     >
-      <div className="mb-6">
-        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#0f3460]/15 bg-[#0f3460]/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#0f3460]">
-          <Gift className="h-3.5 w-3.5" />
-          {copy.requestBadge}
+      <div className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#0F3460]">
+            {copy.requestBadge}
+          </p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900">
+            {copy.requestTitle}
+          </h2>
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-neutral-900">{copy.requestTitle}</h2>
-        <p className="mt-2 text-sm leading-relaxed text-neutral-600">{copy.requestSubtitle}</p>
-        <p className="mt-2 text-xs text-neutral-500">
+        <p className="text-xs text-neutral-500">
           <span className="text-red-500">*</span> {copy.required}
         </p>
       </div>
+      <p className="mb-8 max-w-2xl text-sm leading-relaxed text-neutral-600">
+        {copy.requestSubtitle}
+      </p>
 
       <div className="space-y-8">
-        <section>
-          <div className="mb-4 flex items-center gap-2 text-[#0f3460]">
-            <User className="h-4 w-4" />
-            <h3 className="text-sm font-semibold uppercase tracking-[0.12em]">{copy.senderSection}</h3>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+        <FormSection title={copy.senderSection}>
+          <div className="grid gap-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <FormField label={copy.senderName} required error={errors.senderName}>
+              <FormField label={copy.senderName} required error={translateError("senderName", errors.senderName)}>
                 <input
-                  className={fieldClassName(errors.senderName)}
+                  className={fieldClassName(translateError("senderName", errors.senderName))}
                   value={form.senderName}
                   onChange={(event) =>
                     updateField("senderName", sanitizeNameInput(event.target.value))
@@ -348,19 +394,19 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
                 />
               </FormField>
             </div>
-            <FormField label={copy.senderEmail} required error={errors.senderEmail}>
+            <FormField label={copy.senderEmail} required error={translateError("senderEmail", errors.senderEmail)}>
               <input
                 type="email"
-                className={fieldClassName(errors.senderEmail)}
+                className={fieldClassName(translateError("senderEmail", errors.senderEmail))}
                 value={form.senderEmail}
                 onChange={(event) => updateField("senderEmail", event.target.value)}
                 onBlur={() => validateOnBlur("senderEmail")}
                 autoComplete="email"
               />
             </FormField>
-            <FormField label={copy.senderPhone} required error={errors.senderPhone}>
+            <FormField label={copy.senderPhone} required error={translateError("senderPhone", errors.senderPhone)}>
               <input
-                className={fieldClassName(errors.senderPhone)}
+                className={fieldClassName(translateError("senderPhone", errors.senderPhone))}
                 value={form.senderPhone}
                 onChange={(event) =>
                   updateField("senderPhone", sanitizePhoneInput(event.target.value))
@@ -371,17 +417,13 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
               />
             </FormField>
           </div>
-        </section>
+        </FormSection>
 
-        <section>
-          <div className="mb-4 flex items-center gap-2 text-[#0f3460]">
-            <MapPin className="h-4 w-4" />
-            <h3 className="text-sm font-semibold uppercase tracking-[0.12em]">{copy.recipientSection}</h3>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField label={copy.recipientName} required error={errors.recipientName}>
+        <FormSection title={copy.recipientSection}>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <FormField label={copy.recipientName} required error={translateError("recipientName", errors.recipientName)}>
               <input
-                className={fieldClassName(errors.recipientName)}
+                className={fieldClassName(translateError("recipientName", errors.recipientName))}
                 value={form.recipientName}
                 onChange={(event) =>
                   updateField("recipientName", sanitizeNameInput(event.target.value))
@@ -389,9 +431,9 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
                 onBlur={() => validateOnBlur("recipientName")}
               />
             </FormField>
-            <FormField label={copy.recipientPhone} required error={errors.recipientPhone}>
+            <FormField label={copy.recipientPhone} required error={translateError("recipientPhone", errors.recipientPhone)}>
               <input
-                className={fieldClassName(errors.recipientPhone)}
+                className={fieldClassName(translateError("recipientPhone", errors.recipientPhone))}
                 value={form.recipientPhone}
                 onChange={(event) =>
                   updateField("recipientPhone", sanitizeRecipientPhoneInput(event.target.value))
@@ -400,9 +442,9 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
                 inputMode="numeric"
               />
             </FormField>
-            <FormField label={copy.recipientCity} required error={errors.recipientCity}>
+            <FormField label={copy.recipientCity} required error={translateError("recipientCity", errors.recipientCity)}>
               <input
-                className={fieldClassName(errors.recipientCity)}
+                className={fieldClassName(translateError("recipientCity", errors.recipientCity))}
                 value={form.recipientCity}
                 onChange={(event) =>
                   updateField("recipientCity", sanitizeCityCountryInput(event.target.value))
@@ -410,9 +452,9 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
                 onBlur={() => validateOnBlur("recipientCity")}
               />
             </FormField>
-            <FormField label={copy.recipientProvince} error={errors.recipientProvince}>
+            <FormField label={copy.recipientProvince} error={translateError("recipientProvince", errors.recipientProvince)}>
               <input
-                className={fieldClassName(errors.recipientProvince)}
+                className={fieldClassName(translateError("recipientProvince", errors.recipientProvince))}
                 value={form.recipientProvince}
                 onChange={(event) =>
                   updateField("recipientProvince", sanitizeCityCountryInput(event.target.value))
@@ -421,9 +463,9 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
               />
             </FormField>
             <div className="sm:col-span-2">
-              <FormField label={copy.recipientAddress} required error={errors.recipientAddress}>
+              <FormField label={copy.recipientAddress} required error={translateError("recipientAddress", errors.recipientAddress)}>
                 <textarea
-                  className={fieldClassName(errors.recipientAddress, true)}
+                  className={fieldClassName(translateError("recipientAddress", errors.recipientAddress), true)}
                   value={form.recipientAddress}
                   onChange={(event) => updateField("recipientAddress", event.target.value)}
                   onBlur={() => validateOnBlur("recipientAddress")}
@@ -431,14 +473,10 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
               </FormField>
             </div>
           </div>
-        </section>
+        </FormSection>
 
-        <section>
-          <div className="mb-4 flex items-center gap-2 text-[#0f3460]">
-            <Gift className="h-4 w-4" />
-            <h3 className="text-sm font-semibold uppercase tracking-[0.12em]">{copy.giftSection}</h3>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+        <FormSection title={copy.giftSection}>
+          <div className="grid gap-5 sm:grid-cols-2">
             <FormField label={copy.occasion}>
               <select
                 className={fieldClassName(errors.occasion)}
@@ -453,11 +491,11 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
                 ))}
               </select>
             </FormField>
-            <FormField label={copy.preferredDate} error={errors.preferredDeliveryDate}>
+            <FormField label={copy.preferredDate} error={translateError("preferredDeliveryDate", errors.preferredDeliveryDate)}>
               <input
                 type="date"
                 min={minDeliveryDate}
-                className={fieldClassName(errors.preferredDeliveryDate)}
+                className={fieldClassName(translateError("preferredDeliveryDate", errors.preferredDeliveryDate))}
                 value={form.preferredDeliveryDate}
                 onChange={(event) => updateField("preferredDeliveryDate", event.target.value)}
                 onBlur={() => validateOnBlur("preferredDeliveryDate")}
@@ -478,114 +516,10 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
               </select>
             </FormField>
 
-            {isDressSelected ? (
-              <div className="sm:col-span-2 rounded-xl border border-[#0f3460]/15 bg-[#0f3460]/5 p-4">
-                <h4 className="text-sm font-semibold text-[#0f3460]">{copy.dressSection}</h4>
-                <p className="mt-1 text-xs text-neutral-600">{copy.dressSectionHint}</p>
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <FormField label={copy.dressColor}>
-                    <input
-                      className={fieldClassName()}
-                      value={form.dressColor}
-                      onChange={(event) => updateField("dressColor", event.target.value)}
-                      placeholder={copy.dressColorPlaceholder}
-                    />
-                  </FormField>
-                  <FormField label={copy.dressTexture}>
-                    <input
-                      className={fieldClassName()}
-                      value={form.dressTexture}
-                      onChange={(event) => updateField("dressTexture", event.target.value)}
-                      placeholder={copy.dressTexturePlaceholder}
-                    />
-                  </FormField>
-                  <FormField label={copy.dressSize}>
-                    <select
-                      className={fieldClassName()}
-                      value={form.dressSize}
-                      onChange={(event) => updateField("dressSize", event.target.value)}
-                    >
-                      <option value="">{copy.dressSizePlaceholder}</option>
-                      {dressSizeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </FormField>
-                  <FormField label={copy.dressSleeveType}>
-                    <select
-                      className={fieldClassName()}
-                      value={form.dressSleeveType}
-                      onChange={(event) => updateField("dressSleeveType", event.target.value)}
-                    >
-                      <option value="">{copy.dressSleeveTypePlaceholder}</option>
-                      {dressSleeveOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </FormField>
-                  <FormField label={copy.dressLength}>
-                    <select
-                      className={fieldClassName()}
-                      value={form.dressLength}
-                      onChange={(event) => updateField("dressLength", event.target.value)}
-                    >
-                      <option value="">{copy.dressLengthPlaceholder}</option>
-                      {dressLengthOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </FormField>
-                  <FormField label={copy.dressFitting}>
-                    <select
-                      className={fieldClassName()}
-                      value={form.dressFitting}
-                      onChange={(event) => updateField("dressFitting", event.target.value)}
-                    >
-                      <option value="">{copy.dressFittingPlaceholder}</option>
-                      {dressFittingOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </FormField>
-                  <div className="sm:col-span-2">
-                    <label className={LABEL_CLASS}>{copy.dressGenderLabel}</label>
-                    <div className="flex flex-wrap items-center gap-5">
-                      <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-neutral-300 text-[#0f3460] focus:ring-[#0f3460]/30"
-                          checked={form.dressForMale}
-                          onChange={(event) => updateField("dressForMale", event.target.checked)}
-                        />
-                        {copy.dressForMale}
-                      </label>
-                      <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-neutral-300 text-[#0f3460] focus:ring-[#0f3460]/30"
-                          checked={form.dressForFemale}
-                          onChange={(event) => updateField("dressForFemale", event.target.checked)}
-                        />
-                        {copy.dressForFemale}
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
             <div className="sm:col-span-2">
-              <FormField label={copy.preparationNotes} required error={errors.preparationNotes}>
+              <FormField label={copy.preparationNotes} required error={translateError("preparationNotes", errors.preparationNotes)}>
                 <textarea
-                  className={fieldClassName(errors.preparationNotes, true)}
+                  className={fieldClassName(translateError("preparationNotes", errors.preparationNotes), true)}
                   value={form.preparationNotes}
                   onChange={(event) => updateField("preparationNotes", event.target.value)}
                   onBlur={() => validateOnBlur("preparationNotes")}
@@ -594,9 +528,13 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
               </FormField>
             </div>
             <div className="sm:col-span-2">
-              <FormField label={copy.deliveryInstructions} required error={errors.deliveryInstructions}>
+              <FormField
+                label={copy.deliveryInstructions}
+                required
+                error={translateError("deliveryInstructions", errors.deliveryInstructions)}
+              >
                 <textarea
-                  className={fieldClassName(errors.deliveryInstructions, true)}
+                  className={fieldClassName(translateError("deliveryInstructions", errors.deliveryInstructions), true)}
                   value={form.deliveryInstructions}
                   onChange={(event) => updateField("deliveryInstructions", event.target.value)}
                   onBlur={() => validateOnBlur("deliveryInstructions")}
@@ -605,9 +543,9 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
               </FormField>
             </div>
             <div className="sm:col-span-2">
-              <FormField label={copy.budgetNote} error={errors.budgetNote}>
+              <FormField label={copy.budgetNote} error={translateError("budgetNote", errors.budgetNote)}>
                 <input
-                  className={fieldClassName(errors.budgetNote)}
+                  className={fieldClassName(translateError("budgetNote", errors.budgetNote))}
                   value={form.budgetNote}
                   onChange={(event) => updateField("budgetNote", event.target.value)}
                   onBlur={() => validateOnBlur("budgetNote")}
@@ -616,15 +554,111 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
               </FormField>
             </div>
           </div>
-        </section>
+        </FormSection>
 
-        <section>
-          <div className="mb-4">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-[#0f3460]">
-              {copy.mediaSection}
-            </h3>
-            <p className="mt-1 text-sm text-neutral-600">{copy.mediaSectionHint}</p>
-          </div>
+        {isDressSelected ? (
+          <FormSection title={copy.dressSection} hint={copy.dressSectionHint}>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <FormField label={copy.dressColor}>
+                <input
+                  className={fieldClassName()}
+                  value={form.dressColor}
+                  onChange={(event) => updateField("dressColor", event.target.value)}
+                  placeholder={copy.dressColorPlaceholder}
+                />
+              </FormField>
+              <FormField label={copy.dressTexture}>
+                <input
+                  className={fieldClassName()}
+                  value={form.dressTexture}
+                  onChange={(event) => updateField("dressTexture", event.target.value)}
+                  placeholder={copy.dressTexturePlaceholder}
+                />
+              </FormField>
+              <FormField label={copy.dressSize}>
+                <select
+                  className={fieldClassName()}
+                  value={form.dressSize}
+                  onChange={(event) => updateField("dressSize", event.target.value)}
+                >
+                  <option value="">{copy.dressSizePlaceholder}</option>
+                  {dressSizeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label={copy.dressSleeveType}>
+                <select
+                  className={fieldClassName()}
+                  value={form.dressSleeveType}
+                  onChange={(event) => updateField("dressSleeveType", event.target.value)}
+                >
+                  <option value="">{copy.dressSleeveTypePlaceholder}</option>
+                  {dressSleeveOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label={copy.dressLength}>
+                <select
+                  className={fieldClassName()}
+                  value={form.dressLength}
+                  onChange={(event) => updateField("dressLength", event.target.value)}
+                >
+                  <option value="">{copy.dressLengthPlaceholder}</option>
+                  {dressLengthOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label={copy.dressFitting}>
+                <select
+                  className={fieldClassName()}
+                  value={form.dressFitting}
+                  onChange={(event) => updateField("dressFitting", event.target.value)}
+                >
+                  <option value="">{copy.dressFittingPlaceholder}</option>
+                  {dressFittingOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <div className="sm:col-span-2">
+                <label className={LABEL_CLASS}>{copy.dressGenderLabel}</label>
+                <div className="flex flex-wrap items-center gap-5 border-b border-neutral-300 py-2.5">
+                  <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 border-neutral-300 text-[#0F3460] focus:ring-[#0F3460]/30"
+                      checked={form.dressForMale}
+                      onChange={(event) => updateField("dressForMale", event.target.checked)}
+                    />
+                    {copy.dressForMale}
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 border-neutral-300 text-[#0F3460] focus:ring-[#0F3460]/30"
+                      checked={form.dressForFemale}
+                      onChange={(event) => updateField("dressForFemale", event.target.checked)}
+                    />
+                    {copy.dressForFemale}
+                  </label>
+                </div>
+              </div>
+            </div>
+          </FormSection>
+        ) : null}
+
+        <FormSection title={copy.mediaSection} hint={copy.mediaSectionHint}>
           <GiftRequestMediaFields
             locale={locale}
             imageUrls={imageAttachments}
@@ -633,17 +667,19 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
             onVideoUrlsChange={setVideoAttachments}
             disabled={submitting}
           />
-        </section>
+        </FormSection>
       </div>
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0f3460] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-      >
-        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        {submitting ? copy.submitting : copy.submit}
-      </button>
+      <div className="mt-10 border-t border-neutral-200 pt-6">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="inline-flex w-full items-center justify-center gap-2 bg-[#0F3460] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        >
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          {submitting ? copy.submitting : copy.submit}
+        </button>
+      </div>
     </form>
   );
 }
