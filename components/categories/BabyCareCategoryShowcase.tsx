@@ -14,7 +14,7 @@ import type { PublicCatalogProduct } from "@/lib/products/public-catalog";
 const HERO_IMAGE = "/category/baby-care/hero.jpg";
 const DUO_IMAGES = [
   { src: "/category/baby-care/duo-1.jpg", href: "#baby-care-products", altKey: "duo.leftAlt", labelKey: "duo.leftLabel" },
-  { src: "/category/baby-care/duo-2.jpg", href: "#baby-care-products", altKey: "duo.rightAlt", labelKey: "duo.rightLabel" },
+  { src: "/category/baby-care/duo-2.jpg", href: "/baby-packages", altKey: "duo.rightAlt", labelKey: "duo.rightLabel" },
 ] as const;
 const PROMO_IMAGES = [
   { src: "/category/baby-care/promo-1.jpg", href: "#baby-care-products", altKey: "promos.oneAlt", labelKey: "promos.oneLabel" },
@@ -113,6 +113,12 @@ export function BabyCareCategoryShowcase({
             >
               {t("shopProducts")}
             </a>
+            <Link
+              href="/baby-packages"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-white/35 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
+            >
+              {t("viewPackages")}
+            </Link>
           </div>
         </div>
       </section>
@@ -120,25 +126,36 @@ export function BabyCareCategoryShowcase({
       <section className="w-full min-w-0 py-3 sm:py-4">
         <div className="mx-auto w-full max-w-[1540px] px-2 sm:px-4">
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:gap-3">
-            {DUO_IMAGES.map((item) => (
-              <a
-                key={item.src}
-                href={item.href}
-                className="relative block min-h-[140px] flex-1 overflow-hidden sm:min-h-[180px] lg:min-h-[210px]"
-              >
-                <Image
-                  src={item.src}
-                  alt={t(item.altKey)}
-                  fill
-                  className="object-cover object-center transition duration-500 hover:scale-[1.02]"
-                  sizes="(max-width: 640px) 100vw, 50vw"
-                />
-                <div className="absolute inset-0 bg-linear-to-t from-[#0F3460]/70 via-[#0F3460]/10 to-transparent" />
-                <span className="absolute inset-s-3 bottom-3 text-sm font-semibold text-white sm:inset-s-4 sm:bottom-4 sm:text-base">
-                  {t(item.labelKey)}
-                </span>
-              </a>
-            ))}
+            {DUO_IMAGES.map((item) => {
+              const isHash = item.href.startsWith("#");
+              const className =
+                "relative block min-h-[140px] flex-1 overflow-hidden sm:min-h-[180px] lg:min-h-[210px]";
+              const media = (
+                <>
+                  <Image
+                    src={item.src}
+                    alt={t(item.altKey)}
+                    fill
+                    className="object-cover object-center transition duration-500 hover:scale-[1.02]"
+                    sizes="(max-width: 640px) 100vw, 50vw"
+                  />
+                  <div className="absolute inset-0 bg-linear-to-t from-[#0F3460]/70 via-[#0F3460]/10 to-transparent" />
+                  <span className="absolute inset-s-3 bottom-3 text-sm font-semibold text-white sm:inset-s-4 sm:bottom-4 sm:text-base">
+                    {t(item.labelKey)}
+                  </span>
+                </>
+              );
+
+              return isHash ? (
+                <a key={item.src} href={item.href} className={className}>
+                  {media}
+                </a>
+              ) : (
+                <Link key={item.src} href={item.href} className={className}>
+                  {media}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>

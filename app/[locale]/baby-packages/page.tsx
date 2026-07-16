@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { BabyPackagesPageClient } from "./BabyPackagesPageClient";
+import { BabyPackagesShowcase } from "@/components/baby-packages/BabyPackagesShowcase";
 
 export const metadata: Metadata = {
   title: "Baby Packages | Online Mandawee",
@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function BabyPackagesPage() {
-  return <BabyPackagesPageClient />;
+  return <BabyPackagesShowcase />;
 }

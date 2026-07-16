@@ -1508,11 +1508,12 @@
       "eyebrow": "MandawEE · Baby Care",
       "subtitle": "Gentle essentials for little ones — soft care, everyday comfort, and trusted brands in one place.",
       "shopProducts": "Shop products",
+      "viewPackages": "Baby packages",
       "duo": {
         "leftAlt": "Soft baby care essentials for everyday comfort",
         "rightAlt": "Happy moments with baby and family care",
         "leftLabel": "Soft care picks",
-        "rightLabel": "Family favorites"
+        "rightLabel": "Baby packages"
       },
       "promos": {
         "oneAlt": "Baby bath and skincare must-haves",
@@ -2439,6 +2440,31 @@
       "sortRating": "Top rated",
       "noDeals": "No active deals yet",
       "noDealsHint": "As vendors publish promotions, they will appear here.",
+      "browseProducts": "Browse all products",
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {page} of {total}"
+    }
+  },
+  "BabyPackagesPages": {
+    "landing": {
+      "home": "Home",
+      "babyCare": "Baby Care",
+      "title": "Baby Packages",
+      "subtitle": "Curated newborn and baby-care essentials — ready to shop or turn into a custom gift package.",
+      "browseBabyCare": "Browse Baby Care",
+      "requestCustom": "Request custom package",
+      "packageTypesTitle": "Shop by type",
+      "packageTypesSubtitle": "Jump into related baby categories while building your package.",
+      "results": "{count, plural, one {# product} other {# products}}",
+      "showing": "Showing {from}–{to} of {total}",
+      "sort": "Sort",
+      "sortNewest": "Newest",
+      "sortPriceAsc": "Price: Low to High",
+      "sortPriceDesc": "Price: High to Low",
+      "sortRating": "Top rated",
+      "noProducts": "No baby package products yet",
+      "noProductsHint": "As vendors add baby-care items, they will appear here.",
       "browseProducts": "Browse all products",
       "previous": "Previous",
       "next": "Next",
