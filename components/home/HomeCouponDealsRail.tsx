@@ -125,7 +125,7 @@ function DealProductCard({
           ) : null}
         </div>
         {discountLabel ? (
-          <span className="shrink-0 rounded-lg bg-[#ec1b23] px-2 py-1 text-xs font-bold text-white">
+          <span className="shrink-0 rounded-lg bg-[#0F3460] px-2 py-1 text-xs font-bold text-white">
             {discountLabel}
           </span>
         ) : null}
@@ -284,7 +284,7 @@ export function HomeCouponDealsRail() {
 
   return (
     <section className="w-full min-w-0 pb-4">
-      <div className="overflow-hidden rounded-xl bg-[#ec1b23] p-1.5 sm:rounded-2xl sm:p-2.5">
+      <div className="overflow-hidden rounded-xl bg-[#0F3460] p-1.5 sm:rounded-2xl sm:p-2.5">
         <div className="flex flex-col overflow-hidden rounded-lg sm:flex-row sm:rounded-xl">
           <div className={`order-1 shrink-0 ${isRtl ? "sm:order-1" : "sm:order-2"}`}>{promoAside}</div>
           <div className={`order-2 min-w-0 sm:flex-1 ${isRtl ? "sm:order-2" : "sm:order-1"}`}>
