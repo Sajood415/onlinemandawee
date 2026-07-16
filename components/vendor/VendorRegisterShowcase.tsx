@@ -49,10 +49,10 @@ export function VendorRegisterShowcase() {
       <section className="w-full min-w-0 border-b border-black/5">
         <div className="mx-auto w-full max-w-[1540px] px-0">
           <div className="grid min-h-[380px] grid-cols-1 lg:min-h-[470px] lg:grid-cols-2">
-            <div className="relative overflow-hidden bg-linear-to-br from-[#b70f33] via-[#970f2f] to-[#7b0d28] text-white">
+            <div className="relative overflow-hidden bg-linear-to-br from-[#163f73] via-[#0F3460] to-[#0a2748] text-white">
               <div
                 aria-hidden
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(255,255,255,0.2),transparent_42%)]"
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(255,255,255,0.18),transparent_42%)]"
               />
               <div className="relative flex h-full flex-col justify-center px-4 py-10 sm:px-7 lg:px-10">
                 <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold">
@@ -68,7 +68,7 @@ export function VendorRegisterShowcase() {
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   <Link
                     href="/vendor/register/apply"
-                    className="inline-flex min-h-11 items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[#970f2f] shadow-sm transition hover:bg-neutral-100"
+                    className="inline-flex min-h-11 items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[#0F3460] shadow-sm transition hover:bg-neutral-100"
                   >
                     {t("startButton")}
                   </Link>
@@ -166,7 +166,7 @@ export function VendorRegisterShowcase() {
                 sizes="(max-width: 1024px) 100vw, 50vw"
               />
             </div>
-            <div className="flex h-full flex-col justify-center bg-[#970f2f] px-4 py-6 text-white sm:px-7 lg:px-10 lg:py-8">
+            <div className="flex h-full flex-col justify-center bg-[#0F3460] px-4 py-6 text-white sm:px-7 lg:px-10 lg:py-8">
               <h3 className="text-xl font-bold sm:text-2xl">{t("requirements.title")}</h3>
               <p className="mt-2 text-sm leading-relaxed text-white/85 sm:text-base">
                 {t("requirements.subtitle")}
@@ -212,7 +212,7 @@ export function VendorRegisterShowcase() {
 
       <section className="w-full min-w-0 px-2 py-3 sm:px-4 sm:py-4">
         <div className="mx-auto w-full max-w-[1540px]">
-          <div className="rounded-2xl bg-[#970f2f] px-4 py-5 text-white sm:px-6 sm:py-6">
+          <div className="rounded-2xl bg-[#0F3460] px-4 py-5 text-white sm:px-6 sm:py-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-lg font-bold sm:text-xl">{t("finalCta.title")}</h3>
@@ -220,7 +220,7 @@ export function VendorRegisterShowcase() {
               </div>
               <Link
                 href="/vendor/register/apply"
-                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[#970f2f] transition hover:bg-neutral-100"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[#0F3460] transition hover:bg-neutral-100"
               >
                 {t("finalCta.button")}
               </Link>
@@ -243,7 +243,7 @@ function FeatureCard({
 }) {
   return (
     <article className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#ec1b23]/10 text-[#970f2f]">
+      <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#0F3460]/10 text-[#0F3460]">
         {icon}
       </div>
       <h2 className="mt-3 text-sm font-bold text-neutral-900 sm:text-base">{title}</h2>
@@ -264,7 +264,7 @@ function ProcessRow({
   return (
     <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-3">
       <div className="flex items-center gap-2.5">
-        <span className="inline-flex rounded-full bg-[#970f2f]/10 px-2 py-0.5 text-[11px] font-bold text-[#970f2f]">
+        <span className="inline-flex rounded-full bg-[#0F3460]/10 px-2 py-0.5 text-[11px] font-bold text-[#0F3460]">
           Step {index}
         </span>
         <p className="text-sm font-semibold text-neutral-800">{label}</p>
@@ -283,7 +283,7 @@ function ListItem({ text, onDark = false }: { text: string; onDark?: boolean }) 
     >
       <span
         className={`mt-1 inline-block h-2 w-2 shrink-0 rounded-full ${
-          onDark ? "bg-white" : "bg-[#ec1b23]"
+          onDark ? "bg-white" : "bg-[#0F3460]"
         }`}
         aria-hidden
       />
@@ -295,7 +295,7 @@ function ListItem({ text, onDark = false }: { text: string; onDark?: boolean }) 
 function TrustRow({ icon, text }: { icon: ReactNode; text: string }) {
   return (
     <div className="flex items-start gap-2 rounded-lg bg-[#fafafa] px-3 py-2 text-sm text-neutral-700">
-      <span className="mt-0.5 text-[#970f2f]">{icon}</span>
+      <span className="mt-0.5 text-[#0F3460]">{icon}</span>
       <span>{text}</span>
     </div>
   );
