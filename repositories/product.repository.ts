@@ -258,86 +258,230 @@ export class ProductRepository {
     });
   }
 
-  listPublic(filters: {
+  private buildPublicWhere(filters: {
     categoryIds?: string[];
-    vendorStoreSlug?: string;
+    vendorStoreSlugs?: string[];
     search?: string;
+    minPriceMinor?: number;
+    maxPriceMinor?: number;
+    inStock?: boolean;
+    productIds?: string[];
+  }): Prisma.ProductWhereInput {
+    const vendorStoreSlugs = filters.vendorStoreSlugs?.filter(Boolean);
+    const andClauses: Prisma.ProductWhereInput[] = [];
+
+    if (filters.search) {
+      andClauses.push({
+        OR: [
+          {
+            name: {
+              contains: filters.search,
+              mode: "insensitive",
+            },
+          },
+          {
+            description: {
+              contains: filters.search,
+              mode: "insensitive",
+            },
+          },
+          {
+            sku: {
+              contains: filters.search,
+              mode: "insensitive",
+            },
+          },
+          {
+            vendorProfile: {
+              storeName: {
+                contains: filters.search,
+                mode: "insensitive",
+              },
+            },
+          },
+          {
+            category: {
+              name: {
+                contains: filters.search,
+                mode: "insensitive",
+              },
+            },
+          },
+        ],
+      });
+    }
+
+    if (filters.inStock) {
+      andClauses.push({
+        OR: [
+          { stockQty: { gt: 0 } },
+          {
+            variants: {
+              some: {
+                isActive: true,
+                stockQty: { gt: 0 },
+              },
+            },
+          },
+        ],
+      });
+    }
+
+    return {
+      approvalStatus: "APPROVED",
+      isActive: true,
+      ...(filters.productIds
+        ? {
+            id: {
+              in: filters.productIds,
+            },
+          }
+        : {}),
+      ...(filters.categoryIds?.length
+        ? {
+            categoryId: {
+              in: filters.categoryIds,
+            },
+          }
+        : {}),
+      ...(filters.minPriceMinor != null || filters.maxPriceMinor != null
+        ? {
+            priceAmount: {
+              ...(filters.minPriceMinor != null
+                ? { gte: filters.minPriceMinor }
+                : {}),
+              ...(filters.maxPriceMinor != null
+                ? { lte: filters.maxPriceMinor }
+                : {}),
+            },
+          }
+        : {}),
+      vendorProfile: vendorStoreSlugs?.length
+        ? {
+            storeSlug: {
+              in: vendorStoreSlugs,
+            },
+            status: "ACTIVE",
+          }
+        : {
+            status: "ACTIVE",
+          },
+      ...(andClauses.length > 0 ? { AND: andClauses } : {}),
+    };
+  }
+
+  private buildPublicOrderBy(
+    sort?: "newest" | "price-asc" | "price-desc" | "rating" | "relevance"
+  ): Prisma.ProductOrderByWithRelationInput {
+    switch (sort) {
+      case "price-asc":
+        return { priceAmount: "asc" };
+      case "price-desc":
+        return { priceAmount: "desc" };
+      case "rating":
+        return { ratingAverage: "desc" };
+      case "relevance":
+      case "newest":
+      default:
+        return { createdAt: "desc" };
+    }
+  }
+
+  async listPublic(filters: {
+    categoryIds?: string[];
+    vendorStoreSlugs?: string[];
+    search?: string;
+    minPriceMinor?: number;
+    maxPriceMinor?: number;
+    inStock?: boolean;
+    productIds?: string[];
+    sort?: "newest" | "price-asc" | "price-desc" | "rating" | "relevance";
+    skip?: number;
+    take?: number;
   }) {
-    return prisma.product.findMany({
-      where: {
-        approvalStatus: "APPROVED",
-        isActive: true,
-        ...(filters.search
-          ? {
-              OR: [
-                {
-                  name: {
-                    contains: filters.search,
-                    mode: "insensitive",
-                  },
-                },
-                {
-                  description: {
-                    contains: filters.search,
-                    mode: "insensitive",
-                  },
-                },
-                {
-                  sku: {
-                    contains: filters.search,
-                    mode: "insensitive",
-                  },
-                },
-                {
-                  vendorProfile: {
-                    storeName: {
-                      contains: filters.search,
-                      mode: "insensitive",
-                    },
-                  },
-                },
-                {
-                  category: {
-                    name: {
-                      contains: filters.search,
-                      mode: "insensitive",
-                    },
-                  },
-                },
-              ],
-            }
-          : {}),
-        ...(filters.categoryIds?.length
-          ? {
-              categoryId: {
-                in: filters.categoryIds,
-              },
-            }
-          : {}),
-        ...(filters.vendorStoreSlug
-          ? {
-              vendorProfile: {
-                storeSlug: filters.vendorStoreSlug,
-                status: "ACTIVE",
-              },
-            }
-          : {
-              vendorProfile: {
-                status: "ACTIVE",
-              },
-            }),
-      },
-      include: {
-        category: true,
-        variants: {
-          where: { isActive: true },
-          orderBy: { createdAt: "asc" as const },
+    const where = this.buildPublicWhere(filters);
+    const orderBy = this.buildPublicOrderBy(filters.sort);
+
+    const [items, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: {
+          category: true,
+          variants: {
+            where: { isActive: true },
+            orderBy: { createdAt: "asc" as const },
+          },
+          vendorProfile: true,
         },
-        vendorProfile: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+        orderBy,
+        ...(filters.skip != null ? { skip: filters.skip } : {}),
+        ...(filters.take != null ? { take: filters.take } : {}),
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    return { items, total };
+  }
+
+  countPublic(filters: {
+    categoryIds?: string[];
+    vendorStoreSlugs?: string[];
+    search?: string;
+    minPriceMinor?: number;
+    maxPriceMinor?: number;
+    inStock?: boolean;
+    productIds?: string[];
+  }) {
+    return prisma.product.count({
+      where: this.buildPublicWhere(filters),
+    });
+  }
+
+  groupPublicByCategory(filters: {
+    categoryIds?: string[];
+    vendorStoreSlugs?: string[];
+    search?: string;
+    minPriceMinor?: number;
+    maxPriceMinor?: number;
+    inStock?: boolean;
+    productIds?: string[];
+  }) {
+    return prisma.product.groupBy({
+      by: ["categoryId"],
+      where: this.buildPublicWhere(filters),
+      _count: { _all: true },
+    });
+  }
+
+  groupPublicByVendor(filters: {
+    categoryIds?: string[];
+    vendorStoreSlugs?: string[];
+    search?: string;
+    minPriceMinor?: number;
+    maxPriceMinor?: number;
+    inStock?: boolean;
+    productIds?: string[];
+  }) {
+    return prisma.product.groupBy({
+      by: ["vendorProfileId"],
+      where: this.buildPublicWhere(filters),
+      _count: { _all: true },
+    });
+  }
+
+  aggregatePublicPrice(filters: {
+    categoryIds?: string[];
+    vendorStoreSlugs?: string[];
+    search?: string;
+    minPriceMinor?: number;
+    maxPriceMinor?: number;
+    inStock?: boolean;
+    productIds?: string[];
+  }) {
+    return prisma.product.aggregate({
+      where: this.buildPublicWhere(filters),
+      _min: { priceAmount: true },
+      _max: { priceAmount: true },
     });
   }
 }

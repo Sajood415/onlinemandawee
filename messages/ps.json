@@ -2378,5 +2378,66 @@
       "joined": "په {year} کې یوځای شوی",
       "defaultDescription": "د دې پلورنځي محصولات وګورئ."
     }
+  },
+  "ProductsPages": {
+    "catalog": {
+      "home": "کور",
+      "title": "ټول محصولات",
+      "searchTitle": "د لټون پایلې",
+      "searchSubtitle": "د «{query}» سره سم محصولات",
+      "results": "{count} محصولات",
+      "showing": "ښودل {from}–{to} له {total}",
+      "filters": "فلټرونه",
+      "sort": "ترتیب",
+      "sortNewest": "نوي",
+      "sortRelevance": "غوره تطابق",
+      "sortPriceAsc": "قیمت: کم څخه زیات",
+      "sortPriceDesc": "قیمت: زیات څخه کم",
+      "sortRating": "لوړ امتیاز",
+      "categories": "کټګوري",
+      "allCategories": "ټولې کټګورۍ",
+      "price": "قیمت",
+      "minPrice": "لږترلږه",
+      "maxPrice": "ډېر",
+      "vendors": "پلورونکی",
+      "inStock": "یوازې موجود",
+      "onSale": "تخفیف لرونکي",
+      "clearAll": "ټول پاک کړئ",
+      "applyFilters": "{count} محصولات وښایئ",
+      "closeFilters": "فلټرونه بند کړئ",
+      "noProducts": "هیڅ محصول ونه موندل شو",
+      "noProductsHint": "فلټرونه یا لټون بدل کړئ.",
+      "clearFilters": "ټول فلټرونه پاک کړئ",
+      "browseCategories": "مشهورې کټګورۍ",
+      "addToCart": "کارټ ته اضافه کړئ",
+      "chooseOptions": "انتخابونه وټاکئ",
+      "addedToCart": "کارټ ته اضافه شو!",
+      "addError": "کارټ ته اضافه کول ناکام شول",
+      "soldOut": "پلورل شوی",
+      "previous": "مخکې",
+      "next": "وروسته",
+      "pageOf": "پاڼه {page} له {total}",
+      "removeFilter": "فلټر لرې کړئ"
+    }
+  },
+  "DealsPages": {
+    "landing": {
+      "home": "کور",
+      "title": "تخفیفونه",
+      "subtitle": "د باوري پلورونکو فعال وړاندیزونه او تخفیف لرونکي محصولات.",
+      "results": "{count} تخفیفونه",
+      "showing": "ښودل {from}–{to} له {total}",
+      "sort": "ترتیب",
+      "sortNewest": "نوي",
+      "sortPriceAsc": "قیمت: کم څخه زیات",
+      "sortPriceDesc": "قیمت: زیات څخه کم",
+      "sortRating": "لوړ امتیاز",
+      "noDeals": "تر اوسه فعال تخفیف نشته",
+      "noDealsHint": "کله چې پلورونکي وړاندیزونه خپاره کړي، دلته به ښکاره شي.",
+      "browseProducts": "ټول محصولات وګورئ",
+      "previous": "مخکې",
+      "next": "وروسته",
+      "pageOf": "پاڼه {page} له {total}"
+    }
   }
 }

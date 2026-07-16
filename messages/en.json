@@ -2378,5 +2378,66 @@
       "joined": "Joined {year}",
       "defaultDescription": "Browse products from this store."
     }
+  },
+  "ProductsPages": {
+    "catalog": {
+      "home": "Home",
+      "title": "All products",
+      "searchTitle": "Search results",
+      "searchSubtitle": "Showing products matching “{query}”",
+      "results": "{count, plural, one {# product} other {# products}}",
+      "showing": "Showing {from}–{to} of {total}",
+      "filters": "Filters",
+      "sort": "Sort",
+      "sortNewest": "Newest",
+      "sortRelevance": "Best match",
+      "sortPriceAsc": "Price: Low to High",
+      "sortPriceDesc": "Price: High to Low",
+      "sortRating": "Top rated",
+      "categories": "Category",
+      "allCategories": "All categories",
+      "price": "Price",
+      "minPrice": "Min",
+      "maxPrice": "Max",
+      "vendors": "Vendor",
+      "inStock": "In stock only",
+      "onSale": "On sale",
+      "clearAll": "Clear all",
+      "applyFilters": "Show {count} products",
+      "closeFilters": "Close filters",
+      "noProducts": "No products found",
+      "noProductsHint": "Try adjusting your filters or search to discover more items.",
+      "clearFilters": "Clear all filters",
+      "browseCategories": "Popular categories",
+      "addToCart": "Add to cart",
+      "chooseOptions": "Choose options",
+      "addedToCart": "Added to cart!",
+      "addError": "Failed to add to cart",
+      "soldOut": "Sold out",
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {page} of {total}",
+      "removeFilter": "Remove filter"
+    }
+  },
+  "DealsPages": {
+    "landing": {
+      "home": "Home",
+      "title": "Deals",
+      "subtitle": "Active offers and discounted products from trusted vendors.",
+      "results": "{count, plural, one {# deal} other {# deals}}",
+      "showing": "Showing {from}–{to} of {total}",
+      "sort": "Sort",
+      "sortNewest": "Newest",
+      "sortPriceAsc": "Price: Low to High",
+      "sortPriceDesc": "Price: High to Low",
+      "sortRating": "Top rated",
+      "noDeals": "No active deals yet",
+      "noDealsHint": "As vendors publish promotions, they will appear here.",
+      "browseProducts": "Browse all products",
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {page} of {total}"
+    }
   }
 }

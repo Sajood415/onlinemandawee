@@ -207,6 +207,16 @@ export function mapApiProductToCatalog(product: ApiCatalogProduct): PublicCatalo
   };
 }
 
+const LEGACY_CATALOG_PAGE_SIZE = 200;
+
+type PublicCatalogPagePayload = {
+  items: ApiCatalogProduct[];
+  total: number;
+  page: number;
+  pageSize: number;
+  facets?: unknown;
+};
+
 const catalogProductsRequests = new Map<string, Promise<PublicCatalogProduct[]>>();
 
 function catalogProductsCacheKey(filters?: {
@@ -235,11 +245,15 @@ export async function fetchPublicCatalogProducts(filters?: {
     if (filters?.category) params.set("category", filters.category);
     if (filters?.vendor) params.set("vendor", filters.vendor);
     if (filters?.search) params.set("search", filters.search);
+    // Legacy callers expect a full list; request a large first page.
+    params.set("page", "1");
+    params.set("pageSize", String(LEGACY_CATALOG_PAGE_SIZE));
 
     const qs = params.toString();
     const res = await fetch(`/api/catalog/products${qs ? `?${qs}` : ""}`);
-    const data = await parseApiResponse<ApiCatalogProduct[]>(res);
-    return data.map(mapApiProductToCatalog);
+    const data = await parseApiResponse<ApiCatalogProduct[] | PublicCatalogPagePayload>(res);
+    const items = Array.isArray(data) ? data : data.items;
+    return items.map(mapApiProductToCatalog);
   })();
 
   catalogProductsRequests.set(cacheKey, request);
@@ -256,4 +270,90 @@ export async function fetchPublicCatalogProduct(productId: string) {
   const res = await fetch(`/api/catalog/products/${productId}`);
   const data = await parseApiResponse<ApiCatalogProduct>(res);
   return mapApiProductToCatalog(data);
+}
+
+export type CatalogFacetCategory = {
+  id: string;
+  slug: string;
+  name: string;
+  parentId: string | null;
+  count: number;
+  children: Array<{
+    id: string;
+    slug: string;
+    name: string;
+    parentId: string | null;
+    count: number;
+  }>;
+};
+
+export type CatalogFacets = {
+  categories: CatalogFacetCategory[];
+  vendors: Array<{ storeSlug: string; storeName: string; count: number }>;
+  priceMin: number;
+  priceMax: number;
+  inStockCount: number;
+  onSaleCount: number;
+};
+
+export type PublicCatalogSort =
+  | "newest"
+  | "price-asc"
+  | "price-desc"
+  | "rating"
+  | "relevance";
+
+export type FetchPublicCatalogPageParams = {
+  category?: string;
+  vendors?: string[];
+  search?: string;
+  page?: number;
+  pageSize?: number;
+  sort?: PublicCatalogSort;
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
+  onSale?: boolean;
+};
+
+export type PublicCatalogPage = {
+  items: PublicCatalogProduct[];
+  total: number;
+  page: number;
+  pageSize: number;
+  facets: CatalogFacets;
+};
+
+export async function fetchPublicCatalogPage(
+  params: FetchPublicCatalogPageParams = {}
+): Promise<PublicCatalogPage> {
+  const query = new URLSearchParams();
+  if (params.category) query.set("category", params.category);
+  if (params.vendors?.length) query.set("vendors", params.vendors.join(","));
+  if (params.search) query.set("search", params.search);
+  query.set("page", String(params.page ?? 1));
+  query.set("pageSize", String(params.pageSize ?? 24));
+  query.set("sort", params.sort ?? "newest");
+  if (params.minPrice != null) query.set("minPrice", String(params.minPrice));
+  if (params.maxPrice != null) query.set("maxPrice", String(params.maxPrice));
+  if (params.inStock) query.set("inStock", "true");
+  if (params.onSale) query.set("onSale", "true");
+
+  const res = await fetch(`/api/catalog/products?${query.toString()}`);
+  const data = await parseApiResponse<PublicCatalogPagePayload>(res);
+
+  return {
+    items: (data.items ?? []).map(mapApiProductToCatalog),
+    total: data.total ?? 0,
+    page: data.page ?? 1,
+    pageSize: data.pageSize ?? 24,
+    facets: (data.facets as CatalogFacets) ?? {
+      categories: [],
+      vendors: [],
+      priceMin: 0,
+      priceMax: 0,
+      inStockCount: 0,
+      onSaleCount: 0,
+    },
+  };
 }

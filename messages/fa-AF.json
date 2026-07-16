@@ -2378,5 +2378,66 @@
       "joined": "پیوسته در {year}",
       "defaultDescription": "محصولات این فروشگاه را ببینید."
     }
+  },
+  "ProductsPages": {
+    "catalog": {
+      "home": "خانه",
+      "title": "همه محصولات",
+      "searchTitle": "نتایج جستجو",
+      "searchSubtitle": "محصولات مطابق «{query}»",
+      "results": "{count} محصول",
+      "showing": "نمایش {from}–{to} از {total}",
+      "filters": "فیلترها",
+      "sort": "مرتب‌سازی",
+      "sortNewest": "جدیدترین",
+      "sortRelevance": "بهترین تطابق",
+      "sortPriceAsc": "قیمت: کم به زیاد",
+      "sortPriceDesc": "قیمت: زیاد به کم",
+      "sortRating": "بالاترین امتیاز",
+      "categories": "دسته‌بندی",
+      "allCategories": "همه دسته‌ها",
+      "price": "قیمت",
+      "minPrice": "حداقل",
+      "maxPrice": "حداکثر",
+      "vendors": "فروشنده",
+      "inStock": "فقط موجود",
+      "onSale": "تخفیف‌دار",
+      "clearAll": "پاک کردن همه",
+      "applyFilters": "نمایش {count} محصول",
+      "closeFilters": "بستن فیلترها",
+      "noProducts": "محصولی یافت نشد",
+      "noProductsHint": "فیلترها یا جستجو را تغییر دهید.",
+      "clearFilters": "پاک کردن همه فیلترها",
+      "browseCategories": "دسته‌های محبوب",
+      "addToCart": "افزودن به سبد",
+      "chooseOptions": "انتخاب گزینه‌ها",
+      "addedToCart": "به سبد اضافه شد!",
+      "addError": "افزودن به سبد ناموفق بود",
+      "soldOut": "ناموجود",
+      "previous": "قبلی",
+      "next": "بعدی",
+      "pageOf": "صفحه {page} از {total}",
+      "removeFilter": "حذف فیلتر"
+    }
+  },
+  "DealsPages": {
+    "landing": {
+      "home": "خانه",
+      "title": "تخفیف‌ها",
+      "subtitle": "پیشنهادهای فعال و محصولات تخفیف‌دار از فروشندگان معتبر.",
+      "results": "{count} تخفیف",
+      "showing": "نمایش {from}–{to} از {total}",
+      "sort": "مرتب‌سازی",
+      "sortNewest": "جدیدترین",
+      "sortPriceAsc": "قیمت: کم به زیاد",
+      "sortPriceDesc": "قیمت: زیاد به کم",
+      "sortRating": "بالاترین امتیاز",
+      "noDeals": "هنوز تخفیف فعالی نیست",
+      "noDealsHint": "وقتی فروشندگان پیشنهادها را منتشر کنند، اینجا نمایش داده می‌شود.",
+      "browseProducts": "مشاهده همه محصولات",
+      "previous": "قبلی",
+      "next": "بعدی",
+      "pageOf": "صفحه {page} از {total}"
+    }
   }
 }

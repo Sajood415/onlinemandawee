@@ -1012,20 +1012,20 @@ export default function Header() {
               }`}
             >
               {/* Header */}
-              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-white to-gray-50/50 sticky top-0 z-10">
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-100 bg-white p-6">
                 <div className="flex items-center gap-3">
                   <motion.div
-                    className="bg-primary/10 p-3 rounded-2xl border border-primary/20"
+                    className="rounded-2xl border border-[#0F3460]/15 bg-[#0F3460]/10 p-3"
                     whileHover={{ scale: 1.05 }}
                     transition={{ type: "spring", stiffness: 400 }}
                   >
-                    <ShoppingBasket size={26} className="text-primary" />
+                    <ShoppingBasket size={26} className="text-[#0F3460]" />
                   </motion.div>
                   <div>
-                    <h2 className="text-xl font-black text-gray-900 tracking-tight leading-none">
+                    <h2 className="text-xl font-black leading-none tracking-tight text-neutral-900">
                       {copy.yourBasket}
                     </h2>
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                    <p className="mt-1 text-[11px] font-bold uppercase tracking-widest text-neutral-400">
                       {itemCount > 0
                         ? `${itemCount} ${copy.itemsReady}`
                         : copy.startShopping}
@@ -1125,11 +1125,6 @@ export default function Header() {
                           <p className="text-xs text-gray-500">
                             <bdi>{localizeVendor(item.vendor, safeLocale)}</bdi>
                           </p>
-                          {item.productDescription ? (
-                            <p className="mt-1 line-clamp-2 text-xs text-gray-400">
-                              {item.productDescription}
-                            </p>
-                          ) : null}
                           {item.delivery ? (
                             <p className="mt-1 text-[11px] font-medium text-emerald-600">
                               {localizeDelivery(item.delivery, safeLocale)}
@@ -1192,12 +1187,12 @@ export default function Header() {
                   <LocaleLink
                     href="/cart"
                     onClick={() => setIsCartOpen(false)}
-                    className="w-full py-4 bg-gray-900 text-white rounded-full font-bold shadow-lg flex items-center justify-center gap-2 hover:bg-black transition-all group"
+                    className="group flex w-full items-center justify-center gap-2 rounded-full bg-[#0F3460] py-4 font-bold text-white shadow-lg transition-all hover:bg-[#0a2540]"
                   >
                     {copy.viewFullBasket}
                     <ArrowRight
                       size={18}
-                      className="group-hover:translate-x-1 transition-transform"
+                      className="transition-transform group-hover:translate-x-1"
                     />
                   </LocaleLink>
                 </motion.div>
