@@ -18,6 +18,33 @@
       "addError": "افزودن نشد — دوباره تلاش کنید",
       "unitPrice": "قیمت واحد",
       "per": "/ برای هر",
+      "hero": {
+        "shopNowFallback": "همین حالا خرید کنید",
+        "slideFallbackLabel": "بنر اصلی صفحه خانه",
+        "goToSlide": "رفتن به اسلاید {number}",
+        "previousSlide": "اسلاید قبلی",
+        "nextSlide": "اسلاید بعدی"
+      },
+      "deals": {
+        "previousDeals": "پیشنهادهای قبلی",
+        "nextDeals": "پیشنهادهای بعدی"
+      },
+      "productRail": {
+        "previousProducts": "محصولات قبلی",
+        "nextProducts": "محصولات بعدی",
+        "noProducts": "هنوز محصولی موجود نیست."
+      },
+      "categories": {
+        "previous": "دسته‌های قبلی",
+        "next": "دسته‌های بعدی",
+        "noImage": "بدون تصویر"
+      },
+      "stackedSections": {
+        "qualityGrocery": "محصولات خوراکی باکیفیت برای زندگی بهتر",
+        "snacksConfectionery": "تنقلات و شیرینی‌جات",
+        "sipRefreshment": "نوشیدنی تازه بنوشید و لذت ببرید",
+        "babyWorld": "ضروریات دنیای نوزاد"
+      },
       "heroSlides": [
         {
           "image": "/banners/banner-1.webp",

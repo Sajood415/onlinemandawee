@@ -32,7 +32,7 @@ function formatCategoryLabel(label: string) {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
 
-function CategoryCircle({ tile }: { tile: DisplayCategoryTile }) {
+function CategoryCircle({ tile, noImageLabel }: { tile: DisplayCategoryTile; noImageLabel: string }) {
   return (
     <Link
       href={tile.href}
@@ -51,7 +51,7 @@ function CategoryCircle({ tile }: { tile: DisplayCategoryTile }) {
               sizes="(max-width: 640px) 104px, 116px"
             />
           ) : (
-            <span className="text-[10px] font-medium uppercase text-neutral-400">No image</span>
+            <span className="text-[10px] font-medium uppercase text-neutral-400">{noImageLabel}</span>
           )}
         </div>
       </div>
@@ -127,7 +127,7 @@ export function HomeCategoryCarousel() {
           type="button"
           onClick={() => scroll(-1)}
           className="absolute -left-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200/80 bg-white/90 text-neutral-500 shadow-sm transition hover:bg-white hover:text-neutral-700 sm:flex"
-          aria-label="Previous categories"
+          aria-label={t("categories.previous")}
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -135,7 +135,7 @@ export function HomeCategoryCarousel() {
           type="button"
           onClick={() => scroll(1)}
           className="absolute -right-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200/80 bg-white/90 text-neutral-500 shadow-sm transition hover:bg-white hover:text-neutral-700 sm:flex"
-          aria-label="Next categories"
+          aria-label={t("categories.next")}
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -145,7 +145,7 @@ export function HomeCategoryCarousel() {
           className="flex gap-4 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-6 [&::-webkit-scrollbar]:hidden"
         >
           {tiles.map((tile) => (
-            <CategoryCircle key={tile.slug} tile={tile} />
+            <CategoryCircle key={tile.slug} tile={tile} noImageLabel={t("categories.noImage")} />
           ))}
         </div>
       </div>

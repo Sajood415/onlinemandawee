@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   fetchPublicCatalogProducts,
   type PublicCatalogProduct,
@@ -11,7 +12,7 @@ const HOME_STACKED_SECTIONS = [
   {
     id: "quality-grocery",
     href: "/category/grocery",
-    title: "Quality grocery products for a better living",
+    titleKey: "stackedSections.qualityGrocery",
     productIds: [
       "beef-meat-1kg",
       "hayat-cooking-oil-16l",
@@ -24,7 +25,7 @@ const HOME_STACKED_SECTIONS = [
   {
     id: "snacks-confectionery",
     href: "/category/snacks",
-    title: "Snacks and confectionery",
+    titleKey: "stackedSections.snacksConfectionery",
     productIds: [
       "afghani-cake-1kg",
       "artisan-dark-chocolate-3bar",
@@ -37,7 +38,7 @@ const HOME_STACKED_SECTIONS = [
   {
     id: "sip-refreshment",
     href: "/category/beverages",
-    title: "Sip refreshment and repeat",
+    titleKey: "stackedSections.sipRefreshment",
     productIds: [
       "minute-maid-juice-1l",
       "mana-cola-250ml",
@@ -50,7 +51,7 @@ const HOME_STACKED_SECTIONS = [
   {
     id: "baby-world",
     href: "/category/baby-care",
-    title: "Baby world essentials",
+    titleKey: "stackedSections.babyWorld",
     productIds: [
       "baby-pino-soap-75g",
       "johnsons-baby-soap-125g",
@@ -63,6 +64,7 @@ const HOME_STACKED_SECTIONS = [
 ] as const;
 
 export function HomeStackedSections() {
+  const t = useTranslations("Homepage.store");
   const [sharedVendorProducts, setSharedVendorProducts] = useState<
     PublicCatalogProduct[] | undefined
   >(undefined);
@@ -79,7 +81,7 @@ export function HomeStackedSections() {
         <div key={section.id} className="w-full min-w-0">
           <div className="w-full min-w-0 px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
             <HomeProductRail
-              title={section.title}
+              title={t(section.titleKey)}
               viewAllHref={section.href}
               productIds={section.productIds}
               sharedVendorProducts={sharedVendorProducts}

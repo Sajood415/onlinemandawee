@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import {
@@ -59,7 +60,7 @@ function bannerToSlide(banner: PublicHomeBanner): HeroSlide {
     imageMobile: banner.imageMobileUrl ?? undefined,
     headline: banner.title,
     sub: banner.subtitle ?? "",
-    cta: banner.ctaLabel ?? "Shop now",
+    cta: banner.ctaLabel ?? "",
     href: banner.href,
   };
 }
@@ -97,6 +98,7 @@ function HeroSlideMedia({ slide, label }: { slide: HeroSlide; label: string }) {
 }
 
 export function HomeHeroCarousel() {
+  const t = useTranslations("Homepage.store");
   const [dynamicBanners, setDynamicBanners] = useState<PublicHomeBanner[] | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -124,8 +126,9 @@ export function HomeHeroCarousel() {
   if (slides.length === 0) return null;
 
   const slide = slides[activeIndex] ?? slides[0];
+  const slideCta = slide.cta?.trim() ? slide.cta : t("hero.shopNowFallback");
   const label =
-    [slide.headline, slide.sub].filter(Boolean).join(". ") || "Mandawee";
+    [slide.headline, slide.sub].filter(Boolean).join(". ") || t("hero.slideFallbackLabel");
 
   return (
     <section className={sectionClass} aria-labelledby="hero-heading">
@@ -139,7 +142,7 @@ export function HomeHeroCarousel() {
             <HomeBannerContentOverlay
               title={slide.headline}
               subtitle={slide.sub}
-              ctaLabel={slide.cta}
+              ctaLabel={slideCta}
               variant="hero"
             />
           </Link>
@@ -152,7 +155,7 @@ export function HomeHeroCarousel() {
                     <button
                       key={`${item.href}-${index}`}
                       type="button"
-                      aria-label={`Go to slide ${index + 1}`}
+                      aria-label={t("hero.goToSlide", { number: index + 1 })}
                       aria-current={index === activeIndex ? "true" : undefined}
                       onClick={() => setActiveIndex(index)}
                       className={`rounded-full transition-all duration-300 ${
@@ -171,7 +174,7 @@ export function HomeHeroCarousel() {
                       setActiveIndex((current) => (current - 1 + slides.length) % slides.length)
                     }
                     className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-neutral-200/90 bg-white/95 text-neutral-600 shadow-sm transition hover:bg-white"
-                    aria-label="Previous slide"
+                    aria-label={t("hero.previousSlide")}
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
@@ -179,7 +182,7 @@ export function HomeHeroCarousel() {
                     type="button"
                     onClick={() => setActiveIndex((current) => (current + 1) % slides.length)}
                     className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-neutral-200/90 bg-white/95 text-neutral-600 shadow-sm transition hover:bg-white"
-                    aria-label="Next slide"
+                    aria-label={t("hero.nextSlide")}
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>

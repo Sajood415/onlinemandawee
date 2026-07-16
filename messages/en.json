@@ -18,6 +18,33 @@
       "addError": "Could not add — try again",
       "unitPrice": "Unit price",
       "per": "/ per",
+      "hero": {
+        "shopNowFallback": "Shop now",
+        "slideFallbackLabel": "Homepage hero banner",
+        "goToSlide": "Go to slide {number}",
+        "previousSlide": "Previous slide",
+        "nextSlide": "Next slide"
+      },
+      "deals": {
+        "previousDeals": "Previous deals",
+        "nextDeals": "Next deals"
+      },
+      "productRail": {
+        "previousProducts": "Previous products",
+        "nextProducts": "Next products",
+        "noProducts": "No products yet."
+      },
+      "categories": {
+        "previous": "Previous categories",
+        "next": "Next categories",
+        "noImage": "No image"
+      },
+      "stackedSections": {
+        "qualityGrocery": "Quality grocery products for a better living",
+        "snacksConfectionery": "Snacks and confectionery",
+        "sipRefreshment": "Sip refreshment and repeat",
+        "babyWorld": "Baby world essentials"
+      },
       "heroSlides": [
         {
           "image": "/banners/banner-1.webp",

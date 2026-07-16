@@ -18,6 +18,33 @@
       "addError": "اضافه نشو — بیا هڅه وکړئ",
       "unitPrice": "واحد بیه",
       "per": "/ له",
+      "hero": {
+        "shopNowFallback": "اوس واخلئ",
+        "slideFallbackLabel": "د کورپاڼې اصلي بنر",
+        "goToSlide": "سلایډ {number} ته لاړ شئ",
+        "previousSlide": "مخکینی سلایډ",
+        "nextSlide": "بل سلایډ"
+      },
+      "deals": {
+        "previousDeals": "مخکیني وړاندیزونه",
+        "nextDeals": "بل وړاندیزونه"
+      },
+      "productRail": {
+        "previousProducts": "مخکیني محصولات",
+        "nextProducts": "بل محصولات",
+        "noProducts": "لا تر اوسه محصولات نشته."
+      },
+      "categories": {
+        "previous": "مخکینۍ کټګورۍ",
+        "next": "بلې کټګورۍ",
+        "noImage": "انځور نشته"
+      },
+      "stackedSections": {
+        "qualityGrocery": "د ښه ژوند لپاره باکیفیته خوراکي توکي",
+        "snacksConfectionery": "سنکس او خوږ توکي",
+        "sipRefreshment": "تازه مشروبات وڅښئ او خوند ترې واخلئ",
+        "babyWorld": "د ماشوم نړۍ اړین توکي"
+      },
       "heroSlides": [
         {
           "image": "/banners/banner-1.webp",

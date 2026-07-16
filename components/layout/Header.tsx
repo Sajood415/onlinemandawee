@@ -420,7 +420,7 @@ export default function Header() {
             dir={isRtl ? "rtl" : "ltr"}
             className="hidden border-b border-gray-200 bg-[#f7f8fa] sm:block"
           >
-            <div className="mx-auto flex h-9 w-full max-w-7xl items-center justify-between px-4 text-[11px] text-gray-600 lg:px-6">
+            <div className="flex h-9 w-full items-center justify-between px-2 text-[11px] text-gray-600 sm:px-3 lg:px-4">
               <div className="flex items-center gap-2 font-medium">
                 <span className="text-gray-800">{copy.welcome}</span>
                 <span className="hidden text-gray-300 lg:inline">|</span>
@@ -457,7 +457,7 @@ export default function Header() {
           dir={isRtl ? "rtl" : "ltr"}
           className={`relative z-[9999] overflow-x-clip overflow-y-visible border-b border-black/10 shadow-[0_2px_12px_rgba(0,0,0,0.15)] ${HEADER_BAR_CLASS}`}
         >
-          <div className="mx-auto w-full min-w-0 max-w-7xl px-3 py-2.5 sm:px-4 sm:py-3 lg:px-6">
+          <div className="w-full min-w-0 px-2 py-2.5 sm:px-3 sm:py-3 lg:px-4">
             <div className="flex min-w-0 flex-nowrap items-center gap-2 sm:gap-3 lg:gap-4">
               <Link href="/" className="order-1 shrink-0">
                 <Image
@@ -472,7 +472,7 @@ export default function Header() {
 
               <form
                 onSubmit={handleSearch}
-                className={`group order-2 hidden h-11 min-w-0 max-w-3xl flex-1 items-center rounded-lg border border-gray-200 bg-[#f0f0f1] transition-all duration-200 focus-within:border-primary/40 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/10 md:flex ${isRtl ? "pr-4 pl-1.5" : "pl-4 pr-1.5"}`}
+                className={`group order-2 hidden h-11 min-w-0 max-w-2xl flex-1 items-center rounded-lg border border-gray-200 bg-[#f0f0f1] transition-all duration-200 focus-within:border-primary/40 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/10 md:flex ${isRtl ? "pr-4 pl-1.5" : "pl-4 pr-1.5"}`}
               >
                 <input
                   value={searchQuery}
@@ -495,7 +495,7 @@ export default function Header() {
                 </button>
               </form>
 
-              <div className="order-3 flex shrink-0 items-center gap-1 sm:gap-2 lg:gap-3">
+              <div className="order-3 ms-auto flex shrink-0 items-center gap-1 sm:gap-2 lg:gap-3">
                 <button
                   onClick={() => setShowMobileSearch(!showMobileSearch)}
                   className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20 md:hidden"
@@ -684,7 +684,7 @@ export default function Header() {
             dir={isRtl ? "rtl" : "ltr"}
             className="relative z-[9997] border-b border-gray-200 bg-white"
           >
-            <div className="mx-auto flex h-11 w-full max-w-7xl items-center gap-2 px-3 sm:px-4 lg:px-6">
+            <div className="flex h-11 w-full items-center gap-2 px-2 sm:px-3 lg:px-4">
               <LocaleLink
                 href="/orders"
                 className="hidden shrink-0 items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-600 transition-colors hover:bg-orange-100 lg:inline-flex"
@@ -804,7 +804,7 @@ export default function Header() {
                     exit="exit"
                     className="absolute inset-x-0 top-full z-[9999] border-t border-gray-200 bg-white shadow-2xl"
                   >
-                    <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">
+                    <div className="w-full px-2 py-5 sm:px-3 lg:px-4">
                       <div className="mb-4 flex items-center justify-between gap-4">
                         <div>
                           <p className="text-xs font-medium uppercase tracking-wider text-gray-400">

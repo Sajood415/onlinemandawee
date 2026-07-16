@@ -178,11 +178,15 @@ function ProductRail({
   locale,
   scrollRef,
   onScroll,
+  previousDealsLabel,
+  nextDealsLabel,
 }: {
   dealProducts: PublicCatalogProduct[];
   locale: LocaleKey;
   scrollRef: RefObject<HTMLDivElement | null>;
   onScroll: (dir: -1 | 1) => void;
+  previousDealsLabel: string;
+  nextDealsLabel: string;
 }) {
   return (
     <div className="relative min-w-0 flex-1 bg-white">
@@ -190,7 +194,7 @@ function ProductRail({
         type="button"
         onClick={() => onScroll(-1)}
         className="absolute -left-3 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-500 shadow-md transition hover:text-neutral-800 sm:flex"
-        aria-label="Previous deals"
+        aria-label={previousDealsLabel}
       >
         <ChevronLeft className="h-5 w-5" />
       </button>
@@ -198,7 +202,7 @@ function ProductRail({
         type="button"
         onClick={() => onScroll(1)}
         className="absolute -right-3 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-500 shadow-md transition hover:text-neutral-800 sm:flex"
-        aria-label="Next deals"
+        aria-label={nextDealsLabel}
       >
         <ChevronRight className="h-5 w-5" />
       </button>
@@ -268,6 +272,8 @@ export function HomeCouponDealsRail() {
       locale={locale}
       scrollRef={scrollRef}
       onScroll={scrollByPage}
+      previousDealsLabel={t("deals.previousDeals")}
+      nextDealsLabel={t("deals.nextDeals")}
     />
   );
 

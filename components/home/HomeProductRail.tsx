@@ -216,7 +216,7 @@ export function HomeProductRail({
               type="button"
               onClick={() => scrollByPage(-1)}
               className="absolute left-0 top-1/2 z-30 hidden h-10 w-9 -translate-y-1/2 items-center justify-center border border-neutral-200 bg-white text-neutral-500 transition hover:bg-neutral-50 sm:flex"
-              aria-label="Previous products"
+              aria-label={t("productRail.previousProducts")}
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -224,7 +224,7 @@ export function HomeProductRail({
               type="button"
               onClick={() => scrollByPage(1)}
               className="absolute right-0 top-1/2 z-30 hidden h-10 w-9 -translate-y-1/2 items-center justify-center border border-neutral-200 bg-white text-neutral-500 transition hover:bg-neutral-50 sm:flex"
-              aria-label="Next products"
+              aria-label={t("productRail.nextProducts")}
             >
               <ChevronRight className="h-5 w-5" />
             </button>
@@ -245,7 +245,9 @@ export function HomeProductRail({
             ))}
           </div>
         ) : rows.length === 0 ? (
-          <p className="px-4 py-10 text-center text-sm text-neutral-500">No products yet.</p>
+          <p className="px-4 py-10 text-center text-sm text-neutral-500">
+            {t("productRail.noProducts")}
+          </p>
         ) : (
           <div
             ref={scrollRef}
