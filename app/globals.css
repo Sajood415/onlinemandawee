@@ -9,10 +9,23 @@
   --green: #428445;
   --yellow: #E0B252;
   --header-height: 7rem;
-  --hero-banner-height: clamp(168px, 24vw, 380px);
+  /* Mobile hero: tall enough to read; sm+ uses desktop crop frame */
+  --hero-banner-height: clamp(200px, 52vw, 260px);
   --promo-banner-height: clamp(6.5rem, 18vw, 14rem);
   --promo-banner-height-mobile: clamp(4.75rem, 22vw, 6.5rem);
   --home-inline-padding: max(0.75rem, env(safe-area-inset-left, 0px));
+}
+
+@media (min-width: 640px) {
+  :root {
+    --hero-banner-height: clamp(200px, 26vw, 360px);
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --hero-banner-height: clamp(240px, 24vw, 400px);
+  }
 }
 
 @theme inline {

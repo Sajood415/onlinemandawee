@@ -11,18 +11,19 @@ export function HomeBannerContentOverlay({
   ctaLabel,
   variant = "section",
 }: HomeBannerContentOverlayProps) {
-  const cta = ctaLabel?.trim();
+  const isHero = variant === "hero";
+  const cta = isHero ? "" : ctaLabel?.trim();
   const sub = subtitle?.trim();
   const headline = title.trim();
 
   if (!cta && !sub && !headline) return null;
 
-  const isHero = variant === "hero";
-
   return (
     <div
       className={`pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-gradient-to-t from-black/70 via-black/35 to-transparent ${
-        isHero ? "px-3 pb-3 pt-12 sm:px-8 sm:pb-8 sm:pt-24" : "px-3 pb-3 pt-10 sm:px-6 sm:pb-6 sm:pt-16"
+        isHero
+          ? "px-3 pb-10 pt-14 sm:px-8 sm:pb-8 sm:pt-24"
+          : "px-3 pb-3 pt-10 sm:px-6 sm:pb-6 sm:pt-16"
       }`}
     >
       <div className={`max-w-xl ${isHero ? "sm:max-w-2xl" : ""}`}>

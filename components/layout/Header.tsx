@@ -257,7 +257,6 @@ export default function Header() {
     }[]
   >([]);
   const [activeMegaCategorySlug, setActiveMegaCategorySlug] = useState<string | null>(null);
-  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
 
@@ -413,11 +412,9 @@ export default function Header() {
       if (pathname.includes("/products")) {
         router.replace("/products");
       }
-      setShowMobileSearch(false);
       return;
     }
     router.push(`/products?search=${encodeURIComponent(term)}`);
-    setShowMobileSearch(false);
   };
 
   const handleLogin = () => {
@@ -543,30 +540,7 @@ export default function Header() {
                 </button>
               </form>
 
-              <div className="order-3 ms-auto flex shrink-0 items-center gap-1 sm:gap-2 lg:gap-3">
-                <button
-                  onClick={() => setShowMobileSearch(!showMobileSearch)}
-                  className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20 md:hidden"
-                  aria-label={copy.searchButton}
-                >
-                  <Search size={19} />
-                </button>
-
-                <div className="hidden min-[380px]:flex sm:hidden items-center gap-1">
-                  {languageOptions.length > 1 ? (
-                    <LanguageSelector
-                      locale={locale}
-                      label={tAuth("languages.select")}
-                      isRtl={isRtl}
-                      variant="dark"
-                      languages={languageOptions}
-                    />
-                  ) : null}
-                  <CurrencySelector isRtl={isRtl} variant="dark" />
-                </div>
-
-                <div className="hidden h-8 w-px bg-white/25 sm:block" />
-
+              <div className="order-3 ms-auto flex shrink-0 items-center gap-0.5 sm:gap-2 lg:gap-3">
                 {isAuthenticated ? (
                   <div className="relative" ref={accountMenuRef}>
                     <button
@@ -688,41 +662,31 @@ export default function Header() {
               </div>
             </div>
 
-            <AnimatePresence>
-              {showMobileSearch ? (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden pb-1 pt-2 md:hidden"
-                >
-                  <form
-                    onSubmit={handleSearch}
-                    className="relative flex h-11 items-center rounded-lg border border-gray-200 bg-[#f0f0f1] px-3 focus-within:border-primary/40 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/10"
-                  >
-                    <Search className="shrink-0 text-gray-400" size={18} />
-                    <input
-                      value={searchQuery}
-                      onChange={(e) => handleSearchInputChange(e.target.value)}
-                      onFocus={() => setIsSearchFocused(true)}
-                      onBlur={() => setIsSearchFocused(false)}
-                      placeholder={
-                        isSearchFocused || searchQuery
-                          ? copy.mobileSearchPlaceholder
-                          : placeholderText
-                      }
-                      className="min-w-0 flex-1 bg-transparent px-2 text-[15px] font-medium outline-none placeholder:text-gray-400"
-                    />
-                    <button
-                      type="submit"
-                      className="inline-flex h-8 shrink-0 cursor-pointer items-center justify-center rounded-md px-2 text-xs font-bold text-primary"
-                    >
-                      {copy.searchButton}
-                    </button>
-                  </form>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
+            {/* Always-visible mobile search — Digikala/Naheed pattern */}
+            <form
+              onSubmit={handleSearch}
+              className={`relative mt-2 flex h-10 items-center rounded-lg border border-white/20 bg-white px-3 md:hidden ${isRtl ? "flex-row-reverse" : ""}`}
+            >
+              <Search className="shrink-0 text-gray-400" size={17} />
+              <input
+                value={searchQuery}
+                onChange={(e) => handleSearchInputChange(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                placeholder={
+                  isSearchFocused || searchQuery
+                    ? copy.mobileSearchPlaceholder
+                    : placeholderText
+                }
+                className="min-w-0 flex-1 bg-transparent px-2 text-[14px] font-medium text-gray-900 outline-none placeholder:text-gray-400"
+              />
+              <button
+                type="submit"
+                className="inline-flex h-7 shrink-0 cursor-pointer items-center justify-center rounded-md px-2 text-xs font-bold text-[#ec1b23]"
+              >
+                {copy.searchButton}
+              </button>
+            </form>
           </div>
         </header>
 
@@ -823,11 +787,16 @@ export default function Header() {
                 </div>
 
                 <div className="ms-auto xl:hidden">
-                  <MobileNavMenu closeAll={closeAll} isRtl={isRtl} surface="light" />
+                  <MobileNavMenu
+                    closeAll={closeAll}
+                    isRtl={isRtl}
+                    surface="light"
+                    languages={languageOptions}
+                  />
                 </div>
               </div>
 
-              <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto px-1 md:hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto px-0.5 md:hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <button
                   type="button"
                   onClick={() => setShowCategoriesDropdown(!showCategoriesDropdown)}
@@ -839,7 +808,12 @@ export default function Header() {
                 <SecondaryNavLinkMobile href="/deals" pathname={pathname} label={copy.hot} />
                 <SecondaryNavLinkMobile href="/products" pathname={pathname} label={copy.products} />
                 <SecondaryNavLinkMobile href="/vendors" pathname={pathname} label={copy.vendors} />
-                <MobileNavMenu closeAll={closeAll} isRtl={isRtl} surface="light" />
+                <MobileNavMenu
+                  closeAll={closeAll}
+                  isRtl={isRtl}
+                  surface="light"
+                  languages={languageOptions}
+                />
               </div>
             </div>
 
