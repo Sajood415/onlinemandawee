@@ -796,18 +796,20 @@ export default function Header() {
                 </div>
               </div>
 
-              <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto px-0.5 md:hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <button
-                  type="button"
-                  onClick={() => setShowCategoriesDropdown(!showCategoriesDropdown)}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#ec1b23] px-2.5 py-1.5 text-[11px] font-bold text-white"
-                >
-                  <LayoutGrid size={14} />
-                  {copy.categories}
-                </button>
-                <SecondaryNavLinkMobile href="/deals" pathname={pathname} label={copy.hot} />
-                <SecondaryNavLinkMobile href="/products" pathname={pathname} label={copy.products} />
-                <SecondaryNavLinkMobile href="/vendors" pathname={pathname} label={copy.vendors} />
+              <div className="flex min-w-0 flex-1 items-center md:hidden">
+                <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto px-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoriesDropdown(!showCategoriesDropdown)}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#ec1b23] px-2.5 py-1.5 text-[11px] font-bold text-white"
+                  >
+                    <LayoutGrid size={14} />
+                    {copy.categories}
+                  </button>
+                  <SecondaryNavLinkMobile href="/deals" pathname={pathname} label={copy.hot} />
+                  <SecondaryNavLinkMobile href="/products" pathname={pathname} label={copy.products} />
+                  <SecondaryNavLinkMobile href="/vendors" pathname={pathname} label={copy.vendors} />
+                </div>
                 <MobileNavMenu
                   closeAll={closeAll}
                   isRtl={isRtl}

@@ -18,11 +18,14 @@ import {
 import { useLocale, useTranslations } from "next-intl";
 
 import { headerCopy } from "@/components/layout/header/header-copy";
-import { CurrencySelector } from "@/components/layout/header/CurrencySelector";
-import { LanguageSelector } from "@/components/layout/header/LanguageSelector";
-import { Link as LocaleLink } from "@/i18n/navigation";
+import { Link as LocaleLink, usePathname, useRouter } from "@/i18n/navigation";
+import {
+  CURRENCY_SYMBOLS,
+  type SupportedCurrency,
+} from "@/lib/currency/constants";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { useAuth } from "@/store/auth-context";
+import { useCurrency } from "@/store/currency-context";
 
 type MobileNavMenuProps = {
   closeAll: () => void;
@@ -43,6 +46,9 @@ export function MobileNavMenu({
   const copy = headerCopy[safeLocale];
   const tAuth = useTranslations("Auth");
   const { isAuthenticated, user, logout } = useAuth();
+  const { currency, availableCurrencies, setCurrency } = useCurrency();
+  const router = useRouter();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -89,7 +95,8 @@ export function MobileNavMenu({
         ? tAuth("accountMenu.vendorDashboard")
         : tAuth("accountMenu.myAccount");
 
-  const showLocaleRow = languages.length > 1;
+  const showLanguages = languages.length > 1;
+  const showCurrencies = availableCurrencies.length > 1;
 
   return (
     <div className="relative flex h-9 shrink-0 items-center" ref={menuRef}>
@@ -114,30 +121,79 @@ export function MobileNavMenu({
       </button>
 
       <AnimatePresence>
-        {isOpen && (
+        {isOpen ? (
           <motion.div
             initial={{ opacity: 0, y: 8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className={`absolute top-full z-[1002] mt-2 w-56 max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-gray-100 bg-white shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] sm:w-52 ${
-              isRtl ? "left-0" : "right-0"
-            }`}
+            className="absolute end-0 top-full z-[10050] mt-2 max-h-[min(70dvh,28rem)] w-64 max-w-[calc(100vw-1rem)] overflow-y-auto rounded-xl border border-gray-100 bg-white shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)]"
             style={{ transformOrigin: isRtl ? "top left" : "top right" }}
           >
             <div className="p-2">
-              <div className="mb-2 flex flex-wrap items-center gap-1 border-b border-gray-100 px-1 pb-2">
-                {showLocaleRow ? (
-                  <LanguageSelector
-                    locale={locale}
-                    label={tAuth("languages.select")}
-                    isRtl={isRtl}
-                    variant="default"
-                    languages={languages}
-                  />
-                ) : null}
-                <CurrencySelector isRtl={isRtl} variant="default" />
-              </div>
+              {showLanguages ? (
+                <div className="mb-2 border-b border-gray-100 px-1 pb-2">
+                  <p className="px-2 py-1.5 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                    {tAuth("languages.select")}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 px-1">
+                    {languages.map((language) => {
+                      const active = locale === language.code;
+                      return (
+                        <button
+                          key={language.code}
+                          type="button"
+                          onClick={() => {
+                            router.replace(pathname, { locale: language.code });
+                            setIsOpen(false);
+                            closeAll();
+                          }}
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold transition-colors ${
+                            active
+                              ? "bg-[#ec1b23] text-white"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
+                        >
+                          <span aria-hidden>{language.flag}</span>
+                          <span>{language.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              {showCurrencies ? (
+                <div className="mb-2 border-b border-gray-100 px-1 pb-2">
+                  <p className="px-2 py-1.5 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                    {tAuth("currencies.select")}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 px-1">
+                    {availableCurrencies.map((code) => {
+                      const active = currency === code;
+                      return (
+                        <button
+                          key={code}
+                          type="button"
+                          onClick={() => {
+                            setCurrency(code as SupportedCurrency);
+                            setIsOpen(false);
+                            closeAll();
+                          }}
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold transition-colors ${
+                            active
+                              ? "bg-[#ec1b23] text-white"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
+                        >
+                          <span>{CURRENCY_SYMBOLS[code as SupportedCurrency]}</span>
+                          <span>{code}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
 
               {isAuthenticated ? (
                 <div className="mb-2 border-b border-gray-100 pb-2">
@@ -228,7 +284,7 @@ export function MobileNavMenu({
               ))}
             </div>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>
   );
