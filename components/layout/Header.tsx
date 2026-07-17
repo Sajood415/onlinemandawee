@@ -181,32 +181,6 @@ function SecondaryNavLink({
   );
 }
 
-function SecondaryNavLinkMobile({
-  href,
-  pathname,
-  label,
-}: {
-  href: string;
-  pathname: string;
-  label: string;
-}) {
-  const active = isNavLinkActive(pathname, href);
-
-  return (
-    <Link
-      href={href}
-      aria-current={active ? "page" : undefined}
-      className={`relative inline-flex px-2 py-2 text-[11px] font-medium whitespace-nowrap transition-colors after:absolute after:inset-x-1 after:bottom-0.5 after:h-[2px] after:rounded-full after:bg-[#ec1b23] after:transition-transform after:duration-200 ${
-        active
-          ? "font-semibold text-[#ec1b23] after:scale-x-100"
-          : "text-gray-600 after:scale-x-0 hover:text-gray-900 hover:after:scale-x-100"
-      }`}
-    >
-      {label}
-    </Link>
-  );
-}
-
 export default function Header() {
   const t = useTranslations("Homepage.navbar");
   const tAuth = useTranslations("Auth");
@@ -541,6 +515,15 @@ export default function Header() {
               </form>
 
               <div className="order-3 ms-auto flex shrink-0 items-center gap-0.5 sm:gap-2 lg:gap-3">
+                <div className="md:hidden">
+                  <MobileNavMenu
+                    closeAll={closeAll}
+                    isRtl={isRtl}
+                    surface="dark"
+                    languages={languageOptions}
+                  />
+                </div>
+
                 {isAuthenticated ? (
                   <div className="relative" ref={accountMenuRef}>
                     <button
@@ -694,7 +677,7 @@ export default function Header() {
           <nav
             ref={categoriesRef}
             dir={isRtl ? "rtl" : "ltr"}
-            className="relative z-[9997] border-b border-gray-200 bg-white"
+            className="relative z-[9997] hidden border-b border-gray-200 bg-white md:block"
             onMouseLeave={() => setShowCategoriesDropdown(false)}
           >
             <div className="flex h-11 w-full items-center gap-2 px-2 sm:px-3 lg:px-4">
@@ -706,6 +689,7 @@ export default function Header() {
                 <span>{copy.trackOrder}</span>
               </LocaleLink>
 
+              {/* Desktop / tablet secondary nav — mobile uses bottom bar */}
               <div className="hidden min-w-0 flex-1 items-center md:flex">
                 <button
                   type="button"
@@ -794,28 +778,6 @@ export default function Header() {
                     languages={languageOptions}
                   />
                 </div>
-              </div>
-
-              <div className="flex min-w-0 flex-1 items-center md:hidden">
-                <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto px-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <button
-                    type="button"
-                    onClick={() => setShowCategoriesDropdown(!showCategoriesDropdown)}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#ec1b23] px-2.5 py-1.5 text-[11px] font-bold text-white"
-                  >
-                    <LayoutGrid size={14} />
-                    {copy.categories}
-                  </button>
-                  <SecondaryNavLinkMobile href="/deals" pathname={pathname} label={copy.hot} />
-                  <SecondaryNavLinkMobile href="/products" pathname={pathname} label={copy.products} />
-                  <SecondaryNavLinkMobile href="/vendors" pathname={pathname} label={copy.vendors} />
-                </div>
-                <MobileNavMenu
-                  closeAll={closeAll}
-                  isRtl={isRtl}
-                  surface="light"
-                  languages={languageOptions}
-                />
               </div>
             </div>
 
