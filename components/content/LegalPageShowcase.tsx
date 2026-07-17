@@ -40,15 +40,18 @@ function replaceContactTokens(text: string) {
 
 function SectionBody({ section }: { section: LegalSection }) {
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       {section.paragraphs?.map((paragraph) => (
-        <p key={paragraph} className="text-sm leading-relaxed text-neutral-600 sm:text-[15px]">
+        <p
+          key={paragraph}
+          className="break-words text-sm leading-relaxed text-neutral-600 sm:text-[15px]"
+        >
           {replaceContactTokens(paragraph)}
         </p>
       ))}
 
       {section.bullets && section.bullets.length > 0 ? (
-        <ul className="list-disc space-y-2 ps-5 text-sm leading-relaxed text-neutral-600 sm:text-[15px]">
+        <ul className="list-disc space-y-2 break-words ps-5 text-sm leading-relaxed text-neutral-600 sm:text-[15px]">
           {section.bullets.map((bullet) => (
             <li key={bullet}>{replaceContactTokens(bullet)}</li>
           ))}
@@ -56,15 +59,23 @@ function SectionBody({ section }: { section: LegalSection }) {
       ) : null}
 
       {section.subsections?.map((subsection) => (
-        <div key={subsection.title} className="space-y-2 border-s-2 border-[#0F3460]/25 ps-4">
-          <h3 className="text-sm font-semibold text-neutral-900 sm:text-base">{subsection.title}</h3>
+        <div
+          key={subsection.title}
+          className="min-w-0 space-y-2 border-s-2 border-[#0F3460]/25 ps-4"
+        >
+          <h3 className="break-words text-sm font-semibold text-neutral-900 sm:text-base">
+            {subsection.title}
+          </h3>
           {subsection.paragraphs?.map((paragraph) => (
-            <p key={paragraph} className="text-sm leading-relaxed text-neutral-600 sm:text-[15px]">
+            <p
+              key={paragraph}
+              className="break-words text-sm leading-relaxed text-neutral-600 sm:text-[15px]"
+            >
               {replaceContactTokens(paragraph)}
             </p>
           ))}
           {subsection.bullets && subsection.bullets.length > 0 ? (
-            <ul className="list-disc space-y-2 ps-5 text-sm leading-relaxed text-neutral-600 sm:text-[15px]">
+            <ul className="list-disc space-y-2 break-words ps-5 text-sm leading-relaxed text-neutral-600 sm:text-[15px]">
               {subsection.bullets.map((bullet) => (
                 <li key={bullet}>{replaceContactTokens(bullet)}</li>
               ))}
@@ -104,10 +115,10 @@ export function LegalPageShowcase({ pageKey }: LegalPageShowcaseProps) {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
             MandawEE · {t("eyebrow")}
           </p>
-          <h1 className="mt-3 max-w-3xl text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+          <h1 className="mt-3 max-w-3xl break-words text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
             {t("title")}
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">
+          <p className="mt-3 max-w-2xl break-words text-sm leading-relaxed text-white/80 sm:text-base">
             {t("subtitle")}
           </p>
           <p className="mt-4 text-xs text-white/55">
@@ -116,19 +127,19 @@ export function LegalPageShowcase({ pageKey }: LegalPageShowcaseProps) {
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-[1540px] px-4 py-8 sm:px-6 sm:py-10">
-        <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)]">
-          <aside className="lg:sticky lg:top-24 lg:self-start">
-            <div className="border border-neutral-200/80 bg-white px-4 py-4 sm:px-5">
+      <div className="mx-auto w-full min-w-0 max-w-[1540px] px-4 py-8 sm:px-6 sm:py-10">
+        <div className="grid min-w-0 gap-8 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)]">
+          <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+            <div className="min-w-0 border border-neutral-200/80 bg-white px-4 py-4 sm:px-5">
               <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
                 {tShared("onThisPage")}
               </h2>
-              <nav className="-mx-1 flex gap-2 overflow-x-auto pb-1 lg:mx-0 lg:block lg:space-y-1.5 lg:overflow-visible lg:pb-0">
+              <nav className="flex min-w-0 flex-wrap gap-2 lg:block lg:space-y-1.5">
                 {sections.map((section) => (
                   <a
                     key={section.id}
                     href={`#${section.id}`}
-                    className="inline-flex shrink-0 whitespace-nowrap border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-600 transition hover:border-[#0F3460]/30 hover:text-[#0F3460] lg:block lg:border-0 lg:bg-transparent lg:px-0 lg:py-0.5 lg:whitespace-normal"
+                    className="inline-flex max-w-full break-words border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-600 transition hover:border-[#0F3460]/30 hover:text-[#0F3460] lg:block lg:border-0 lg:bg-transparent lg:px-0 lg:py-0.5"
                   >
                     {section.title}
                   </a>
@@ -137,16 +148,18 @@ export function LegalPageShowcase({ pageKey }: LegalPageShowcaseProps) {
             </div>
           </aside>
 
-          <div className="min-w-0 border border-neutral-200/80 bg-white">
+          <div className="min-w-0 max-w-full border border-neutral-200/80 bg-white">
             {sections.map((section, index) => (
               <section
                 key={section.id}
                 id={section.id}
-                className={`scroll-mt-24 px-4 py-6 sm:px-6 sm:py-7 ${
+                className={`min-w-0 scroll-mt-24 px-4 py-6 sm:px-6 sm:py-7 ${
                   index < sections.length - 1 ? "border-b border-neutral-100" : ""
                 }`}
               >
-                <h2 className="mb-4 text-lg font-bold text-neutral-900 sm:text-xl">{section.title}</h2>
+                <h2 className="mb-4 break-words text-lg font-bold text-neutral-900 sm:text-xl">
+                  {section.title}
+                </h2>
                 <SectionBody section={section} />
               </section>
             ))}
