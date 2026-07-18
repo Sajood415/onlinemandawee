@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Check,
   ChevronDown,
   ChevronUp,
   Loader2,
@@ -9,16 +10,17 @@ import {
   RefreshCw,
   Search,
 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
+import { VendorConfirmDialog } from "@/components/vendor/products/VendorConfirmDialog";
 import { useClientPagination } from "@/hooks/use-client-pagination";
+import { Link } from "@/i18n/navigation";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { resolveVendorOrderDeliveredAtIso } from "@/lib/orders/resolve-vendor-order-delivered-at";
 import { toast } from "@/lib/utils/toast";
-
-/* ─── Types ──────────────────────────────────────────────────────────── */
 
 type OrderItem = {
   id: string;
@@ -40,16 +42,11 @@ type VendorOrderStatus =
   | "SHIPPED"
   | "DELIVERED"
   | "CANCELLED";
-type WarehouseInboundShipmentStatus = "PENDING_SHIPMENT" | "INBOUND_SHIPPED" | "RECEIVED";
-type ConsolidationBatchStatus =
-  | "OPEN"
-  | "PARTIALLY_RECEIVED"
-  | "READY_TO_CONSOLIDATE"
-  | "CONSOLIDATED"
-  | "OUTBOUND_SHIPPED"
-  | "DELIVERED"
-  | "CANCELLED";
-type OutboundShipmentStatus = "CONSOLIDATED" | "OUTBOUND_SHIPPED" | "DELIVERED";
+
+type WarehouseInboundShipmentStatus =
+  | "PENDING_SHIPMENT"
+  | "INBOUND_SHIPPED"
+  | "RECEIVED";
 
 type VendorOrder = {
   id: string;
@@ -86,96 +83,50 @@ type VendorOrder = {
       trackingRef: string | null;
       shippedAt: string | null;
       receivedAt: string | null;
-      createdAt: string;
-      updatedAt: string;
     } | null;
     batch: {
       id: string;
-      status: ConsolidationBatchStatus;
+      status: string;
       expectedVendorCount: number;
       receivedVendorCount: number;
       readyToConsolidateAt: string | null;
-      createdAt: string;
-      updatedAt: string;
     } | null;
     outboundShipment: {
       id: string;
-      status: OutboundShipmentStatus;
+      status: string;
       trackingRef: string | null;
       consolidatedAt: string | null;
       shippedAt: string | null;
       deliveredAt: string | null;
-      createdAt: string;
-      updatedAt: string;
     } | null;
   };
   items: OrderItem[];
 };
 
-/* ─── Helpers ────────────────────────────────────────────────────────── */
-
 const STATUS_COLORS: Record<VendorOrderStatus, string> = {
-  NEW: "bg-blue-50 text-blue-700 border border-blue-200",
-  PREPARING: "bg-yellow-50 text-yellow-700 border border-yellow-200",
-  INBOUND_SHIPPED: "bg-cyan-50 text-cyan-700 border border-cyan-200",
-  RECEIVED_AT_WAREHOUSE: "bg-indigo-50 text-indigo-700 border border-indigo-200",
-  SHIPPED: "bg-cyan-50 text-cyan-700 border border-cyan-200",
-  DELIVERED: "bg-green-50 text-green-700 border border-green-200",
-  CANCELLED: "bg-red-50 text-red-700 border border-red-200",
+  NEW: "bg-blue-50 text-blue-700 ring-blue-200",
+  PREPARING: "bg-amber-50 text-amber-800 ring-amber-200",
+  INBOUND_SHIPPED: "bg-cyan-50 text-cyan-800 ring-cyan-200",
+  RECEIVED_AT_WAREHOUSE: "bg-indigo-50 text-indigo-700 ring-indigo-200",
+  SHIPPED: "bg-sky-50 text-sky-800 ring-sky-200",
+  DELIVERED: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  CANCELLED: "bg-red-50 text-red-700 ring-red-200",
 };
 
-const STATUS_LABELS: Record<VendorOrderStatus, string> = {
-  NEW: "New",
-  PREPARING: "Preparing",
-  INBOUND_SHIPPED: "Inbound Shipped",
-  RECEIVED_AT_WAREHOUSE: "Received At Warehouse",
-  SHIPPED: "Shipped",
-  DELIVERED: "Delivered",
-  CANCELLED: "Cancelled",
-};
+const FILTER_STATUSES: Array<VendorOrderStatus | "ALL"> = [
+  "ALL",
+  "NEW",
+  "PREPARING",
+  "INBOUND_SHIPPED",
+  "RECEIVED_AT_WAREHOUSE",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+];
 
-// Allowed transitions from each status (non-standard flow)
-const NEXT_STATUSES: Record<VendorOrderStatus, VendorOrderStatus[]> = {
-  NEW: ["PREPARING", "CANCELLED"],
-  PREPARING: ["SHIPPED", "CANCELLED"],
-  INBOUND_SHIPPED: [],
-  RECEIVED_AT_WAREHOUSE: [],
-  SHIPPED: ["DELIVERED"],
-  DELIVERED: [],
-  CANCELLED: [],
-};
-
-const NEXT_STATUS_LABELS: Record<VendorOrderStatus, string> = {
-  NEW: "New",
-  PREPARING: "Accept & Prepare",
-  INBOUND_SHIPPED: "Inbound Shipped",
-  RECEIVED_AT_WAREHOUSE: "Received At Warehouse",
-  SHIPPED: "Mark Shipped",
-  DELIVERED: "Mark Delivered",
-  CANCELLED: "Cancel Order",
-};
-
-const NEXT_STATUS_COLORS: Record<VendorOrderStatus, string> = {
-  NEW: "bg-gray-100 text-gray-600",
-  PREPARING: "bg-indigo-600 text-white hover:bg-indigo-700",
-  INBOUND_SHIPPED: "bg-cyan-50 text-cyan-700",
-  RECEIVED_AT_WAREHOUSE: "bg-indigo-50 text-indigo-700",
-  SHIPPED: "bg-cyan-600 text-white hover:bg-cyan-700",
-  DELIVERED: "bg-green-600 text-white hover:bg-green-700",
-  CANCELLED: "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100",
-};
-
-const PAYMENT_STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-yellow-50 text-yellow-700",
-  PAID: "bg-green-50 text-green-700",
-  UNPAID: "bg-orange-50 text-orange-700",
-  PARTIALLY_REFUNDED: "bg-orange-50 text-orange-700",
-  FULLY_REFUNDED: "bg-red-50 text-red-700",
-};
-
-function formatCurrency(amount: number, currency: string) {
+function formatCurrency(amount: number, currency: string, locale: string) {
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency,
       minimumFractionDigits: 0,
@@ -186,19 +137,19 @@ function formatCurrency(amount: number, currency: string) {
   }
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
+function formatDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale, {
     year: "numeric",
     month: "short",
     day: "numeric",
   });
 }
 
-function formatDateTime(iso: string | null) {
+function formatDateTime(iso: string | null, locale: string) {
   if (!iso) return "—";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString("en-US", {
+  return date.toLocaleString(locale, {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -207,38 +158,261 @@ function formatDateTime(iso: string | null) {
   });
 }
 
-function warehouseStatusClass(status: string) {
-  if (status === "RECEIVED" || status === "DELIVERED") return "bg-emerald-50 text-emerald-700";
-  if (status === "READY_TO_CONSOLIDATE" || status === "CONSOLIDATED")
-    return "bg-blue-50 text-blue-700";
-  if (status === "INBOUND_SHIPPED" || status === "OUTBOUND_SHIPPED")
-    return "bg-cyan-50 text-cyan-700";
-  if (status === "PARTIALLY_RECEIVED") return "bg-amber-50 text-amber-700";
-  if (status === "CANCELLED") return "bg-rose-50 text-rose-700";
-  return "bg-neutral-100 text-neutral-700";
+function isStandardWorkflow(order: VendorOrder) {
+  return order.deliveryMethod === "STANDARD" && order.sellerType === "THIRD_PARTY";
 }
 
-/* ─── Status Change Buttons ──────────────────────────────────────────── */
-
-function StatusActions({
+function WarehouseProgress({
   order,
-  isStandardWorkflow,
-  onStatusChange,
+  locale,
 }: {
   order: VendorOrder;
-  isStandardWorkflow: boolean;
-  onStatusChange: (vendorOrderId: string, status: VendorOrderStatus) => Promise<void>;
+  locale: string;
 }) {
-  const [updating, setUpdating] = useState<VendorOrderStatus | null>(null);
-  if (isStandardWorkflow) return null;
-  const nextStatuses = NEXT_STATUSES[order.status];
+  const t = useTranslations("VendorPages.orders");
+  const inbound = order.warehouse.inboundShipment;
+  const batch = order.warehouse.batch;
+  const outbound = order.warehouse.outboundShipment;
 
-  if (nextStatuses.length === 0) return null;
+  let step1Detail = t("warehouse.waitingSend");
+  if (inbound?.status === "INBOUND_SHIPPED") {
+    step1Detail = t("warehouse.onTheWayToWarehouse");
+  } else if (inbound?.status === "RECEIVED") {
+    step1Detail = t("warehouse.receivedAtWarehouse");
+  }
 
-  const handleChange = async (status: VendorOrderStatus) => {
-    if (status === "CANCELLED") {
-      if (!confirm(`Cancel order #${order.order.orderNumber}? This cannot be undone.`)) return;
+  let step2Detail = t("warehouse.notStarted");
+  if (batch) {
+    if (batch.status === "PARTIALLY_RECEIVED" || batch.status === "OPEN") {
+      step2Detail = t("warehouse.waitingOtherVendors", {
+        received: batch.receivedVendorCount,
+        expected: batch.expectedVendorCount,
+      });
+    } else if (
+      batch.status === "READY_TO_CONSOLIDATE" ||
+      batch.status === "CONSOLIDATED"
+    ) {
+      step2Detail = t("warehouse.packingTogether");
+    } else if (
+      batch.status === "OUTBOUND_SHIPPED" ||
+      batch.status === "DELIVERED"
+    ) {
+      step2Detail = t("warehouse.readyToShip");
+    } else {
+      step2Detail = t("warehouse.packingTogether");
     }
+  } else if (inbound?.status === "RECEIVED") {
+    step2Detail = t("warehouse.receivedAtWarehouse");
+  }
+
+  let step3Detail = t("warehouse.notStarted");
+  if (outbound?.status === "OUTBOUND_SHIPPED") {
+    step3Detail = t("warehouse.onTheWayToCustomer");
+  } else if (outbound?.status === "DELIVERED" || order.status === "DELIVERED") {
+    step3Detail = t("warehouse.deliveredToCustomer");
+  } else if (outbound?.status === "CONSOLIDATED") {
+    step3Detail = t("warehouse.readyToShip");
+  }
+
+  const step1Done =
+    inbound?.status === "RECEIVED" ||
+    Boolean(inbound?.receivedAt) ||
+    order.status === "RECEIVED_AT_WAREHOUSE" ||
+    order.status === "DELIVERED";
+  const step1Active =
+    !step1Done &&
+    (inbound?.status === "INBOUND_SHIPPED" ||
+      order.status === "INBOUND_SHIPPED");
+  const step2Done =
+    Boolean(outbound) ||
+    batch?.status === "OUTBOUND_SHIPPED" ||
+    batch?.status === "DELIVERED" ||
+    order.status === "DELIVERED";
+  const step2Active = step1Done && !step2Done;
+  const step3Done =
+    outbound?.status === "DELIVERED" || order.status === "DELIVERED";
+  const step3Active = step2Done && !step3Done;
+
+  const steps = [
+    {
+      title: t("warehouse.step1Title"),
+      detail: step1Detail,
+      active: step1Active,
+      done: step1Done,
+      meta: [
+        inbound?.trackingRef
+          ? t("warehouse.tracking", { ref: inbound.trackingRef })
+          : null,
+        inbound?.shippedAt
+          ? t("warehouse.sent", {
+              date: formatDateTime(inbound.shippedAt, locale),
+            })
+          : null,
+        inbound?.receivedAt
+          ? t("warehouse.received", {
+              date: formatDateTime(inbound.receivedAt, locale),
+            })
+          : null,
+      ].filter(Boolean) as string[],
+    },
+    {
+      title: t("warehouse.step2Title"),
+      detail: step2Detail,
+      active: step2Active,
+      done: step2Done,
+      meta: [
+        batch?.readyToConsolidateAt
+          ? t("warehouse.ready", {
+              date: formatDateTime(batch.readyToConsolidateAt, locale),
+            })
+          : null,
+      ].filter(Boolean) as string[],
+    },
+    {
+      title: t("warehouse.step3Title"),
+      detail: step3Detail,
+      active: step3Active,
+      done: step3Done,
+      meta: [
+        outbound?.trackingRef
+          ? t("warehouse.tracking", { ref: outbound.trackingRef })
+          : null,
+        outbound?.shippedAt
+          ? t("warehouse.shipped", {
+              date: formatDateTime(outbound.shippedAt, locale),
+            })
+          : null,
+        outbound?.deliveredAt
+          ? t("warehouse.delivered", {
+              date: formatDateTime(outbound.deliveredAt, locale),
+            })
+          : null,
+      ].filter(Boolean) as string[],
+    },
+  ];
+
+  return (
+    <section className="rounded-2xl border border-primary/10 bg-linear-to-b from-primary/4 to-white p-4 sm:p-5">
+      <h3 className="text-sm font-semibold text-neutral-900">
+        {t("warehouse.title")}
+      </h3>
+      <ol className="mt-4 grid gap-0 sm:grid-cols-3">
+        {steps.map((step, index) => (
+          <li
+            key={step.title}
+            className="relative flex gap-3 sm:flex-col sm:px-2 sm:text-center"
+          >
+            {index < steps.length - 1 ? (
+              <span
+                aria-hidden
+                className={`absolute inset-s-3 top-7 hidden h-[calc(100%-1.75rem)] w-px sm:inset-s-auto sm:top-3 sm:left-[calc(50%+1.25rem)] sm:block sm:h-px sm:w-[calc(100%-2.5rem)] ${
+                  step.done ? "bg-emerald-400" : "bg-neutral-200"
+                }`}
+              />
+            ) : null}
+            {index < steps.length - 1 ? (
+              <span
+                aria-hidden
+                className={`absolute inset-s-3 top-7 h-[calc(100%-0.5rem)] w-px sm:hidden ${
+                  step.done ? "bg-emerald-400" : "bg-neutral-200"
+                }`}
+              />
+            ) : null}
+            <span
+              className={`relative z-1 mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold sm:mx-auto ${
+                step.done
+                  ? "bg-emerald-500 text-white"
+                  : step.active
+                    ? "bg-primary text-white ring-4 ring-primary/15"
+                    : "bg-white text-neutral-400 ring-1 ring-neutral-200"
+              }`}
+            >
+              {step.done ? <Check size={14} strokeWidth={3} /> : index + 1}
+            </span>
+            <div className="min-w-0 flex-1 pb-4 sm:pb-0 sm:pt-2">
+              <p
+                className={`text-sm font-semibold ${
+                  step.active || step.done
+                    ? "text-neutral-900"
+                    : "text-neutral-500"
+                }`}
+              >
+                {step.title}
+              </p>
+              <p className="mt-0.5 text-sm text-neutral-600">{step.detail}</p>
+              {step.meta.length > 0 ? (
+                <div className="mt-2 space-y-0.5 text-xs text-neutral-500 sm:mx-auto sm:max-w-56">
+                  {step.meta.map((line) => (
+                    <p key={line}>{line}</p>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function OrderRow({
+  order,
+  locale,
+  onStatusChange,
+  onRequestCancel,
+  onInboundShip,
+}: {
+  order: VendorOrder;
+  locale: string;
+  onStatusChange: (
+    vendorOrderId: string,
+    status: VendorOrderStatus
+  ) => Promise<void>;
+  onRequestCancel: (order: VendorOrder) => void;
+  onInboundShip: (vendorOrderId: string, trackingRef?: string) => Promise<void>;
+}) {
+  const t = useTranslations("VendorPages.orders");
+  const [expanded, setExpanded] = useState(false);
+  const [trackingRef, setTrackingRef] = useState(
+    order.warehouse.inboundShipment?.trackingRef ?? ""
+  );
+  const [submitting, setSubmitting] = useState(false);
+  const [updating, setUpdating] = useState<VendorOrderStatus | null>(null);
+
+  const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  const standard = isStandardWorkflow(order);
+  const cancelledByCustomer =
+    order.status === "CANCELLED" && order.order.cancelledByRole === "CUSTOMER";
+
+  const deliveredAt = resolveVendorOrderDeliveredAtIso({
+    status: order.status,
+    deliveredAt: order.deliveredAt,
+    outboundDeliveredAt: order.warehouse.outboundShipment?.deliveredAt,
+    statusChangedAt: order.updatedAt,
+  });
+
+  const alreadySentToWarehouse =
+    order.status === "INBOUND_SHIPPED" ||
+    order.status === "RECEIVED_AT_WAREHOUSE" ||
+    order.warehouse.inboundShipment?.status === "INBOUND_SHIPPED" ||
+    order.warehouse.inboundShipment?.status === "RECEIVED";
+
+  const canSendToWarehouse =
+    standard &&
+    !alreadySentToWarehouse &&
+    (order.status === "NEW" || order.status === "PREPARING");
+
+  const canCancel =
+    order.status === "NEW" || order.status === "PREPARING";
+
+  const needsYou =
+    canSendToWarehouse ||
+    (!standard &&
+      (order.status === "NEW" ||
+        order.status === "PREPARING" ||
+        order.status === "SHIPPED"));
+
+  const runStatus = async (status: VendorOrderStatus) => {
     setUpdating(status);
     try {
       await onStatusChange(order.id, status);
@@ -247,480 +421,408 @@ function StatusActions({
     }
   };
 
-  return (
-    <div className="flex flex-wrap gap-2 pt-2">
-      {nextStatuses.map((s) => (
-        <button
-          key={s}
-          disabled={!!updating}
-          onClick={(e) => { e.stopPropagation(); void handleChange(s); }}
-          className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-colors disabled:opacity-50 ${NEXT_STATUS_COLORS[s]}`}
-        >
-          {updating === s ? <Loader2 size={13} className="animate-spin" /> : null}
-          {NEXT_STATUS_LABELS[s]}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function StandardWarehouseActions({
-  order,
-  onInboundShip,
-}: {
-  order: VendorOrder;
-  onInboundShip: (vendorOrderId: string, trackingRef?: string) => Promise<void>;
-}) {
-  const [trackingRef, setTrackingRef] = useState(order.warehouse.inboundShipment?.trackingRef ?? "");
-  const [submitting, setSubmitting] = useState(false);
-  const isStandardWorkflow =
-    order.deliveryMethod === "STANDARD" && order.sellerType === "THIRD_PARTY";
-  if (!isStandardWorkflow) return null;
-
-  const alreadySubmitted =
-    order.status === "INBOUND_SHIPPED" ||
-    order.status === "RECEIVED_AT_WAREHOUSE" ||
-    order.warehouse.inboundShipment?.status === "INBOUND_SHIPPED" ||
-    order.warehouse.inboundShipment?.status === "RECEIVED";
-
-  const canSubmit =
-    !alreadySubmitted && (order.status === "NEW" || order.status === "PREPARING");
-
-  const handleSubmit = async () => {
-    setSubmitting(true);
-    try {
-      await onInboundShip(order.id, trackingRef.trim() || undefined);
-    } finally {
-      setSubmitting(false);
-    }
+  const paymentLabels: Record<string, string> = {
+    PENDING: t("payment.PENDING"),
+    PAID: t("payment.PAID"),
+    UNPAID: t("payment.UNPAID"),
+    PARTIALLY_REFUNDED: t("payment.PARTIALLY_REFUNDED"),
+    REFUNDED: t("payment.REFUNDED"),
+    FULLY_REFUNDED: t("payment.FULLY_REFUNDED"),
   };
 
   return (
-    <div className="rounded-xl border border-cyan-200 bg-cyan-50/60 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wider text-cyan-700">
-        Standard Warehouse Action
-      </p>
-      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end">
-        <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-cyan-800">
-            Tracking reference (optional)
-          </label>
-          <input
-            value={trackingRef}
-            onChange={(event) => setTrackingRef(event.target.value)}
-            disabled={!canSubmit || submitting}
-            placeholder="AWB / Waybill / Internal reference"
-            className="w-full rounded-lg border border-cyan-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-cyan-400"
-          />
-        </div>
-        <button
-          type="button"
-          onClick={() => void handleSubmit()}
-          disabled={!canSubmit || submitting}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {submitting ? <Loader2 size={14} className="animate-spin" /> : null}
-          Send To Warehouse
-        </button>
-      </div>
-
-      {alreadySubmitted ? (
-        <div className="mt-3 space-y-1 text-xs text-cyan-900">
-          <p>
-            Shipment status:{" "}
-            <span className="font-semibold">
-              {order.warehouse.inboundShipment?.status ?? "INBOUND_SHIPPED"}
-            </span>
-          </p>
-          <p>
-            Tracking:{" "}
-            <span className="font-semibold">{order.warehouse.inboundShipment?.trackingRef ?? "—"}</span>
-          </p>
-          <p>
-            Sent at:{" "}
-            <span className="font-semibold">
-              {formatDateTime(order.warehouse.inboundShipment?.shippedAt ?? null)}
-            </span>
-          </p>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-/* ─── Order Row Component ────────────────────────────────────────────── */
-
-function OrderRow({
-  order,
-  onStatusChange,
-  onInboundShip,
-}: {
-  order: VendorOrder;
-  onStatusChange: (vendorOrderId: string, status: VendorOrderStatus) => Promise<void>;
-  onInboundShip: (vendorOrderId: string, trackingRef?: string) => Promise<void>;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const totalItems = order.items.reduce((s, i) => s + i.quantity, 0);
-  const isStandardWorkflow =
-    order.deliveryMethod === "STANDARD" && order.sellerType === "THIRD_PARTY";
-  const isCancelledByCustomer =
-    order.status === "CANCELLED" && order.order.cancelledByRole === "CUSTOMER";
-  const warehouseTimeline = [
-    {
-      key: "preparing",
-      label: "Preparing",
-      at:
-        order.status === "PREPARING" ||
-        order.status === "INBOUND_SHIPPED" ||
-        order.status === "RECEIVED_AT_WAREHOUSE" ||
-        order.status === "DELIVERED"
-          ? order.updatedAt
-          : null,
-    },
-    {
-      key: "inbound-shipped",
-      label: "Inbound Shipped",
-      at: order.warehouse.inboundShipment?.shippedAt ?? null,
-    },
-    {
-      key: "received",
-      label: "Received At Warehouse",
-      at: order.warehouse.inboundShipment?.receivedAt ?? null,
-    },
-    {
-      key: "batch-ready",
-      label: "Ready To Consolidate",
-      at: order.warehouse.batch?.readyToConsolidateAt ?? null,
-    },
-    {
-      key: "consolidated",
-      label: "Consolidated",
-      at: order.warehouse.outboundShipment?.consolidatedAt ?? null,
-    },
-    {
-      key: "outbound-shipped",
-      label: "Outbound Shipped",
-      at: order.warehouse.outboundShipment?.shippedAt ?? null,
-    },
-    {
-      key: "delivered",
-      label: "Delivered",
-      at: order.warehouse.outboundShipment?.deliveredAt ?? null,
-    },
-  ];
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-shadow hover:shadow-md">
-      {/* Header row — click to expand */}
+    <article
+      className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:shadow-md ${
+        needsYou ? "border-amber-200" : "border-neutral-200"
+      }`}
+    >
       <button
+        type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full text-left px-6 py-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0"
+        className="flex w-full flex-col gap-3 px-4 py-4 text-start sm:flex-row sm:items-center sm:gap-4 sm:px-5"
       >
-        {/* Order number + date */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="font-semibold text-[#0f3460] text-sm">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold text-primary">
               #{order.order.orderNumber}
             </span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[order.status] ?? "bg-gray-100 text-gray-600"}`}>
-              {STATUS_LABELS[order.status] ?? order.status}
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${STATUS_COLORS[order.status]}`}
+            >
+              {t(`statuses.${order.status}`)}
             </span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${PAYMENT_STATUS_COLORS[order.order.paymentStatus] ?? "bg-gray-100 text-gray-600"}`}>
-              {order.order.paymentStatus.replace(/_/g, " ")}
+            <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-700">
+              {paymentLabels[order.order.paymentStatus] ??
+                order.order.paymentStatus.replaceAll("_", " ")}
             </span>
-            {isStandardWorkflow ? (
-              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
-                Standard warehouse
+            {standard ? (
+              <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-700 ring-1 ring-indigo-200">
+                {t("standardBadge")}
+              </span>
+            ) : null}
+            {needsYou ? (
+              <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-amber-200">
+                {t("needsYou")}
               </span>
             ) : null}
           </div>
-          <p className="text-xs text-gray-400 mt-1">Placed {formatDate(order.createdAt)}</p>
-          {isCancelledByCustomer && order.order.cancelledAt ? (
-            <p className="text-xs text-rose-700 mt-0.5">
-              Cancelled by customer on {formatDateTime(order.order.cancelledAt)}
+          <p className="mt-1 text-xs text-neutral-500">
+            {t("placed", { date: formatDate(order.createdAt, locale) })}
+          </p>
+          {cancelledByCustomer && order.order.cancelledAt ? (
+            <p className="mt-0.5 text-xs text-rose-700">
+              {t("cancelledOn", {
+                date: formatDateTime(order.order.cancelledAt, locale),
+              })}
             </p>
           ) : null}
-          {(() => {
-            const deliveredAt = resolveVendorOrderDeliveredAtIso({
-              status: order.status,
-              deliveredAt: order.deliveredAt,
-              outboundDeliveredAt: order.warehouse.outboundShipment?.deliveredAt,
-              statusChangedAt: order.updatedAt,
-            });
-            if (order.status !== "DELIVERED" && !deliveredAt) return null;
-            return (
-              <p className="text-xs text-emerald-700 mt-0.5">
-                Delivered on{" "}
-                {deliveredAt ? formatDateTime(deliveredAt) : "— date not recorded"}
-              </p>
-            );
-          })()}
+          {order.status === "DELIVERED" && deliveredAt ? (
+            <p className="mt-0.5 text-xs text-emerald-700">
+              {t("deliveredOn", {
+                date: formatDateTime(deliveredAt, locale),
+              })}
+            </p>
+          ) : null}
         </div>
 
-        {/* Customer */}
-        <div className="sm:w-48 min-w-0">
-          <p className="text-sm font-medium text-gray-800 truncate">{order.order.shippingFullName}</p>
-          <p className="text-xs text-gray-400 truncate">{order.order.shippingPhone}</p>
+        <div className="min-w-0 sm:w-44">
+          <p className="truncate text-sm font-medium text-neutral-800">
+            {order.order.shippingFullName}
+          </p>
+          <p className="truncate text-xs text-neutral-500">
+            {order.order.shippingPhone}
+          </p>
         </div>
 
-        {/* Items + total */}
-        <div className="sm:w-40 text-right flex sm:flex-col items-center sm:items-end gap-3 sm:gap-0">
-          <span className="text-xs text-gray-400">{totalItems} item{totalItems !== 1 ? "s" : ""}</span>
-          <span className="text-sm font-bold text-[#0f3460]">
-            {formatCurrency(order.grandTotalAmount, order.currency)}
+        <div className="flex items-center justify-between gap-3 sm:w-36 sm:flex-col sm:items-end">
+          <span className="text-xs text-neutral-500">
+            {totalItems === 1
+              ? t("itemCount", { count: totalItems })
+              : t("itemCountPlural", { count: totalItems })}
+          </span>
+          <span className="text-sm font-bold text-primary">
+            {formatCurrency(order.grandTotalAmount, order.currency, locale)}
           </span>
         </div>
 
-        <div className="sm:ml-4 text-gray-400">
+        <span className="text-neutral-400 sm:ms-1">
           {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-        </div>
+        </span>
       </button>
 
-      {/* Expanded details */}
-      {expanded && (
-        <div className="border-t border-gray-100 px-6 py-5 space-y-6">
-          {isCancelledByCustomer ? (
+      {expanded ? (
+        <div className="space-y-5 border-t border-neutral-100 px-4 py-5 sm:px-5">
+          {cancelledByCustomer ? (
             <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
-              <p className="font-semibold">Cancelled by customer</p>
+              <p className="font-semibold">{t("cancelledByCustomer")}</p>
               {order.order.cancelledAt ? (
-                <p className="mt-1 text-rose-800">
-                  Cancelled on {formatDateTime(order.order.cancelledAt)}
+                <p className="mt-1">
+                  {t("cancelledOn", {
+                    date: formatDateTime(order.order.cancelledAt, locale),
+                  })}
                 </p>
               ) : null}
-              {order.order.cancellationReason ? (
-                <p className="mt-2 text-rose-800">
-                  <span className="font-medium">Reason:</span> {order.order.cancellationReason}
-                </p>
-              ) : (
-                <p className="mt-2 text-rose-700 italic">No reason provided.</p>
-              )}
+              <p className="mt-2">
+                {order.order.cancellationReason
+                  ? t("reason", { reason: order.order.cancellationReason })
+                  : t("noReason")}
+              </p>
             </div>
           ) : null}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Delivery address */}
+          <div
+            className={`rounded-2xl border p-4 sm:p-5 ${
+              needsYou
+                ? "border-primary/20 bg-primary/5"
+                : "border-neutral-100 bg-neutral-50/60"
+            }`}
+          >
+            <p className="mb-3 text-sm font-semibold text-neutral-900">
+              {t("updateStatus")}
+            </p>
+            <div className="mb-3 flex flex-wrap gap-2">
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${STATUS_COLORS[order.status]}`}
+              >
+                {t("currentStatus", {
+                  status: t(`statuses.${order.status}`),
+                })}
+              </span>
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-neutral-700 ring-1 ring-neutral-200">
+                {t("deliveryMethod", {
+                  method: order.deliveryMethod
+                    ? t(`deliveryMethods.${order.deliveryMethod}`)
+                    : t("deliveryMethods.unknown"),
+                })}
+              </span>
+            </div>
+
+            {!standard ? (
+              <div className="flex flex-wrap gap-2">
+                {order.status === "NEW" ? (
+                  <button
+                    type="button"
+                    disabled={Boolean(updating)}
+                    onClick={() => void runStatus("PREPARING")}
+                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-50"
+                  >
+                    {updating === "PREPARING" ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : null}
+                    {t("actions.prepare")}
+                  </button>
+                ) : null}
+                {order.status === "PREPARING" ? (
+                  <button
+                    type="button"
+                    disabled={Boolean(updating)}
+                    onClick={() => void runStatus("SHIPPED")}
+                    className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50"
+                  >
+                    {updating === "SHIPPED" ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : null}
+                    {t("actions.ship")}
+                  </button>
+                ) : null}
+                {order.status === "SHIPPED" ? (
+                  <button
+                    type="button"
+                    disabled={Boolean(updating)}
+                    onClick={() => void runStatus("DELIVERED")}
+                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {updating === "DELIVERED" ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : null}
+                    {t("actions.deliver")}
+                  </button>
+                ) : null}
+                {canCancel ? (
+                  <button
+                    type="button"
+                    disabled={Boolean(updating)}
+                    onClick={() => onRequestCancel(order)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  >
+                    {t("actions.cancel")}
+                  </button>
+                ) : null}
+                {!needsYou && !canCancel ? (
+                  <p className="text-sm text-neutral-600">
+                    {t("noActionNeeded")}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-neutral-700">
+                  {t("actions.warehouseHelp")}
+                </p>
+                {canSendToWarehouse ? (
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                    <label className="min-w-0 flex-1 text-sm text-neutral-700">
+                      {t("actions.trackingOptional")}
+                      <input
+                        value={trackingRef}
+                        onChange={(e) => setTrackingRef(e.target.value)}
+                        disabled={submitting}
+                        placeholder={t("actions.trackingPlaceholder")}
+                        className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => {
+                        setSubmitting(true);
+                        void onInboundShip(
+                          order.id,
+                          trackingRef.trim() || undefined
+                        ).finally(() => setSubmitting(false));
+                      }}
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-50"
+                    >
+                      {submitting ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : null}
+                      {t("actions.sendWarehouse")}
+                    </button>
+                  </div>
+                ) : alreadySentToWarehouse ? (
+                  <div className="space-y-1 text-sm text-neutral-700">
+                    <p className="font-medium">{t("actions.alreadySent")}</p>
+                    <p>
+                      {t("actions.trackingLabel", {
+                        ref:
+                          order.warehouse.inboundShipment?.trackingRef ?? "—",
+                      })}
+                    </p>
+                    <p>
+                      {t("actions.sentAt", {
+                        date: formatDateTime(
+                          order.warehouse.inboundShipment?.shippedAt ?? null,
+                          locale
+                        ),
+                      })}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-neutral-600">
+                    {t("noActionNeeded")}
+                  </p>
+                )}
+                {canCancel ? (
+                  <button
+                    type="button"
+                    onClick={() => onRequestCancel(order)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50"
+                  >
+                    {t("actions.cancel")}
+                  </button>
+                ) : null}
+              </div>
+            )}
+          </div>
+
+          {standard ? <WarehouseProgress order={order} locale={locale} /> : null}
+
+          <div className="grid gap-5 lg:grid-cols-2">
             <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Delivery Address</p>
-              <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-700 space-y-0.5">
-                <p className="font-medium text-gray-900">{order.order.shippingFullName}</p>
-                <p>{order.order.shippingAddressLine1}</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                {t("deliveryAddress")}
+              </p>
+              <div className="rounded-xl bg-neutral-50 p-4 text-sm text-neutral-700">
+                <p className="font-medium text-neutral-900">
+                  {order.order.shippingFullName}
+                </p>
+                <p className="mt-1">{order.order.shippingAddressLine1}</p>
                 <p>
                   {order.order.shippingCity}
-                  {order.order.shippingPostalCode ? `, ${order.order.shippingPostalCode}` : ""}
+                  {order.order.shippingPostalCode
+                    ? `, ${order.order.shippingPostalCode}`
+                    : ""}
                 </p>
                 <p>{order.order.shippingCountry}</p>
-                {order.order.shippingPhone && (
-                  <p className="text-gray-500 pt-1">{order.order.shippingPhone}</p>
-                )}
+                {order.order.shippingPhone ? (
+                  <p className="mt-2 text-neutral-500">
+                    {order.order.shippingPhone}
+                  </p>
+                ) : null}
               </div>
             </div>
 
-            {/* Items */}
             <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Items Ordered</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                {t("itemsOrdered")}
+              </p>
               <div className="space-y-2">
                 {order.items.map((item) => (
-                  <div key={item.id} className="flex items-start gap-3 bg-gray-50 rounded-xl p-3">
+                  <div
+                    key={item.id}
+                    className="flex items-start gap-3 rounded-xl bg-neutral-50 p-3"
+                  >
                     {item.productImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.productImage} alt={item.productName}
-                        className="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-200" />
+                      <img
+                        src={item.productImage}
+                        alt=""
+                        className="h-10 w-10 shrink-0 rounded-lg border border-neutral-200 object-cover"
+                      />
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center shrink-0">
-                        <Package size={16} className="text-gray-400" />
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-200">
+                        <Package size={16} className="text-neutral-400" />
                       </div>
                     )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">{item.productName}</p>
-                      {item.productSku && <p className="text-xs text-gray-400">SKU: {item.productSku}</p>}
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs text-gray-500">
-                        {item.quantity} × {formatCurrency(item.unitPriceAmount, item.currency)}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-neutral-800">
+                        {item.productName}
                       </p>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {formatCurrency(item.lineTotalAmount, item.currency)}
+                      {item.productSku ? (
+                        <p className="text-xs text-neutral-400">
+                          {t("sku", { sku: item.productSku })}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="shrink-0 text-end">
+                      <p className="text-xs text-neutral-500">
+                        {item.quantity} ×{" "}
+                        {formatCurrency(
+                          item.unitPriceAmount,
+                          item.currency,
+                          locale
+                        )}
+                      </p>
+                      <p className="text-sm font-semibold text-neutral-900">
+                        {formatCurrency(
+                          item.lineTotalAmount,
+                          item.currency,
+                          locale
+                        )}
                       </p>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Totals */}
-              <div className="mt-3 space-y-1 text-sm border-t border-gray-100 pt-3">
-                <div className="flex justify-between text-gray-500">
-                  <span>Subtotal</span>
-                  <span>{formatCurrency(order.subtotalAmount, order.currency)}</span>
-                </div>
-                {order.deliveryAmount > 0 && (
-                  <div className="flex justify-between text-gray-500">
-                    <span>Delivery</span>
-                    <span>{formatCurrency(order.deliveryAmount, order.currency)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between font-bold text-[#0f3460] pt-1 border-t border-gray-100">
-                  <span>Total</span>
-                  <span>{formatCurrency(order.grandTotalAmount, order.currency)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {isStandardWorkflow ? (
-            <section className="rounded-xl border border-neutral-200 p-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                Warehouse visibility
-              </h3>
-              <div className="mt-3 grid gap-4 md:grid-cols-3">
-                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                  <p className="text-xs font-semibold text-neutral-600">Inbound shipment</p>
-                  <span
-                    className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${warehouseStatusClass(order.warehouse.inboundShipment?.status ?? "PENDING_SHIPMENT")}`}
-                  >
-                    {order.warehouse.inboundShipment?.status ?? "PENDING_SHIPMENT"}
+              <div className="mt-3 space-y-1 border-t border-neutral-100 pt-3 text-sm">
+                <div className="flex justify-between text-neutral-500">
+                  <span>{t("subtotal")}</span>
+                  <span>
+                    {formatCurrency(
+                      order.subtotalAmount,
+                      order.currency,
+                      locale
+                    )}
                   </span>
-                  <p className="mt-2 text-xs text-neutral-700">
-                    Tracking: {order.warehouse.inboundShipment?.trackingRef ?? "—"}
-                  </p>
-                  <p className="text-xs text-neutral-700">
-                    Sent: {formatDateTime(order.warehouse.inboundShipment?.shippedAt ?? null)}
-                  </p>
-                  <p className="text-xs text-neutral-700">
-                    Received: {formatDateTime(order.warehouse.inboundShipment?.receivedAt ?? null)}
-                  </p>
                 </div>
-
-                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                  <p className="text-xs font-semibold text-neutral-600">Consolidation batch</p>
-                  {order.warehouse.batch ? (
-                    <span
-                      className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${warehouseStatusClass(order.warehouse.batch.status)}`}
-                    >
-                      {order.warehouse.batch.status}
+                {order.discountAmount > 0 ? (
+                  <div className="flex justify-between text-neutral-500">
+                    <span>{t("discount")}</span>
+                    <span>
+                      −
+                      {formatCurrency(
+                        order.discountAmount,
+                        order.currency,
+                        locale
+                      )}
                     </span>
-                  ) : (
-                    <span className="mt-2 inline-flex rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-700">
-                      Not created
+                  </div>
+                ) : null}
+                {order.deliveryAmount > 0 ? (
+                  <div className="flex justify-between text-neutral-500">
+                    <span>{t("delivery")}</span>
+                    <span>
+                      {formatCurrency(
+                        order.deliveryAmount,
+                        order.currency,
+                        locale
+                      )}
                     </span>
-                  )}
-                  <p className="mt-2 text-xs text-neutral-700">
-                    Progress: {order.warehouse.batch?.receivedVendorCount ?? 0}/
-                    {order.warehouse.batch?.expectedVendorCount ?? 0}
-                  </p>
-                  <p className="text-xs text-neutral-700">
-                    Ready at: {formatDateTime(order.warehouse.batch?.readyToConsolidateAt ?? null)}
-                  </p>
-                </div>
-
-                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                  <p className="text-xs font-semibold text-neutral-600">Outbound shipment</p>
-                  {order.warehouse.outboundShipment ? (
-                    <span
-                      className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${warehouseStatusClass(order.warehouse.outboundShipment.status)}`}
-                    >
-                      {order.warehouse.outboundShipment.status}
-                    </span>
-                  ) : (
-                    <span className="mt-2 inline-flex rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-700">
-                      Not created
-                    </span>
-                  )}
-                  <p className="mt-2 text-xs text-neutral-700">
-                    Tracking: {order.warehouse.outboundShipment?.trackingRef ?? "—"}
-                  </p>
-                  <p className="text-xs text-neutral-700">
-                    Shipped: {formatDateTime(order.warehouse.outboundShipment?.shippedAt ?? null)}
-                  </p>
-                  <p className="text-xs text-neutral-700">
-                    Delivered: {formatDateTime(order.warehouse.outboundShipment?.deliveredAt ?? null)}
-                  </p>
+                  </div>
+                ) : null}
+                <div className="flex justify-between border-t border-neutral-100 pt-1 font-bold text-primary">
+                  <span>{t("total")}</span>
+                  <span>
+                    {formatCurrency(
+                      order.grandTotalAmount,
+                      order.currency,
+                      locale
+                    )}
+                  </span>
                 </div>
               </div>
-
-              <div className="mt-4 rounded-lg border border-neutral-200 bg-white p-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
-                  Warehouse timeline
-                </p>
-                <ol className="mt-2 grid gap-2 md:grid-cols-2">
-                  {warehouseTimeline.map((step) => (
-                    <li key={step.key} className="flex items-center justify-between rounded-md bg-neutral-50 px-3 py-2">
-                      <span className="text-xs font-medium text-neutral-800">{step.label}</span>
-                      <span className="text-xs text-neutral-600">{formatDateTime(step.at)}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            </section>
-          ) : null}
-
-          {/* Status actions */}
-          <div className="border-t border-gray-100 pt-4">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-              Update Order Status
-            </p>
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className={`px-3 py-1.5 rounded-xl text-xs font-semibold ${STATUS_COLORS[order.status]}`}>
-                Current: {STATUS_LABELS[order.status]}
-              </span>
-              <span className="rounded-xl bg-neutral-100 px-3 py-1.5 text-xs font-semibold text-neutral-700">
-                Delivery method: {order.deliveryMethod ?? "—"}
-              </span>
-              <StatusActions
-                order={order}
-                isStandardWorkflow={isStandardWorkflow}
-                onStatusChange={onStatusChange}
-              />
             </div>
-            <div className="mt-3">
-              <StandardWarehouseActions order={order} onInboundShip={onInboundShip} />
-            </div>
-            {order.status === "SHIPPED" && (
-              <p className="text-xs text-cyan-600 mt-2">
-                📧 An email was sent to the customer notifying them their order has shipped.
-              </p>
-            )}
-            {order.status === "DELIVERED" && (
-              <p className="text-xs text-green-600 mt-2">
-                📧 An email was sent to the customer confirming delivery.
-                {(() => {
-                  const deliveredAt = resolveVendorOrderDeliveredAtIso({
-                    status: order.status,
-                    deliveredAt: order.deliveredAt,
-                    outboundDeliveredAt: order.warehouse.outboundShipment?.deliveredAt,
-                    statusChangedAt: order.updatedAt,
-                  });
-                  if (!deliveredAt) return null;
-                  return (
-                    <span className="block mt-1 text-neutral-600">
-                      Delivered on {formatDateTime(deliveredAt)}
-                    </span>
-                  );
-                })()}
-              </p>
-            )}
           </div>
         </div>
-      )}
-    </div>
+      ) : null}
+    </article>
   );
 }
 
-/* ─── Filter options ─────────────────────────────────────────────────── */
-
-const STATUS_FILTER_OPTIONS = [
-  { label: "All", value: "ALL" },
-  { label: "New", value: "NEW" },
-  { label: "Preparing", value: "PREPARING" },
-  { label: "Inbound Shipped", value: "INBOUND_SHIPPED" },
-  { label: "Received At Warehouse", value: "RECEIVED_AT_WAREHOUSE" },
-  { label: "Shipped", value: "SHIPPED" },
-  { label: "Delivered", value: "DELIVERED" },
-  { label: "Cancelled", value: "CANCELLED" },
-];
-
-/* ─── Page ───────────────────────────────────────────────────────────── */
-
 export default function VendorOrdersPage() {
+  const t = useTranslations("VendorPages.orders");
+  const locale = useLocale();
   const { isLoading: authLoading, user } = useDashboardGuard("VENDOR");
 
   const [orders, setOrders] = useState<VendorOrder[]>([]);
@@ -728,83 +830,105 @@ export default function VendorOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [cancelTarget, setCancelTarget] = useState<VendorOrder | null>(null);
+  const [cancelling, setCancelling] = useState(false);
   const hasFetched = useRef(false);
 
-  const fetchOrders = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    setError(null);
-    try {
-      const res = await fetchWithAuth("/api/vendor/orders");
-      const data = await parseApiResponse<VendorOrder[]>(res);
-      setOrders(data);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Could not load orders.";
-      if (!silent) {
-        setError(msg);
-        toast.error(msg);
+  const fetchOrders = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      setError(null);
+      try {
+        const res = await fetchWithAuth("/api/vendor/orders");
+        const data = await parseApiResponse<VendorOrder[]>(res);
+        setOrders(data);
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : t("loadError");
+        if (!silent) {
+          setError(msg);
+          toast.error(msg);
+        }
+      } finally {
+        if (!silent) setLoading(false);
       }
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, []);
+    },
+    [t]
+  );
 
-  const handleStatusChange = useCallback(
+  const applyStatus = useCallback(
     async (vendorOrderId: string, status: VendorOrderStatus) => {
       try {
-        const res = await fetchWithAuth(`/api/vendor/orders/${vendorOrderId}/status`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status }),
-        });
+        const res = await fetchWithAuth(
+          `/api/vendor/orders/${vendorOrderId}/status`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status }),
+          }
+        );
         if (!res.ok) {
           const data = await res.json();
-          toast.error(data?.error?.message ?? "Could not update status.");
+          toast.error(
+            t("toasts.updateError"),
+            data?.error?.message
+          );
           return;
         }
         if (status === "DELIVERED") {
-          toast.success(
-            `Order delivered. Net earnings are recorded in hold and become releasable after the payout hold window.`
-          );
-          await fetchOrders(true);
+          toast.success(t("payoutHold"));
+        } else if (status === "CANCELLED") {
+          toast.success(t("toasts.cancelledRefunded"));
         } else {
-          toast.success(`Order marked as ${STATUS_LABELS[status]}.`);
-          setOrders((prev) =>
-            prev.map((o) => (o.id === vendorOrderId ? { ...o, status } : o))
+          toast.success(
+            t("toasts.updated", { status: t(`statuses.${status}`) })
           );
         }
+        await fetchOrders(true);
       } catch {
-        toast.error("Network error. Please try again.");
+        toast.error(t("toasts.networkError"));
       }
     },
-    [fetchOrders]
+    [fetchOrders, t]
   );
+
+  const confirmCancel = async () => {
+    if (!cancelTarget) return;
+    setCancelling(true);
+    try {
+      await applyStatus(cancelTarget.id, "CANCELLED");
+      setCancelTarget(null);
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const handleInboundShip = useCallback(
     async (vendorOrderId: string, trackingRef?: string) => {
       try {
-        const res = await fetchWithAuth(`/api/vendor/orders/${vendorOrderId}/inbound-ship`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            trackingRef: trackingRef?.trim() ? trackingRef.trim() : undefined,
-          }),
-        });
-        await parseApiResponse<{
-          status: WarehouseInboundShipmentStatus;
-          shippedAt: string | null;
-          trackingRef: string | null;
-        }>(res);
-
-        toast.success("Shipment submitted to warehouse.");
-
+        const res = await fetchWithAuth(
+          `/api/vendor/orders/${vendorOrderId}/inbound-ship`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              trackingRef: trackingRef?.trim()
+                ? trackingRef.trim()
+                : undefined,
+            }),
+          }
+        );
+        await parseApiResponse(res);
+        toast.success(t("toasts.warehouseSent"));
         await fetchOrders(true);
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Could not submit shipment to warehouse.";
-        toast.error(message);
+        toast.error(
+          t("toasts.warehouseError"),
+          error instanceof Error ? error.message : undefined
+        );
       }
     },
-    [fetchOrders]
+    [fetchOrders, t]
   );
 
   useEffect(() => {
@@ -822,11 +946,19 @@ export default function VendorOrdersPage() {
   }, [fetchOrders]);
 
   const filtered = orders.filter((o) => {
+    const q = search.trim().toLowerCase();
     const matchesSearch =
-      search.trim() === "" ||
-      o.order.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
-      o.order.shippingFullName.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "ALL" || o.status === statusFilter;
+      q === "" ||
+      o.order.orderNumber.toLowerCase().includes(q) ||
+      o.order.shippingFullName.toLowerCase().includes(q) ||
+      o.order.shippingPhone.toLowerCase().includes(q) ||
+      o.items.some(
+        (item) =>
+          item.productName.toLowerCase().includes(q) ||
+          (item.productSku ?? "").toLowerCase().includes(q)
+      );
+    const matchesStatus =
+      statusFilter === "ALL" || o.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -848,103 +980,154 @@ export default function VendorOrdersPage() {
   if (authLoading || !user) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="animate-spin text-gray-400" size={28} />
+        <Loader2 className="animate-spin text-neutral-400" size={28} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#0f3460]">Orders</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage orders containing your products</p>
+    <div className="space-y-5 pb-16">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-semibold tracking-tight text-primary">
+            {t("title")}
+          </h1>
+          <p className="mt-1 max-w-xl text-sm text-neutral-600">
+            {t("subtitle")}
+          </p>
+          <Link
+            href="/vendor/disputes"
+            className="mt-2 inline-flex text-sm font-medium text-primary hover:underline"
+          >
+            {t("disputesLink")}
+          </Link>
         </div>
         <button
-          onClick={() => fetchOrders()}
+          type="button"
+          onClick={() => void fetchOrders()}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition disabled:opacity-50"
+          className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
         >
-          <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
-          Refresh
+          <RefreshCw
+            size={15}
+            className={loading ? "animate-spin" : undefined}
+          />
+          {t("refresh")}
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search by order # or customer…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-4 py-2.5 text-sm outline-none focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10 transition"
-          />
+      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+        <div className="space-y-3 border-b border-neutral-100 px-4 py-4 sm:px-5">
+          <div className="relative w-full">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 rtl:left-auto rtl:right-3" />
+            <input
+              type="text"
+              placeholder={t("searchPlaceholder")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 rtl:pl-3 rtl:pr-9"
+            />
+          </div>
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5">
+            {FILTER_STATUSES.map((value) => {
+              const active = statusFilter === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setStatusFilter(value)}
+                  className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                    active
+                      ? "bg-primary text-white"
+                      : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                  }`}
+                >
+                  {value === "ALL"
+                    ? t("allStatuses")
+                    : t(`statuses.${value}`)}
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10 transition cursor-pointer"
-        >
-          {STATUS_FILTER_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+
+        {loading ? (
+          <div className="flex min-h-[30vh] flex-col items-center justify-center gap-2 text-sm text-neutral-600">
+            <Loader2 className="animate-spin text-neutral-400" size={28} />
+            {t("loading")}
+          </div>
+        ) : error ? (
+          <div className="flex min-h-[30vh] flex-col items-center justify-center gap-3 text-center">
+            <p className="text-sm text-red-600">{error}</p>
+            <button
+              type="button"
+              onClick={() => void fetchOrders()}
+              className="text-sm font-medium text-primary underline"
+            >
+              {t("tryAgain")}
+            </button>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex min-h-[30vh] flex-col items-center justify-center gap-3 px-6 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100">
+              <Package size={24} className="text-neutral-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-neutral-800">
+                {orders.length === 0 ? t("empty") : t("emptyFiltered")}
+              </p>
+              <p className="mt-1 text-xs text-neutral-500">
+                {orders.length === 0
+                  ? t("emptyHint")
+                  : t("emptyFilteredHint")}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-3 px-4 py-4 sm:px-5">
+              <p className="text-xs text-neutral-500">
+                {t("showing", {
+                  shown: filtered.length,
+                  total: orders.length,
+                })}
+              </p>
+              {paginatedOrders.map((order) => (
+                <OrderRow
+                  key={order.id}
+                  order={order}
+                  locale={locale}
+                  onStatusChange={applyStatus}
+                  onRequestCancel={setCancelTarget}
+                  onInboundShip={handleInboundShip}
+                />
+              ))}
+            </div>
+            <PaginationFooter
+              pageIndex={pageIndex}
+              pageCount={pageCount}
+              pageSize={pageSize}
+              pageSizeOptions={pageSizeOptions}
+              onPageIndexChange={setPageIndex}
+              onPageSizeChange={setPageSize}
+            />
+          </>
+        )}
       </div>
 
-      {/* Content */}
-      {loading ? (
-        <div className="flex min-h-[30vh] items-center justify-center">
-          <Loader2 className="animate-spin text-gray-400" size={28} />
-        </div>
-      ) : error ? (
-        <div className="flex flex-col items-center justify-center min-h-[30vh] gap-3 text-center">
-          <p className="text-sm text-red-500">{error}</p>
-          <button onClick={() => fetchOrders()} className="text-sm text-[#0f3460] underline">Try again</button>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[30vh] gap-3 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center">
-            <Package size={24} className="text-gray-400" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-700">
-              {orders.length === 0 ? "No orders yet" : "No orders match your filters"}
-            </p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {orders.length === 0
-                ? "Orders containing your products will appear here."
-                : "Try adjusting your search or status filter."}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-          <div className="space-y-3 px-4 py-4">
-            <p className="text-xs text-gray-400">
-              Showing {filtered.length} of {orders.length} order{orders.length !== 1 ? "s" : ""}
-            </p>
-            {paginatedOrders.map((order) => (
-              <OrderRow
-                key={order.id}
-                order={order}
-                onStatusChange={handleStatusChange}
-                onInboundShip={handleInboundShip}
-              />
-            ))}
-          </div>
-          <PaginationFooter
-            pageIndex={pageIndex}
-            pageCount={pageCount}
-            pageSize={pageSize}
-            pageSizeOptions={pageSizeOptions}
-            onPageIndexChange={setPageIndex}
-            onPageSizeChange={setPageSize}
-          />
-        </div>
-      )}
+      <VendorConfirmDialog
+        open={Boolean(cancelTarget)}
+        title={t("cancelConfirm.title")}
+        body={t("cancelConfirm.body", {
+          orderNumber: cancelTarget?.order.orderNumber ?? "",
+        })}
+        confirmLabel={t("cancelConfirm.confirm")}
+        cancelLabel={t("cancelConfirm.cancel")}
+        danger
+        busy={cancelling}
+        onConfirm={() => void confirmCancel()}
+        onCancel={() => setCancelTarget(null)}
+      />
     </div>
   );
 }

@@ -309,13 +309,13 @@
         "cancelledOn": "Cancelled on {date}",
         "cancellationReason": "Reason",
         "cancelModalTitle": "Cancel order",
-        "cancelModalDescription": "You can cancel this order before it is shipped. This action cannot be undone.",
+        "cancelModalDescription": "You can cancel before it ships. We will refund your payment to the same card. This cannot be undone.",
         "cancelReasonLabel": "Reason for cancellation (optional)",
         "cancelReasonPlaceholder": "Tell us why you are cancelling…",
         "cancelModalDismiss": "Keep order",
-        "cancelModalConfirm": "Cancel order",
+        "cancelModalConfirm": "Cancel & refund",
         "cancelling": "Cancelling…",
-        "cancelSuccess": "Your order has been cancelled."
+        "cancelSuccess": "Order cancelled. Your refund has been started."
       },
       "addresses": {
         "title": "Saved addresses",
@@ -988,7 +988,114 @@
     },
     "orders": {
       "title": "Orders",
-      "subtitle": "Manage orders containing your products"
+      "subtitle": "New orders appear here. Open one, then pack and send.",
+      "refresh": "Refresh",
+      "searchPlaceholder": "Search order #, customer, or phone…",
+      "allStatuses": "All statuses",
+      "loading": "Loading orders…",
+      "loadError": "Could not load orders.",
+      "tryAgain": "Try again",
+      "empty": "No orders yet",
+      "emptyHint": "When customers buy your products, orders show up here.",
+      "emptyFiltered": "No orders match your filters",
+      "emptyFilteredHint": "Try a different search or status.",
+      "showing": "Showing {shown} of {total}",
+      "placed": "Placed {date}",
+      "deliveredOn": "Delivered {date}",
+      "cancelledByCustomer": "Cancelled by customer",
+      "cancelledOn": "Cancelled on {date}",
+      "reason": "Reason: {reason}",
+      "noReason": "No reason given.",
+      "itemCount": "{count} item",
+      "itemCountPlural": "{count} items",
+      "deliveryAddress": "Delivery address",
+      "itemsOrdered": "Items",
+      "sku": "SKU: {sku}",
+      "subtotal": "Subtotal",
+      "delivery": "Delivery",
+      "discount": "Discount",
+      "total": "Total",
+      "updateStatus": "What to do next",
+      "currentStatus": "Status: {status}",
+      "deliveryMethod": "Delivery: {method}",
+      "deliveryMethods": {
+        "PICKUP": "Pickup",
+        "EXPRESS": "Express",
+        "STANDARD": "Standard delivery",
+        "unknown": "—"
+      },
+      "standardBadge": "Sends to Mandawee warehouse",
+      "needsYou": "Needs you",
+      "noActionNeeded": "Nothing left for you on this order — Mandawee will handle the rest.",
+      "disputesLink": "Open disputes",
+      "emailShipped": "Customer was emailed that the order shipped.",
+      "emailDelivered": "Customer was emailed that the order was delivered.",
+      "payoutHold": "Order delivered. Earnings go on hold, then become available for payout.",
+      "statuses": {
+        "NEW": "New",
+        "PREPARING": "Preparing",
+        "INBOUND_SHIPPED": "Sent to warehouse",
+        "RECEIVED_AT_WAREHOUSE": "At warehouse",
+        "SHIPPED": "Shipped",
+        "DELIVERED": "Delivered",
+        "CANCELLED": "Cancelled"
+      },
+      "actions": {
+        "prepare": "Start preparing",
+        "ship": "Mark as shipped",
+        "deliver": "Mark as delivered",
+        "cancel": "Cancel order",
+        "sendWarehouse": "Send to Mandawee",
+        "trackingOptional": "Tracking number (optional)",
+        "trackingPlaceholder": "e.g. AWB1234",
+        "warehouseHelp": "Pack the items, then send the package to Mandawee. We deliver it to the customer.",
+        "alreadySent": "You already sent this package to Mandawee.",
+        "trackingLabel": "Tracking: {ref}",
+        "sentAt": "Sent: {date}"
+      },
+      "payment": {
+        "PENDING": "Payment pending",
+        "PAID": "Paid",
+        "UNPAID": "Unpaid",
+        "PARTIALLY_REFUNDED": "Partly refunded",
+        "REFUNDED": "Refunded",
+        "FULLY_REFUNDED": "Refunded"
+      },
+      "warehouse": {
+        "title": "Delivery progress",
+        "step1Title": "Sent to Mandawee",
+        "step2Title": "At warehouse",
+        "step3Title": "To the customer",
+        "waitingSend": "Waiting for you to send the package",
+        "onTheWayToWarehouse": "On the way to Mandawee",
+        "receivedAtWarehouse": "Mandawee received your package",
+        "waitingOtherVendors": "Waiting for other sellers ({received}/{expected})",
+        "packingTogether": "Packing with other sellers’ items",
+        "readyToShip": "Ready to send to customer",
+        "onTheWayToCustomer": "On the way to the customer",
+        "deliveredToCustomer": "Delivered to the customer",
+        "notStarted": "Not started yet",
+        "tracking": "Tracking: {ref}",
+        "sent": "Sent {date}",
+        "received": "Received {date}",
+        "shipped": "Shipped {date}",
+        "delivered": "Delivered {date}",
+        "ready": "Ready {date}"
+      },
+      "cancelConfirm": {
+        "title": "Cancel this order?",
+        "body": "Order #{orderNumber} will be cancelled and the customer’s payment will be refunded. This cannot be undone.",
+        "confirm": "Cancel & refund",
+        "cancel": "Keep order"
+      },
+      "toasts": {
+        "updated": "Order updated: {status}",
+        "cancelledRefunded": "Order cancelled. Customer refund started.",
+        "updateError": "Could not update order",
+        "warehouseSent": "Package marked as sent to Mandawee",
+        "warehouseError": "Could not send to Mandawee",
+        "networkError": "Network error. Please try again."
+      }
     },
     "reports": {
       "title": "Reports",
@@ -1472,7 +1579,7 @@
         }
       },
       "trust": {
-        "title": "Why transfer with MandawEE",
+        "title": "Why transfer with Mandawee",
         "subtitle": "Built for clarity, speed, and accountability.",
         "rates": {
           "title": "Live exchange rates",
@@ -1659,7 +1766,7 @@
         "refunds": "Refund Policy",
         "howItWorks": "How It Works",
         "contact": "Contact Us",
-        "sell": "Sell on MandawEE"
+        "sell": "Sell on Mandawee"
       },
       "contact": {
         "title": "Still need help?",
@@ -1723,13 +1830,13 @@
   },
   "AboutPages": {
     "landing": {
-      "eyebrow": "About MandawEE",
+      "eyebrow": "About Mandawee",
       "title": "Afghanistan's trusted multi-vendor marketplace",
       "subtitle": "We connect local vendors with customers at home and abroad — so quality products reach the people who matter most.",
-      "heroImageAlt": "Local commerce and community shopping with MandawEE",
+      "heroImageAlt": "Local commerce and community shopping with Mandawee",
       "cta": {
         "shop": "Shop products",
-        "sell": "Sell on MandawEE"
+        "sell": "Sell on Mandawee"
       },
       "mission": {
         "title": "Our mission",
@@ -1738,7 +1845,7 @@
       },
       "story": {
         "title": "Built for Afghanistan, open to the world",
-        "description": "From groceries and gifts to everyday essentials, MandawEE is designed for reliable shopping, clear communication, and commerce that supports independent vendors."
+        "description": "From groceries and gifts to everyday essentials, Mandawee is designed for reliable shopping, clear communication, and commerce that supports independent vendors."
       },
       "offer": {
         "title": "What we offer",
@@ -1776,7 +1883,7 @@
         "description": "Every order supports independent vendors building businesses in Afghanistan. We are committed to reliable delivery, clear communication, and a modern, secure shopping experience."
       },
       "links": {
-        "title": "Explore MandawEE",
+        "title": "Explore Mandawee",
         "howItWorks": "How it works",
         "help": "Help Center",
         "contact": "Contact support",
@@ -1785,7 +1892,7 @@
       "finalCta": {
         "eyebrow": "Join the marketplace",
         "title": "Shop today — or grow your store with us",
-        "subtitle": "Browse products from trusted vendors, or apply to sell on MandawEE.",
+        "subtitle": "Browse products from trusted vendors, or apply to sell on Mandawee.",
         "shop": "Start shopping",
         "sell": "Apply to sell"
       }
@@ -1793,7 +1900,7 @@
   },
   "GiftPages": {
     "landing": {
-      "eyebrow": "MandawEE · Gift Sets",
+      "eyebrow": "Mandawee · Gift Sets",
       "title": "Gift Sets",
       "subtitle": "Send a thoughtful gift to loved ones in Afghanistan — browse ready-made sets or request a personalized gift prepared and delivered your way.",
       "heroImageAlt": "Wrapped gifts ready to send with care",
@@ -1889,7 +1996,7 @@
       "notFound": "Category not found"
     },
     "showcase": {
-      "eyebrow": "MandawEE · {category}",
+      "eyebrow": "Mandawee · {category}",
       "subtitle": "Trusted products from local vendors — shop this category with clear prices and fast delivery options.",
       "babyCareSubtitle": "Gentle essentials for little ones — soft care, everyday comfort, and trusted brands in one place.",
       "shopProducts": "Shop products",

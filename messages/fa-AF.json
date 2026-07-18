@@ -309,13 +309,13 @@
         "cancelledOn": "لغو شده در {date}",
         "cancellationReason": "دلیل",
         "cancelModalTitle": "لغو سفارش",
-        "cancelModalDescription": "می‌توانید این سفارش را قبل از ارسال لغو کنید. این عمل قابل بازگشت نیست.",
+        "cancelModalDescription": "می‌توانید قبل از ارسال لغو کنید. پول به همان کارت برمی‌گردد. این کار برگشت‌پذیر نیست.",
         "cancelReasonLabel": "دلیل لغو (اختیاری)",
         "cancelReasonPlaceholder": "دلیل لغو را بنویسید…",
         "cancelModalDismiss": "نگه‌داشتن سفارش",
-        "cancelModalConfirm": "لغو سفارش",
+        "cancelModalConfirm": "لغو و بازپرداخت",
         "cancelling": "در حال لغو…",
-        "cancelSuccess": "سفارش شما لغو شد."
+        "cancelSuccess": "سفارش لغو شد. بازپرداخت شما شروع شد."
       },
       "addresses": {
         "title": "آدرس‌های ذخیره‌شده",
@@ -988,7 +988,114 @@
     },
     "orders": {
       "title": "سفارش‌ها",
-      "subtitle": "سفارش‌هایی که محصولات شما را دارند مدیریت کنید"
+      "subtitle": "سفارش‌های جدید اینجا می‌آیند. یکی را باز کنید، بسته‌بندی و ارسال کنید.",
+      "refresh": "تازه‌سازی",
+      "searchPlaceholder": "جستجوی شماره سفارش، مشتری یا تلفن…",
+      "allStatuses": "همه وضعیت‌ها",
+      "loading": "در حال بارگذاری سفارش‌ها…",
+      "loadError": "بارگذاری سفارش‌ها ممکن نشد.",
+      "tryAgain": "تلاش دوباره",
+      "empty": "هنوز سفارشی نیست",
+      "emptyHint": "وقتی مشتریان محصولات شما را بخرند، سفارش‌ها اینجا می‌آیند.",
+      "emptyFiltered": "هیچ سفارشی با فیلترهای شما مطابقت ندارد",
+      "emptyFilteredHint": "جستجو یا وضعیت دیگری را امتحان کنید.",
+      "showing": "نمایش {shown} از {total}",
+      "placed": "ثبت‌شده {date}",
+      "deliveredOn": "تحویل‌شده {date}",
+      "cancelledByCustomer": "لغو توسط مشتری",
+      "cancelledOn": "لغو شده در {date}",
+      "reason": "دلیل: {reason}",
+      "noReason": "دلیلی داده نشده.",
+      "itemCount": "{count} کالا",
+      "itemCountPlural": "{count} کالا",
+      "deliveryAddress": "آدرس تحویل",
+      "itemsOrdered": "کالاها",
+      "sku": "SKU: {sku}",
+      "subtotal": "جمع جزء",
+      "delivery": "تحویل",
+      "discount": "تخفیف",
+      "total": "جمع کل",
+      "updateStatus": "قدم بعدی",
+      "currentStatus": "وضعیت: {status}",
+      "deliveryMethod": "تحویل: {method}",
+      "deliveryMethods": {
+        "PICKUP": "تحویل حضوری",
+        "EXPRESS": "اکسپرس",
+        "STANDARD": "تحویل عادی",
+        "unknown": "—"
+      },
+      "standardBadge": "به انبار Mandawee می‌رود",
+      "needsYou": "نیاز به شما",
+      "noActionNeeded": "در این سفارش کار بیشتری برای شما نیست — ادامه را Mandawee انجام می‌دهد.",
+      "disputesLink": "باز کردن اختلافات",
+      "emailShipped": "به مشتری ایمیل شد که سفارش ارسال شده.",
+      "emailDelivered": "به مشتری ایمیل شد که سفارش تحویل شده.",
+      "payoutHold": "سفارش تحویل شد. درآمد بعداً برای پرداخت آزاد می‌شود.",
+      "statuses": {
+        "NEW": "جدید",
+        "PREPARING": "در حال آماده‌سازی",
+        "INBOUND_SHIPPED": "ارسال به انبار",
+        "RECEIVED_AT_WAREHOUSE": "در انبار",
+        "SHIPPED": "ارسال‌شده",
+        "DELIVERED": "تحویل‌شده",
+        "CANCELLED": "لغو‌شده"
+      },
+      "actions": {
+        "prepare": "شروع آماده‌سازی",
+        "ship": "علامت به‌عنوان ارسال‌شده",
+        "deliver": "علامت به‌عنوان تحویل‌شده",
+        "cancel": "لغو سفارش",
+        "sendWarehouse": "ارسال به Mandawee",
+        "trackingOptional": "شماره رهگیری (اختیاری)",
+        "trackingPlaceholder": "مثلاً AWB1234",
+        "warehouseHelp": "کالاها را بسته‌بندی کنید، سپس بسته را به Mandawee بفرستید. ما به مشتری می‌رسانیم.",
+        "alreadySent": "این بسته را قبلاً به Mandawee فرستاده‌اید.",
+        "trackingLabel": "رهگیری: {ref}",
+        "sentAt": "ارسال: {date}"
+      },
+      "payment": {
+        "PENDING": "در انتظار پرداخت",
+        "PAID": "پرداخت‌شده",
+        "UNPAID": "پرداخت‌نشده",
+        "PARTIALLY_REFUNDED": "بازگشت جزئی",
+        "REFUNDED": "بازگشت‌شده",
+        "FULLY_REFUNDED": "بازگشت‌شده"
+      },
+      "warehouse": {
+        "title": "پیشرفت تحویل",
+        "step1Title": "ارسال به Mandawee",
+        "step2Title": "در انبار",
+        "step3Title": "به مشتری",
+        "waitingSend": "در انتظار ارسال شما",
+        "onTheWayToWarehouse": "در راه به Mandawee",
+        "receivedAtWarehouse": "Mandawee بسته شما را دریافت کرد",
+        "waitingOtherVendors": "در انتظار فروشندگان دیگر ({received}/{expected})",
+        "packingTogether": "بسته‌بندی با کالاهای فروشندگان دیگر",
+        "readyToShip": "آماده ارسال به مشتری",
+        "onTheWayToCustomer": "در راه به مشتری",
+        "deliveredToCustomer": "تحویل به مشتری",
+        "notStarted": "هنوز شروع نشده",
+        "tracking": "رهگیری: {ref}",
+        "sent": "ارسال {date}",
+        "received": "دریافت {date}",
+        "shipped": "ارسال {date}",
+        "delivered": "تحویل {date}",
+        "ready": "آماده {date}"
+      },
+      "cancelConfirm": {
+        "title": "این سفارش لغو شود؟",
+        "body": "سفارش #{orderNumber} لغو می‌شود و پول مشتری بازگردانده می‌شود. این کار برگشت‌پذیر نیست.",
+        "confirm": "لغو و بازپرداخت",
+        "cancel": "نگه داشتن سفارش"
+      },
+      "toasts": {
+        "updated": "سفارش به‌روز شد: {status}",
+        "cancelledRefunded": "سفارش لغو شد. بازپرداخت مشتری شروع شد.",
+        "updateError": "به‌روزرسانی سفارش ممکن نشد",
+        "warehouseSent": "بسته به‌عنوان ارسال به Mandawee علامت خورد",
+        "warehouseError": "ارسال به Mandawee ممکن نشد",
+        "networkError": "خطای شبکه. دوباره تلاش کنید."
+      }
     },
     "reports": {
       "title": "گزارش‌ها",
@@ -1472,7 +1579,7 @@
         }
       },
       "trust": {
-        "title": "چرا با MandawEE انتقال دهید",
+        "title": "چرا با Mandawee انتقال دهید",
         "subtitle": "ساخته‌شده برای شفافیت، سرعت و پاسخگویی.",
         "rates": {
           "title": "نرخ‌های زنده تبادله",
@@ -1659,7 +1766,7 @@
         "refunds": "سیاست بازگشت وجه",
         "howItWorks": "چگونه کار می‌کند",
         "contact": "تماس با ما",
-        "sell": "فروش در MandawEE"
+        "sell": "فروش در Mandawee"
       },
       "contact": {
         "title": "هنوز به کمک نیاز دارید؟",
@@ -1723,13 +1830,13 @@
   },
   "AboutPages": {
     "landing": {
-      "eyebrow": "درباره MandawEE",
+      "eyebrow": "درباره Mandawee",
       "title": "بازار چندفروشنده قابل اعتماد افغانستان",
       "subtitle": "ما فروشندگان محلی را به مشتریان داخل و خارج وصل می‌کنیم — تا محصولات باکیفیت به عزیزان شما برسد.",
-      "heroImageAlt": "تجارت محلی و خرید اجتماعی با MandawEE",
+      "heroImageAlt": "تجارت محلی و خرید اجتماعی با Mandawee",
       "cta": {
         "shop": "مشاهده محصولات",
-        "sell": "فروش در MandawEE"
+        "sell": "فروش در Mandawee"
       },
       "mission": {
         "title": "ماموریت ما",
@@ -1738,7 +1845,7 @@
       },
       "story": {
         "title": "ساخته‌شده برای افغانستان، باز به روی جهان",
-        "description": "از مواد غذایی و هدایا تا ضروریات روزانه، MandawEE برای خرید قابل اعتماد، ارتباط شفاف و حمایت از فروشندگان مستقل طراحی شده است."
+        "description": "از مواد غذایی و هدایا تا ضروریات روزانه، Mandawee برای خرید قابل اعتماد، ارتباط شفاف و حمایت از فروشندگان مستقل طراحی شده است."
       },
       "offer": {
         "title": "چه ارائه می‌دهیم",
@@ -1776,7 +1883,7 @@
         "description": "هر سفارش از فروشندگان مستقل در افغانستان حمایت می‌کند. ما به تحویل قابل اعتماد، ارتباط شفاف و تجربه خرید مدرن و امن متعهدیم."
       },
       "links": {
-        "title": "MandawEE را کاوش کنید",
+        "title": "Mandawee را کاوش کنید",
         "howItWorks": "چگونه کار می‌کند",
         "help": "مرکز راهنما",
         "contact": "تماس با پشتیبانی",
@@ -1785,7 +1892,7 @@
       "finalCta": {
         "eyebrow": "به بازار بپیوندید",
         "title": "همین امروز خرید کنید — یا فروشگاه خود را با ما رشد دهید",
-        "subtitle": "محصولات فروشندگان معتبر را ببینید، یا برای فروش در MandawEE درخواست دهید.",
+        "subtitle": "محصولات فروشندگان معتبر را ببینید، یا برای فروش در Mandawee درخواست دهید.",
         "shop": "شروع خرید",
         "sell": "درخواست فروش"
       }
@@ -1793,7 +1900,7 @@
   },
   "GiftPages": {
     "landing": {
-      "eyebrow": "MandawEE · بسته‌های هدیه",
+      "eyebrow": "Mandawee · بسته‌های هدیه",
       "title": "بسته‌های هدیه",
       "subtitle": "هدایای دل‌انگیز برای عزیزان در افغانستان — بسته‌های آماده را ببینید یا درخواست هدیه شخصی‌سازی‌شده ثبت کنید.",
       "heroImageAlt": "هدایای بسته‌بندی‌شده آماده ارسال",

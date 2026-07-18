@@ -477,22 +477,50 @@ export function buildOrderPickupReadyEmail(
   };
 }
 
-export function buildOrderCancelledEmail(ctx: OrderEmailContext) {
+export function buildOrderCancelledEmail(
+  ctx: OrderEmailContext,
+  options?: {
+    refundedAmount?: number;
+    partial?: boolean;
+  }
+) {
+  const refundedAmount = options?.refundedAmount ?? 0;
+  const hasRefund = refundedAmount > 0;
+  const refundLine = hasRefund
+    ? options?.partial
+      ? `<p style="margin-top:16px">We refunded <strong>${formatCurrency(refundedAmount, ctx.currency)}</strong> for the cancelled items. It usually appears on your card in a few days.</p>`
+      : `<p style="margin-top:16px">We refunded <strong>${formatCurrency(refundedAmount, ctx.currency)}</strong> to your original payment method. It usually appears on your card in a few days.</p>`
+    : "";
+  const refundText = hasRefund
+    ? options?.partial
+      ? ` We refunded ${formatCurrency(refundedAmount, ctx.currency)} for the cancelled items.`
+      : ` We refunded ${formatCurrency(refundedAmount, ctx.currency)} to your original payment method.`
+    : "";
+  const title = options?.partial
+    ? "Part of your order was cancelled"
+    : "Your order has been cancelled";
+  const intro = options?.partial
+    ? `Hi ${ctx.customerName}, part of your order <strong>${ctx.orderNumber}</strong> was cancelled.`
+    : `Hi ${ctx.customerName}, your order <strong>${ctx.orderNumber}</strong> has been cancelled.`;
+
   const body = `
-    <span class="badge" style="background:#fef2f2;color:#b91c1c;border-color:#fecaca">❌ Order Cancelled</span>
-    <h2>Your order has been cancelled</h2>
-    <p>Hi ${ctx.customerName}, your order <strong>${ctx.orderNumber}</strong> has been successfully cancelled.</p>
+    <span class="badge" style="background:#fef2f2;color:#b91c1c;border-color:#fecaca">Order Cancelled</span>
+    <h2>${title}</h2>
+    <p>${intro}</p>
     <div class="order-box">
       <div class="label">Order Number</div>
       <div class="value">${ctx.orderNumber}</div>
     </div>
     ${itemsTable(ctx)}
+    ${refundLine}
     ${trackingCta(ctx.trackingUrl)}
-    <p style="margin-top:20px">If you didn't request this cancellation or have any questions, please contact our support team.</p>
+    <p style="margin-top:20px">If you have any questions, please contact our support team.</p>
   `;
   return {
-    subject: `Order ${ctx.orderNumber} has been cancelled`,
+    subject: hasRefund
+      ? `Order ${ctx.orderNumber} cancelled — refund started`
+      : `Order ${ctx.orderNumber} has been cancelled`,
     html: baseLayout(`Order Cancelled — ${ctx.orderNumber}`, body),
-    text: `Hi ${ctx.customerName}, your order ${ctx.orderNumber} has been cancelled.${trackingTextLine(ctx.trackingUrl)}`,
+    text: `Hi ${ctx.customerName}, ${options?.partial ? "part of your order" : "your order"} ${ctx.orderNumber} was cancelled.${refundText}${trackingTextLine(ctx.trackingUrl)}`,
   };
 }

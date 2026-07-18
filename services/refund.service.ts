@@ -20,6 +20,7 @@ import {
 } from "@/lib/mail/send-refund-emails";
 import { emitDisputeUpdated } from "@/lib/realtime/emit-dispute-updated";
 import { publishDisputeEvent } from "@/lib/realtime/publish-dispute-event";
+import { resolvePaymentStatusFromStripe } from "@/lib/orders/sync-payment-status-from-stripe";
 import { durationFromNow } from "@/lib/utils/duration";
 import { sha256 } from "@/lib/utils/crypto";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
@@ -1476,13 +1477,18 @@ export class RefundService {
       return sum + (refundCase.decision?.approvedAmount ?? 0);
     }, 0);
 
-    let paymentStatus: PaymentStatus = "PAID";
-
+    let fallbackStatus: PaymentStatus = "PAID";
     if (approvedRefundTotal >= order.grandTotalAmount) {
-      paymentStatus = "REFUNDED";
+      fallbackStatus = "REFUNDED";
     } else if (approvedRefundTotal > 0) {
-      paymentStatus = "PARTIALLY_REFUNDED";
+      fallbackStatus = "PARTIALLY_REFUNDED";
     }
+
+    // Stripe is source of truth so cancel refunds are not overwritten by dispute sync.
+    const paymentStatus = await resolvePaymentStatusFromStripe({
+      stripePaymentIntentId: order.stripePaymentIntentId,
+      fallbackStatus,
+    });
 
     await this.orderRepository.updateOrderPaymentStatus(orderId, paymentStatus);
   }

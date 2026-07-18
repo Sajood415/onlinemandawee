@@ -309,13 +309,13 @@
         "cancelledOn": "لغوه شوی {date}",
         "cancellationReason": "دلیل",
         "cancelModalTitle": "فرمایش لغوه کړئ",
-        "cancelModalDescription": "تاسو کولی شئ دا فرمایش لغوه کړئ ترڅو چې لیږل شوی نه وي. دا عمل بیرته نشي اخیستل کیدی.",
+        "cancelModalDescription": "تاسو کولی شئ مخکې له لیږلو لغوه کړئ. پیسې به هماغه کارت ته بیرته شي. دا بیرته نشي.",
         "cancelReasonLabel": "د لغوه کولو دلیل (اختیاري)",
         "cancelReasonPlaceholder": "ولې لغوه کوئ ولیکئ…",
         "cancelModalDismiss": "فرمایش وساتئ",
-        "cancelModalConfirm": "فرمایش لغوه کړئ",
+        "cancelModalConfirm": "لغوه او بیرته ورکړه",
         "cancelling": "لغوه کېږي…",
-        "cancelSuccess": "ستاسو فرمایش لغوه شو."
+        "cancelSuccess": "فرمایش لغوه شو. ستاسو بیرته ورکول پیل شول."
       },
       "addresses": {
         "title": "خوندي پتې",
@@ -988,7 +988,114 @@
     },
     "orders": {
       "title": "فرمایشونه",
-      "subtitle": "هغه فرمایشونه اداره کړئ چې ستاسو محصولات پکې دي"
+      "subtitle": "نوي فرمایشونه دلته راځي. یو پرانیزئ، بیا بسته کړئ او ولېږئ.",
+      "refresh": "بیا تازه کړئ",
+      "searchPlaceholder": "د فرمایش #، پیرودونکي یا تلیفون لټون…",
+      "allStatuses": "ټول حالتونه",
+      "loading": "فرمایشونه پورته کېږي…",
+      "loadError": "فرمایشونه پورته نشول.",
+      "tryAgain": "بیا هڅه",
+      "empty": "تر اوسه هیڅ فرمایش نشته",
+      "emptyHint": "کله چې پیرودونکي ستاسو محصولات واخلي، فرمایشونه دلته راځي.",
+      "emptyFiltered": "ستاسو فلټرونو سره هیڅ فرمایش برابر نه دی",
+      "emptyFilteredHint": "بل لټون یا حالت وڅیړئ.",
+      "showing": "{shown} له {total} ښودل کېږي",
+      "placed": "ثبت شوی {date}",
+      "deliveredOn": "تحویل شوی {date}",
+      "cancelledByCustomer": "د پیرودونکي لخوا لغوه شوی",
+      "cancelledOn": "لغوه شوی په {date}",
+      "reason": "دلیل: {reason}",
+      "noReason": "هیڅ دلیل نه دی ورکړل شوی.",
+      "itemCount": "{count} توکی",
+      "itemCountPlural": "{count} توکي",
+      "deliveryAddress": "د تحویل پته",
+      "itemsOrdered": "توکي",
+      "sku": "SKU: {sku}",
+      "subtotal": "فرعي مجموعه",
+      "delivery": "تحویل",
+      "discount": "تخفیف",
+      "total": "ټول",
+      "updateStatus": "راتلونکی ګام",
+      "currentStatus": "حالت: {status}",
+      "deliveryMethod": "تحویل: {method}",
+      "deliveryMethods": {
+        "PICKUP": "اخیستل",
+        "EXPRESS": "چټک",
+        "STANDARD": "معیاري تحویل",
+        "unknown": "—"
+      },
+      "standardBadge": "Mandawee ګودام ته ځي",
+      "needsYou": "ستاسو عمل ته اړتیا",
+      "noActionNeeded": "په دې فرمایش کې ستاسو لپاره هیڅ پاتې نه دی — پاتې کار Mandawee کوي.",
+      "disputesLink": "شخړې پرانیزئ",
+      "emailShipped": "پیرودونکي ته بریښنالیک تللی چې فرمایش لېږل شوی.",
+      "emailDelivered": "پیرودونکي ته بریښنالیک تللی چې فرمایش تحویل شوی.",
+      "payoutHold": "فرمایش تحویل شو. عاید به وروسته د تادیې لپاره چمتو شي.",
+      "statuses": {
+        "NEW": "نوی",
+        "PREPARING": "چمتو کیږي",
+        "INBOUND_SHIPPED": "ګودام ته لېږل شوی",
+        "RECEIVED_AT_WAREHOUSE": "په ګودام کې",
+        "SHIPPED": "لېږل شوی",
+        "DELIVERED": "تحویل شوی",
+        "CANCELLED": "لغوه شوی"
+      },
+      "actions": {
+        "prepare": "چمتووالی پیل کړئ",
+        "ship": "لکه لېږل شوی نښه کړئ",
+        "deliver": "لکه تحویل شوی نښه کړئ",
+        "cancel": "فرمایش لغوه کړئ",
+        "sendWarehouse": "Mandawee ته ولېږئ",
+        "trackingOptional": "د تعقیب شمېره (اختیاري)",
+        "trackingPlaceholder": "لکه AWB1234",
+        "warehouseHelp": "توکي بسته کړئ، بیا بسته Mandawee ته ولېږئ. موږ یې پیرودونکي ته رسوو.",
+        "alreadySent": "تاسو دا بسته دمخه Mandawee ته لېږلې ده.",
+        "trackingLabel": "تعقیب: {ref}",
+        "sentAt": "لېږل شوی: {date}"
+      },
+      "payment": {
+        "PENDING": "تادیه پاتې",
+        "PAID": "تادیه شوې",
+        "UNPAID": "نا تادیه",
+        "PARTIALLY_REFUNDED": "نیمه بیرته",
+        "REFUNDED": "بیرته ورکړل شوې",
+        "FULLY_REFUNDED": "بیرته ورکړل شوې"
+      },
+      "warehouse": {
+        "title": "د تحویل پرمختګ",
+        "step1Title": "Mandawee ته لېږل شوی",
+        "step2Title": "په ګودام کې",
+        "step3Title": "پیرودونکي ته",
+        "waitingSend": "ستاسو د لېږلو په تمه",
+        "onTheWayToWarehouse": "Mandawee ته په لاره",
+        "receivedAtWarehouse": "Mandawee ستاسو بسته ترلاسه کړه",
+        "waitingOtherVendors": "د نورو پلورونکو په تمه ({received}/{expected})",
+        "packingTogether": "د نورو پلورونکو توکو سره بسته کېږي",
+        "readyToShip": "پیرودونکي ته د لېږلو چمتو",
+        "onTheWayToCustomer": "پیرودونکي ته په لاره",
+        "deliveredToCustomer": "پیرودونکي ته تحویل شو",
+        "notStarted": "تر اوسه پیل نه دی",
+        "tracking": "تعقیب: {ref}",
+        "sent": "لېږل شوی {date}",
+        "received": "ترلاسه شوی {date}",
+        "shipped": "لېږل شوی {date}",
+        "delivered": "تحویل شوی {date}",
+        "ready": "چمتو {date}"
+      },
+      "cancelConfirm": {
+        "title": "دا فرمایش لغوه کړئ؟",
+        "body": "فرمایش #{orderNumber} به لغوه شي او د پیرودونکي پیسې به بیرته ورکړل شي. دا بیرته نشي.",
+        "confirm": "لغوه او بیرته ورکړه",
+        "cancel": "فرمایش وساتئ"
+      },
+      "toasts": {
+        "updated": "فرمایش تازه شو: {status}",
+        "cancelledRefunded": "فرمایش لغوه شو. د پیرودونکي بیرته ورکول پیل شول.",
+        "updateError": "فرمایش تازه نشو",
+        "warehouseSent": "بسته Mandawee ته لېږل شوې نښه شوه",
+        "warehouseError": "Mandawee ته لېږل نشو",
+        "networkError": "د شبکې ستونزه. بیا هڅه وکړئ."
+      }
     },
     "reports": {
       "title": "راپورونه",
@@ -1472,7 +1579,7 @@
         }
       },
       "trust": {
-        "title": "ولې له MandawEE سره لېږد وکړئ",
+        "title": "ولې له Mandawee سره لېږد وکړئ",
         "subtitle": "د روڼتیا، چټکتیا او حساب ورکونې لپاره جوړ شوی.",
         "rates": {
           "title": "ژوندي تبادلې نرخونه",
@@ -1659,7 +1766,7 @@
         "refunds": "د بیرته ورکړې تګلاره",
         "howItWorks": "څنګه کار کوي",
         "contact": "اړیکه",
-        "sell": "په MandawEE وپلورئ"
+        "sell": "په Mandawee وپلورئ"
       },
       "contact": {
         "title": "لا هم مرستې ته اړتیا لرئ؟",
@@ -1723,13 +1830,13 @@
   },
   "AboutPages": {
     "landing": {
-      "eyebrow": "د MandawEE په اړه",
+      "eyebrow": "د Mandawee په اړه",
       "title": "د افغانستان باوري څو پلورونکی بازار",
       "subtitle": "موږ سیمه‌ییز پلورونکي له کور او بهر پیرودونکو سره نښلوو — ترڅو باکیفیته محصولات هغو کسانو ته ورسیږي چې ستاسو لپاره مهم دي.",
-      "heroImageAlt": "د MandawEE سره سیمه‌ییز تجارت او ټولنیز پیرود",
+      "heroImageAlt": "د Mandawee سره سیمه‌ییز تجارت او ټولنیز پیرود",
       "cta": {
         "shop": "محصولات وپلټئ",
-        "sell": "په MandawEE وپلورئ"
+        "sell": "په Mandawee وپلورئ"
       },
       "mission": {
         "title": "زموږ ماموریت",
@@ -1738,7 +1845,7 @@
       },
       "story": {
         "title": "د افغانستان لپاره جوړ شوی، نړۍ ته پرانیستی",
-        "description": "له خوراکي توکو او ډالیو څخه تر ورځنیو اړینو پورې، MandawEE د باوري پیرود، روښانه اړیکو، او د خپلواکو پلورونکو ملاتړ لپاره جوړ شوی."
+        "description": "له خوراکي توکو او ډالیو څخه تر ورځنیو اړینو پورې، Mandawee د باوري پیرود، روښانه اړیکو، او د خپلواکو پلورونکو ملاتړ لپاره جوړ شوی."
       },
       "offer": {
         "title": "موږ څه وړاندې کوو",
@@ -1776,7 +1883,7 @@
         "description": "هر آرډر په افغانستان کې د خپلواکو پلورونکو ملاتړ کوي. موږ د باوري تحویلۍ، روښانه اړیکو، او عصري خوندي پیرود تجربې ته ژمن یو."
       },
       "links": {
-        "title": "MandawEE وپلټئ",
+        "title": "Mandawee وپلټئ",
         "howItWorks": "څنګه کار کوي",
         "help": "د مرستې مرکز",
         "contact": "له ملاتړ سره اړیکه",
@@ -1785,7 +1892,7 @@
       "finalCta": {
         "eyebrow": "بازار ته ورشئ",
         "title": "نن پیرود وکړئ — یا خپل پلورنځی له موږ سره وده ورکړئ",
-        "subtitle": "د باوري پلورونکو محصولات وګورئ، یا په MandawEE د پلور غوښتنه وکړئ.",
+        "subtitle": "د باوري پلورونکو محصولات وګورئ، یا په Mandawee د پلور غوښتنه وکړئ.",
         "shop": "پیرود پیل کړئ",
         "sell": "د پلور غوښتنه"
       }
@@ -1793,7 +1900,7 @@
   },
   "GiftPages": {
     "landing": {
-      "eyebrow": "MandawEE · د ډالۍ بستې",
+      "eyebrow": "Mandawee · د ډالۍ بستې",
       "title": "د ډالۍ بستې",
       "subtitle": "په افغانستان کې خپلو عزیزانو ته ډالۍ واستوئ — چمتو بستې وګورئ یا د خپلې خوښې ډالۍ غوښتنه وکړئ.",
       "heroImageAlt": "په پاملرنې سره چمتو شوې ډالۍ",

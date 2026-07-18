@@ -31,6 +31,7 @@ import {
   isOrderLockedByCustomerCancellation,
 } from "@/lib/orders/order-cancellation";
 import { executeOrderCancellation } from "@/lib/orders/execute-order-cancellation";
+import { OrderCancelRefundService } from "@/services/order-cancel-refund.service";
 
 type QuoteLine = {
   cartItemId: string;
@@ -102,7 +103,8 @@ export class OrderService {
     private readonly vendorProfileRepository = new VendorProfileRepository(),
     private readonly auditLogRepository = new AuditLogRepository(),
     private readonly standardConsolidationService = new StandardConsolidationService(),
-    private readonly payoutReleaseService = new PayoutReleaseService()
+    private readonly payoutReleaseService = new PayoutReleaseService(),
+    private readonly orderCancelRefundService = new OrderCancelRefundService()
   ) {}
 
   async createOrder(
@@ -285,12 +287,19 @@ export class OrderService {
     const customerEmail =
       order.user?.email ?? order.guestEmail ?? auth.email;
 
+    const refund = await this.orderCancelRefundService.refundBeforeCancel({
+      orderId: order.id,
+      mode: "full",
+      actor: "CUSTOMER",
+    });
+
     const result = await executeOrderCancellation({
       orderId: order.id,
       cancelledByRole: "CUSTOMER",
       cancelledByUserId: auth.id,
       cancellationReason: input.reason,
       notifyEmail: customerEmail,
+      refundedAmount: refund.refundedAmount,
     });
 
     await this.auditLogRepository.create({
@@ -303,6 +312,9 @@ export class OrderService {
         orderNumber: order.orderNumber,
         reason: input.reason?.trim() || null,
         cancelledAt: result.cancelledAt,
+        refundedAmount: refund.refundedAmount,
+        paymentStatus: refund.paymentStatus,
+        stripeRefundId: refund.stripeRefundId,
       },
     });
 
@@ -412,6 +424,19 @@ export class OrderService {
 
     this.assertVendorOrderTransition(vendorOrder.status, status);
 
+    let cancelRefund: Awaited<
+      ReturnType<OrderCancelRefundService["refundBeforeCancel"]>
+    > | null = null;
+
+    if (status === "CANCELLED") {
+      cancelRefund = await this.orderCancelRefundService.refundBeforeCancel({
+        orderId: parentOrder.id,
+        mode: "vendor",
+        vendorOrderId,
+        actor: "VENDOR",
+      });
+    }
+
     const updatedVendorOrder = await this.orderRepository.updateVendorOrderStatus(
       vendorOrderId,
       status
@@ -430,6 +455,13 @@ export class OrderService {
         ...(status === "DELIVERED" && updatedVendorOrder.deliveredAt
           ? { deliveredAt: updatedVendorOrder.deliveredAt.toISOString() }
           : {}),
+        ...(cancelRefund
+          ? {
+              refundedAmount: cancelRefund.refundedAmount,
+              paymentStatus: cancelRefund.paymentStatus,
+              stripeRefundId: cancelRefund.stripeRefundId,
+            }
+          : {}),
       },
     });
 
@@ -446,6 +478,7 @@ export class OrderService {
         orderId: vendorOrder.order.id,
         status,
         vendorOrderId: vendorOrder.id,
+        refundedAmount: cancelRefund?.refundedAmount,
       });
     }
 
@@ -657,6 +690,7 @@ export class OrderService {
     orderId: string;
     status: VendorOrderStatus;
     vendorOrderId?: string;
+    refundedAmount?: number;
   }) {
     try {
       const order = await this.orderRepository.findById(input.orderId);
@@ -746,7 +780,15 @@ export class OrderService {
       } else if (input.status === "DELIVERED") {
         emailPayload = buildOrderDeliveredEmail(ctx);
       } else {
-        emailPayload = buildOrderCancelledEmail(ctx);
+        const activeVendorOrders = order.vendorOrders.filter(
+          (row) => row.status !== "CANCELLED"
+        );
+        const partialCancel =
+          Boolean(input.vendorOrderId) && activeVendorOrders.length > 0;
+        emailPayload = buildOrderCancelledEmail(ctx, {
+          refundedAmount: input.refundedAmount ?? 0,
+          partial: partialCancel,
+        });
       }
 
       await sendTransactionalEmail({ to: customerEmail, ...emailPayload });

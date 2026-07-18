@@ -11,6 +11,7 @@ export async function executeOrderCancellation(input: {
   cancelledByUserId?: string;
   cancellationReason?: string | null;
   notifyEmail?: string | null;
+  refundedAmount?: number;
 }) {
   const order = await prisma.order.findUnique({
     where: { id: input.orderId },
@@ -75,7 +76,9 @@ export async function executeOrderCancellation(input: {
         }))
       ),
     };
-    const email = buildOrderCancelledEmail(ctx);
+    const email = buildOrderCancelledEmail(ctx, {
+      refundedAmount: input.refundedAmount ?? 0,
+    });
     await sendTransactionalEmail({ to: customerEmail, ...email });
   } catch {
     // Email failure must not fail cancellation
