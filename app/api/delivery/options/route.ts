@@ -8,7 +8,8 @@ import { z } from "zod";
 
 const deliveryService = new DeliveryService();
 const deliveryOptionsSchema = z.object({
-  addressId: z.string().min(1),
+  // Optional: Pickup needs no address. With an address, country-scoped methods filter better.
+  addressId: z.string().min(1).optional(),
 });
 
 export const POST = withErrorHandling(

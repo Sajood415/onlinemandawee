@@ -59,14 +59,14 @@ type QuoteResult = {
   currency: string;
   deliveryMethod: "PICKUP" | "EXPRESS" | "STANDARD";
   address: {
-    id: string;
+    id: string | null;
     fullName: string;
     phone: string;
     addressLine1: string;
     city: string;
     country: string;
     postalCode: string;
-  };
+  } | null;
   subtotalSnapshot: number;
   subtotalCurrent: number;
   deliveryTotal: number;
@@ -112,7 +112,7 @@ export class OrderService {
   async createOrder(
     auth: AuthenticatedUser,
     input: {
-      addressId: string;
+      addressId?: string;
       method: "PICKUP" | "EXPRESS" | "STANDARD";
       currency?: string;
       distanceKm?: number;
@@ -121,6 +121,14 @@ export class OrderService {
     this.assertActiveCustomer(auth);
     const quote = await this.buildQuote(auth, input);
     const orderNumber = await this.generateUniqueOrderNumber();
+
+    // Pickup: contact only (name/phone). No street address required.
+    const shippingFullName = quote.address?.fullName || auth.fullName || "Customer";
+    const shippingPhone = quote.address?.phone || auth.phone || "";
+    const shippingAddressLine1 = quote.address?.addressLine1 ?? "";
+    const shippingCity = quote.address?.city ?? "";
+    const shippingCountry = quote.address?.country ?? "";
+    const shippingPostalCode = quote.address?.postalCode ?? "";
 
     const order = await this.orderRepository.create({
       userId: auth.id,
@@ -131,12 +139,12 @@ export class OrderService {
       deliveryAmount: quote.deliveryTotal,
       discountAmount: quote.discountTotal,
       grandTotalAmount: quote.grandTotalCurrent,
-      shippingFullName: quote.address.fullName,
-      shippingPhone: quote.address.phone,
-      shippingAddressLine1: quote.address.addressLine1,
-      shippingCity: quote.address.city,
-      shippingCountry: quote.address.country,
-      shippingPostalCode: quote.address.postalCode,
+      shippingFullName,
+      shippingPhone,
+      shippingAddressLine1,
+      shippingCity,
+      shippingCountry,
+      shippingPostalCode,
       vendorOrders: quote.vendorGroups.map((vendorGroup) => {
         const deliveryAmount = resolveVendorSettlementDeliveryAmount({
           deliveryMethod: input.method,
@@ -507,7 +515,7 @@ export class OrderService {
   private async buildQuote(
     auth: AuthenticatedUser,
     input: {
-      addressId: string;
+      addressId?: string;
       method: "PICKUP" | "EXPRESS" | "STANDARD";
       currency?: string;
       distanceKm?: number;
@@ -523,14 +531,34 @@ export class OrderService {
       });
     }
 
-    const address = await this.customerAddressRepository.findById(input.addressId);
+    const isPickup = input.method === "PICKUP";
+    let address: Awaited<
+      ReturnType<CustomerAddressRepository["findById"]>
+    > | null = null;
 
-    if (!address || address.userId !== auth.id) {
-      throw new AppError({
-        code: ERROR_CODE.NOT_FOUND,
-        message: "Address not found",
-        statusCode: 404,
-      });
+    if (!isPickup) {
+      if (!input.addressId) {
+        throw new AppError({
+          code: ERROR_CODE.BAD_REQUEST,
+          message: "Delivery address is required for Express and Standard delivery",
+          statusCode: 400,
+        });
+      }
+      address = await this.customerAddressRepository.findById(input.addressId);
+      if (!address || address.userId !== auth.id) {
+        throw new AppError({
+          code: ERROR_CODE.NOT_FOUND,
+          message: "Address not found",
+          statusCode: 404,
+        });
+      }
+    } else if (input.addressId) {
+      const optionalAddress = await this.customerAddressRepository.findById(
+        input.addressId
+      );
+      if (optionalAddress && optionalAddress.userId === auth.id) {
+        address = optionalAddress;
+      }
     }
 
     const currency = input.currency ?? cart.currency;
@@ -629,7 +657,7 @@ export class OrderService {
       0
     );
     const deliveryQuote =
-      input.method === "PICKUP"
+      isPickup || !address
         ? null
         : await resolveDistanceDeliveryQuote({
             vendorProfileIds: [...new Set(items.map((item) => item.vendorProfileId))],
@@ -645,15 +673,27 @@ export class OrderService {
     return {
       currency,
       deliveryMethod: input.method,
-      address: {
-        id: address.id,
-        fullName: address.fullName,
-        phone: address.phone,
-        addressLine1: address.addressLine1,
-        city: address.city,
-        country: address.country,
-        postalCode: address.postalCode,
-      },
+      address: address
+        ? {
+            id: address.id,
+            fullName: address.fullName,
+            phone: address.phone,
+            addressLine1: address.addressLine1,
+            city: address.city,
+            country: address.country,
+            postalCode: address.postalCode,
+          }
+        : isPickup
+          ? {
+              id: null,
+              fullName: auth.fullName || "Customer",
+              phone: auth.phone || "",
+              addressLine1: "",
+              city: "",
+              country: "",
+              postalCode: "",
+            }
+          : null,
       subtotalSnapshot,
       subtotalCurrent,
       deliveryTotal,

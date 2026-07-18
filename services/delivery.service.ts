@@ -16,7 +16,7 @@ export class DeliveryService {
   async listAvailableMethods(
     auth: AuthenticatedUser,
     input: {
-      addressId: string;
+      addressId?: string;
     }
   ) {
     this.assertActiveCustomer(auth);
@@ -31,20 +31,23 @@ export class DeliveryService {
       });
     }
 
-    const address = await this.customerAddressRepository.findById(input.addressId);
-
-    if (!address || address.userId !== auth.id) {
-      throw new AppError({
-        code: ERROR_CODE.NOT_FOUND,
-        message: "Address not found",
-        statusCode: 404,
-      });
+    let countryCode: string | undefined;
+    if (input.addressId) {
+      const address = await this.customerAddressRepository.findById(input.addressId);
+      if (!address || address.userId !== auth.id) {
+        throw new AppError({
+          code: ERROR_CODE.NOT_FOUND,
+          message: "Address not found",
+          statusCode: 404,
+        });
+      }
+      countryCode = address.country;
     }
 
     const vendorProfileIds = [...new Set(cart.items.map((item) => item.vendorProfileId))];
 
     return this.deliveryPricingService.listAvailableMethods({
-      countryCode: address.country,
+      countryCode,
       vendorProfileIds,
     });
   }
@@ -52,7 +55,7 @@ export class DeliveryService {
   async quote(
     auth: AuthenticatedUser,
     input: {
-      addressId: string;
+      addressId?: string;
       method: "PICKUP" | "EXPRESS" | "STANDARD";
       currency?: string;
       distanceKm?: number;
@@ -67,16 +70,6 @@ export class DeliveryService {
         code: ERROR_CODE.BAD_REQUEST,
         message: "Cart is empty",
         statusCode: 400,
-      });
-    }
-
-    const address = await this.customerAddressRepository.findById(input.addressId);
-
-    if (!address || address.userId !== auth.id) {
-      throw new AppError({
-        code: ERROR_CODE.NOT_FOUND,
-        message: "Address not found",
-        statusCode: 404,
       });
     }
 
@@ -116,6 +109,24 @@ export class DeliveryService {
           scope: "GLOBAL",
         })),
       };
+    }
+
+    if (!input.addressId) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Delivery address is required for Express and Standard delivery",
+        statusCode: 400,
+      });
+    }
+
+    const address = await this.customerAddressRepository.findById(input.addressId);
+
+    if (!address || address.userId !== auth.id) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Address not found",
+        statusCode: 404,
+      });
     }
 
     const deliveryQuote = await resolveDistanceDeliveryQuote({
