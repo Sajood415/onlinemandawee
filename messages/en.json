@@ -1410,7 +1410,7 @@
           "bankName": "Bank Name",
           "accountTitle": "Account Title",
           "accountNumberOrIban": "Account Number / IBAN",
-          "paypalEmailOptional": "PayPal Email (Optional)"
+          "stripeEmailOptional": "Stripe Email (Optional)"
         },
         "stepContent": {
           "account": {
@@ -1549,7 +1549,7 @@
           "minFiveCharacters": "Use at least 5 characters.",
           "phoneLooksGood": "Phone number looks good",
           "storeName": "Store name must be at least 2 characters.",
-          "paypalEmail": "Enter a valid PayPal email."
+          "stripeEmail": "Enter a valid Stripe email."
         },
         "success": {
           "title": "Application received",

@@ -1410,7 +1410,7 @@
           "bankName": "د بانک نوم",
           "accountTitle": "د حساب سرلیک",
           "accountNumberOrIban": "د حساب شمېره / IBAN",
-          "paypalEmailOptional": "PayPal بریښنالیک (اختیاري)"
+          "stripeEmailOptional": "Stripe بریښنالیک (اختیاري)"
         },
         "stepContent": {
           "account": {
@@ -1549,7 +1549,7 @@
           "minFiveCharacters": "لږترلږه ۵ توري وکاروئ.",
           "phoneLooksGood": "د تلیفون شمېره سمه ښکاري",
           "storeName": "د پلورنځي نوم باید لږترلږه ۲ توري وي.",
-          "paypalEmail": "سم PayPal بریښنالیک ولیکئ."
+          "stripeEmail": "سم Stripe بریښنالیک ولیکئ."
         },
         "success": {
           "title": "غوښتنلیک ترلاسه شو",

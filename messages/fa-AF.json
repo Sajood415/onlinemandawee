@@ -1410,7 +1410,7 @@
           "bankName": "نام بانک",
           "accountTitle": "عنوان حساب",
           "accountNumberOrIban": "شماره حساب / IBAN",
-          "paypalEmailOptional": "ایمیل PayPal (اختیاری)"
+          "stripeEmailOptional": "ایمیل Stripe (اختیاری)"
         },
         "stepContent": {
           "account": {
@@ -1549,7 +1549,7 @@
           "minFiveCharacters": "حداقل ۵ نویسه استفاده کنید.",
           "phoneLooksGood": "شماره تلفن درست به‌نظر می‌رسد",
           "storeName": "نام فروشگاه باید حداقل ۲ نویسه باشد.",
-          "paypalEmail": "ایمیل معتبر PayPal وارد کنید."
+          "stripeEmail": "ایمیل معتبر Stripe وارد کنید."
         },
         "success": {
           "title": "درخواست دریافت شد",

@@ -65,7 +65,7 @@ export class PayoutReleaseService {
   }
 
   /**
-   * Auto-payout path: release hold and mark sent (bank / PayPal transfer queued).
+   * Auto-payout path: release hold and mark sent (bank / Stripe transfer queued).
    */
   async autoTransfer(payoutId: string) {
     const payout = await this.payoutRepository.findById(payoutId);

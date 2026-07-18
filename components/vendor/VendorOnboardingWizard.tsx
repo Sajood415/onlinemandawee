@@ -725,7 +725,7 @@ export function VendorOnboardingWizard() {
   const [accountName, setAccountName] = useState("");
   const [accountNumberOrIban, setAccountNumberOrIban] = useState("");
   const [bankName, setBankName] = useState("");
-  const [paypalEmail, setPaypalEmail] = useState("");
+  const [stripeEmail, setStripeEmail] = useState("");
 
   const [ag1, setAg1] = useState(false);
   const [ag2, setAg2] = useState(false);
@@ -831,7 +831,7 @@ export function VendorOnboardingWizard() {
         setAccountName(String(draft.accountName ?? ""));
         setAccountNumberOrIban(String(draft.accountNumberOrIban ?? ""));
         setBankName(String(draft.bankName ?? ""));
-        setPaypalEmail(String(draft.paypalEmail ?? ""));
+        setStripeEmail(String(draft.stripeEmail ?? draft.paypalEmail ?? ""));
         setAg1(Boolean(draft.ag1));
         setAg2(Boolean(draft.ag2));
         setAg3(Boolean(draft.ag3));
@@ -878,7 +878,7 @@ export function VendorOnboardingWizard() {
           accountName,
           accountNumberOrIban,
           bankName,
-          paypalEmail,
+          stripeEmail,
           ag1,
           ag2,
           ag3,
@@ -920,7 +920,7 @@ export function VendorOnboardingWizard() {
     accountName,
     accountNumberOrIban,
     bankName,
-    paypalEmail,
+    stripeEmail,
     ag1,
     ag2,
     ag3,
@@ -1330,7 +1330,7 @@ export function VendorOnboardingWizard() {
           accountName: accountName.trim(),
           accountNumberOrIban: accountNumberOrIban.trim(),
           bankName: bankName.trim(),
-          ...(paypalEmail.trim() ? { stripeEmail: paypalEmail.trim() } : {}),
+          ...(stripeEmail.trim() ? { stripeEmail: stripeEmail.trim() } : {}),
         });
         setDirection(1);
         setStep(6);
@@ -1781,15 +1781,15 @@ export function VendorOnboardingWizard() {
                   success={Boolean(accountNumberOrIban.length > 0 && !accountNumberError)}
                 />
                 <FloatingInput
-                  id="paypal-email"
-                  label={tWizard("fields.paypalEmailOptional")}
+                  id="stripe-email"
+                  label={tWizard("fields.stripeEmailOptional")}
                   icon={<Mail className="h-4 w-4" />}
-                  value={paypalEmail}
-                  onChange={setPaypalEmail}
+                  value={stripeEmail}
+                  onChange={setStripeEmail}
                   type="email"
                   error={
-                    paypalEmail.length > 0 && !EMAIL_REGEX.test(paypalEmail.trim())
-                      ? tWizard("validation.paypalEmail")
+                    stripeEmail.length > 0 && !EMAIL_REGEX.test(stripeEmail.trim())
+                      ? tWizard("validation.stripeEmail")
                       : null
                   }
                 />
@@ -1844,7 +1844,7 @@ export function VendorOnboardingWizard() {
                 !isValidPhone(phone) ||
                 Boolean(passwordError) ||
                 Boolean(confirmPasswordError))) ||
-            (step === 5 && Boolean(paypalEmail) && !EMAIL_REGEX.test(paypalEmail.trim()))
+            (step === 5 && Boolean(stripeEmail) && !EMAIL_REGEX.test(stripeEmail.trim()))
           }
         />
       </div>
