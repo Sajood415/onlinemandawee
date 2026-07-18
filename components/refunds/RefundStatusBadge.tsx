@@ -4,9 +4,11 @@ import { getRefundOutcomeDisplay } from "@/components/refunds/refund-types";
 export function RefundStatusBadge({
   status,
   decision,
+  label,
 }: {
   status: RefundCaseStatus;
   decision?: { decisionType: RefundDecisionType } | null;
+  label?: string;
 }) {
   const display = getRefundOutcomeDisplay({
     status,
@@ -15,9 +17,9 @@ export function RefundStatusBadge({
 
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${display.badgeClass}`}
+      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide ${display.badgeClass}`}
     >
-      {display.label}
+      {label ?? display.label}
     </span>
   );
 }

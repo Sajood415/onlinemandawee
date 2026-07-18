@@ -1097,6 +1097,22 @@
         "networkError": "خطای شبکه. دوباره تلاش کنید."
       }
     },
+    "disputes": {
+      "title": "اختلافات",
+      "subtitle": "اگر مشتری بازپرداخت بخواهد، ظرف ۴۸ ساعت اینجا جواب دهید.",
+      "refresh": "تازه‌سازی",
+      "loadError": "بارگذاری اختلافات ممکن نشد",
+      "empty": "اینجا اختلافی نیست",
+      "emptyHint": "وقتی مشتری برای سفارش شما بازپرداخت بخواهد، در این تب دیده می‌شود.",
+      "ordersLink": "رفتن به سفارش‌ها",
+      "tabs": {
+        "needs_response": "نیاز به شما",
+        "escalated": "نزد Mandawee",
+        "resolved": "حل‌شده"
+      },
+      "respondBy": "تا {date} پاسخ دهید",
+      "back": "بازگشت به اختلافات"
+    },
     "reports": {
       "title": "گزارش‌ها",
       "tabs": {
@@ -2019,6 +2035,85 @@
       },
       "catalogTitle": "خرید {category}",
       "catalogSubtitle": "محصولات این دسته را مرور کنید."
+    }
+  },
+  "Disputes": {
+    "statuses": {
+      "REQUESTED": "درخواست‌شده",
+      "WAITING_VENDOR": "در انتظار فروشنده",
+      "ESCALATED_ADMIN": "نزد Mandawee",
+      "RESOLVED": "حل‌شده"
+    },
+    "decisions": {
+      "APPROVE": "بازپرداخت تأیید شد",
+      "PARTIAL": "بازپرداخت جزئی",
+      "REJECT": "بازپرداخت رد شد"
+    },
+    "detail": {
+      "notFound": "اختلاف پیدا نشد.",
+      "loadError": "بارگذاری اختلاف ممکن نشد",
+      "orderLabel": "سفارش {orderNumber}",
+      "amounts": "مبلغ",
+      "requested": "درخواستی: {amount}",
+      "approved": "تأییدشده: {amount}",
+      "timeline": "زمان‌بندی",
+      "opened": "باز شده: {date}",
+      "vendorDue": "مهلت فروشنده: {date}",
+      "escalated": "ارسال به Mandawee: {date}",
+      "resolved": "حل‌شده: {date}",
+      "customerDescription": "یادداشت مشتری",
+      "vendorExplanation": "پاسخ شما",
+      "customer": "مشتری",
+      "vendor": "فروشنده",
+      "storeFallback": "فروشگاه",
+      "viewVendorProfile": "مشاهده پروفایل فروشنده",
+      "evidence": "عکس‌ها و فایل‌ها",
+      "noEvidence": "فایلی آپلود نشده.",
+      "viewFile": "باز کردن فایل",
+      "escalate": "از Mandawee بخواهید بررسی کند",
+      "escalating": "در حال ارسال…",
+      "escalateSuccess": "به Mandawee ارسال شد",
+      "escalateError": "ارسال به Mandawee ممکن نشد",
+      "finalDecision": "تصمیم نهایی",
+      "recorded": "ثبت شده {date}"
+    },
+    "response": {
+      "title": "پاسخ شما",
+      "help": "با قبول، پول مشتری برمی‌گردد؛ با رد، به Mandawee می‌رود.",
+      "accept": "قبول بازپرداخت",
+      "reject": "رد و ارسال به Mandawee",
+      "explanation": "توضیح شما",
+      "evidenceNote": "یادداشت فایل (اختیاری)",
+      "evidenceFile": "عکس یا PDF (اختیاری)",
+      "uploading": "در حال آپلود…",
+      "uploaded": "فایل آپلود شد",
+      "submit": "ثبت پاسخ",
+      "needExplanation": "لطفاً توضیح کوتاه بنویسید",
+      "acceptSuccess": "بازپرداخت قبول شد",
+      "rejectSuccess": "رد شد و به Mandawee رفت",
+      "submitError": "ثبت پاسخ ممکن نشد",
+      "uploadError": "آپلود ناموفق بود"
+    },
+    "chat": {
+      "title": "پیام‌ها",
+      "live": "زنده",
+      "connecting": "در حال اتصال…",
+      "empty": "هنوز پیامی نیست.",
+      "placeholder": "پیام بنویسید…",
+      "attach": "پیوست",
+      "send": "ارسال",
+      "attachmentReady": "فایل آماده است.",
+      "remove": "حذف",
+      "viewAttachment": "مشاهده فایل",
+      "uploaded": "فایل آپلود شد",
+      "uploadError": "آپلود ناموفق بود",
+      "loadError": "بارگذاری پیام‌ها ممکن نشد",
+      "sendError": "ارسال پیام ممکن نشد",
+      "roles": {
+        "CUSTOMER": "مشتری",
+        "VENDOR": "فروشنده",
+        "ADMIN": "Mandawee"
+      }
     }
   },
   "AdminPages": {

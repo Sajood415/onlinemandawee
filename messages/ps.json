@@ -1097,6 +1097,22 @@
         "networkError": "د شبکې ستونزه. بیا هڅه وکړئ."
       }
     },
+    "disputes": {
+      "title": "شخړې",
+      "subtitle": "که پیرودونکی پیسې بیرته وغواړي، دلته په ۴۸ ساعتونو کې ځواب ورکړئ.",
+      "refresh": "بیا تازه کړئ",
+      "loadError": "شخړې پورته نشولې",
+      "empty": "دلته هیڅ شخړه نشته",
+      "emptyHint": "کله چې پیرودونکی ستاسو پر فرمایش بیرته ورکول وغواړي، په دې ټب کې ښکاره کېږي.",
+      "ordersLink": "فرمایشونو ته لاړ شئ",
+      "tabs": {
+        "needs_response": "ستاسو ته اړتیا",
+        "escalated": "د Mandawee سره",
+        "resolved": "حل شوې"
+      },
+      "respondBy": "تر {date} ځواب ورکړئ",
+      "back": "شخړو ته بیرته"
+    },
     "reports": {
       "title": "راپورونه",
       "tabs": {
@@ -2019,6 +2035,85 @@
       },
       "catalogTitle": "{category} وپلټئ",
       "catalogSubtitle": "په دې کټګورۍ کې محصولات وګورئ."
+    }
+  },
+  "Disputes": {
+    "statuses": {
+      "REQUESTED": "غوښتل شوی",
+      "WAITING_VENDOR": "د پلورونکي په تمه",
+      "ESCALATED_ADMIN": "د Mandawee سره",
+      "RESOLVED": "حل شوی"
+    },
+    "decisions": {
+      "APPROVE": "بیرته ورکول تایید شو",
+      "PARTIAL": "نیمه بیرته",
+      "REJECT": "بیرته ورکول رد شو"
+    },
+    "detail": {
+      "notFound": "شخړه ونه موندل شوه.",
+      "loadError": "شخړه پورته نشوه",
+      "orderLabel": "فرمایش {orderNumber}",
+      "amounts": "پیسې",
+      "requested": "غوښتل شوي: {amount}",
+      "approved": "تایید شوي: {amount}",
+      "timeline": "مهالویش",
+      "opened": "پرانیستل شوی: {date}",
+      "vendorDue": "د پلورونکي نیټه: {date}",
+      "escalated": "Mandawee ته لیږل شوی: {date}",
+      "resolved": "حل شوی: {date}",
+      "customerDescription": "د پیرودونکي یادښت",
+      "vendorExplanation": "ستاسو ځواب",
+      "customer": "پیرودونکی",
+      "vendor": "پلورونکی",
+      "storeFallback": "پلورنځی",
+      "viewVendorProfile": "د پلورونکي پروفایل وګورئ",
+      "evidence": "عکسونه او فایلونه",
+      "noEvidence": "هیڅ فایل نه دی پورته شوی.",
+      "viewFile": "فایل پرانیزئ",
+      "escalate": "له Mandawee څخه بیاکتنه وغواړئ",
+      "escalating": "لیږل کېږي…",
+      "escalateSuccess": "Mandawee ته ولیږل شو",
+      "escalateError": "Mandawee ته ونه لیږل شو",
+      "finalDecision": "وروستی پریکړه",
+      "recorded": "ثبت شوی {date}"
+    },
+    "response": {
+      "title": "ستاسو ځواب",
+      "help": "منل یې د پیرودونکي پیسې بیرته کوي، یا یې رد کړئ او Mandawee ته یې واستوئ.",
+      "accept": "بیرته ورکول ومنئ",
+      "reject": "رد او Mandawee ته واستوئ",
+      "explanation": "ستاسو توضیحات",
+      "evidenceNote": "د فایل یادښت (اختیاري)",
+      "evidenceFile": "عکس یا PDF (اختیاري)",
+      "uploading": "پورته کېږي…",
+      "uploaded": "فایل پورته شو",
+      "submit": "ځواب وسپارئ",
+      "needExplanation": "مهرباني وکړئ لنډ توضیحات ولیکئ",
+      "acceptSuccess": "بیرته ورکول ومنل شو",
+      "rejectSuccess": "رد شو او Mandawee ته ولاړ",
+      "submitError": "ستاسو ځواب ونه سپارل شو",
+      "uploadError": "پورته کول ناکام شو"
+    },
+    "chat": {
+      "title": "پیغامونه",
+      "live": "ژوندی",
+      "connecting": "نښلول کېږي…",
+      "empty": "تر اوسه هیڅ پیغام نشته.",
+      "placeholder": "پیغام ولیکئ…",
+      "attach": "ضمیمه",
+      "send": "ولېږئ",
+      "attachmentReady": "فایل چمتو دی.",
+      "remove": "لرې کړئ",
+      "viewAttachment": "فایل وګورئ",
+      "uploaded": "فایل پورته شو",
+      "uploadError": "پورته کول ناکام شو",
+      "loadError": "پیغامونه پورته نشول",
+      "sendError": "پیغام ونه لیږل شو",
+      "roles": {
+        "CUSTOMER": "پیرودونکی",
+        "VENDOR": "پلورونکی",
+        "ADMIN": "Mandawee"
+      }
     }
   },
   "AdminPages": {

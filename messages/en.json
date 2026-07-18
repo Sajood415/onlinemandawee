@@ -1097,6 +1097,22 @@
         "networkError": "Network error. Please try again."
       }
     },
+    "disputes": {
+      "title": "Disputes",
+      "subtitle": "If a customer asks for money back, answer here within 48 hours.",
+      "refresh": "Refresh",
+      "loadError": "Could not load disputes",
+      "empty": "No disputes here",
+      "emptyHint": "When a customer requests a refund on your order, it shows up in this tab.",
+      "ordersLink": "Go to orders",
+      "tabs": {
+        "needs_response": "Needs you",
+        "escalated": "With Mandawee",
+        "resolved": "Resolved"
+      },
+      "respondBy": "Answer by {date}",
+      "back": "Back to disputes"
+    },
     "reports": {
       "title": "Reports",
       "tabs": {
@@ -2019,6 +2035,85 @@
       },
       "catalogTitle": "Shop {category}",
       "catalogSubtitle": "Browse products in this category."
+    }
+  },
+  "Disputes": {
+    "statuses": {
+      "REQUESTED": "Requested",
+      "WAITING_VENDOR": "Waiting for seller",
+      "ESCALATED_ADMIN": "With Mandawee",
+      "RESOLVED": "Resolved"
+    },
+    "decisions": {
+      "APPROVE": "Refund approved",
+      "PARTIAL": "Part refund",
+      "REJECT": "Refund declined"
+    },
+    "detail": {
+      "notFound": "Dispute not found.",
+      "loadError": "Could not load dispute",
+      "orderLabel": "Order {orderNumber}",
+      "amounts": "Money",
+      "requested": "Asked for: {amount}",
+      "approved": "Approved: {amount}",
+      "timeline": "Timeline",
+      "opened": "Opened: {date}",
+      "vendorDue": "Seller due: {date}",
+      "escalated": "Sent to Mandawee: {date}",
+      "resolved": "Resolved: {date}",
+      "customerDescription": "Customer note",
+      "vendorExplanation": "Your reply",
+      "customer": "Customer",
+      "vendor": "Seller",
+      "storeFallback": "Store",
+      "viewVendorProfile": "View seller profile",
+      "evidence": "Photos & files",
+      "noEvidence": "No files uploaded.",
+      "viewFile": "Open file",
+      "escalate": "Ask Mandawee to review",
+      "escalating": "Sending…",
+      "escalateSuccess": "Sent to Mandawee",
+      "escalateError": "Could not send to Mandawee",
+      "finalDecision": "Final decision",
+      "recorded": "Recorded {date}"
+    },
+    "response": {
+      "title": "Your answer",
+      "help": "Accept to refund the customer, or decline and send it to Mandawee.",
+      "accept": "Accept refund",
+      "reject": "Decline & send to Mandawee",
+      "explanation": "Your explanation",
+      "evidenceNote": "Note about your file (optional)",
+      "evidenceFile": "Photo or PDF (optional)",
+      "uploading": "Uploading…",
+      "uploaded": "File uploaded",
+      "submit": "Submit answer",
+      "needExplanation": "Please write a short explanation",
+      "acceptSuccess": "Refund accepted",
+      "rejectSuccess": "Declined and sent to Mandawee",
+      "submitError": "Could not submit your answer",
+      "uploadError": "Upload failed"
+    },
+    "chat": {
+      "title": "Messages",
+      "live": "Live",
+      "connecting": "Connecting…",
+      "empty": "No messages yet.",
+      "placeholder": "Write a message…",
+      "attach": "Attach",
+      "send": "Send",
+      "attachmentReady": "File ready.",
+      "remove": "Remove",
+      "viewAttachment": "View file",
+      "uploaded": "File uploaded",
+      "uploadError": "Upload failed",
+      "loadError": "Could not load messages",
+      "sendError": "Could not send message",
+      "roles": {
+        "CUSTOMER": "Customer",
+        "VENDOR": "Seller",
+        "ADMIN": "Mandawee"
+      }
     }
   },
   "AdminPages": {
