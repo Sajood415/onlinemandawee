@@ -1030,7 +1030,7 @@
       "disputesLink": "Open disputes",
       "emailShipped": "Customer was emailed that the order shipped.",
       "emailDelivered": "Customer was emailed that the order was delivered.",
-      "payoutHold": "Order delivered. Earnings go on hold, then become available for payout.",
+      "payoutHold": "After the customer pays, earnings are held for 7 days, then become available for payout.",
       "statuses": {
         "NEW": "New",
         "PREPARING": "Preparing",
@@ -1431,7 +1431,7 @@
           },
           "payout": {
             "title": "Payout details",
-            "description": "We'll send your earnings to this account. Payouts are currently processed manually."
+            "description": "We'll send your earnings to this account after a 7-day hold from each paid order (same for all countries). Payouts are processed manually for now."
           },
           "agreements": {
             "title": "Agreements",
@@ -3520,8 +3520,9 @@
           "id": "payments-fees",
           "title": "Payments and fees",
           "paragraphs": [
-            "Customer payments are processed through Stripe at checkout. Online Mandawee charges a platform commission of 3.99% on product sales (not shipping). Vendor payouts and membership fees are handled according to your vendor agreement, membership plan, and reporting dashboard.",
-            "You are responsible for applicable taxes, record keeping, and compliance with local business regulations."
+            "Customer payments are processed through Stripe at checkout. Online Mandawee charges a platform commission on each sale, then holds your net earnings for 7 days after payment before they can be released.",
+            "This 7-day hold applies to all vendors in every country (including Afghanistan, USA, Canada, and UK). Payouts are processed manually to your bank or Stripe details on file.",
+            "Membership fees and reporting are handled according to your membership plan and vendor dashboard. You are responsible for applicable taxes, record keeping, and compliance with local business regulations."
           ]
         },
         {

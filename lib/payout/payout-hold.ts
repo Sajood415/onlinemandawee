@@ -24,6 +24,8 @@ export function computePayoutHoldUntilFrom(from: Date = new Date()) {
 
 /**
  * Hold starts when the customer pays (settlement time).
+ * Same rule for every vendor country (Afghanistan, US, Canada, UK, etc.):
+ * take commission, hold PAYOUT_HOLD_DAYS (default 7), then release.
  * Delivery method does not change the hold window.
  */
 export function computeInitialPayoutHoldUntil(
