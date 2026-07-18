@@ -81,6 +81,30 @@ body {
   scrollbar-width: none;
 }
 
+/*
+  Tailwind sr-only uses inset-inline-start:0 + margin:-1px.
+  In RTL that parks the 1px box on the right edge and spills 1px past
+  the viewport → document horizontal scrollbar (seen on /ps homepage hero h1).
+  Pin to physical left and drop the negative margin.
+*/
+@layer utilities {
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border-width: 0;
+    inset: auto;
+    left: 0;
+    top: 0;
+  }
+}
+
 @layer utilities {
   .responsive-table-shell {
     margin-inline: -1rem;
