@@ -23,6 +23,7 @@ import {
   type GuestCheckoutDeliveryBreakdown,
 } from "@/lib/delivery/calculate-guest-delivery";
 import { getWarehouseAddress } from "@/lib/delivery/get-warehouse-address";
+import { resolveVendorSettlementDeliveryAmount } from "@/lib/delivery/vendor-settlement-delivery";
 import { prisma } from "@/lib/db/prisma";
 import { isMongoObjectId } from "@/lib/db/object-id";
 import type { PostalAddress } from "@/lib/maps/google-maps";
@@ -348,10 +349,14 @@ export async function buildGuestCheckoutQuote(input: {
 
       deliveryAmount += thirdPartyDeliveryQuote.totalAmount;
       for (const entry of thirdPartyDeliveryQuote.breakdown) {
-        const isExpress = selectedThirdPartyMethod === "EXPRESS";
+        // STANDARD fee is charged to the customer but settles to Mandawee, not the vendor.
         deliveryByVendorForSettlement.set(
           entry.vendorProfileId,
-          isExpress ? entry.amount : 0
+          resolveVendorSettlementDeliveryAmount({
+            deliveryMethod: selectedThirdPartyMethod,
+            quotedDeliveryAmount: entry.amount,
+            sellerType: "THIRD_PARTY",
+          })
         );
         const existing = breakdownEntries.find(
           (value) => value.vendorProfileId === entry.vendorProfileId
@@ -495,10 +500,15 @@ export async function buildGuestCheckoutQuote(input: {
     ([vendorProfileId, vendorSubtotal]) => {
       const discount = vendorDiscounts[vendorProfileId]?.amount ?? 0;
       const couponCode = vendorDiscounts[vendorProfileId]?.code ?? null;
-      const vendorDelivery = deliveryByVendorForSettlement.get(vendorProfileId) ?? 0;
       const sellerType = vendorSellerType.get(vendorProfileId) ?? "THIRD_PARTY";
       const vendorDeliveryMethod =
         sellerType === "PLATFORM" ? "STANDARD" : selectedThirdPartyMethod;
+      const vendorDelivery = resolveVendorSettlementDeliveryAmount({
+        deliveryMethod: vendorDeliveryMethod,
+        quotedDeliveryAmount:
+          deliveryByVendorForSettlement.get(vendorProfileId) ?? 0,
+        sellerType,
+      });
       return {
         vendorProfileId,
         sellerType,

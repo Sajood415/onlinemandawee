@@ -15,6 +15,7 @@ import { generateOpaqueToken } from "@/lib/utils/crypto";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 import { StandardConsolidationService } from "@/services/standard-consolidation.service";
 import { mergeLineItemsByProduct } from "@/lib/orders/aggregate-order-line-items";
+import { resolveVendorSettlementDeliveryAmount } from "@/lib/delivery/vendor-settlement-delivery";
 
 async function generateUniqueOrderNumber() {
   for (let i = 0; i < 20; i++) {
@@ -183,33 +184,43 @@ export async function createGuestOrderFromQuote(input: {
       shippingCountry: input.country ?? "",
       shippingPostalCode: input.postalCode ?? "",
       vendorOrders: {
-        create: input.quote.vendorSummaries.map((summary) => ({
-          vendorProfileId: summary.vendorProfileId,
-          status: "NEW",
-          deliveryMethod: summary.deliveryMethod,
-          currency: input.quote.currency,
-          subtotalAmount: summary.subtotalAmount,
-          deliveryAmount: summary.deliveryAmount,
-          discountAmount: summary.discountAmount,
-          grandTotalAmount: summary.grandTotalAmount,
-          couponCode: summary.couponCode,
-          items: {
-            create: (lineItemsByVendor[summary.vendorProfileId] ?? []).map((item) => ({
-              productId: item.productId,
-              variantId: item.variantId ?? null,
-              variantName: item.variantName ?? null,
-              quantity: item.quantity,
-              currency: item.currency,
-              unitPriceAmount: item.unitPriceAmount,
-              lineTotalAmount: item.lineTotalAmount,
-              productName: item.productName,
-              productImage: item.productImage,
-              productSku: item.productSku,
-              vendorProfileId: item.vendorProfileId,
-              categoryId: item.categoryId,
-            })),
-          },
-        })),
+        create: input.quote.vendorSummaries.map((summary) => {
+          const deliveryAmount = resolveVendorSettlementDeliveryAmount({
+            deliveryMethod: summary.deliveryMethod,
+            quotedDeliveryAmount: summary.deliveryAmount,
+            sellerType: summary.sellerType,
+          });
+          return {
+            vendorProfileId: summary.vendorProfileId,
+            status: "NEW",
+            deliveryMethod: summary.deliveryMethod,
+            currency: input.quote.currency,
+            subtotalAmount: summary.subtotalAmount,
+            deliveryAmount,
+            discountAmount: summary.discountAmount,
+            grandTotalAmount: Math.max(
+              0,
+              summary.subtotalAmount + deliveryAmount - summary.discountAmount
+            ),
+            couponCode: summary.couponCode,
+            items: {
+              create: (lineItemsByVendor[summary.vendorProfileId] ?? []).map((item) => ({
+                productId: item.productId,
+                variantId: item.variantId ?? null,
+                variantName: item.variantName ?? null,
+                quantity: item.quantity,
+                currency: item.currency,
+                unitPriceAmount: item.unitPriceAmount,
+                lineTotalAmount: item.lineTotalAmount,
+                productName: item.productName,
+                productImage: item.productImage,
+                productSku: item.productSku,
+                vendorProfileId: item.vendorProfileId,
+                categoryId: item.categoryId,
+              })),
+            },
+          };
+        }),
       },
     },
   });

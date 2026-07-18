@@ -2,6 +2,7 @@ import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { resolveDistanceDeliveryQuote } from "@/lib/delivery/resolve-distance-delivery";
+import { resolveVendorSettlementDeliveryAmount } from "@/lib/delivery/vendor-settlement-delivery";
 import { CartRepository } from "@/repositories/cart.repository";
 import { CustomerAddressRepository } from "@/repositories/customer-address.repository";
 
@@ -98,6 +99,15 @@ export class CheckoutService {
       });
     }
 
+    const sellerTypeByVendor = new Map(
+      cart.items.map((item) => [
+        item.vendorProfileId,
+        (item.product.vendorProfile.sellerType ?? "THIRD_PARTY") as
+          | "PLATFORM"
+          | "THIRD_PARTY",
+      ])
+    );
+
     const groupedByVendor = items.reduce<
       Record<
         string,
@@ -105,6 +115,7 @@ export class CheckoutService {
           vendorProfileId: string;
           vendorStoreSlug: string | null;
           vendorStoreName: string | null;
+          sellerType: "PLATFORM" | "THIRD_PARTY";
           subtotalSnapshot: number;
           subtotalCurrent: number;
           items: typeof items;
@@ -118,6 +129,7 @@ export class CheckoutService {
           vendorProfileId: item.vendorProfileId,
           vendorStoreSlug: item.vendorStoreSlug ?? null,
           vendorStoreName: item.vendorStoreName ?? null,
+          sellerType: sellerTypeByVendor.get(item.vendorProfileId) ?? "THIRD_PARTY",
           subtotalSnapshot: 0,
           subtotalCurrent: 0,
           items: [],
@@ -178,10 +190,14 @@ export class CheckoutService {
       deliveryEta: null,
       vendorGroups: Object.values(groupedByVendor).map((vendorGroup) => ({
         ...vendorGroup,
-        deliveryAmount:
-          deliveryQuote?.breakdown.find(
-            (entry) => entry.vendorProfileId === vendorGroup.vendorProfileId
-          )?.deliveryAmount ?? 0,
+        deliveryAmount: resolveVendorSettlementDeliveryAmount({
+          deliveryMethod: input.method,
+          quotedDeliveryAmount:
+            deliveryQuote?.breakdown.find(
+              (entry) => entry.vendorProfileId === vendorGroup.vendorProfileId
+            )?.deliveryAmount ?? 0,
+          sellerType: vendorGroup.sellerType,
+        }),
       })),
     };
   }

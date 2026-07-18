@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 
 import { env } from "@/config/env.shared";
 import { computeInitialPayoutHoldUntil } from "@/lib/payout/payout-hold";
+import { resolveVendorSettlementDeliveryAmount } from "@/lib/delivery/vendor-settlement-delivery";
 import {
   calculateCommissionAmountMinor,
   resolveCommissionBaseAmountMinor,
@@ -18,6 +19,7 @@ type VendorOrderForSettlement = {
   deliveryMethod?: DeliveryMethodForSettlement;
   subtotalAmount: number;
   deliveryAmount: number;
+  discountAmount?: number;
   grandTotalAmount: number;
   currency: string;
   vendorProfile?: {
@@ -51,9 +53,20 @@ export class OrderSettlementService {
       "THIRD_PARTY";
     const isPlatformVendor = sellerType === "PLATFORM";
     const rateBps = isPlatformVendor ? 0 : env.COMMISSION_RATE_BPS;
+    // STANDARD third-party delivery never settles to the vendor (Mandawee keeps it).
+    const settlementDeliveryAmount = resolveVendorSettlementDeliveryAmount({
+      deliveryMethod: effectiveDeliveryMethod,
+      quotedDeliveryAmount: vendorOrder.deliveryAmount,
+      sellerType,
+    });
+    const discountAmount = Math.max(0, vendorOrder.discountAmount ?? 0);
+    const effectiveGrandTotal = Math.max(
+      0,
+      vendorOrder.subtotalAmount + settlementDeliveryAmount - discountAmount
+    );
     const baseAmount = resolveCommissionBaseAmountMinor({
       subtotalAmount: vendorOrder.subtotalAmount,
-      deliveryAmount: vendorOrder.deliveryAmount,
+      deliveryAmount: settlementDeliveryAmount,
       deliveryMethod: effectiveDeliveryMethod,
     });
     const commissionAmount = isPlatformVendor
@@ -63,9 +76,9 @@ export class OrderSettlementService {
             baseAmountMinor: baseAmount,
             rateBps,
           }),
-          vendorOrder.grandTotalAmount
+          effectiveGrandTotal
         );
-    const netEarningsAmount = vendorOrder.grandTotalAmount - commissionAmount;
+    const netEarningsAmount = effectiveGrandTotal - commissionAmount;
 
     const holdUntil = computeInitialPayoutHoldUntil(effectiveDeliveryMethod);
 

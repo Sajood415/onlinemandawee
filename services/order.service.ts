@@ -21,6 +21,7 @@ import { OrderRepository } from "@/repositories/order.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
 import { buildGuestOrderTrackingUrl } from "@/lib/orders/build-order-tracking-url";
 import { resolveDistanceDeliveryQuote } from "@/lib/delivery/resolve-distance-delivery";
+import { resolveVendorSettlementDeliveryAmount } from "@/lib/delivery/vendor-settlement-delivery";
 import { getRefundEligibility } from "@/lib/refunds/refund-eligibility";
 import { StandardConsolidationService } from "@/services/standard-consolidation.service";
 import { PayoutReleaseService } from "@/services/payout-release.service";
@@ -85,6 +86,7 @@ type QuoteResult = {
     vendorProfileId: string;
     vendorStoreSlug: string | null;
     vendorStoreName: string | null;
+    sellerType: "PLATFORM" | "THIRD_PARTY";
     subtotalSnapshot: number;
     subtotalCurrent: number;
     deliveryAmount: number;
@@ -135,40 +137,47 @@ export class OrderService {
       shippingCity: quote.address.city,
       shippingCountry: quote.address.country,
       shippingPostalCode: quote.address.postalCode,
-      vendorOrders: quote.vendorGroups.map((vendorGroup) => ({
-        vendorProfileId: vendorGroup.vendorProfileId,
-        deliveryMethod: input.method,
-        currency: quote.currency,
-        subtotalAmount: vendorGroup.subtotalCurrent,
-        deliveryAmount: vendorGroup.deliveryAmount,
-        discountAmount: 0,
-        grandTotalAmount: vendorGroup.subtotalCurrent + vendorGroup.deliveryAmount,
-        items: mergeLineItemsByProduct(
-          vendorGroup.items.map((item) => ({
-            productId: item.productId,
-            variantId: null,
-            productName: item.productName,
-            quantity: item.quantity,
-            unitPriceAmount: item.currentUnitPrice,
-            lineTotalAmount: item.currentLineTotal,
-            productImage: item.productImage,
-            productSku: item.productSku,
-            vendorProfileId: item.vendorProfileId,
-            categoryId: item.categoryId,
-          }))
-        ).map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
+      vendorOrders: quote.vendorGroups.map((vendorGroup) => {
+        const deliveryAmount = resolveVendorSettlementDeliveryAmount({
+          deliveryMethod: input.method,
+          quotedDeliveryAmount: vendorGroup.deliveryAmount,
+          sellerType: vendorGroup.sellerType,
+        });
+        return {
+          vendorProfileId: vendorGroup.vendorProfileId,
+          deliveryMethod: input.method,
           currency: quote.currency,
-          unitPriceAmount: item.unitPriceAmount,
-          lineTotalAmount: item.lineTotalAmount,
-          productName: item.productName,
-          productImage: item.productImage as string | null,
-          productSku: item.productSku,
-          vendorProfileId: item.vendorProfileId as string,
-          categoryId: item.categoryId as string,
-        })),
-      })),
+          subtotalAmount: vendorGroup.subtotalCurrent,
+          deliveryAmount,
+          discountAmount: 0,
+          grandTotalAmount: vendorGroup.subtotalCurrent + deliveryAmount,
+          items: mergeLineItemsByProduct(
+            vendorGroup.items.map((item) => ({
+              productId: item.productId,
+              variantId: null,
+              productName: item.productName,
+              quantity: item.quantity,
+              unitPriceAmount: item.currentUnitPrice,
+              lineTotalAmount: item.currentLineTotal,
+              productImage: item.productImage,
+              productSku: item.productSku,
+              vendorProfileId: item.vendorProfileId,
+              categoryId: item.categoryId,
+            }))
+          ).map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            currency: quote.currency,
+            unitPriceAmount: item.unitPriceAmount,
+            lineTotalAmount: item.lineTotalAmount,
+            productName: item.productName,
+            productImage: item.productImage as string | null,
+            productSku: item.productSku,
+            vendorProfileId: item.vendorProfileId as string,
+            categoryId: item.categoryId as string,
+          })),
+        };
+      }),
     });
 
     await this.standardConsolidationService.initializeForOrder(order.id);
@@ -574,6 +583,15 @@ export class OrderService {
       });
     }
 
+    const sellerTypeByVendor = new Map(
+      cart.items.map((item) => [
+        item.vendorProfileId,
+        (item.product.vendorProfile.sellerType ?? "THIRD_PARTY") as
+          | "PLATFORM"
+          | "THIRD_PARTY",
+      ])
+    );
+
     const vendorGroups = Object.values(
       items.reduce<Record<string, QuoteResult["vendorGroups"][number]>>(
         (accumulator, item) => {
@@ -584,6 +602,7 @@ export class OrderService {
               vendorProfileId: item.vendorProfileId,
               vendorStoreSlug: item.vendorStoreSlug ?? null,
               vendorStoreName: item.vendorStoreName ?? null,
+              sellerType: sellerTypeByVendor.get(item.vendorProfileId) ?? "THIRD_PARTY",
               subtotalSnapshot: 0,
               subtotalCurrent: 0,
               deliveryAmount: 0,
@@ -645,10 +664,14 @@ export class OrderService {
       deliveryBreakdown: deliveryQuote?.breakdown,
       vendorGroups: vendorGroups.map((vendorGroup) => ({
         ...vendorGroup,
-        deliveryAmount:
-          deliveryQuote?.breakdown.find(
-            (entry) => entry.vendorProfileId === vendorGroup.vendorProfileId
-          )?.deliveryAmount ?? 0,
+        deliveryAmount: resolveVendorSettlementDeliveryAmount({
+          deliveryMethod: input.method,
+          quotedDeliveryAmount:
+            deliveryQuote?.breakdown.find(
+              (entry) => entry.vendorProfileId === vendorGroup.vendorProfileId
+            )?.deliveryAmount ?? 0,
+          sellerType: vendorGroup.sellerType,
+        }),
       })),
     };
   }
