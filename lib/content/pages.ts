@@ -232,8 +232,8 @@ export const termsPage: ContentPageDefinition = {
       id: "refunds-disputes",
       title: "Refunds and disputes",
       paragraphs: [
-        "Refund requests are handled through our dispute-based refund process. Customers may request a refund within 7 days after an order is marked delivered, subject to eligibility rules and review.",
-        "See our Refund Policy for full details on timelines, vendor response, and platform review.",
+        "For products sold by outside vendors, customers work with that vendor on refunds and disputes. The vendor is responsible for paying approved refunds. Online Mandawee handles refunds for its own shop products.",
+        "Customers may request a refund within 7 days after an order is marked delivered, subject to eligibility rules. See our Refund Policy for full details.",
       ],
     },
     {
@@ -313,8 +313,8 @@ export const refundsPage: ContentPageDefinition = {
       id: "overview",
       title: "Overview",
       paragraphs: [
-        "Online Mandawee is a multi-vendor marketplace. Refund requests are handled through a structured dispute process so customers, vendors, and our support team can review each case fairly.",
-        "This policy describes when you may request a refund, how the process works, and what outcomes you can expect.",
+        "Online Mandawee is a multi-vendor marketplace. For products sold by outside vendors, refunds and disputes are handled between you and that vendor. The vendor is responsible for reviewing the case and paying approved refunds.",
+        "Online Mandawee handles refunds for products sold by its own shop. This policy describes when you may request a refund, how the process works, and what outcomes you can expect.",
       ],
     },
     {
@@ -348,19 +348,19 @@ export const refundsPage: ContentPageDefinition = {
         {
           title: "Step 2 — Vendor response",
           paragraphs: [
-            "The vendor is notified and may accept, partially accept, or decline the request. They may provide comments or evidence.",
+            "The vendor is notified and is responsible for accepting, partially accepting, or declining the request. They may provide comments or evidence. For outside-vendor products, the vendor must pay approved refunds.",
           ],
         },
         {
-          title: "Step 3 — Platform review",
+          title: "Step 3 — Platform involvement",
           paragraphs: [
-            "If the case is not resolved between you and the vendor, it may be escalated to Online Mandawee for admin review and a final decision.",
+            "Online Mandawee handles refunds for its own shop products. For outside-vendor products, Online Mandawee may step in only for fraud, abuse, or legal/compliance issues — the vendor remains responsible for the refund on their sale.",
           ],
         },
         {
           title: "Step 4 — Resolution",
           paragraphs: [
-            "Approved refunds are processed according to our internal financial workflows. Outcomes may include full approval, partial approval, or denial depending on the facts of the case.",
+            "Approved refunds are processed through the platform payment and ledger workflows and are funded from the responsible seller’s earnings. Outcomes may include full approval, partial approval, or denial depending on the facts of the case.",
           ],
         },
       ],
@@ -474,9 +474,10 @@ export const vendorTermsPage: ContentPageDefinition = {
       id: "refunds-disputes",
       title: "Refunds and disputes",
       paragraphs: [
-        "Customers may request refunds within 7 days after an order is marked delivered, subject to platform eligibility rules.",
-        "When a refund case is opened, you must review and respond in good faith within the platform workflow.",
-        "If a case is escalated, Online Mandawee may make a final decision on disputed refunds. By selling on the platform, you agree that Online Mandawee has final decision authority on escalated disputes and refunds.",
+        "Customers contact you (the vendor) for refunds and disputes about your products. They should not contact Online Mandawee first for third-party seller items.",
+        "Customers may request a refund within 7 days after an order is marked delivered, subject to platform eligibility rules. When a refund case is opened, you must review and respond in good faith in the platform workflow.",
+        "You are contractually obligated to pay approved refunds for your products. Approved refund amounts are deducted from your earnings and payouts.",
+        "Online Mandawee handles refunds only for products sold by its own shop. Online Mandawee may act for fraud, abuse, or legal compliance, but you remain responsible for refunds on your own sales.",
       ],
     },
     {
@@ -742,7 +743,7 @@ export const helpPage: ContentPageDefinition = {
         {
           title: "What happens after I submit a refund request?",
           paragraphs: [
-            "A refund case is opened for review. The vendor may respond first, and unresolved cases may be escalated to Online Mandawee for a final decision. See our Refund Policy for the full process.",
+            "A refund case is opened with the vendor. For outside-vendor products, the vendor reviews the case and must pay approved refunds. Online Mandawee handles refunds for its own shop products. See our Refund Policy for the full process.",
           ],
         },
       ],
