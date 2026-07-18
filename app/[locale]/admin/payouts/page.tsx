@@ -290,7 +290,7 @@ export default function AdminPayoutsPage() {
             <div className="border-b border-neutral-200 px-4 py-3">
               <h2 className="text-sm font-semibold text-neutral-900">Hold queue</h2>
               <p className="mt-0.5 text-xs text-neutral-500">
-                Waiting for delivery or hold period. Express orders move to Ready once delivered.
+                Held for 7 days after the customer pays, then ready to release. Same for Pickup, Express, and Standard.
               </p>
             </div>
             <div className="responsive-table-shell overflow-x-auto">

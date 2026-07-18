@@ -151,6 +151,11 @@ export class DeliveryPricingService {
     const methods: DeliveryMethod[] = ["PICKUP", "EXPRESS", "STANDARD"];
     const results = await Promise.all(
       methods.map(async (method) => {
+        // Pickup is always available for everyone (foreign + local) — not rule/country gated.
+        if (method === "PICKUP") {
+          return { method, available: true as const };
+        }
+
         const rules = await this.deliveryRuleRepository.listActiveByMethod(method);
 
         const available = method === "EXPRESS"

@@ -248,7 +248,12 @@ export async function buildGuestCheckoutQuote(input: {
   const deliveryByVendorForSettlement = new Map<string, number>();
   const breakdownEntries: GuestCheckoutDeliveryBreakdown[] = [];
 
-  if (hasPlatformItems && input.deliveryAddress) {
+  // Platform shop: charge warehouse delivery when shipping; Pickup = no fee / no address.
+  if (
+    hasPlatformItems &&
+    input.deliveryAddress &&
+    selectedThirdPartyMethod !== "PICKUP"
+  ) {
     const platformVendorIds = [
       ...new Set(
         lineItems
@@ -501,8 +506,8 @@ export async function buildGuestCheckoutQuote(input: {
       const discount = vendorDiscounts[vendorProfileId]?.amount ?? 0;
       const couponCode = vendorDiscounts[vendorProfileId]?.code ?? null;
       const sellerType = vendorSellerType.get(vendorProfileId) ?? "THIRD_PARTY";
-      const vendorDeliveryMethod =
-        sellerType === "PLATFORM" ? "STANDARD" : selectedThirdPartyMethod;
+      // Same customer choice for Mandawee shop and outside sellers (incl. Pickup for everyone).
+      const vendorDeliveryMethod = selectedThirdPartyMethod;
       const vendorDelivery = resolveVendorSettlementDeliveryAmount({
         deliveryMethod: vendorDeliveryMethod,
         quotedDeliveryAmount:

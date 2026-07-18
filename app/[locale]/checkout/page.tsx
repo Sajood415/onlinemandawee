@@ -433,7 +433,6 @@ function ShippingAddressStep({
   contact,
   address,
   addressRequired,
-  hasThirdPartyProducts,
   deliveryMethod,
   onDeliveryMethodChange,
   savedAddresses,
@@ -448,7 +447,6 @@ function ShippingAddressStep({
   contact: ContactForm;
   address: AddressForm;
   addressRequired: boolean;
-  hasThirdPartyProducts: boolean;
   deliveryMethod: DeliveryMethod;
   onDeliveryMethodChange: (method: DeliveryMethod) => void;
   savedAddresses: CustomerAddress[];
@@ -516,33 +514,31 @@ function ShippingAddressStep({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {hasThirdPartyProducts ? (
-        <div className="space-y-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-            {copy.deliveryMethod.title}
-          </p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {([
-              ["PICKUP", copy.deliveryMethod.pickup],
-              ["EXPRESS", copy.deliveryMethod.express],
-              ["STANDARD", copy.deliveryMethod.standard],
-            ] as const).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => onDeliveryMethodChange(value)}
-                className={`border px-3 py-2.5 text-sm font-semibold transition ${
-                  deliveryMethod === value
-                    ? "border-[#0F3460] bg-[#0F3460] text-white"
-                    : "border-neutral-300 text-neutral-700 hover:border-neutral-500"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+      <div className="space-y-3">
+        <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+          {copy.deliveryMethod.title}
+        </p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {([
+            ["PICKUP", copy.deliveryMethod.pickup],
+            ["EXPRESS", copy.deliveryMethod.express],
+            ["STANDARD", copy.deliveryMethod.standard],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onDeliveryMethodChange(value)}
+              className={`border px-3 py-2.5 text-sm font-semibold transition ${
+                deliveryMethod === value
+                  ? "border-[#0F3460] bg-[#0F3460] text-white"
+                  : "border-neutral-300 text-neutral-700 hover:border-neutral-500"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
-      ) : null}
+      </div>
 
       {addressRequired && savedAddresses.length > 0 ? (
         <div className="space-y-3">
@@ -782,7 +778,6 @@ function DeliveryCostStep({
   copy,
   locale,
   summary,
-  hasThirdPartyProducts,
   deliveryMethod,
   onDeliveryMethodChange,
   loading,
@@ -794,7 +789,6 @@ function DeliveryCostStep({
   copy: CheckoutCopy;
   locale: string;
   summary: PriceSummary | null;
-  hasThirdPartyProducts: boolean;
   deliveryMethod: DeliveryMethod;
   onDeliveryMethodChange: (method: DeliveryMethod) => void;
   loading: boolean;
@@ -808,33 +802,31 @@ function DeliveryCostStep({
 
   return (
     <div className="space-y-7">
-      {hasThirdPartyProducts ? (
-        <div className="space-y-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-            {copy.deliveryMethod.title}
-          </p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {([
-              ["PICKUP", copy.deliveryMethod.pickup],
-              ["EXPRESS", copy.deliveryMethod.express],
-              ["STANDARD", copy.deliveryMethod.standard],
-            ] as const).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => onDeliveryMethodChange(value)}
-                className={`border px-3 py-2.5 text-sm font-semibold transition ${
-                  deliveryMethod === value
-                    ? "border-[#0F3460] bg-[#0F3460] text-white"
-                    : "border-neutral-300 text-neutral-700 hover:border-neutral-500"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+      <div className="space-y-3">
+        <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+          {copy.deliveryMethod.title}
+        </p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {([
+            ["PICKUP", copy.deliveryMethod.pickup],
+            ["EXPRESS", copy.deliveryMethod.express],
+            ["STANDARD", copy.deliveryMethod.standard],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onDeliveryMethodChange(value)}
+              className={`border px-3 py-2.5 text-sm font-semibold transition ${
+                deliveryMethod === value
+                  ? "border-[#0F3460] bg-[#0F3460] text-white"
+                  : "border-neutral-300 text-neutral-700 hover:border-neutral-500"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
-      ) : null}
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
@@ -1467,14 +1459,6 @@ export default function CheckoutPage() {
   );
 
   const cartItems = cart.items;
-  const hasPlatformProducts = useMemo(
-    () => cartItems.some((item) => item.sellerType === "PLATFORM"),
-    [cartItems]
-  );
-  const hasThirdPartyProducts = useMemo(
-    () => cartItems.some((item) => (item.sellerType ?? "THIRD_PARTY") === "THIRD_PARTY"),
-    [cartItems]
-  );
   const addressRequired = deliveryMethod !== "PICKUP";
 
   const handleDeliveryMethodChange = useCallback((method: DeliveryMethod) => {
@@ -2007,7 +1991,6 @@ export default function CheckoutPage() {
                   contact={contact}
                   address={address}
                   addressRequired={addressRequired}
-                  hasThirdPartyProducts={hasThirdPartyProducts}
                   deliveryMethod={deliveryMethod}
                   onDeliveryMethodChange={handleDeliveryMethodChange}
                   savedAddresses={savedAddresses}
@@ -2023,7 +2006,6 @@ export default function CheckoutPage() {
                   copy={copy}
                   locale={locale}
                   summary={priceSummary}
-                  hasThirdPartyProducts={hasThirdPartyProducts}
                   deliveryMethod={deliveryMethod}
                   onDeliveryMethodChange={(method) => {
                     handleDeliveryMethodChange(method);
