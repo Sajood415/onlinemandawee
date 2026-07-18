@@ -1710,7 +1710,7 @@
     "landing": {
       "eyebrow": "Customer & vendor support",
       "title": "We're here to help you get answers fast",
-      "subtitle": "Contact Online Mandawee for order help, account questions, vendor support, or general inquiries. Our team is ready to assist.",
+      "subtitle": "Contact Online Mandawee for account help, Mandawee shop orders, vendor onboarding, and general questions. For products from outside sellers, message the seller in your order or dispute thread first.",
       "heroImageAlt": "Support team ready to help customers and vendors",
       "cta": {
         "emailUs": "Email support",
@@ -1730,10 +1730,10 @@
       },
       "topics": {
         "title": "What we can help with",
-        "subtitle": "Common support needs for shoppers and sellers on Mandawee.",
+        "subtitle": "When to contact Mandawee — and when to contact the seller.",
         "orders": {
-          "title": "Orders & delivery",
-          "description": "Track status, delivery timing, and package updates for your purchases."
+          "title": "Mandawee shop & platform help",
+          "description": "Orders from Online Mandawee’s own shop, warehouse delivery questions, and platform issues."
         },
         "vendors": {
           "title": "Vendor support",
@@ -1745,7 +1745,7 @@
         },
         "refunds": {
           "title": "Refunds & disputes",
-          "description": "Guidance on return windows, dispute threads, and refund status."
+          "description": "Outside-seller products: contact the seller in the dispute thread. Mandawee shop products: our team handles them."
         }
       },
       "tips": {
@@ -1753,9 +1753,9 @@
         "subtitle": "These steps often resolve questions faster.",
         "items": {
           "helpCenter": "Check the Help Center for answers to common questions.",
-          "refundPolicy": "Review the Refund Policy if your question is about returns or disputes.",
-          "orderNumber": "Have your order number ready when asking about a purchase.",
-          "accountStatus": "Signed-in customers can view live order status from their account."
+          "refundPolicy": "For an outside seller’s product, open a refund case and message that seller first — do not email Mandawee first.",
+          "orderNumber": "Have your order number ready when asking about a Mandawee shop order or account issue.",
+          "accountStatus": "Signed-in customers can view live order status and dispute messages from their account."
         }
       },
       "links": {
@@ -1777,7 +1777,7 @@
         "items": {
           "orders": {
             "question": "How do I check my order status?",
-            "answer": "Sign in to your account and open Orders for live updates. If you need extra help, email us with your order number."
+            "answer": "Sign in to your account and open Orders for live updates. For outside-seller items, use the order or dispute messages to reach the seller. Contact us for Mandawee shop orders or account problems."
           },
           "vendors": {
             "question": "I want to sell on Mandawee. Where do I start?",
@@ -1789,14 +1789,14 @@
           },
           "refunds": {
             "question": "How do refunds and disputes work?",
-            "answer": "Review the Refund Policy first. If a case is already open, continue in the dispute thread so all details stay in one place."
+            "answer": "For outside sellers, open a refund case and talk with the seller in the dispute thread — Mandawee does not take over those cases. For Mandawee shop products, our team handles the refund. See the Refund Policy for details."
           }
         }
       },
       "finalCta": {
         "eyebrow": "Still need help?",
         "title": "Reach our support team now",
-        "subtitle": "Email or call us and we will guide you through the next step.",
+        "subtitle": "Email or call us for account help, Mandawee shop orders, or vendor onboarding. Outside-seller product issues go to the seller first.",
         "email": "Send email",
         "call": "Call now"
       }
@@ -3041,7 +3041,7 @@
       "lastUpdated": "Last updated",
       "relatedLinks": "Related pages",
       "contactTitle": "Need help?",
-      "contactSubtitle": "Our support team is here to assist customers and vendors.",
+      "contactSubtitle": "Contact us for account help and Mandawee shop issues. Outside-seller product problems go to that seller first.",
       "emailLabel": "Email",
       "callLabel": "Call"
     },
@@ -3442,7 +3442,7 @@
           "title": "Refund method and timing",
           "paragraphs": [
             "Approved refunds are handled through our platform payment and ledger processes. Timing may depend on your payment method, bank, and whether additional review is required.",
-            "If a refund is approved, we will notify you by email. If you have questions about the status of a refund case, contact support with your order number."
+            "If a refund is approved, we will notify you by email. For outside-seller cases, ask the seller in the dispute thread. For Mandawee shop cases, contact support with your order number."
           ]
         },
         {
@@ -3456,7 +3456,7 @@
           "id": "contact",
           "title": "Need help with a refund?",
           "paragraphs": [
-            "Contact us at {email} or {phone} with your order number and a brief description of the issue. For faster handling, submit the request through your account when eligible."
+            "Outside-seller products: message the seller in your refund dispute thread. Mandawee shop products or account issues: contact us at {email} or {phone} with your order number. For faster handling, submit the request through your account when eligible."
           ]
         }
       ]

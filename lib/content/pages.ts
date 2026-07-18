@@ -390,7 +390,7 @@ export const refundsPage: ContentPageDefinition = {
       title: "Refund method and timing",
       paragraphs: [
         "Approved refunds are handled through our platform payment and ledger processes. Timing may depend on your payment method, bank, and whether additional review is required.",
-        "If a refund is approved, we will notify you by email. If you have questions about the status of a refund case, contact support with your order number.",
+        "If a refund is approved, we will notify you by email. For outside-seller cases, ask the seller in the dispute thread. For Mandawee shop cases, contact support with your order number.",
       ],
     },
     {
@@ -404,7 +404,7 @@ export const refundsPage: ContentPageDefinition = {
       id: "contact",
       title: "Need help with a refund?",
       paragraphs: [
-        `Contact us at ${email} or ${phoneDisplay} with your order number and a brief description of the issue. For faster handling, submit the request through your account when eligible.`,
+        `Outside-seller products: message the seller in your refund dispute thread. Mandawee shop products or account issues: contact us at ${email} or ${phoneDisplay} with your order number. For faster handling, submit the request through your account when eligible.`,
       ],
     },
   ],
@@ -769,7 +769,7 @@ export const contactPage: ContentPageDefinition = {
   slug: "contact",
   title: "Contact Us",
   subtitle:
-    "Reach our support team for order help, vendor questions, or general inquiries about Online Mandawee.",
+    "Reach Online Mandawee for account help, our own shop orders, vendor onboarding, and general questions. For outside-seller products, contact that seller first.",
   badge: "Support",
   showTableOfContents: false,
   showContactBlock: false,
@@ -784,7 +784,8 @@ export const contactPage: ContentPageDefinition = {
       id: "customer-support",
       title: "Customer support",
       paragraphs: [
-        "For order status, delivery questions, refund requests, or account help, contact us with your order number if available.",
+        "Contact us for account help, Online Mandawee shop orders, warehouse/platform delivery questions, and general inquiries. Include your order number when relevant.",
+        "For products sold by outside vendors, message that vendor in your order or refund dispute thread. Online Mandawee does not take over those seller disputes.",
       ],
       bullets: [
         `Email: ${email}`,
@@ -807,7 +808,7 @@ export const contactPage: ContentPageDefinition = {
       title: "Response times",
       paragraphs: [
         "We aim to respond to emails within 1–2 business days. Phone support is available during business hours (Afghanistan time).",
-        "For refund cases already open in your account, please continue the conversation in the dispute thread so all details stay in one place.",
+        "For outside-seller refund cases, continue with the vendor in the dispute thread. For Mandawee shop refunds, our team handles the case in your account.",
       ],
     },
     {
@@ -815,8 +816,8 @@ export const contactPage: ContentPageDefinition = {
       title: "Before you contact us",
       bullets: [
         "Check the Help Center for answers to common questions.",
-        "Review the Refund Policy if your question is about returns or disputes.",
-        "Signed-in customers can view live order status from their account.",
+        "Outside-seller product issue? Open a refund case and message the seller first.",
+        "Signed-in customers can view live order status and dispute messages from their account.",
       ],
     },
   ],
