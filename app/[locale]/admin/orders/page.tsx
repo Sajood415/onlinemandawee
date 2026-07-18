@@ -345,8 +345,7 @@ function payoutStatusLabel(status: PayoutStatus | null, t: OrdersT) {
   if (status === "ON_HOLD") return t("payoutStatuses.ON_HOLD");
   if (status === "READY") return t("payoutStatuses.READY");
   if (status === "SENT") return t("payoutStatuses.SENT");
-  if (status === "FAILED") return t("payoutStatuses.FAILED");
-  return status.replaceAll("_", " ");
+  return t("payoutStatuses.FAILED");
 }
 
 function warehouseStatusClass(status: string) {
