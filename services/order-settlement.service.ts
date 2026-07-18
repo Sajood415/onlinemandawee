@@ -2,7 +2,10 @@ import { Prisma } from "@prisma/client";
 
 import { env } from "@/config/env.shared";
 import { computeInitialPayoutHoldUntil } from "@/lib/payout/payout-hold";
-import { calculateCommissionAmountMinor } from "@/lib/platform/transaction-fee";
+import {
+  calculateCommissionAmountMinor,
+  resolveCommissionBaseAmountMinor,
+} from "@/lib/platform/transaction-fee";
 import { prisma } from "@/lib/db/prisma";
 import { OrderRepository } from "@/repositories/order.repository";
 
@@ -17,14 +20,17 @@ type VendorOrderForSettlement = {
   deliveryAmount: number;
   grandTotalAmount: number;
   currency: string;
+  vendorProfile?: {
+    sellerType?: "PLATFORM" | "THIRD_PARTY";
+  };
 };
 
 export class OrderSettlementService {
   constructor(private readonly orderRepository = new OrderRepository()) {}
 
   /**
-   * Records platform commission (3.99% of product subtotal by default), vendor hold
-   * balance, and payout for one vendor split.
+   * Records platform commission (3.99% of products + Express delivery when applicable),
+   * vendor hold balance, and payout for one vendor split.
    * Safe to call multiple times (skips if commission already exists).
    */
   async settleVendorOrderSplit(input: {
@@ -39,9 +45,17 @@ export class OrderSettlementService {
     const effectiveDeliveryMethod =
       vendorOrder.deliveryMethod ?? input.deliveryMethod ?? null;
 
-    const isPlatformVendor = vendorOrder.sellerType === "PLATFORM";
+    const sellerType =
+      vendorOrder.sellerType ??
+      vendorOrder.vendorProfile?.sellerType ??
+      "THIRD_PARTY";
+    const isPlatformVendor = sellerType === "PLATFORM";
     const rateBps = isPlatformVendor ? 0 : env.COMMISSION_RATE_BPS;
-    const baseAmount = Math.max(0, vendorOrder.subtotalAmount);
+    const baseAmount = resolveCommissionBaseAmountMinor({
+      subtotalAmount: vendorOrder.subtotalAmount,
+      deliveryAmount: vendorOrder.deliveryAmount,
+      deliveryMethod: effectiveDeliveryMethod,
+    });
     const commissionAmount = isPlatformVendor
       ? 0
       : Math.min(

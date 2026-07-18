@@ -1370,7 +1370,7 @@
         "intro": "Please confirm each policy. You must accept all to submit.",
         "vendorTerms": "I agree to the Vendor Terms & Conditions.",
         "membership": "I agree to the membership: {fee} per month, {trialDays} days free for new vendors.",
-        "transactionFee": "I agree to the platform commission: {fee} (taken from product sales only; not applied to shipping).",
+        "transactionFee": "I agree to the platform commission: {fee} (on product sales, and also on Express delivery fees).",
         "disputes": "I agree that for my products I am responsible for customer refunds and disputes. Customers contact me first. I must pay approved refunds. Online Mandawee handles refunds only for its own shop products.",
         "delivery": "I agree to follow platform delivery rules."
       },
@@ -3521,7 +3521,7 @@
           "id": "payments-fees",
           "title": "Payments and fees",
           "paragraphs": [
-            "Customer payments are processed through Stripe at checkout. Online Mandawee charges a platform commission on each sale, then holds your net earnings for 7 days after payment before they can be released.",
+            "Customer payments are processed through Stripe at checkout. Online Mandawee charges a platform commission on each sale (on product amounts, and also on Express delivery fees), then holds your net earnings for 7 days after payment before they can be released.",
             "This 7-day hold applies to all vendors in every country (including Afghanistan, USA, Canada, and UK). Payouts are processed manually to your bank or Stripe details on file.",
             "Membership fees and reporting are handled according to your membership plan and vendor dashboard. You are responsible for applicable taxes, record keeping, and compliance with local business regulations."
           ]

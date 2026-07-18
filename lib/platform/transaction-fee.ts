@@ -46,6 +46,26 @@ export function calculateCommissionAmountMinor(input: {
   return Math.round((input.baseAmountMinor * rateBps) / 10_000);
 }
 
+type CommissionDeliveryMethod = "PICKUP" | "EXPRESS" | "STANDARD" | null | undefined;
+
+/**
+ * Commission base: product subtotal always.
+ * Express: also include that vendor's delivery fee (e.g. $100 + $10 Express → $110).
+ * Pickup / Standard: products only (no delivery fee in the base).
+ */
+export function resolveCommissionBaseAmountMinor(input: {
+  subtotalAmount: number;
+  deliveryAmount: number;
+  deliveryMethod?: CommissionDeliveryMethod;
+}) {
+  const subtotal = Math.max(0, input.subtotalAmount);
+  const delivery = Math.max(0, input.deliveryAmount);
+  if (input.deliveryMethod === "EXPRESS") {
+    return subtotal + delivery;
+  }
+  return subtotal;
+}
+
 /** Flat $ fee no longer applies by delivery method — commission is always %. */
 export function usesFixedTransactionFeeDeliveryMethod(
   _method: "PICKUP" | "EXPRESS" | "STANDARD" | null | undefined

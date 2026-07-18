@@ -466,7 +466,7 @@ export const vendorTermsPage: ContentPageDefinition = {
       id: "payments-fees",
       title: "Payments and fees",
       paragraphs: [
-        "Customer payments are processed through Stripe at checkout. Online Mandawee charges a platform commission on each sale, then holds your net earnings for 7 days after payment before they can be released.",
+        "Customer payments are processed through Stripe at checkout. Online Mandawee charges a platform commission on each sale (on product amounts, and also on Express delivery fees), then holds your net earnings for 7 days after payment before they can be released.",
         "This 7-day hold applies to all vendors in every country (including Afghanistan, USA, Canada, and UK). Payouts are processed manually to your bank or Stripe details on file.",
         "Membership fees and reporting are handled according to your membership plan and vendor dashboard. You are responsible for applicable taxes, record keeping, and compliance with local business regulations.",
       ],

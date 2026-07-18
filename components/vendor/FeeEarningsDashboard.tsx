@@ -67,7 +67,7 @@ export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
         <div>
           <h2 className="text-lg font-bold text-[#0f3460]">Fees &amp; earnings</h2>
           <p className="mt-1 text-sm text-neutral-600">
-            Per-order breakdown: order total, platform commission (percent of sale), and what you keep after fees.
+            Per-order breakdown: order total, platform commission (percent of products + Express delivery), and what you keep after fees.
           </p>
         </div>
         <Link

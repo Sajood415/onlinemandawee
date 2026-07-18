@@ -1010,7 +1010,7 @@ export function VendorOnboardingWizard() {
           setAccountName(draft.payout.accountName);
           setAccountNumberOrIban(draft.payout.accountNumberOrIban);
           setBankName(draft.payout.bankName);
-          setPaypalEmail(draft.payout.stripeEmail ?? "");
+          setStripeEmail(draft.payout.stripeEmail ?? "");
         }
         if (draft.agreements) {
           setAg1(draft.agreements.agreedToVendorTerms);
