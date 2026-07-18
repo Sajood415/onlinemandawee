@@ -152,6 +152,11 @@ export class RefundService {
       });
     }
 
+    const sellerType =
+      orderItem.orderVendor.vendorProfile.sellerType ?? "THIRD_PARTY";
+    const isPlatformShop = sellerType === "PLATFORM";
+    const now = new Date();
+
     const refundCase = await this.refundCaseRepository
       .create({
         orderId: orderItem.orderVendor.orderId,
@@ -161,8 +166,12 @@ export class RefundService {
         reason: input.reason,
         description: input.description,
         requestedAmount: input.requestedAmount,
-        status: "WAITING_VENDOR",
-        vendorResponseDueAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
+        // PLATFORM (Mandawee shop) → admin queue. Outside vendors → vendor first.
+        status: isPlatformShop ? "ESCALATED_ADMIN" : "WAITING_VENDOR",
+        vendorResponseDueAt: isPlatformShop
+          ? null
+          : new Date(now.getTime() + 48 * 60 * 60 * 1000),
+        escalatedAt: isPlatformShop ? now : null,
       })
       .catch((error: unknown) => {
         if (
@@ -315,6 +324,14 @@ export class RefundService {
       });
     }
 
+    if (refundCase.orderItem.orderVendor.vendorProfile.sellerType === "PLATFORM") {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Mandawee shop refunds are handled by admin, not the vendor response form",
+        statusCode: 400,
+      });
+    }
+
     if (input.evidenceFileUrl || input.evidenceNote) {
       await this.refundEvidenceRepository.create({
         refundCaseId,
@@ -408,11 +425,34 @@ export class RefundService {
       return serialized;
     }
 
+    // Outside vendors: decline is final — do not send to Mandawee.
+    try {
+      await this.refundDecisionRepository.create({
+        refundCaseId,
+        decisionType: "REJECT",
+        approvedAmount: 0,
+        reason: input.explanation,
+        decidedByUserId: auth.id,
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        throw new AppError({
+          code: ERROR_CODE.BAD_REQUEST,
+          message: "Refund case is already resolved",
+          statusCode: 400,
+        });
+      }
+      throw error;
+    }
+
     const updated = await this.refundCaseRepository.update({
       id: refundCaseId,
-      status: "ESCALATED_ADMIN",
+      status: "RESOLVED",
       vendorExplanation: `${input.action}: ${input.explanation}`,
-      escalatedAt: new Date(),
+      finalDecisionAt: new Date(),
       vendorResponseDueAt: null,
     });
 
@@ -434,12 +474,20 @@ export class RefundService {
     });
 
     const serialized = this.serializeRefundCase(updated);
-    void sendRefundEscalatedAdminEmail(this.toRefundEmailCase(serialized));
+    void sendRefundDecisionEmails(this.toRefundEmailCase(serialized));
     return serialized;
   }
 
   async escalate(auth: AuthenticatedUser, refundCaseId: string) {
     const refundCase = await this.requireAccessibleCase(auth, refundCaseId);
+
+    if (auth.role !== "CUSTOMER" && auth.role !== "ADMIN") {
+      throw new AppError({
+        code: ERROR_CODE.FORBIDDEN,
+        message: "Only customers or admins can escalate refund cases",
+        statusCode: 403,
+      });
+    }
 
     if (refundCase.status === "RESOLVED") {
       throw new AppError({
@@ -447,6 +495,23 @@ export class RefundService {
         message: "Resolved refund case cannot be escalated",
         statusCode: 400,
       });
+    }
+
+    const sellerType =
+      refundCase.orderItem.orderVendor.vendorProfile.sellerType ?? "THIRD_PARTY";
+
+    // Outside-vendor products stay with the vendor — customers cannot escalate to Mandawee.
+    if (auth.role === "CUSTOMER" && sellerType === "THIRD_PARTY") {
+      throw new AppError({
+        code: ERROR_CODE.FORBIDDEN,
+        message:
+          "For outside seller products, contact the vendor about this refund. Mandawee only handles refunds for its own shop.",
+        statusCode: 403,
+      });
+    }
+
+    if (refundCase.status === "ESCALATED_ADMIN") {
+      return this.serializeRefundCase(refundCase);
     }
 
     const updated = await this.refundCaseRepository.update({
@@ -681,6 +746,20 @@ export class RefundService {
       });
     }
 
+    const sellerTypeForDecision =
+      refundCase.orderItem.orderVendor.vendorProfile.sellerType ?? "THIRD_PARTY";
+    if (
+      sellerTypeForDecision === "THIRD_PARTY" &&
+      refundCase.status === "WAITING_VENDOR"
+    ) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message:
+          "Outside-vendor refunds must be handled by the vendor. Change status only for fraud/abuse cases before deciding.",
+        statusCode: 400,
+      });
+    }
+
     if (refundCase.decision) {
       if (refundCase.status === "ESCALATED_ADMIN") {
         const repaired = await this.repairStuckRefundCaseIfNeeded(refundCase);
@@ -893,6 +972,14 @@ export class RefundService {
     const escalated = [];
 
     for (const refundCase of overdueCases) {
+      const sellerType =
+        refundCase.orderItem.orderVendor.vendorProfile?.sellerType ?? "THIRD_PARTY";
+
+      // Outside vendors keep ownership of overdue refunds — do not auto-send to Mandawee.
+      if (sellerType === "THIRD_PARTY") {
+        continue;
+      }
+
       const updated = await this.refundCaseRepository.update({
         id: refundCase.id,
         status: "ESCALATED_ADMIN",
@@ -1546,6 +1633,8 @@ export class RefundService {
         vendorProfileId: refundCase.orderItem.orderVendor.vendorProfile.id,
         storeName: refundCase.orderItem.orderVendor.vendorProfile.storeName,
         storeSlug: refundCase.orderItem.orderVendor.vendorProfile.storeSlug,
+        sellerType:
+          refundCase.orderItem.orderVendor.vendorProfile.sellerType ?? "THIRD_PARTY",
         user: {
           id: refundCase.orderItem.orderVendor.vendorProfile.user.id,
           fullName: refundCase.orderItem.orderVendor.vendorProfile.user.fullName,
@@ -1614,6 +1703,8 @@ export class RefundService {
         vendorProfileId: refundCase.orderItem.orderVendor.vendorProfile.id,
         storeName: refundCase.orderItem.orderVendor.vendorProfile.storeName,
         storeSlug: refundCase.orderItem.orderVendor.vendorProfile.storeSlug,
+        sellerType:
+          refundCase.orderItem.orderVendor.vendorProfile.sellerType ?? "THIRD_PARTY",
       },
       decision: refundCase.decision
         ? {
@@ -1652,6 +1743,14 @@ export class RefundService {
     refundCase: ReturnType<RefundService["serializeRefundCase"]>
   ) {
     const emailCase = this.toRefundEmailCase(refundCase);
+    if (refundCase.vendor.sellerType === "PLATFORM") {
+      await Promise.allSettled([
+        sendRefundOpenedCustomerEmail(emailCase),
+        sendRefundEscalatedAdminEmail(emailCase),
+      ]);
+      return;
+    }
+
     await Promise.allSettled([
       sendRefundOpenedCustomerEmail(emailCase),
       sendRefundOpenedVendorEmail(emailCase),

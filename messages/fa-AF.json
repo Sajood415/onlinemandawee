@@ -2310,14 +2310,15 @@
       "escalating": "در حال ارسال…",
       "escalateSuccess": "به Mandawee ارسال شد",
       "escalateError": "ارسال به Mandawee ممکن نشد",
+      "contactVendorOnly": "این محصول فروشنده بیرونی است. از پیام‌های زیر با فروشنده حرف بزنید — آنلاین منداوی این بازپرداخت را بر عهده نمی‌گیرد.",
       "finalDecision": "تصمیم نهایی",
       "recorded": "ثبت شده {date}"
     },
     "response": {
       "title": "پاسخ شما",
-      "help": "با قبول، پول مشتری برمی‌گردد؛ با رد، به Mandawee می‌رود.",
+      "help": "با قبول، پول مشتری برمی‌گردد؛ با رد، درخواست رد می‌شود. برای محصولات شما تصمیم‌تان نهایی است.",
       "accept": "قبول بازپرداخت",
-      "reject": "رد و ارسال به Mandawee",
+      "reject": "رد بازپرداخت",
       "explanation": "توضیح شما",
       "evidenceNote": "یادداشت فایل (اختیاری)",
       "evidenceFile": "عکس یا PDF (اختیاری)",
@@ -2326,7 +2327,7 @@
       "submit": "ثبت پاسخ",
       "needExplanation": "لطفاً توضیح کوتاه بنویسید",
       "acceptSuccess": "بازپرداخت قبول شد",
-      "rejectSuccess": "رد شد و به Mandawee رفت",
+      "rejectSuccess": "بازپرداخت رد شد",
       "submitError": "ثبت پاسخ ممکن نشد",
       "uploadError": "آپلود ناموفق بود"
     },

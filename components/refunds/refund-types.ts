@@ -40,6 +40,7 @@ export type RefundCaseListItem = {
     vendorProfileId: string;
     storeName: string | null;
     storeSlug: string | null;
+    sellerType: "PLATFORM" | "THIRD_PARTY";
   };
   decision: {
     decisionType: RefundDecisionType;

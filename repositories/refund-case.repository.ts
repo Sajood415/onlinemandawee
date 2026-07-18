@@ -115,6 +115,7 @@ const listInclude = {
               id: true,
               storeName: true,
               storeSlug: true,
+              sellerType: true,
               user: {
                 select: {
                   id: true,
@@ -164,7 +165,8 @@ export class RefundCaseRepository {
     description?: string;
     requestedAmount: number;
     status: RefundCaseStatus;
-    vendorResponseDueAt?: Date;
+    vendorResponseDueAt?: Date | null;
+    escalatedAt?: Date | null;
   }) {
     return refundCaseDelegate.create({
       data: {
@@ -178,6 +180,7 @@ export class RefundCaseRepository {
         requestedAmount: input.requestedAmount,
         status: input.status,
         vendorResponseDueAt: input.vendorResponseDueAt ?? null,
+        escalatedAt: input.escalatedAt ?? null,
       },
       include: {
         order: true,
@@ -248,7 +251,16 @@ export class RefundCaseRepository {
         order: true,
         orderItem: {
           include: {
-            orderVendor: true,
+            orderVendor: {
+              include: {
+                vendorProfile: {
+                  select: {
+                    id: true,
+                    sellerType: true,
+                  },
+                },
+              },
+            },
           },
         },
         customerUser: true,

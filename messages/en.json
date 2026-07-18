@@ -2310,14 +2310,15 @@
       "escalating": "Sending…",
       "escalateSuccess": "Sent to Mandawee",
       "escalateError": "Could not send to Mandawee",
+      "contactVendorOnly": "This is an outside seller’s product. Use messages below to talk with the seller — Mandawee does not take over these refunds.",
       "finalDecision": "Final decision",
       "recorded": "Recorded {date}"
     },
     "response": {
       "title": "Your answer",
-      "help": "Accept to refund the customer, or decline and send it to Mandawee.",
+      "help": "Accept to refund the customer, or decline the request. Your decision is final for your products.",
       "accept": "Accept refund",
-      "reject": "Decline & send to Mandawee",
+      "reject": "Decline refund",
       "explanation": "Your explanation",
       "evidenceNote": "Note about your file (optional)",
       "evidenceFile": "Photo or PDF (optional)",
@@ -2326,7 +2327,7 @@
       "submit": "Submit answer",
       "needExplanation": "Please write a short explanation",
       "acceptSuccess": "Refund accepted",
-      "rejectSuccess": "Declined and sent to Mandawee",
+      "rejectSuccess": "Refund declined",
       "submitError": "Could not submit your answer",
       "uploadError": "Upload failed"
     },

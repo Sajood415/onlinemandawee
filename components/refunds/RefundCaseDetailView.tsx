@@ -99,13 +99,19 @@ export function RefundCaseDetailView({
     );
   }
 
+  const isOutsideVendor = refundCase.vendor.sellerType !== "PLATFORM";
+
+  // Outside sellers: customer works with the vendor only. Mandawee shop: already with admin.
   const canEscalate =
     role === "CUSTOMER" &&
+    !isOutsideVendor &&
     refundCase.status !== "RESOLVED" &&
     refundCase.status !== "ESCALATED_ADMIN";
 
   const showVendorForm =
-    role === "VENDOR" && refundCase.status === "WAITING_VENDOR";
+    role === "VENDOR" &&
+    refundCase.status === "WAITING_VENDOR" &&
+    isOutsideVendor;
   const showAdminForm =
     role === "ADMIN" && refundCase.status !== "RESOLVED" && !refundCase.decision;
   const showRecordedDecision = Boolean(refundCase.decision) && !showAdminForm;
@@ -294,6 +300,14 @@ export function RefundCaseDetailView({
             ) : null}
             {escalating ? t("detail.escalating") : t("detail.escalate")}
           </button>
+        ) : null}
+
+        {role === "CUSTOMER" &&
+        isOutsideVendor &&
+        refundCase.status === "WAITING_VENDOR" ? (
+          <p className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
+            {t("detail.contactVendorOnly")}
+          </p>
         ) : null}
       </div>
 
