@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { DollarSign, Globe, Loader2, Save, Warehouse } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { AddressAutocompleteInput } from "@/components/address/AddressAutocompleteInput";
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
@@ -34,6 +35,7 @@ const CHECKBOX_CARD =
   "flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3 text-sm transition hover:border-neutral-300";
 
 export default function AdminSettingsPage() {
+  const t = useTranslations("AdminPages.settings");
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
 
   const [settings, setSettings] = useState<PlatformSettings | null>(null);
@@ -65,11 +67,11 @@ export default function AdminSettingsPage() {
       setWarehouseCountry(data.warehouseCountry ?? "");
       setWarehousePostalCode(data.warehousePostalCode ?? "");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load settings.");
+      setError(e instanceof Error ? e.message : t("loadError"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!authLoading && user) void loadSettings();
@@ -79,7 +81,7 @@ export default function AdminSettingsPage() {
     setAvailableLocales((current) => {
       if (current.includes(locale)) {
         if (current.length === 1) {
-          toast.error("At least one language", "Keep at least one language enabled.");
+          toast.error(t("toasts.localeMinTitle"), t("toasts.localeMinBody"));
           return current;
         }
         return current.filter((item) => item !== locale);
@@ -92,7 +94,7 @@ export default function AdminSettingsPage() {
     setAvailableCurrencies((current) => {
       if (current.includes(currency)) {
         if (current.length === 1) {
-          toast.error("At least one currency", "Keep at least one currency enabled.");
+          toast.error(t("toasts.currencyMinTitle"), t("toasts.currencyMinBody"));
           return current;
         }
         return current.filter((item) => item !== currency);
@@ -124,9 +126,12 @@ export default function AdminSettingsPage() {
       setWarehouseCity(data.warehouseCity ?? "");
       setWarehouseCountry(data.warehouseCountry ?? "");
       setWarehousePostalCode(data.warehousePostalCode ?? "");
-      toast.success("Settings saved", "Platform settings updated for the storefront.");
+      toast.success(t("toasts.savedTitle"), t("toasts.savedBody"));
     } catch (e) {
-      toast.error("Could not save", e instanceof Error ? e.message : "Unknown error");
+      toast.error(
+        t("toasts.saveFailedTitle"),
+        e instanceof Error ? e.message : t("toasts.unknownError")
+      );
     } finally {
       setSaving(false);
     }
@@ -143,9 +148,9 @@ export default function AdminSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[#0f3460]">Platform settings</h1>
+        <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
         <p className="mt-1 text-sm text-neutral-600">
-          Configure which languages and currencies customers can use on the storefront.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -161,16 +166,15 @@ export default function AdminSettingsPage() {
             <Globe className="h-5 w-5 text-[#0f3460]" />
           </div>
           <div className="flex-1">
-            <h2 className="text-base font-semibold text-neutral-900">Customer languages</h2>
+            <h2 className="text-base font-semibold text-neutral-900">{t("languagesTitle")}</h2>
             <p className="mt-1 text-sm text-neutral-600">
-              Choose which languages appear in the storefront language selector. Disabled
-              languages redirect customers to the first enabled language.
+              {t("languagesBody")}
             </p>
 
             {loading ? (
               <div className="mt-4 flex items-center gap-2 text-sm text-neutral-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Loading…
+                {t("loading")}
               </div>
             ) : (
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -196,15 +200,15 @@ export default function AdminSettingsPage() {
             <DollarSign className="h-5 w-5 text-[#0f3460]" />
           </div>
           <div className="flex-1">
-            <h2 className="text-base font-semibold text-neutral-900">Customer currencies</h2>
+            <h2 className="text-base font-semibold text-neutral-900">{t("currenciesTitle")}</h2>
             <p className="mt-1 text-sm text-neutral-600">
-              Choose which currencies customers can select for browsing and checkout.
+              {t("currenciesBody")}
             </p>
 
             {loading ? (
               <div className="mt-4 flex items-center gap-2 text-sm text-neutral-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Loading…
+                {t("loading")}
               </div>
             ) : (
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -232,25 +236,24 @@ export default function AdminSettingsPage() {
             <Warehouse className="h-5 w-5 text-[#0f3460]" />
           </div>
           <div className="flex-1">
-            <h2 className="text-base font-semibold text-neutral-900">Warehouse pickup address</h2>
+            <h2 className="text-base font-semibold text-neutral-900">{t("warehouseTitle")}</h2>
             <p className="mt-1 text-sm text-neutral-600">
-              Used to calculate the delivery distance (in km) for platform-sold items priced
-              with a per-kilometer standard delivery rate.
+              {t("warehouseBody")}
             </p>
 
             {loading ? (
               <div className="mt-4 flex items-center gap-2 text-sm text-neutral-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Loading…
+                {t("loading")}
               </div>
             ) : (
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <label className="text-sm text-neutral-700 sm:col-span-2">
-                  Address line
+                  {t("addressLine")}
                   <AddressAutocompleteInput
                     className={`${INPUT} mt-1 max-w-none`}
                     value={warehouseAddressLine1}
-                    placeholder="Start typing an address…"
+                    placeholder={t("addressPlaceholder")}
                     onTextChange={setWarehouseAddressLine1}
                     onPlaceSelect={(place) => {
                       setWarehouseAddressLine1(place.addressLine1);
@@ -261,33 +264,33 @@ export default function AdminSettingsPage() {
                   />
                 </label>
                 <label className="text-sm text-neutral-700">
-                  City
+                  {t("city")}
                   <input
                     type="text"
                     className={`${INPUT} mt-1 max-w-none`}
                     value={warehouseCity}
                     onChange={(event) => setWarehouseCity(event.target.value)}
-                    placeholder="City"
+                    placeholder={t("city")}
                   />
                 </label>
                 <label className="text-sm text-neutral-700">
-                  Country
+                  {t("country")}
                   <input
                     type="text"
                     className={`${INPUT} mt-1 max-w-none`}
                     value={warehouseCountry}
                     onChange={(event) => setWarehouseCountry(event.target.value)}
-                    placeholder="Country"
+                    placeholder={t("country")}
                   />
                 </label>
                 <label className="text-sm text-neutral-700">
-                  Postal code
+                  {t("postalCode")}
                   <input
                     type="text"
                     className={`${INPUT} mt-1 max-w-none`}
                     value={warehousePostalCode}
                     onChange={(event) => setWarehousePostalCode(event.target.value)}
-                    placeholder="Postal code (optional)"
+                    placeholder={t("postalPlaceholder")}
                   />
                 </label>
               </div>
@@ -304,11 +307,11 @@ export default function AdminSettingsPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Save settings
+          {t("save")}
         </button>
         {settings ? (
           <p className="mt-2 text-xs text-neutral-500">
-            Last updated {new Date(settings.updatedAt).toLocaleString()}
+            {t("lastUpdated", { date: new Date(settings.updatedAt).toLocaleString() })}
           </p>
         ) : null}
       </div>

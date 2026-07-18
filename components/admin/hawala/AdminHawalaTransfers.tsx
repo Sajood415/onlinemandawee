@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { Banknote, Eye, Loader2, Search, Settings2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
@@ -62,16 +63,9 @@ const STATUS_FILTERS: Array<"ALL" | HawalaTransferStatus> = [
   "CANCELLED",
 ];
 
-const STATUS_LABELS: Record<HawalaTransferStatus, string> = {
-  PENDING: "Pending",
-  APPROVED: "Approved",
-  REJECTED: "Rejected",
-  IN_PROGRESS: "In progress",
-  DELIVERED: "Delivered",
-  COMPLETED: "Completed",
-  FAILED: "Failed",
-  CANCELLED: "Cancelled",
-};
+const HAWALA_STATUSES = STATUS_FILTERS.filter(
+  (status): status is HawalaTransferStatus => status !== "ALL"
+);
 
 const STATUS_BADGE: Record<HawalaTransferStatus, string> = {
   PENDING: "bg-amber-50 text-amber-700",
@@ -100,20 +94,19 @@ const displayDate = (iso: string) => {
 const formatMoney = (amountMinor: number, currency: string) =>
   `${(amountMinor / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currency}`;
 
-const toErrorMessage = (error: unknown) =>
-  error instanceof Error && error.message ? error.message : "Something went wrong";
-
 function StatusBadge({ status }: { status: HawalaTransferStatus }) {
+  const t = useTranslations("AdminPages.hawala");
   return (
     <span
       className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${STATUS_BADGE[status]}`}
     >
-      {STATUS_LABELS[status]}
+      {t.has(`statuses.${status}`) ? t(`statuses.${status}`) : status}
     </span>
   );
 }
 
 export function AdminHawalaTransfers() {
+  const t = useTranslations("AdminPages.hawala");
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [transfers, setTransfers] = useState<HawalaTransferRow[]>([]);
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>("ALL");
@@ -122,6 +115,12 @@ export function AdminHawalaTransfers() {
   const [selected, setSelected] = useState<HawalaTransferRow | null>(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [adminNoteDraft, setAdminNoteDraft] = useState("");
+
+  const toErrorMessage = useCallback(
+    (error: unknown) =>
+      error instanceof Error && error.message ? error.message : t("genericError"),
+    [t]
+  );
 
   const loadTransfers = useCallback(async () => {
     setLoadingList(true);
@@ -133,11 +132,11 @@ export function AdminHawalaTransfers() {
       const data = await parseApiResponse<HawalaTransferRow[]>(response);
       setTransfers(data);
     } catch (error) {
-      toast.error("Failed to load Hawala transfers", toErrorMessage(error));
+      toast.error(t("loadError"), toErrorMessage(error));
     } finally {
       setLoadingList(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, t, toErrorMessage]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -170,7 +169,7 @@ export function AdminHawalaTransfers() {
     () => [
       {
         accessorKey: "transferNumber",
-        header: "Transfer #",
+        header: t("columns.transferNumber"),
         cell: ({ row }) => (
           <span className="font-mono text-sm font-semibold text-[#0f3460]">
             {row.original.transferNumber}
@@ -179,7 +178,7 @@ export function AdminHawalaTransfers() {
       },
       {
         accessorKey: "senderName",
-        header: "Sender",
+        header: t("columns.sender"),
         cell: ({ row }) => (
           <div>
             <p className="font-medium text-neutral-900">{row.original.senderName}</p>
@@ -189,7 +188,7 @@ export function AdminHawalaTransfers() {
       },
       {
         accessorKey: "receiverName",
-        header: "Receiver",
+        header: t("columns.receiver"),
         cell: ({ row }) => (
           <div>
             <p className="font-medium text-neutral-900">{row.original.receiverName}</p>
@@ -199,7 +198,7 @@ export function AdminHawalaTransfers() {
       },
       {
         id: "amount",
-        header: "Amount",
+        header: t("columns.amount"),
         cell: ({ row }) => (
           <div className="text-sm text-neutral-800">
             <p>{formatMoney(row.original.sendAmountMinor, row.original.sendCurrency)}</p>
@@ -211,12 +210,12 @@ export function AdminHawalaTransfers() {
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("columns.status"),
         cell: ({ row }) => <StatusBadge status={row.original.status} />,
       },
       {
         accessorKey: "createdAt",
-        header: "Submitted",
+        header: t("columns.submitted"),
         cell: ({ row }) => (
           <span className="text-sm text-neutral-600">{displayDate(row.original.createdAt)}</span>
         ),
@@ -231,12 +230,12 @@ export function AdminHawalaTransfers() {
             className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:border-[#0f3460]/30 hover:bg-[#0f3460]/5"
           >
             <Eye className="h-3.5 w-3.5" />
-            View
+            {t("view")}
           </button>
         ),
       },
     ],
-    []
+    [t]
   );
 
   const handleStatusChange = async (status: HawalaTransferStatus) => {
@@ -253,9 +252,9 @@ export function AdminHawalaTransfers() {
       setTransfers((current) =>
         current.map((row) => (row.id === updated.id ? updated : row))
       );
-      toast.success("Status updated");
+      toast.success(t("statusUpdated"));
     } catch (error) {
-      toast.error("Could not update status", toErrorMessage(error));
+      toast.error(t("statusUpdateFailed"), toErrorMessage(error));
     } finally {
       setStatusUpdating(false);
     }
@@ -275,9 +274,9 @@ export function AdminHawalaTransfers() {
       setTransfers((current) =>
         current.map((row) => (row.id === updated.id ? updated : row))
       );
-      toast.success("Note saved");
+      toast.success(t("noteSaved"));
     } catch (error) {
-      toast.error("Could not save note", toErrorMessage(error));
+      toast.error(t("noteSaveFailed"), toErrorMessage(error));
     } finally {
       setStatusUpdating(false);
     }
@@ -297,19 +296,17 @@ export function AdminHawalaTransfers() {
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#0f3460]/15 bg-[#0f3460]/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#0f3460]">
             <Banknote className="h-3.5 w-3.5" />
-            Hawala transfers
+            {t("badge")}
           </div>
-          <h1 className="text-2xl font-bold text-neutral-900">Hawala money transfers</h1>
-          <p className="mt-1 text-sm text-neutral-600">
-            Review, approve, and track Hawala transfer requests.
-          </p>
+          <h1 className="text-2xl font-bold text-neutral-900">{t("title")}</h1>
+          <p className="mt-1 text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <Link
           href="/admin/hawala/exchange-rates"
           className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
         >
           <Settings2 className="h-4 w-4" />
-          Manage exchange rates
+          {t("manageRates")}
         </Link>
       </div>
 
@@ -326,7 +323,11 @@ export function AdminHawalaTransfers() {
                   : "bg-white text-neutral-600 ring-1 ring-neutral-200 hover:bg-neutral-50"
               }`}
             >
-              {status === "ALL" ? "All" : STATUS_LABELS[status]}
+              {status === "ALL"
+                ? t("all")
+                : t.has(`statuses.${status}`)
+                  ? t(`statuses.${status}`)
+                  : status}
             </button>
           ))}
         </div>
@@ -335,7 +336,7 @@ export function AdminHawalaTransfers() {
           <input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search transfer #, sender, receiver..."
+            placeholder={t("searchPlaceholder")}
             className="w-full rounded-xl border border-neutral-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10"
           />
         </div>
@@ -350,7 +351,7 @@ export function AdminHawalaTransfers() {
           data={filteredTransfers}
           columns={columns}
           getRowId={(row) => row.id}
-          emptyMessage="No Hawala transfers found."
+          emptyMessage={t("empty")}
         />
       )}
 
@@ -360,7 +361,7 @@ export function AdminHawalaTransfers() {
             <div className="sticky top-0 z-10 flex items-start justify-between border-b border-neutral-100 bg-white px-6 py-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                  Hawala transfer
+                  {t("detail.title")}
                 </p>
                 <h2 className="mt-1 font-mono text-lg font-bold text-[#0f3460]">
                   {selected.transferNumber}
@@ -382,7 +383,7 @@ export function AdminHawalaTransfers() {
               <section className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                    Sender
+                    {t("detail.sender")}
                   </h3>
                   <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
                     <p className="font-medium text-neutral-900">{selected.senderName}</p>
@@ -392,13 +393,16 @@ export function AdminHawalaTransfers() {
                       {selected.senderAddress}, {selected.senderCountry}
                     </p>
                     <p className="mt-2 text-xs text-neutral-500">
-                      Bank: {selected.senderBankName} · Acct: {selected.senderAccountNumber}
+                      {t("detail.bank", {
+                        bank: selected.senderBankName,
+                        account: selected.senderAccountNumber,
+                      })}
                     </p>
                   </div>
                 </div>
                 <div>
                   <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                    Receiver
+                    {t("detail.receiver")}
                   </h3>
                   <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
                     <p className="font-medium text-neutral-900">{selected.receiverName}</p>
@@ -407,7 +411,10 @@ export function AdminHawalaTransfers() {
                       {selected.receiverAddress}, {selected.receiverCountry}
                     </p>
                     <p className="mt-2 text-xs text-neutral-500">
-                      Bank: {selected.receiverBankName} · Acct: {selected.receiverAccountNumber}
+                      {t("detail.bank", {
+                        bank: selected.receiverBankName,
+                        account: selected.receiverAccountNumber,
+                      })}
                     </p>
                   </div>
                 </div>
@@ -422,11 +429,13 @@ export function AdminHawalaTransfers() {
                     </span>
                   </p>
                   <p className="text-xs text-neutral-500">
-                    Rate: 1 {selected.sendCurrency} ≈{" "}
-                    {selected.exchangeRate.toLocaleString(undefined, {
-                      maximumFractionDigits: 4,
-                    })}{" "}
-                    {selected.receiveCurrency}
+                    {t("detail.rate", {
+                      from: selected.sendCurrency,
+                      rate: selected.exchangeRate.toLocaleString(undefined, {
+                        maximumFractionDigits: 4,
+                      }),
+                      to: selected.receiveCurrency,
+                    })}
                   </p>
                 </div>
               </section>
@@ -434,7 +443,7 @@ export function AdminHawalaTransfers() {
               {selected.note ? (
                 <section>
                   <h3 className="mb-2 text-sm font-semibold text-neutral-800">
-                    Customer note
+                    {t("detail.customerNote")}
                   </h3>
                   <p className="rounded-xl border border-neutral-200 bg-white p-4 text-sm leading-relaxed text-neutral-700 whitespace-pre-wrap">
                     {selected.note}
@@ -444,7 +453,7 @@ export function AdminHawalaTransfers() {
 
               <section>
                 <label className="mb-2 block text-sm font-semibold text-neutral-800">
-                  Update status
+                  {t("detail.updateStatus")}
                 </label>
                 <select
                   value={selected.status}
@@ -454,30 +463,27 @@ export function AdminHawalaTransfers() {
                   }
                   className="w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10 disabled:opacity-60"
                 >
-                  {(Object.keys(STATUS_LABELS) as HawalaTransferStatus[]).map((status) => (
+                  {HAWALA_STATUSES.map((status) => (
                     <option key={status} value={status}>
-                      {STATUS_LABELS[status]}
+                      {t.has(`statuses.${status}`) ? t(`statuses.${status}`) : status}
                     </option>
                   ))}
                 </select>
                 {CLOSED_STATUSES.includes(selected.status) ? (
-                  <p className="mt-2 text-xs text-amber-600">
-                    This transfer is closed. Changing status again is disabled once closed
-                    unless you pick the same status.
-                  </p>
+                  <p className="mt-2 text-xs text-amber-600">{t("detail.closedHint")}</p>
                 ) : null}
               </section>
 
               <section>
                 <label className="mb-2 block text-sm font-semibold text-neutral-800">
-                  Admin note (visible to customer)
+                  {t("detail.adminNote")}
                 </label>
                 <textarea
                   value={adminNoteDraft}
                   onChange={(event) => setAdminNoteDraft(event.target.value)}
                   disabled={statusUpdating}
                   className="min-h-[90px] w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10 disabled:opacity-60"
-                  placeholder="Add a note about approval, rejection reason, or delivery details"
+                  placeholder={t("detail.adminNotePlaceholder")}
                 />
                 <button
                   type="button"
@@ -486,14 +492,14 @@ export function AdminHawalaTransfers() {
                   className="mt-2 inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-60"
                 >
                   {statusUpdating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                  Save note
+                  {t("detail.saveNote")}
                 </button>
               </section>
 
               <p className="text-xs text-neutral-500">
-                Submitted {displayDate(selected.createdAt)}
+                {t("detail.submitted", { date: displayDate(selected.createdAt) })}
                 {selected.updatedAt !== selected.createdAt
-                  ? ` · Updated ${displayDate(selected.updatedAt)}`
+                  ? ` · ${t("detail.updated", { date: displayDate(selected.updatedAt) })}`
                   : ""}
               </p>
             </div>

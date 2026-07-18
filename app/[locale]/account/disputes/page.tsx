@@ -2,6 +2,7 @@
 
 import { Loader2, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { RefundStatusBadge } from "@/components/refunds/RefundStatusBadge";
 import type { RefundCaseListItem, RefundCaseStatus, RefundListResponse } from "@/components/refunds/refund-types";
@@ -11,7 +12,6 @@ import { Link } from "@/i18n/navigation";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
-import { useLocale } from "next-intl";
 
 const STATUS_FILTERS: Array<"ALL" | RefundCaseStatus> = [
   "ALL",
@@ -22,6 +22,7 @@ const STATUS_FILTERS: Array<"ALL" | RefundCaseStatus> = [
 
 export default function CustomerDisputesPage() {
   const locale = useLocale();
+  const t = useTranslations("Disputes.list");
   const { isLoading: authLoading } = useCustomerRouteGuard();
   const [items, setItems] = useState<RefundCaseListItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>("ALL");
@@ -39,11 +40,11 @@ export default function CustomerDisputesPage() {
       setItems(data.items);
       setPagination(data.pagination);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load disputes");
+      toast.error(error instanceof Error ? error.message : t("loadError"));
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter]);
+  }, [page, statusFilter, t]);
 
   useEffect(() => {
     if (!authLoading) void loadDisputes();
@@ -63,10 +64,8 @@ export default function CustomerDisputesPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-neutral-900">Disputes</h1>
-          <p className="mt-1 text-sm text-neutral-600">
-            Track refund requests and chat with vendors or support.
-          </p>
+          <h1 className="text-2xl font-semibold text-neutral-900">{t("title")}</h1>
+          <p className="mt-1 text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <button
           type="button"
@@ -74,7 +73,7 @@ export default function CustomerDisputesPage() {
           className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
         >
           <RefreshCw className="h-4 w-4" />
-          Refresh
+          {t("refresh")}
         </button>
       </div>
 
@@ -91,7 +90,7 @@ export default function CustomerDisputesPage() {
               statusFilter === option ? "bg-primary text-white" : "bg-neutral-100 text-neutral-700"
             }`}
           >
-            {option === "ALL" ? "All" : option.replaceAll("_", " ")}
+            {t(`filters.${option}`)}
           </button>
         ))}
       </div>
@@ -102,15 +101,13 @@ export default function CustomerDisputesPage() {
         </div>
       ) : empty ? (
         <div className="rounded-xl border border-dashed border-neutral-300 bg-white px-6 py-12 text-center">
-          <p className="text-sm font-semibold text-neutral-900">No disputes yet</p>
-          <p className="mt-1 text-sm text-neutral-500">
-            Request a refund from an eligible paid order in your overview.
-          </p>
+          <p className="text-sm font-semibold text-neutral-900">{t("empty")}</p>
+          <p className="mt-1 text-sm text-neutral-500">{t("emptyHint")}</p>
           <Link
             href="/account"
             className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
           >
-            View orders
+            {t("viewOrders")}
           </Link>
         </div>
       ) : (
@@ -126,7 +123,8 @@ export default function CustomerDisputesPage() {
                   <p className="text-sm font-semibold text-neutral-900">{item.order.orderNumber}</p>
                   <p className="mt-1 text-sm text-neutral-700">{item.orderItem.productName}</p>
                   <p className="mt-1 text-xs text-neutral-500">
-                    {item.vendor.storeName ?? "Vendor"} · {formatRefundDate(item.createdAt, locale)}
+                    {item.vendor.storeName ?? t("vendorFallback")} ·{" "}
+                    {formatRefundDate(item.createdAt, locale)}
                   </p>
                 </div>
                 <div className="text-right">
@@ -149,10 +147,10 @@ export default function CustomerDisputesPage() {
             onClick={() => setPage((current) => Math.max(1, current - 1))}
             className="rounded-lg border border-neutral-300 px-3 py-2 text-sm disabled:opacity-50"
           >
-            Previous
+            {t("previous")}
           </button>
           <span className="text-sm text-neutral-600">
-            Page {pagination.page} of {pagination.totalPages}
+            {t("pageOf", { page: pagination.page, total: pagination.totalPages })}
           </span>
           <button
             type="button"
@@ -160,7 +158,7 @@ export default function CustomerDisputesPage() {
             onClick={() => setPage((current) => current + 1)}
             className="rounded-lg border border-neutral-300 px-3 py-2 text-sm disabled:opacity-50"
           >
-            Next
+            {t("next")}
           </button>
         </div>
       ) : null}

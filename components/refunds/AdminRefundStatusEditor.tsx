@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import type { RefundCaseDetail, RefundCaseStatus } from "@/components/refunds/refund-types";
@@ -22,6 +23,7 @@ export function AdminRefundStatusEditor({
   onSuccess,
   variant = "card",
 }: AdminRefundStatusEditorProps) {
+  const t = useTranslations("Disputes");
   const [status, setStatus] = useState(refundCase.status);
   const [updating, setUpdating] = useState(false);
 
@@ -71,7 +73,7 @@ export function AdminRefundStatusEditor({
       >
         {REFUND_STATUSES.map((option) => (
           <option key={option} value={option}>
-            {REFUND_STATUS_LABELS[option]}
+            {t(REFUND_STATUS_LABELS[option])}
           </option>
         ))}
       </select>

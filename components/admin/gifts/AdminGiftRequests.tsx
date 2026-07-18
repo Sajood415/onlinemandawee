@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { Eye, Gift, Loader2, Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
@@ -72,14 +73,9 @@ const STATUS_FILTERS: Array<"ALL" | GiftRequestStatus> = [
   "CANCELLED",
 ];
 
-const STATUS_LABELS: Record<GiftRequestStatus, string> = {
-  SUBMITTED: "Submitted",
-  REVIEWING: "Reviewing",
-  AWAITING_PAYMENT: "Awaiting payment",
-  IN_PROGRESS: "In progress",
-  COMPLETED: "Completed",
-  CANCELLED: "Cancelled",
-};
+const GIFT_STATUSES = STATUS_FILTERS.filter(
+  (status): status is GiftRequestStatus => status !== "ALL"
+);
 
 const STATUS_BADGE: Record<GiftRequestStatus, string> = {
   SUBMITTED: "bg-amber-50 text-amber-700",
@@ -96,20 +92,19 @@ const displayDate = (iso: string) => {
   return date.toLocaleString();
 };
 
-const toErrorMessage = (error: unknown) =>
-  error instanceof Error && error.message ? error.message : "Something went wrong";
-
 function StatusBadge({ status }: { status: GiftRequestStatus }) {
+  const t = useTranslations("AdminPages.giftRequests");
   return (
     <span
       className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${STATUS_BADGE[status]}`}
     >
-      {STATUS_LABELS[status]}
+      {t.has(`statuses.${status}`) ? t(`statuses.${status}`) : status}
     </span>
   );
 }
 
 export function AdminGiftRequests() {
+  const t = useTranslations("AdminPages.giftRequests");
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [requests, setRequests] = useState<GiftRequestRow[]>([]);
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>("ALL");
@@ -117,6 +112,12 @@ export function AdminGiftRequests() {
   const [loadingList, setLoadingList] = useState(true);
   const [selected, setSelected] = useState<GiftRequestRow | null>(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
+
+  const toErrorMessage = useCallback(
+    (error: unknown) =>
+      error instanceof Error && error.message ? error.message : t("genericError"),
+    [t]
+  );
 
   const loadRequests = useCallback(async () => {
     setLoadingList(true);
@@ -128,11 +129,11 @@ export function AdminGiftRequests() {
       const data = await parseApiResponse<GiftRequestRow[]>(response);
       setRequests(data);
     } catch (error) {
-      toast.error("Failed to load gift requests", toErrorMessage(error));
+      toast.error(t("loadError"), toErrorMessage(error));
     } finally {
       setLoadingList(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, t, toErrorMessage]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -161,7 +162,7 @@ export function AdminGiftRequests() {
     () => [
       {
         accessorKey: "requestNumber",
-        header: "Request #",
+        header: t("columns.requestNumber"),
         cell: ({ row }) => (
           <span className="font-mono text-sm font-semibold text-[#0f3460]">
             {row.original.requestNumber}
@@ -170,7 +171,7 @@ export function AdminGiftRequests() {
       },
       {
         accessorKey: "senderName",
-        header: "Sender",
+        header: t("columns.sender"),
         cell: ({ row }) => (
           <div>
             <p className="font-medium text-neutral-900">{row.original.senderName}</p>
@@ -180,7 +181,7 @@ export function AdminGiftRequests() {
       },
       {
         accessorKey: "recipientName",
-        header: "Recipient",
+        header: t("columns.recipient"),
         cell: ({ row }) => (
           <div>
             <div className="flex items-center gap-1.5">
@@ -197,12 +198,12 @@ export function AdminGiftRequests() {
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("columns.status"),
         cell: ({ row }) => <StatusBadge status={row.original.status} />,
       },
       {
         accessorKey: "createdAt",
-        header: "Submitted",
+        header: t("columns.submitted"),
         cell: ({ row }) => (
           <span className="text-sm text-neutral-600">{displayDate(row.original.createdAt)}</span>
         ),
@@ -217,12 +218,12 @@ export function AdminGiftRequests() {
             className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:border-[#0f3460]/30 hover:bg-[#0f3460]/5"
           >
             <Eye className="h-3.5 w-3.5" />
-            View
+            {t("view")}
           </button>
         ),
       },
     ],
-    []
+    [t]
   );
 
   const handleStatusChange = async (status: GiftRequestStatus) => {
@@ -239,9 +240,9 @@ export function AdminGiftRequests() {
       setRequests((current) =>
         current.map((row) => (row.id === updated.id ? updated : row))
       );
-      toast.success("Status updated");
+      toast.success(t("statusUpdated"));
     } catch (error) {
-      toast.error("Could not update status", toErrorMessage(error));
+      toast.error(t("statusUpdateFailed"), toErrorMessage(error));
     } finally {
       setStatusUpdating(false);
     }
@@ -261,12 +262,10 @@ export function AdminGiftRequests() {
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#0f3460]/15 bg-[#0f3460]/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#0f3460]">
             <Gift className="h-3.5 w-3.5" />
-            Gift requests
+            {t("badge")}
           </div>
-          <h1 className="text-2xl font-bold text-neutral-900">Personalized gift requests</h1>
-          <p className="mt-1 text-sm text-neutral-600">
-            Review customer gift requests for relatives in Afghanistan.
-          </p>
+          <h1 className="text-2xl font-bold text-neutral-900">{t("title")}</h1>
+          <p className="mt-1 text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
       </div>
 
@@ -283,7 +282,11 @@ export function AdminGiftRequests() {
                   : "bg-white text-neutral-600 ring-1 ring-neutral-200 hover:bg-neutral-50"
               }`}
             >
-              {status === "ALL" ? "All" : STATUS_LABELS[status]}
+              {status === "ALL"
+                ? t("all")
+                : t.has(`statuses.${status}`)
+                  ? t(`statuses.${status}`)
+                  : status}
             </button>
           ))}
         </div>
@@ -292,7 +295,7 @@ export function AdminGiftRequests() {
           <input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search request #, sender, recipient..."
+            placeholder={t("searchPlaceholder")}
             className="w-full rounded-xl border border-neutral-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10"
           />
         </div>
@@ -307,7 +310,7 @@ export function AdminGiftRequests() {
           data={filteredRequests}
           columns={columns}
           getRowId={(row) => row.id}
-          emptyMessage="No gift requests found."
+          emptyMessage={t("empty")}
         />
       )}
 
@@ -317,7 +320,7 @@ export function AdminGiftRequests() {
             <div className="sticky top-0 z-10 flex items-start justify-between border-b border-neutral-100 bg-white px-6 py-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                  Gift request
+                  {t("detail.title")}
                 </p>
                 <h2 className="mt-1 font-mono text-lg font-bold text-[#0f3460]">
                   {selected.requestNumber}
@@ -338,7 +341,7 @@ export function AdminGiftRequests() {
             <div className="space-y-6 px-6 py-5">
               <section>
                 <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                  Sender
+                  {t("detail.sender")}
                 </h3>
                 <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
                   <p className="font-medium text-neutral-900">{selected.senderName}</p>
@@ -349,7 +352,7 @@ export function AdminGiftRequests() {
 
               <section>
                 <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                  Recipient in Afghanistan
+                  {t("detail.recipient")}
                 </h3>
                 <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
                   <p className="font-medium text-neutral-900">{selected.recipientName}</p>
@@ -364,7 +367,7 @@ export function AdminGiftRequests() {
               <section className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                    Occasion
+                    {t("detail.occasion")}
                   </p>
                   <p className="mt-1 text-sm text-neutral-800">{selected.occasion ?? "—"}</p>
                 </div>
@@ -378,7 +381,7 @@ export function AdminGiftRequests() {
                 </div>
                 <div className="sm:col-span-2">
                   <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                    Budget note
+                    {t("detail.budget")}
                   </p>
                   <p className="mt-1 text-sm text-neutral-800">{selected.budgetNote ?? "—"}</p>
                 </div>
@@ -387,24 +390,24 @@ export function AdminGiftRequests() {
               {selected.itemType === "DRESS" ? (
                 <section className="rounded-xl border border-[#0f3460]/15 bg-[#0f3460]/5 p-4">
                   <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-[#0f3460]">
-                    Dress details
+                    {t("detail.dressDetails")}
                   </h3>
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                        Color
+                        {t("detail.color")}
                       </p>
                       <p className="mt-1 text-sm text-neutral-800">{selected.dressColor ?? "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                        Size
+                        {t("detail.size")}
                       </p>
                       <p className="mt-1 text-sm text-neutral-800">{selected.dressSize ?? "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                        Sleeve type
+                        {t("detail.style")}
                       </p>
                       <p className="mt-1 text-sm text-neutral-800">
                         {selected.dressSleeveType ?? "—"}
@@ -412,19 +415,19 @@ export function AdminGiftRequests() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                        Length
+                        {t("detail.length")}
                       </p>
                       <p className="mt-1 text-sm text-neutral-800">{selected.dressLength ?? "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                        Fitting
+                        {t("detail.fitting")}
                       </p>
                       <p className="mt-1 text-sm text-neutral-800">{selected.dressFitting ?? "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                        Fabric / texture
+                        {t("detail.texture")}
                       </p>
                       <p className="mt-1 text-sm text-neutral-800">{selected.dressTexture ?? "—"}</p>
                     </div>
@@ -446,7 +449,9 @@ export function AdminGiftRequests() {
               ) : null}
 
               <section>
-                <h3 className="mb-2 text-sm font-semibold text-neutral-800">Preparation notes</h3>
+                <h3 className="mb-2 text-sm font-semibold text-neutral-800">
+                  {t("detail.preparationNotes")}
+                </h3>
                 <p className="rounded-xl border border-neutral-200 bg-white p-4 text-sm leading-relaxed text-neutral-700 whitespace-pre-wrap">
                   {selected.preparationNotes}
                 </p>
@@ -482,7 +487,7 @@ export function AdminGiftRequests() {
 
               <section>
                 <label className="mb-2 block text-sm font-semibold text-neutral-800">
-                  Update status
+                  {t("detail.updateStatus")}
                 </label>
                 <select
                   value={selected.status}
@@ -492,18 +497,18 @@ export function AdminGiftRequests() {
                   }
                   className="w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10 disabled:opacity-60"
                 >
-                  {(Object.keys(STATUS_LABELS) as GiftRequestStatus[]).map((status) => (
+                  {GIFT_STATUSES.map((status) => (
                     <option key={status} value={status}>
-                      {STATUS_LABELS[status]}
+                      {t.has(`statuses.${status}`) ? t(`statuses.${status}`) : status}
                     </option>
                   ))}
                 </select>
               </section>
 
               <p className="text-xs text-neutral-500">
-                Submitted {displayDate(selected.createdAt)}
+                {t("detail.submitted", { date: displayDate(selected.createdAt) })}
                 {selected.updatedAt !== selected.createdAt
-                  ? ` · Updated ${displayDate(selected.updatedAt)}`
+                  ? ` · ${t("detail.updated", { date: displayDate(selected.updatedAt) })}`
                   : ""}
               </p>
             </div>

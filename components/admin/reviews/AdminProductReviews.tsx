@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { Eye, EyeOff, Loader2, Search, Star, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
@@ -39,9 +40,6 @@ const displayDate = (iso: string) => {
   return date.toLocaleString();
 };
 
-const toErrorMessage = (error: unknown) =>
-  error instanceof Error && error.message ? error.message : "Something went wrong";
-
 function RatingStars({ rating }: { rating: number }) {
   return (
     <div className="flex items-center gap-0.5">
@@ -59,12 +57,19 @@ function RatingStars({ rating }: { rating: number }) {
 }
 
 export function AdminProductReviews() {
+  const t = useTranslations("AdminPages.reviews");
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [reviews, setReviews] = useState<AdminProductReviewRow[]>([]);
   const [ratingFilter, setRatingFilter] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingList, setLoadingList] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
+
+  const toErrorMessage = useCallback(
+    (error: unknown) =>
+      error instanceof Error && error.message ? error.message : t("genericError"),
+    [t]
+  );
 
   const loadReviews = useCallback(async () => {
     setLoadingList(true);
@@ -77,11 +82,11 @@ export function AdminProductReviews() {
       const data = await parseApiResponse<ReviewsResponse>(response);
       setReviews(data.reviews);
     } catch (error) {
-      toast.error("Failed to load reviews", toErrorMessage(error));
+      toast.error(t("loadError"), toErrorMessage(error));
     } finally {
       setLoadingList(false);
     }
-  }, [ratingFilter, searchQuery]);
+  }, [ratingFilter, searchQuery, t, toErrorMessage]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -99,27 +104,25 @@ export function AdminProductReviews() {
       });
       const updated = await parseApiResponse<AdminProductReviewRow>(response);
       setReviews((current) => current.map((row) => (row.id === updated.id ? updated : row)));
-      toast.success(updated.isHidden ? "Review hidden" : "Review published");
+      toast.success(updated.isHidden ? t("hiddenToast") : t("publishedToast"));
     } catch (error) {
-      toast.error("Could not update review", toErrorMessage(error));
+      toast.error(t("updateFailed"), toErrorMessage(error));
     } finally {
       setActionId(null);
     }
   };
 
   const handleDelete = async (review: AdminProductReviewRow) => {
-    const confirmed = window.confirm(
-      `Permanently delete this review by ${review.reviewerName}? This cannot be undone.`
-    );
+    const confirmed = window.confirm(t("deleteConfirm", { name: review.reviewerName }));
     if (!confirmed) return;
 
     setActionId(review.id);
     try {
       await fetchWithAuth(`/api/admin/product-reviews/${review.id}`, { method: "DELETE" });
       setReviews((current) => current.filter((row) => row.id !== review.id));
-      toast.success("Review deleted");
+      toast.success(t("deletedToast"));
     } catch (error) {
-      toast.error("Could not delete review", toErrorMessage(error));
+      toast.error(t("deleteFailed"), toErrorMessage(error));
     } finally {
       setActionId(null);
     }
@@ -129,7 +132,7 @@ export function AdminProductReviews() {
     () => [
       {
         accessorKey: "product",
-        header: "Product",
+        header: t("columns.product"),
         cell: ({ row }) => (
           <p className="max-w-[220px] truncate font-medium text-neutral-900">
             {row.original.product.name}
@@ -138,19 +141,19 @@ export function AdminProductReviews() {
       },
       {
         accessorKey: "rating",
-        header: "Rating",
+        header: t("columns.rating"),
         cell: ({ row }) => <RatingStars rating={row.original.rating} />,
       },
       {
         accessorKey: "comment",
-        header: "Comment",
+        header: t("columns.comment"),
         cell: ({ row }) => (
           <p className="max-w-[320px] truncate text-neutral-700">{row.original.comment}</p>
         ),
       },
       {
         accessorKey: "reviewerName",
-        header: "Reviewer",
+        header: t("columns.reviewer"),
         cell: ({ row }) => (
           <div>
             <p className="font-medium text-neutral-900">{row.original.reviewerName}</p>
@@ -160,7 +163,7 @@ export function AdminProductReviews() {
       },
       {
         accessorKey: "isHidden",
-        header: "Status",
+        header: t("columns.status"),
         cell: ({ row }) => (
           <span
             className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
@@ -169,13 +172,13 @@ export function AdminProductReviews() {
                 : "bg-emerald-50 text-emerald-700"
             }`}
           >
-            {row.original.isHidden ? "Hidden" : "Published"}
+            {row.original.isHidden ? t("hidden") : t("published")}
           </span>
         ),
       },
       {
         accessorKey: "createdAt",
-        header: "Submitted",
+        header: t("columns.submitted"),
         cell: ({ row }) => (
           <span className="text-sm text-neutral-600">{displayDate(row.original.createdAt)}</span>
         ),
@@ -196,7 +199,7 @@ export function AdminProductReviews() {
               ) : (
                 <EyeOff className="h-3.5 w-3.5" />
               )}
-              {row.original.isHidden ? "Publish" : "Hide"}
+              {row.original.isHidden ? t("publish") : t("hide")}
             </button>
             <button
               type="button"
@@ -205,13 +208,13 @@ export function AdminProductReviews() {
               className="inline-flex items-center gap-1 rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-60"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              Delete
+              {t("delete")}
             </button>
           </div>
         ),
       },
     ],
-    [actionId]
+    [actionId, t]
   );
 
   if (authLoading) {
@@ -227,11 +230,11 @@ export function AdminProductReviews() {
       <div>
         <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#0f3460]/15 bg-[#0f3460]/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#0f3460]">
           <Star className="h-3.5 w-3.5" />
-          Product reviews
+          {t("badge")}
         </div>
-        <h1 className="text-2xl font-bold text-neutral-900">Customer reviews</h1>
+        <h1 className="text-2xl font-bold text-neutral-900">{t("title")}</h1>
         <p className="mt-1 text-sm text-neutral-600">
-          Moderate star ratings and comments customers leave on products.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -248,7 +251,7 @@ export function AdminProductReviews() {
                   : "bg-white text-neutral-600 ring-1 ring-neutral-200 hover:bg-neutral-50"
               }`}
             >
-              {value === 0 ? "All" : `${value} ★`}
+              {value === 0 ? t("all") : t("stars", { count: value })}
             </button>
           ))}
         </div>
@@ -257,7 +260,7 @@ export function AdminProductReviews() {
           <input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search comment, product, or reviewer..."
+            placeholder={t("searchPlaceholder")}
             className="w-full rounded-xl border border-neutral-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10"
           />
         </div>
@@ -272,7 +275,7 @@ export function AdminProductReviews() {
           data={reviews}
           columns={columns}
           getRowId={(row) => row.id}
-          emptyMessage="No reviews found."
+          emptyMessage={t("empty")}
         />
       )}
     </div>

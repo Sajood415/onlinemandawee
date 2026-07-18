@@ -8,6 +8,7 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { AdminOrderDisputePanel } from "@/components/admin/AdminOrderDisputePanel";
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
@@ -19,6 +20,8 @@ import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { resolveVendorOrderDeliveredAtIso } from "@/lib/orders/resolve-vendor-order-delivered-at";
 import { Link } from "@/i18n/navigation";
+
+type OrdersT = ReturnType<typeof useTranslations<"AdminPages.orders">>;
 
 type VendorOption = {
   id: string;
@@ -255,26 +258,28 @@ function displayShortDate(iso: string | null) {
   });
 }
 
-function deliveryMethodLabel(method: DeliveryMethod | null | undefined) {
-  if (method === "PICKUP") return "Pickup";
-  if (method === "EXPRESS") return "Express";
-  if (method === "STANDARD") return "Standard";
+function deliveryMethodLabel(method: DeliveryMethod | null | undefined, t: OrdersT) {
+  if (method === "PICKUP") return t("delivery.PICKUP");
+  if (method === "EXPRESS") return t("delivery.EXPRESS");
+  if (method === "STANDARD") return t("delivery.STANDARD");
   return "—";
 }
 
-function listDeliveryLabel(order: AdminOrderListItem) {
-  if (order.deliveryMethod) return deliveryMethodLabel(order.deliveryMethod);
+function listDeliveryLabel(order: AdminOrderListItem, t: OrdersT) {
+  if (order.deliveryMethod) return deliveryMethodLabel(order.deliveryMethod, t);
   if (order.vendorDeliveryMethods.length === 1) {
-    return deliveryMethodLabel(order.vendorDeliveryMethods[0]);
+    return deliveryMethodLabel(order.vendorDeliveryMethods[0], t);
   }
-  if (order.vendorDeliveryMethods.length > 1) return "Mixed";
+  if (order.vendorDeliveryMethods.length > 1) return t("delivery.MIXED");
   return "—";
 }
 
-function listVendorLabel(order: AdminOrderListItem) {
+function listVendorLabel(order: AdminOrderListItem, t: OrdersT) {
   const first = order.vendors[0];
   const name =
-    first?.vendorStoreName ?? first?.vendorStoreSlug ?? (order.vendorCount ? "Vendor" : "—");
+    first?.vendorStoreName ??
+    first?.vendorStoreSlug ??
+    (order.vendorCount ? t("vendorFallback") : "—");
   if (order.vendorCount <= 1) return name;
   return `${name} +${order.vendorCount - 1}`;
 }
@@ -335,8 +340,12 @@ function payoutStatusClass(status: PayoutStatus | null) {
   return "bg-neutral-100 text-neutral-500";
 }
 
-function payoutStatusLabel(status: PayoutStatus | null) {
-  if (!status) return "Not created";
+function payoutStatusLabel(status: PayoutStatus | null, t: OrdersT) {
+  if (!status) return t("notCreated");
+  if (status === "ON_HOLD") return t("payoutStatuses.ON_HOLD");
+  if (status === "READY") return t("payoutStatuses.READY");
+  if (status === "SENT") return t("payoutStatuses.SENT");
+  if (status === "FAILED") return t("payoutStatuses.FAILED");
   return status.replaceAll("_", " ");
 }
 
@@ -393,15 +402,8 @@ const EMPTY_FILTERS: AppliedFilters = {
   to: "",
 };
 
-const STATUS_FILTER_LABELS: Record<(typeof adminOrderStatusFilters)[number], string> = {
-  PENDING: "Pending",
-  SHIPPED: "Shipped",
-  DELIVERED: "Delivered",
-  CANCELLED: "Cancelled",
-  REFUNDED: "Refunded",
-};
-
 export default function AdminOrdersPage() {
+  const t = useTranslations("AdminPages.orders");
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
 
   const [orders, setOrders] = useState<AdminOrderListItem[]>([]);
@@ -454,12 +456,12 @@ export default function AdminOrdersPage() {
       setOrders(data.items);
       setPagination(data.pagination);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load orders.");
+      setError(e instanceof Error ? e.message : t("loadError"));
       setOrders([]);
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.pageSize, appliedFilters]);
+  }, [pagination.page, pagination.pageSize, appliedFilters, t]);
 
   useEffect(() => {
     if (!authLoading && user) void loadVendors();
@@ -479,11 +481,11 @@ export default function AdminOrdersPage() {
       setDetail(data);
     } catch (e) {
       setDetailOrderId(null);
-      setError(e instanceof Error ? e.message : "Failed to load order details.");
+      setError(e instanceof Error ? e.message : t("detailLoadError"));
     } finally {
       setDetailLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const refreshDetail = useCallback(async () => {
     if (!detailOrderId) return;
@@ -497,9 +499,9 @@ export default function AdminOrdersPage() {
         )
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to refresh order details.");
+      setError(e instanceof Error ? e.message : t("refreshDetailError"));
     }
-  }, [detailOrderId]);
+  }, [detailOrderId, t]);
 
   const closeDetail = () => {
     setDetailOrderId(null);
@@ -529,11 +531,8 @@ export default function AdminOrdersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0f3460]">Orders</h1>
-          <p className="mt-1 text-sm text-neutral-600">
-            All marketplace orders across every vendor. Refunds are vendor-driven; use dispute
-            intervention when needed.
-          </p>
+          <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+          <p className="mt-1 text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <button
           type="button"
@@ -541,7 +540,7 @@ export default function AdminOrdersPage() {
           className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
         >
           <RefreshCw className="h-4 w-4" />
-          Refresh
+          {t("refresh")}
         </button>
       </div>
 
@@ -549,14 +548,14 @@ export default function AdminOrdersPage() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="xl:col-span-2">
             <label className={LABEL_CLASS} htmlFor="admin-order-search">
-              Search
+              {t("search")}
             </label>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
               <input
                 id="admin-order-search"
                 className={`${INPUT_CLASS} pl-9`}
-                placeholder="Order #, email, phone, customer name"
+                placeholder={t("searchPlaceholder")}
                 value={draftFilters.search}
                 onChange={(event) =>
                   setDraftFilters((current) => ({ ...current, search: event.target.value }))
@@ -567,7 +566,7 @@ export default function AdminOrdersPage() {
 
           <div>
             <label className={LABEL_CLASS} htmlFor="admin-order-vendor">
-              Vendor
+              {t("vendor")}
             </label>
             <select
               id="admin-order-vendor"
@@ -580,7 +579,7 @@ export default function AdminOrdersPage() {
                 }))
               }
             >
-              <option value="">All vendors</option>
+              <option value="">{t("allVendors")}</option>
               {vendors.map((vendor) => (
                 <option key={vendor.id} value={vendor.id}>
                   {vendor.storeName ?? vendor.storeSlug ?? vendor.id}
@@ -591,7 +590,7 @@ export default function AdminOrdersPage() {
 
           <div>
             <label className={LABEL_CLASS} htmlFor="admin-order-status-filter">
-              Order status
+              {t("orderStatus")}
             </label>
             <select
               id="admin-order-status-filter"
@@ -604,10 +603,10 @@ export default function AdminOrdersPage() {
                 }))
               }
             >
-              <option value="">All statuses</option>
+              <option value="">{t("allStatuses")}</option>
               {adminOrderStatusFilters.map((status) => (
                 <option key={status} value={status}>
-                  {STATUS_FILTER_LABELS[status]}
+                  {t(`statusFilters.${status}`)}
                 </option>
               ))}
             </select>
@@ -615,7 +614,7 @@ export default function AdminOrdersPage() {
 
           <div>
             <label className={LABEL_CLASS} htmlFor="admin-order-from">
-              From date
+              {t("fromDate")}
             </label>
             <input
               id="admin-order-from"
@@ -630,7 +629,7 @@ export default function AdminOrdersPage() {
 
           <div>
             <label className={LABEL_CLASS} htmlFor="admin-order-to">
-              To date
+              {t("toDate")}
             </label>
             <input
               id="admin-order-to"
@@ -650,14 +649,14 @@ export default function AdminOrdersPage() {
             onClick={applyFilters}
             className="rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847]"
           >
-            Apply filters
+            {t("applyFilters")}
           </button>
           <button
             type="button"
             onClick={resetFilters}
             className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
           >
-            Reset
+            {t("reset")}
           </button>
         </div>
       </section>
@@ -674,7 +673,7 @@ export default function AdminOrdersPage() {
         </div>
       ) : orders.length === 0 ? (
         <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center text-sm text-neutral-500">
-          No orders match the current filters.
+          {t("empty")}
         </div>
       ) : (
         <>
@@ -683,14 +682,14 @@ export default function AdminOrdersPage() {
               <table className="w-full min-w-[960px] border-collapse">
                 <thead className="bg-neutral-50">
                   <tr className="border-b border-neutral-200 text-start text-xs font-semibold text-neutral-500">
-                    <th className="px-4 py-3">Order</th>
-                    <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Vendor</th>
-                    <th className="px-4 py-3">Delivery</th>
-                    <th className="px-4 py-3">Payment</th>
-                    <th className="px-4 py-3">Fee</th>
-                    <th className="px-4 py-3">Payout</th>
-                    <th className="px-4 py-3">Total</th>
+                    <th className="px-4 py-3">{t("columns.order")}</th>
+                    <th className="px-4 py-3">{t("columns.customer")}</th>
+                    <th className="px-4 py-3">{t("columns.vendor")}</th>
+                    <th className="px-4 py-3">{t("columns.delivery")}</th>
+                    <th className="px-4 py-3">{t("columns.payment")}</th>
+                    <th className="px-4 py-3">{t("columns.fee")}</th>
+                    <th className="px-4 py-3">{t("columns.payout")}</th>
+                    <th className="px-4 py-3">{t("columns.total")}</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -724,14 +723,16 @@ export default function AdminOrdersPage() {
                         </td>
                         <td className="max-w-[160px] px-4 py-3 text-sm">
                           <p className="truncate font-medium text-neutral-900">
-                            {listVendorLabel(order)}
+                            {listVendorLabel(order, t)}
                           </p>
                           <p className="mt-0.5 text-xs text-neutral-500">
-                            {order.itemCount} item{order.itemCount !== 1 ? "s" : ""}
+                            {order.itemCount === 1
+                              ? t("item", { count: order.itemCount })
+                              : t("items", { count: order.itemCount })}
                           </p>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-sm text-neutral-700">
-                          {listDeliveryLabel(order)}
+                          {listDeliveryLabel(order, t)}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-sm">
                           <span
@@ -749,7 +750,7 @@ export default function AdminOrdersPage() {
                           <span
                             className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${payoutStatusClass(payoutStatus)}`}
                           >
-                            {payoutStatusLabel(payoutStatus)}
+                            {payoutStatusLabel(payoutStatus, t)}
                           </span>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-neutral-900">
@@ -762,7 +763,7 @@ export default function AdminOrdersPage() {
                             className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
                           >
                             <Eye className="h-3.5 w-3.5" />
-                            View
+                            {t("view")}
                           </button>
                         </td>
                       </tr>
@@ -795,8 +796,11 @@ export default function AdminOrdersPage() {
           <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl">
             <div className="flex shrink-0 items-start justify-between gap-3 border-b border-neutral-200 px-5 py-4">
               <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                  {t("detail.title")}
+                </p>
                 <h2 className="truncate text-xl font-bold text-neutral-900">
-                  {detail?.orderNumber ?? "Order"}
+                  {detail?.orderNumber ?? "…"}
                 </h2>
                 {detail ? (
                   <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -814,7 +818,8 @@ export default function AdminOrdersPage() {
                       {deliveryMethodLabel(
                         detail.deliveryMethod ??
                           detail.vendorOrders[0]?.deliveryMethod ??
-                          null
+                          null,
+                        t
                       )}
                     </span>
                     <span className="text-xs text-neutral-500">
@@ -827,7 +832,7 @@ export default function AdminOrdersPage() {
                 type="button"
                 onClick={closeDetail}
                 className="rounded-lg border border-neutral-200 p-2 text-neutral-600 hover:bg-neutral-50"
-                aria-label="Close order detail"
+                aria-label={t("detail.close")}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -841,60 +846,68 @@ export default function AdminOrdersPage() {
               <div className="space-y-5 overflow-y-auto p-5">
                 {detail.isLockedByCustomerCancellation ? (
                   <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
-                    <p className="font-semibold">Cancelled by customer</p>
+                    <p className="font-semibold">{t("detail.cancelledByCustomer")}</p>
                     {detail.cancelledAt ? (
-                      <p className="mt-1">On {displayShortDate(detail.cancelledAt)}</p>
+                      <p className="mt-1">
+                        {t("detail.cancelledOn", {
+                          date: displayShortDate(detail.cancelledAt),
+                        })}
+                      </p>
                     ) : null}
                     {detail.cancellationReason ? (
-                      <p className="mt-1">Reason: {detail.cancellationReason}</p>
+                      <p className="mt-1">
+                        {t("detail.cancellationReason", {
+                          reason: detail.cancellationReason,
+                        })}
+                      </p>
                     ) : null}
                   </div>
                 ) : null}
 
                 <section className="grid gap-4 sm:grid-cols-2">
                   <div className="rounded-xl border border-neutral-200 p-4">
-                    <h3 className="text-sm font-semibold text-neutral-900">Totals</h3>
+                    <h3 className="text-sm font-semibold text-neutral-900">{t("detail.totals")}</h3>
                     <dl className="mt-3 space-y-2 text-sm">
                       <div className="flex justify-between gap-3 text-neutral-600">
-                        <dt>Subtotal</dt>
+                        <dt>{t("detail.subtotal")}</dt>
                         <dd>{formatMoney(detail.subtotalAmount, detail.currency)}</dd>
                       </div>
                       <div className="flex justify-between gap-3 text-neutral-600">
-                        <dt>Delivery</dt>
+                        <dt>{t("detail.delivery")}</dt>
                         <dd>{formatMoney(detail.deliveryAmount, detail.currency)}</dd>
                       </div>
                       {detail.discountAmount > 0 ? (
                         <div className="flex justify-between gap-3 text-neutral-600">
-                          <dt>Discount</dt>
+                          <dt>{t("detail.discount")}</dt>
                           <dd>{formatMoney(detail.discountAmount, detail.currency)}</dd>
                         </div>
                       ) : null}
                       <div className="flex justify-between gap-3 border-t border-neutral-100 pt-2 font-semibold text-neutral-900">
-                        <dt>Grand total</dt>
+                        <dt>{t("detail.total")}</dt>
                         <dd>{formatMoney(detail.grandTotalAmount, detail.currency)}</dd>
                       </div>
                       <div className="flex justify-between gap-3 text-neutral-600">
-                        <dt>Platform fee</dt>
+                        <dt>{t("detail.fee")}</dt>
                         <dd>{formatMoney(detail.totalCommissionAmount, detail.currency)}</dd>
                       </div>
                     </dl>
                   </div>
 
                   <div className="rounded-xl border border-neutral-200 p-4">
-                    <h3 className="text-sm font-semibold text-neutral-900">Customer</h3>
+                    <h3 className="text-sm font-semibold text-neutral-900">{t("detail.customer")}</h3>
                     <div className="mt-3 space-y-1 text-sm text-neutral-700">
                       <p className="font-medium text-neutral-900">
                         {detail.customer?.fullName ?? detail.shippingAddress.fullName}
                       </p>
                       <p>
-                        {detail.customer?.email ?? detail.guestEmail ?? "Guest checkout"}
+                        {detail.customer?.email ?? detail.guestEmail ?? t("detail.guest")}
                       </p>
                       <p>{detail.customer?.phone ?? detail.shippingAddress.phone}</p>
                     </div>
                     {(detail.deliveryMethod ?? detail.vendorOrders[0]?.deliveryMethod) !==
                     "PICKUP" ? (
                       <div className="mt-4 border-t border-neutral-100 pt-3 text-sm text-neutral-700">
-                        <p className="text-xs font-medium text-neutral-500">Ship to</p>
+                        <p className="text-xs font-medium text-neutral-500">{t("detail.shipTo")}</p>
                         <p className="mt-1">{detail.shippingAddress.addressLine1}</p>
                         <p>
                           {detail.shippingAddress.city}
@@ -906,14 +919,14 @@ export default function AdminOrdersPage() {
                       </div>
                     ) : (
                       <p className="mt-4 border-t border-neutral-100 pt-3 text-sm text-neutral-500">
-                        Customer picks up from vendor
+                        {t("detail.pickupNote")}
                       </p>
                     )}
                   </div>
                 </section>
 
                 <section className="space-y-3">
-                  <h3 className="text-sm font-semibold text-neutral-900">Vendors</h3>
+                  <h3 className="text-sm font-semibold text-neutral-900">{t("detail.vendors")}</h3>
                   {detail.vendorOrders.map((vendorOrder) => {
                     const deliveredAt = resolveVendorOrderDeliveredAtIso({
                       status: vendorOrder.status,
@@ -933,7 +946,7 @@ export default function AdminOrdersPage() {
                             >
                               {vendorOrder.vendorStoreName ??
                                 vendorOrder.vendorStoreSlug ??
-                                "Vendor"}
+                                t("vendorFallback")}
                             </Link>
                             <div className="mt-2 flex flex-wrap gap-2">
                               <span
@@ -942,18 +955,20 @@ export default function AdminOrdersPage() {
                                 {vendorOrder.status.replaceAll("_", " ")}
                               </span>
                               <span className="inline-flex rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-700">
-                                {deliveryMethodLabel(vendorOrder.deliveryMethod)}
+                                {deliveryMethodLabel(vendorOrder.deliveryMethod, t)}
                               </span>
                             </div>
                             {deliveredAt ? (
                               <p className="mt-2 text-xs text-emerald-700">
-                                Delivered {displayShortDate(deliveredAt)}
+                                {t("detail.deliveredOn", {
+                                  date: displayShortDate(deliveredAt),
+                                })}
                               </p>
                             ) : null}
                           </div>
                           <dl className="min-w-[160px] space-y-1 text-sm">
                             <div className="flex justify-between gap-4">
-                              <dt className="text-neutral-500">Vendor total</dt>
+                              <dt className="text-neutral-500">{t("detail.vendorTotal")}</dt>
                               <dd className="font-medium text-neutral-900">
                                 {formatMoney(
                                   vendorOrder.grandTotalAmount,
@@ -962,7 +977,7 @@ export default function AdminOrdersPage() {
                               </dd>
                             </div>
                             <div className="flex justify-between gap-4">
-                              <dt className="text-neutral-500">Fee</dt>
+                              <dt className="text-neutral-500">{t("detail.feeShort")}</dt>
                               <dd className="font-medium text-neutral-900">
                                 {vendorOrder.commission.commissionAmount != null
                                   ? formatMoney(
@@ -974,18 +989,18 @@ export default function AdminOrdersPage() {
                               </dd>
                             </div>
                             <div className="flex justify-between gap-4">
-                              <dt className="text-neutral-500">Payout</dt>
+                              <dt className="text-neutral-500">{t("detail.payout")}</dt>
                               <dd>
                                 <span
                                   className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${payoutStatusClass(vendorOrder.payout.status)}`}
                                 >
-                                  {payoutStatusLabel(vendorOrder.payout.status)}
+                                  {payoutStatusLabel(vendorOrder.payout.status, t)}
                                 </span>
                               </dd>
                             </div>
                             {vendorOrder.payout.amount != null ? (
                               <div className="flex justify-between gap-4">
-                                <dt className="text-neutral-500">Payout amount</dt>
+                                <dt className="text-neutral-500">{t("detail.payoutAmount")}</dt>
                                 <dd className="font-medium text-neutral-900">
                                   {formatMoney(
                                     vendorOrder.payout.amount,
@@ -1000,7 +1015,9 @@ export default function AdminOrdersPage() {
                               </p>
                             ) : vendorOrder.payout.holdUntil ? (
                               <p className="text-xs text-neutral-500">
-                                Hold until {displayShortDate(vendorOrder.payout.holdUntil)}
+                                {t("detail.holdUntil", {
+                                  date: displayShortDate(vendorOrder.payout.holdUntil),
+                                })}
                               </p>
                             ) : null}
                           </dl>
@@ -1010,10 +1027,10 @@ export default function AdminOrdersPage() {
                           <table className="w-full min-w-[480px] text-sm">
                             <thead>
                               <tr className="border-b border-neutral-200 text-start text-xs font-semibold text-neutral-500">
-                                <th className="py-2 pe-3">Item</th>
-                                <th className="py-2 pe-3">Qty</th>
-                                <th className="py-2 pe-3">Unit</th>
-                                <th className="py-2">Line total</th>
+                                <th className="py-2 pe-3">{t("detail.itemCol")}</th>
+                                <th className="py-2 pe-3">{t("detail.qty")}</th>
+                                <th className="py-2 pe-3">{t("detail.unit")}</th>
+                                <th className="py-2">{t("detail.lineTotal")}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-neutral-100">
@@ -1048,16 +1065,16 @@ export default function AdminOrdersPage() {
                         {vendorOrder.vendorLedgerEntries.length > 0 ? (
                           <details className="mt-3 rounded-lg border border-neutral-200 px-3 py-2">
                             <summary className="cursor-pointer text-sm font-medium text-neutral-700">
-                              Ledger ({vendorOrder.vendorLedgerEntries.length})
+                              {t("detail.ledger")} ({vendorOrder.vendorLedgerEntries.length})
                             </summary>
                             <div className="mt-2 overflow-x-auto">
                               <table className="w-full min-w-[520px] text-sm">
                                 <thead>
                                   <tr className="border-b border-neutral-100 text-start text-xs font-semibold text-neutral-500">
-                                    <th className="py-1.5 pe-3">Type</th>
-                                    <th className="py-1.5 pe-3">Amount</th>
-                                    <th className="py-1.5 pe-3">Date</th>
-                                    <th className="py-1.5">Note</th>
+                                    <th className="py-1.5 pe-3">{t("detail.type")}</th>
+                                    <th className="py-1.5 pe-3">{t("detail.amount")}</th>
+                                    <th className="py-1.5 pe-3">{t("detail.date")}</th>
+                                    <th className="py-1.5">{t("detail.note")}</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-neutral-100">
@@ -1092,27 +1109,35 @@ export default function AdminOrdersPage() {
                 detail.warehouse.inboundShipments.length > 0 ? (
                   <section className="rounded-xl border border-neutral-200 p-4">
                     <h3 className="text-sm font-semibold text-neutral-900">
-                      Warehouse (Standard delivery)
+                      {t("detail.warehouse")}
                     </h3>
                     <div className="mt-3 flex flex-wrap gap-2 text-sm">
                       {detail.warehouse.batch ? (
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${warehouseStatusClass(detail.warehouse.batch.status)}`}
                         >
-                          Batch: {detail.warehouse.batch.status.replaceAll("_", " ")}
+                          {t("detail.batch", {
+                            status: detail.warehouse.batch.status.replaceAll("_", " "),
+                          })}
                         </span>
                       ) : null}
                       {detail.warehouse.outboundShipment ? (
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${warehouseStatusClass(detail.warehouse.outboundShipment.status)}`}
                         >
-                          Outbound:{" "}
-                          {detail.warehouse.outboundShipment.status.replaceAll("_", " ")}
+                          {t("detail.outbound", {
+                            status: detail.warehouse.outboundShipment.status.replaceAll(
+                              "_",
+                              " "
+                            ),
+                          })}
                         </span>
                       ) : null}
                       {detail.warehouse.outboundShipment?.trackingRef ? (
                         <span className="text-xs text-neutral-500">
-                          Tracking: {detail.warehouse.outboundShipment.trackingRef}
+                          {t("detail.tracking", {
+                            ref: detail.warehouse.outboundShipment.trackingRef,
+                          })}
                         </span>
                       ) : null}
                     </div>
@@ -1121,10 +1146,10 @@ export default function AdminOrdersPage() {
                         <table className="w-full min-w-[560px] text-sm">
                           <thead>
                             <tr className="border-b border-neutral-200 text-start text-xs font-semibold text-neutral-500">
-                              <th className="py-2 pe-3">Vendor</th>
-                              <th className="py-2 pe-3">Qty</th>
-                              <th className="py-2 pe-3">Status</th>
-                              <th className="py-2">Tracking</th>
+                              <th className="py-2 pe-3">{t("detail.vendorCol")}</th>
+                              <th className="py-2 pe-3">{t("detail.qty")}</th>
+                              <th className="py-2 pe-3">{t("detail.statusCol")}</th>
+                              <th className="py-2">{t("detail.trackingCol")}</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-neutral-100">
@@ -1133,7 +1158,7 @@ export default function AdminOrdersPage() {
                                 <td className="py-2 pe-3">
                                   {shipment.vendorStoreName ??
                                     shipment.vendorStoreSlug ??
-                                    "Vendor"}
+                                    t("vendorFallback")}
                                 </td>
                                 <td className="py-2 pe-3">{shipment.totalQuantity}</td>
                                 <td className="py-2 pe-3">

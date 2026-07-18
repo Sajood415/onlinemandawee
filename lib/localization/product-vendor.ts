@@ -23,6 +23,10 @@ const deliveryTranslations = {
     ps: "2-3 ورځې",
     "fa-AF": "2-3 روز",
   },
+  "Standard delivery": {
+    ps: "معیاري تحویل",
+    "fa-AF": "تحویل استاندارد",
+  },
 } as const;
 
 export const localizeVendor = (vendor: string, locale: SupportedLocale) => {

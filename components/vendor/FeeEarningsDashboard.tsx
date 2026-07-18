@@ -1,8 +1,9 @@
 "use client";
 
-import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { CreditCard, Receipt, TrendingDown, Wallet } from "lucide-react";
 
+import { Link } from "@/i18n/navigation";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { useClientPagination } from "@/hooks/use-client-pagination";
 
@@ -58,6 +59,7 @@ function formatDate(iso: string) {
 }
 
 export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
+  const t = useTranslations("VendorPages.feeEarnings");
   const feeLabel = data.transactionFeeLabel;
   const ordersPagination = useClientPagination(data.orders, { initialPageSize: 10 });
 
@@ -65,16 +67,14 @@ export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
     <section className="mt-10 space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-[#0f3460]">Fees &amp; earnings</h2>
-          <p className="mt-1 text-sm text-neutral-600">
-            Per-order breakdown: order total, platform commission (percent of products + Express delivery), and what you keep after fees.
-          </p>
+          <h2 className="text-lg font-bold text-[#0f3460]">{t("title")}</h2>
+          <p className="mt-1 text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <Link
           href="/vendor/reports"
           className="text-sm font-medium text-primary hover:underline"
         >
-          Full reports →
+          {t("fullReports")}
         </Link>
       </div>
 
@@ -86,15 +86,14 @@ export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-                Transaction fee
+                {t("transactionFee")}
               </p>
               <p className="mt-1 text-sm text-amber-900">{feeLabel}</p>
               <p className="mt-2 text-lg font-bold text-amber-900">
                 {formatCurrency(data.totals.transactionFees, data.currency)}
               </p>
               <p className="text-xs text-amber-800">
-                Deducted on {data.totals.settledOrderCount} settled order
-                {data.totals.settledOrderCount === 1 ? "" : "s"}
+                {t("deductedOn", { count: data.totals.settledOrderCount })}
               </p>
             </div>
           </div>
@@ -107,12 +106,12 @@ export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
-                Net earnings (orders)
+                {t("netEarnings")}
               </p>
               <p className="mt-2 text-lg font-bold text-emerald-900">
                 {formatCurrency(data.totals.netEarnings, data.currency)}
               </p>
-              <p className="text-xs text-emerald-800">After transaction fees</p>
+              <p className="text-xs text-emerald-800">{t("afterFees")}</p>
             </div>
           </div>
         </div>
@@ -124,24 +123,24 @@ export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                Monthly subscription
+                {t("monthlySubscription")}
               </p>
               <p className="mt-2 text-lg font-bold text-[#0f3460]">
                 {formatCurrency(
                   data.subscription.monthlyAmount,
                   data.subscription.currency
                 )}
-                <span className="text-sm font-medium text-neutral-600"> / month</span>
+                <span className="text-sm font-medium text-neutral-600"> {t("perMonth")}</span>
               </p>
               <p className="mt-1 text-xs text-neutral-600">
                 {data.subscription.periodLabel
-                  ? `Current period: ${data.subscription.periodLabel}`
-                  : "Billed monthly for marketplace membership"}
+                  ? t("currentPeriod", { period: data.subscription.periodLabel })
+                  : t("billedMonthly")}
               </p>
               <p className="mt-1 text-xs font-medium text-neutral-700">
-                Status: {data.subscription.status.replace(/_/g, " ")}
+                {t("status", { status: data.subscription.status.replace(/_/g, " ") })}
                 {data.subscription.dueAt
-                  ? ` · Due ${formatDate(data.subscription.dueAt)}`
+                  ? t("due", { date: formatDate(data.subscription.dueAt) })
                   : ""}
               </p>
             </div>
@@ -152,23 +151,21 @@ export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
       <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
         <div className="flex items-center gap-2 border-b border-neutral-200 px-5 py-4">
           <Receipt className="h-5 w-5 text-primary" />
-          <h3 className="text-base font-semibold text-neutral-900">Per-order breakdown</h3>
+          <h3 className="text-base font-semibold text-neutral-900">{t("breakdownTitle")}</h3>
         </div>
 
         {data.orders.length === 0 ? (
-          <p className="px-5 py-12 text-center text-sm text-neutral-500">
-            No orders yet. Fees and earnings appear after customer card payments are settled.
-          </p>
+          <p className="px-5 py-12 text-center text-sm text-neutral-500">{t("empty")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-neutral-50 text-xs font-semibold uppercase tracking-wide text-neutral-500">
                 <tr>
-                  <th className="px-5 py-3">Order</th>
-                  <th className="px-5 py-3">Date</th>
-                  <th className="px-5 py-3 text-right">Order total</th>
-                  <th className="px-5 py-3 text-right">Transaction fee</th>
-                  <th className="px-5 py-3 text-right">Net earnings</th>
+                  <th className="px-5 py-3">{t("columns.order")}</th>
+                  <th className="px-5 py-3">{t("columns.date")}</th>
+                  <th className="px-5 py-3 text-right">{t("columns.orderTotal")}</th>
+                  <th className="px-5 py-3 text-right">{t("columns.transactionFee")}</th>
+                  <th className="px-5 py-3 text-right">{t("columns.netEarnings")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
@@ -190,8 +187,8 @@ export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
                       {order.transactionFee != null ? (
                         <>−{formatCurrency(order.transactionFee, order.currency)}</>
                       ) : (
-                        <span className="text-neutral-400" title="Settles on delivery or payment">
-                          Pending
+                        <span className="text-neutral-400" title={t("pendingTitle")}>
+                          {t("pending")}
                         </span>
                       )}
                     </td>
@@ -209,7 +206,7 @@ export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
                 <tfoot className="border-t border-neutral-200 bg-neutral-50 font-semibold text-neutral-900">
                   <tr>
                     <td className="px-5 py-3" colSpan={2}>
-                      Settled totals ({data.totals.settledOrderCount} orders)
+                      {t("settledTotals", { count: data.totals.settledOrderCount })}
                     </td>
                     <td className="px-5 py-3 text-right">
                       {formatCurrency(data.totals.orderTotal, data.currency)}

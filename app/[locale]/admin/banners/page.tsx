@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ImagePlus, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { DataTable } from "@/components/ui/data-table";
@@ -14,6 +15,8 @@ import {
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
+
+type BannersT = ReturnType<typeof useTranslations<"AdminPages.banners">>;
 
 type HomeBanner = {
   id: string;
@@ -75,14 +78,15 @@ function fromDatetimeLocal(value: string) {
   return new Date(value).toISOString();
 }
 
-function formatSchedule(banner: HomeBanner) {
-  if (!banner.startsAt && !banner.expiresAt) return "Always on";
-  const start = banner.startsAt ? new Date(banner.startsAt).toLocaleString() : "Anytime";
-  const end = banner.expiresAt ? new Date(banner.expiresAt).toLocaleString() : "No end";
+function formatSchedule(banner: HomeBanner, t: BannersT) {
+  if (!banner.startsAt && !banner.expiresAt) return t("alwaysOn");
+  const start = banner.startsAt ? new Date(banner.startsAt).toLocaleString() : t("anytime");
+  const end = banner.expiresAt ? new Date(banner.expiresAt).toLocaleString() : t("noEnd");
   return `${start} → ${end}`;
 }
 
 export default function AdminBannersPage() {
+  const t = useTranslations("AdminPages.banners");
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [banners, setBanners] = useState<HomeBanner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,11 +105,11 @@ export default function AdminBannersPage() {
       const data = await parseApiResponse<HomeBanner[]>(res);
       setBanners(data);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load banners");
+      toast.error(error instanceof Error ? error.message : t("loadError"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!authLoading && user) void loadBanners();
@@ -127,9 +131,9 @@ export default function AdminBannersPage() {
           ? { imageUrl: data.url }
           : { imageMobileUrl: data.url }),
       }));
-      toast.success(field === "desktop" ? "Desktop image uploaded" : "Mobile image uploaded");
+      toast.success(field === "desktop" ? t("desktopUploaded") : t("mobileUploaded"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
+      toast.error(error instanceof Error ? error.message : t("uploadFailed"));
     } finally {
       setUploadingField(null);
     }
@@ -137,7 +141,7 @@ export default function AdminBannersPage() {
 
   const openCreate = () => {
     setEditingId(null);
-    setForm(emptyForm());
+    setForm({ ...emptyForm(), ctaLabel: t("form.defaultCta") });
     setShowForm(true);
   };
 
@@ -197,32 +201,32 @@ export default function AdminBannersPage() {
         }
       );
       await parseApiResponse(res);
-      toast.success(editingId ? "Banner updated" : "Banner created");
+      toast.success(t("saved"));
       closeForm();
       await loadBanners();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not save banner");
+      toast.error(error instanceof Error ? error.message : t("saveFailed"));
     } finally {
       setSaving(false);
     }
   };
 
   const onDelete = async (banner: HomeBanner) => {
-    if (!window.confirm(`Delete banner "${banner.title}"?`)) return;
+    if (!window.confirm(t("deleteConfirm"))) return;
     try {
       await fetchWithAuth(`/api/admin/home-banners/${banner.id}`, { method: "DELETE" });
-      toast.success("Banner deleted");
+      toast.success(t("deleted"));
       if (editingId === banner.id) closeForm();
       await loadBanners();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not delete banner");
+      toast.error(error instanceof Error ? error.message : t("deleteFailed"));
     }
   };
 
   const columns = useMemo<ColumnDef<HomeBanner>[]>(
     () => [
       {
-        header: "Preview",
+        header: t("columns.preview"),
         id: "preview",
         cell: ({ row }) => (
           // eslint-disable-next-line @next/next/no-img-element
@@ -234,7 +238,7 @@ export default function AdminBannersPage() {
         ),
       },
       {
-        header: "Title",
+        header: t("columns.title"),
         id: "title",
         cell: ({ row }) => (
           <div>
@@ -244,19 +248,19 @@ export default function AdminBannersPage() {
         ),
       },
       {
-        header: "Placement",
+        header: t("columns.placement"),
         id: "placement",
         cell: ({ row }) => HOME_BANNER_PLACEMENT_LABELS[row.original.placement],
       },
       {
-        header: "Schedule",
+        header: t("columns.schedule"),
         id: "schedule",
         cell: ({ row }) => (
-          <span className="text-xs text-neutral-600">{formatSchedule(row.original)}</span>
+          <span className="text-xs text-neutral-600">{formatSchedule(row.original, t)}</span>
         ),
       },
       {
-        header: "Status",
+        header: t("columns.status"),
         id: "status",
         cell: ({ row }) => (
           <span
@@ -266,12 +270,12 @@ export default function AdminBannersPage() {
                 : "bg-neutral-100 text-neutral-600"
             }`}
           >
-            {row.original.isActive ? "Active" : "Inactive"}
+            {row.original.isActive ? t("active") : t("inactive")}
           </span>
         ),
       },
       {
-        header: "Actions",
+        header: t("columns.actions"),
         id: "actions",
         cell: ({ row }) => {
           const banner = row.original;
@@ -287,7 +291,7 @@ export default function AdminBannersPage() {
                 className="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
               >
                 <Pencil className="h-3.5 w-3.5" />
-                Edit
+                {t("edit")}
               </button>
               <button
                 type="button"
@@ -295,14 +299,14 @@ export default function AdminBannersPage() {
                 className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                Delete
+                {t("delete")}
               </button>
             </div>
           );
         },
       },
     ],
-    []
+    [t]
   );
 
   if (authLoading || !user) {
@@ -318,11 +322,9 @@ export default function AdminBannersPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-[#0f3460]">
-            Home page banners
+            {t("title")}
           </h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            Schedule seasonal promotions (Ramadan, Eid, etc.) with start and end dates.
-          </p>
+          <p className="mt-1 text-sm text-neutral-500">{t("subtitle")}</p>
         </div>
         {!showForm ? (
           <button
@@ -331,7 +333,7 @@ export default function AdminBannersPage() {
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-95"
           >
             <Plus className="h-4 w-4" />
-            New banner
+            {t("newBanner")}
           </button>
         ) : null}
       </div>
@@ -343,7 +345,7 @@ export default function AdminBannersPage() {
         >
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-base font-semibold text-neutral-900">
-              {editingId ? "Edit banner" : "New banner"}
+              {editingId ? t("editTitle") : t("createTitle")}
             </h2>
             <button
               type="button"
@@ -351,13 +353,13 @@ export default function AdminBannersPage() {
               className="inline-flex items-center gap-1 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
             >
               <X className="h-3.5 w-3.5" />
-              Cancel
+              {t("cancel")}
             </button>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label className="text-sm font-medium text-neutral-700">Title *</label>
+              <label className="text-sm font-medium text-neutral-700">{t("form.title")} *</label>
               <input
                 className={INPUT}
                 value={form.title}
@@ -366,7 +368,7 @@ export default function AdminBannersPage() {
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-sm font-medium text-neutral-700">Subtitle</label>
+              <label className="text-sm font-medium text-neutral-700">{t("form.subtitle")}</label>
               <input
                 className={INPUT}
                 value={form.subtitle}
@@ -375,7 +377,7 @@ export default function AdminBannersPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-neutral-700">Placement *</label>
+              <label className="text-sm font-medium text-neutral-700">{t("form.placement")} *</label>
               <select
                 className={INPUT}
                 value={form.placement}
@@ -394,7 +396,7 @@ export default function AdminBannersPage() {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-neutral-700">Sort order</label>
+              <label className="text-sm font-medium text-neutral-700">{t("form.sortOrder")}</label>
               <input
                 type="number"
                 min="0"
@@ -404,7 +406,7 @@ export default function AdminBannersPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-neutral-700">Link (href) *</label>
+              <label className="text-sm font-medium text-neutral-700">{t("form.link")} *</label>
               <input
                 className={INPUT}
                 value={form.href}
@@ -413,16 +415,16 @@ export default function AdminBannersPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-neutral-700">CTA label</label>
+              <label className="text-sm font-medium text-neutral-700">{t("form.cta")}</label>
               <input
                 className={INPUT}
                 value={form.ctaLabel}
                 onChange={(e) => setForm((c) => ({ ...c, ctaLabel: e.target.value }))}
-                placeholder="Shop now"
+                placeholder={t("form.defaultCta")}
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-neutral-700">Display from</label>
+              <label className="text-sm font-medium text-neutral-700">{t("form.displayFrom")}</label>
               <input
                 type="datetime-local"
                 className={INPUT}
@@ -431,7 +433,7 @@ export default function AdminBannersPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-neutral-700">Display until</label>
+              <label className="text-sm font-medium text-neutral-700">{t("form.displayUntil")}</label>
               <input
                 type="datetime-local"
                 className={INPUT}
@@ -440,7 +442,7 @@ export default function AdminBannersPage() {
               />
             </div>
             <div className="sm:col-span-2">
-              <span className="text-sm font-medium text-neutral-700">Desktop image *</span>
+              <span className="text-sm font-medium text-neutral-700">{t("form.desktopImage")} *</span>
               <div className="mt-1 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
@@ -453,7 +455,7 @@ export default function AdminBannersPage() {
                   ) : (
                     <ImagePlus className="h-4 w-4" />
                   )}
-                  Upload desktop
+                  {t("form.uploadDesktop")}
                 </button>
                 <input
                   ref={desktopFileRef}
@@ -480,7 +482,7 @@ export default function AdminBannersPage() {
             </div>
             <div className="sm:col-span-2">
               <span className="text-sm font-medium text-neutral-700">
-                Mobile image (optional, for hero)
+                {t("form.mobileImage")}
               </span>
               <div className="mt-1 flex flex-wrap items-center gap-3">
                 <button
@@ -494,7 +496,7 @@ export default function AdminBannersPage() {
                   ) : (
                     <ImagePlus className="h-4 w-4" />
                   )}
-                  Upload mobile
+                  {t("form.uploadMobile")}
                 </button>
                 <input
                   ref={mobileFileRef}
@@ -525,7 +527,7 @@ export default function AdminBannersPage() {
                 checked={form.isActive}
                 onChange={(e) => setForm((c) => ({ ...c, isActive: e.target.checked }))}
               />
-              <span className="text-sm font-medium text-neutral-700">Active</span>
+              <span className="text-sm font-medium text-neutral-700">{t("form.isActive")}</span>
             </label>
           </div>
 
@@ -536,7 +538,7 @@ export default function AdminBannersPage() {
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-60"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {editingId ? "Save changes" : "Create banner"}
+              {saving ? t("saving") : t("save")}
             </button>
           </div>
         </form>
@@ -547,14 +549,13 @@ export default function AdminBannersPage() {
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-neutral-500">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Loading banners…
           </div>
         ) : (
           <DataTable
             data={banners}
             columns={columns}
             getRowId={(row) => row.id}
-            emptyMessage="No banners yet. Create one for Ramadan or Eid."
+            emptyMessage={t("empty")}
             initialPageSize={10}
             pageSizeOptions={[10, 20, 50]}
           />

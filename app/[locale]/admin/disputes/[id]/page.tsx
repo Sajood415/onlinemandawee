@@ -3,11 +3,12 @@
 import { RefundCaseDetailView } from "@/components/refunds/RefundCaseDetailView";
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { PageLoader } from "@/components/ui/PageLoader";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 
 export default function AdminDisputeDetailPage() {
   const locale = useLocale();
+  const t = useTranslations("AdminPages.disputes");
   const params = useParams<{ id: string }>();
   const { isLoading } = useDashboardGuard("ADMIN");
 
@@ -19,7 +20,7 @@ export default function AdminDisputeDetailPage() {
       locale={locale}
       role="ADMIN"
       backHref="/admin/disputes"
-      backLabel="Back to disputes queue"
+      backLabel={t("backToQueue")}
     />
   );
 }

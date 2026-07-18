@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { CreditCard, Loader2 } from "lucide-react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { CheckoutStripeProvider } from "@/components/checkout/CheckoutStripeProvider";
 import {
@@ -52,6 +52,7 @@ function GiftRequestStripePaymentForm({
   onRetry: () => void;
 }) {
   const locale = useLocale();
+  const t = useTranslations("GiftPages.payment");
   const stripe = useStripe();
   const elements = useElements();
   const [paying, setPaying] = useState(false);
@@ -72,7 +73,7 @@ function GiftRequestStripePaymentForm({
     try {
       const { error: submitError } = await elements.submit();
       if (submitError) {
-        toast.error(submitError.message ?? "Please check your card details.");
+        toast.error(submitError.message ?? t("checkCard"));
         return;
       }
 
@@ -85,7 +86,7 @@ function GiftRequestStripePaymentForm({
       });
 
       if (error) {
-        toast.error(error.message ?? "Payment failed. Please try again.");
+        toast.error(error.message ?? t("paymentFailed"));
         return;
       }
 
@@ -99,11 +100,11 @@ function GiftRequestStripePaymentForm({
           }
         );
         await parseApiResponse(response);
-        toast.success("Payment received. Thank you!");
+        toast.success(t("paymentSuccess"));
         onPaid();
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Payment could not be completed");
+      toast.error(err instanceof Error ? err.message : t("paymentIncomplete"));
     } finally {
       setPaying(false);
     }
@@ -119,7 +120,7 @@ function GiftRequestStripePaymentForm({
             onClick={onRetry}
             className="text-sm font-semibold text-[#0f3460] underline hover:no-underline"
           >
-            Reload card form
+            {t("reloadForm")}
           </button>
         </div>
       ) : null}
@@ -148,7 +149,7 @@ function GiftRequestStripePaymentForm({
         className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-60 sm:w-auto"
       >
         {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-        {paying ? "Processing..." : "Pay now"}
+        {paying ? t("processing") : t("payNow")}
       </button>
     </form>
   );
@@ -164,11 +165,12 @@ export function GiftRequestQuotePayment({
   onPaid,
 }: GiftRequestQuotePaymentProps) {
   const locale = useLocale();
+  const t = useTranslations("GiftPages.payment");
   const [loading, setLoading] = useState(false);
   const [payment, setPayment] = useState<PaymentIntentData | null>(null);
   const [intentError, setIntentError] = useState<string | null>(null);
 
-  const loadIntent = async () => {
+  const loadIntent = useCallback(async () => {
     if (!isStripeCheckoutConfigured()) return;
 
     setLoading(true);
@@ -181,24 +183,24 @@ export function GiftRequestQuotePayment({
       const data = await parseApiResponse<PaymentIntentData>(response);
       setPayment(data);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Could not start payment";
+      const message = err instanceof Error ? err.message : t("startFailed");
       setIntentError(message);
       toast.error(message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [requestId, t]);
 
   useEffect(() => {
     if (!isStripeCheckoutConfigured()) return;
 
     void getStripePromise();
     void loadIntent();
-  }, [requestId]);
+  }, [loadIntent]);
 
   return (
     <section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-      <h3 className="text-sm font-semibold text-amber-900">Quote ready — payment required</h3>
+      <h3 className="text-sm font-semibold text-amber-900">{t("title")}</h3>
       <p className="mt-1 text-sm text-amber-800">
         {requestNumber} · {formatMoney(quoteAmountMinor, quoteCurrency)}
       </p>
@@ -207,7 +209,7 @@ export function GiftRequestQuotePayment({
         <div className="relative mt-4 aspect-[4/3] max-w-sm overflow-hidden rounded-xl border border-amber-200 bg-white">
           <Image
             src={quoteImageUrl}
-            alt="Gift preview"
+            alt={t("giftPreviewAlt")}
             fill
             className="object-cover"
             sizes="(max-width: 640px) 100vw, 320px"
@@ -222,13 +224,11 @@ export function GiftRequestQuotePayment({
       ) : null}
 
       {!isStripeCheckoutConfigured() ? (
-        <p className="mt-4 text-sm text-amber-900">
-          Online payment is not available right now. Please contact support to complete payment.
-        </p>
+        <p className="mt-4 text-sm text-amber-900">{t("stripeUnavailable")}</p>
       ) : loading ? (
         <div className="mt-4 inline-flex items-center gap-2 text-sm text-amber-900">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Preparing secure checkout...
+          {t("preparing")}
         </div>
       ) : intentError ? (
         <div className="mt-4 space-y-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -238,7 +238,7 @@ export function GiftRequestQuotePayment({
             onClick={() => void loadIntent()}
             className="text-sm font-semibold text-[#0f3460] underline hover:no-underline"
           >
-            Try again
+            {t("tryAgain")}
           </button>
         </div>
       ) : payment?.clientSecret ? (

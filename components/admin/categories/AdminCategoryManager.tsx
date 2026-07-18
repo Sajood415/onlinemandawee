@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Loader2, Pencil, Plus, Trash2, ToggleLeft, ToggleRight, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { DataTable } from "@/components/ui/data-table";
@@ -51,6 +52,7 @@ const LABEL = "block text-sm font-medium text-neutral-700";
 /* ─── Page ────────────────────────────────────────────────────────────── */
 
 export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
+  const t = useTranslations("AdminPages.categories");
   const isSubMode = mode === "sub";
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [categories, setCategories] = useState<Category[]>([]);
@@ -86,11 +88,11 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
       const data = await parseApiResponse<Category[]>(res);
       setCategories(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load categories.");
+      setError(e instanceof Error ? e.message : t("toasts.loadError"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!authLoading && user) void fetchCategories();
@@ -144,9 +146,12 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
       });
       const data = await parseApiResponse<{ url: string }>(res);
       setFormImageUrl(data.url);
-      toast.success("Uploaded", "Category image uploaded.");
+      toast.success(t("toasts.uploaded"), t("toasts.uploadedBody"));
     } catch (err) {
-      toast.error("Upload failed", err instanceof Error ? err.message : "Unknown error");
+      toast.error(
+        t("toasts.uploadFailed"),
+        err instanceof Error ? err.message : t("toasts.genericError")
+      );
     } finally {
       setUploadingImage(false);
     }
@@ -158,12 +163,12 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
     e.preventDefault();
 
     if (!formName.trim()) {
-      toast.error("Name required", "Enter a category name.");
+      toast.error(t("toasts.nameRequired"), t("toasts.nameRequiredBody"));
       return;
     }
 
     if (isSubMode && !formParentId) {
-      toast.error("Parent category required", "Select which category this belongs under.");
+      toast.error(t("toasts.parentRequired"), t("toasts.parentRequiredBody"));
       return;
     }
 
@@ -192,18 +197,14 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
         body: JSON.stringify(payload),
       });
       await parseApiResponse<Category>(res);
-      toast.success(
-        editingId ? "Saved" : "Created",
-        editingId
-          ? "Changes saved."
-          : isSubMode
-            ? "New sub-category has been added."
-            : "New category has been added."
-      );
+      toast.success(editingId ? t("toasts.saved") : t("toasts.created"));
       resetForm();
       await fetchCategories(true);
     } catch (err) {
-      toast.error("Could not save", err instanceof Error ? err.message : "Unknown error");
+      toast.error(
+        t("toasts.saveFailed"),
+        err instanceof Error ? err.message : t("toasts.genericError")
+      );
     } finally {
       setSaving(false);
     }
@@ -225,13 +226,13 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
         }),
       });
       await parseApiResponse<Category>(res);
-      toast.success(
-        cat.isActive ? "Hidden" : "Activated",
-        cat.isActive ? `"${cat.name}" is now inactive.` : `"${cat.name}" is now active.`
-      );
+      toast.success(cat.isActive ? t("toasts.deactivated") : t("toasts.activated"));
       await fetchCategories(true);
     } catch (err) {
-      toast.error("Toggle failed", err instanceof Error ? err.message : "Unknown error");
+      toast.error(
+        t("toasts.toggleFailed"),
+        err instanceof Error ? err.message : t("toasts.genericError")
+      );
     } finally {
       setTogglingId(null);
     }
@@ -243,10 +244,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
     if (!deleteTarget) return;
 
     if (!isSubMode && deleteTarget.children.length > 0) {
-      toast.error(
-        "Cannot delete",
-        "This category has sub-categories. Delete or move them first."
-      );
+      toast.error(t("toasts.hasChildren"), t("toasts.hasChildrenBody"));
       setDeleteTarget(null);
       return;
     }
@@ -257,12 +255,18 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
         method: "DELETE",
       });
       await parseApiResponse<{ id: string }>(res);
-      toast.success("Deleted", `"${deleteTarget.name}" was deleted.`);
+      toast.success(
+        t("toasts.deleted"),
+        t("toasts.deletedBody", { name: deleteTarget.name })
+      );
       setCategories((current) => current.filter((c) => c.id !== deleteTarget.id));
       if (editingId === deleteTarget.id) resetForm();
       setDeleteTarget(null);
     } catch (err) {
-      toast.error("Could not delete", err instanceof Error ? err.message : "Unknown error");
+      toast.error(
+        t("toasts.deleteFailed"),
+        err instanceof Error ? err.message : t("toasts.genericError")
+      );
     } finally {
       setDeleting(false);
     }
@@ -281,14 +285,14 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
   const columns = useMemo<ColumnDef<Category>[]>(() => {
     const base: ColumnDef<Category>[] = [
       {
-        header: "Name",
+        header: t("columns.name"),
         accessorKey: "name",
         cell: ({ row }) => (
           <span className="font-medium text-neutral-900">{row.original.name}</span>
         ),
       },
       {
-        header: "Slug",
+        header: t("columns.slug"),
         accessorKey: "slug",
         cell: ({ row }) => (
           <span className="font-mono text-xs text-neutral-500">{row.original.slug}</span>
@@ -298,14 +302,14 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
 
     if (isSubMode) {
       base.push({
-        header: "Parent category",
+        header: t("columns.parent"),
         id: "parent",
         cell: ({ row }) =>
           row.original.parent?.name ?? <span className="text-neutral-300">—</span>,
       });
     } else {
       base.push({
-        header: "Sub-categories",
+        header: t("columns.children"),
         id: "children",
         cell: ({ row }) =>
           row.original.children?.length > 0 ? (
@@ -320,14 +324,14 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
 
     base.push(
       {
-        header: "Sort",
+        header: t("columns.sort"),
         accessorKey: "sortOrder",
         cell: ({ row }) => (
           <span className="tabular-nums text-neutral-600">{row.original.sortOrder}</span>
         ),
       },
       {
-        header: "Status",
+        header: t("columns.status"),
         id: "status",
         cell: ({ row }) => {
           const cat = row.original;
@@ -339,13 +343,13 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
                   : "bg-neutral-100 text-neutral-500 ring-neutral-200"
               }`}
             >
-              {cat.isActive ? "Active" : "Inactive"}
+              {cat.isActive ? t("active") : t("inactive")}
             </span>
           );
         },
       },
       {
-        header: "Actions",
+        header: t("columns.actions"),
         id: "actions",
         cell: ({ row }) => {
           const cat = row.original;
@@ -361,7 +365,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
                 className="inline-flex items-center gap-1 rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
               >
                 <Pencil className="h-3.5 w-3.5" />
-                Edit
+                {t("edit")}
               </button>
               <button
                 type="button"
@@ -380,7 +384,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
                 ) : (
                   <ToggleLeft className="h-3.5 w-3.5" />
                 )}
-                {cat.isActive ? "Deactivate" : "Activate"}
+                {cat.isActive ? t("deactivate") : t("activate")}
               </button>
               <button
                 type="button"
@@ -388,7 +392,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
                 className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                Delete
+                {t("delete")}
               </button>
             </div>
           );
@@ -397,7 +401,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
     );
 
     return base;
-  }, [isSubMode, togglingId]);
+  }, [isSubMode, togglingId, t]);
 
   /* ── Guard ──────────────────────────────────────────────────────── */
 
@@ -416,12 +420,10 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-[#0f3460]">
-          {isSubMode ? "Sub-category Management" : "Category Management"}
+          {isSubMode ? t("titleSub") : t("title")}
         </h1>
         <p className="mt-1 text-sm text-neutral-500">
-          {isSubMode
-            ? "Create, edit, and delete sub-categories that sit under a parent category. These appear nested under their parent in the vendor product dropdown and on the storefront."
-            : "Create, edit, and delete top-level product categories. Manage the sub-categories nested under each one from the Sub-categories page."}
+          {isSubMode ? t("subtitleSub") : t("subtitle")}
         </p>
       </div>
 
@@ -437,16 +439,14 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
             <h2 className="text-base font-semibold text-neutral-900">
               {editingId
                 ? isSubMode
-                  ? "Edit sub-category"
-                  : "Edit category"
+                  ? t("editSubCategory")
+                  : t("editCategory")
                 : isSubMode
-                  ? "New sub-category"
-                  : "New category"}
+                  ? t("newSubCategory")
+                  : t("newCategory")}
             </h2>
             {editingId ? (
-              <p className="mt-1 text-sm text-neutral-500">
-                Update the fields below, then click Save changes.
-              </p>
+              <p className="mt-1 text-sm text-neutral-500">{t("editHint")}</p>
             ) : null}
           </div>
           {editingId && (
@@ -456,7 +456,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
               className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
             >
               <X className="h-3.5 w-3.5" />
-              Cancel
+              {t("cancel")}
             </button>
           )}
         </div>
@@ -466,7 +466,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
             {/* Name */}
             <div className="flex flex-col gap-1.5 lg:col-span-2">
               <label className={LABEL}>
-                Name (English) <span className="text-red-500">*</span>
+                {t("nameEn")} <span className="text-red-500">*</span>
               </label>
               <input
                 className={INPUT}
@@ -479,7 +479,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
 
             {editingId ? (
               <div className="flex flex-col gap-1.5 lg:col-span-2">
-                <label className={LABEL}>Slug</label>
+                <label className={LABEL}>{t("slug")}</label>
                 <input
                   className={`${INPUT} bg-neutral-50 text-neutral-500`}
                   value={categories.find((category) => category.id === editingId)?.slug ?? ""}
@@ -493,14 +493,14 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
             {isSubMode ? (
               <div className="flex flex-col gap-1.5">
                 <label className={LABEL}>
-                  Parent category <span className="text-red-500">*</span>
+                  {t("parentCategory")} <span className="text-red-500">*</span>
                 </label>
                 <select
                   className={INPUT}
                   value={formParentId}
                   onChange={(e) => setFormParentId(e.target.value)}
                 >
-                  <option value="">— Select a category —</option>
+                  <option value="">{t("selectParent")}</option>
                   {topLevelCategories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -512,7 +512,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
 
             {/* Sort order */}
             <div className="flex flex-col gap-1.5">
-              <label className={LABEL}>Sort order</label>
+              <label className={LABEL}>{t("sortOrder")}</label>
               <input
                 type="number"
                 min="0"
@@ -525,7 +525,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
 
             {/* Category image */}
             <div className="flex flex-col gap-1.5 lg:col-span-2">
-              <label className={LABEL}>Category image</label>
+              <label className={LABEL}>{t("categoryImage")}</label>
               <div className="flex flex-col gap-2">
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">
                   {uploadingImage ? (
@@ -533,7 +533,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
                   ) : (
                     <Plus className="h-4 w-4" />
                   )}
-                  Upload image
+                  {t("uploadImage")}
                   <input
                     type="file"
                     accept="image/png,image/jpeg,image/webp"
@@ -549,7 +549,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
                   />
                 </label>
                 {formImageUrl ? (
-                  <p className="text-xs text-emerald-700">Image uploaded.</p>
+                  <p className="text-xs text-emerald-700">{t("toasts.uploadedBody")}</p>
                 ) : null}
               </div>
             </div>
@@ -577,7 +577,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
               <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition peer-checked:translate-x-4" />
             </span>
             <span className="text-sm font-medium text-neutral-700">
-              {formIsActive ? "Active (visible to vendors & customers)" : "Inactive (hidden)"}
+              {formIsActive ? t("active") : t("inactive")}
             </span>
           </label>
 
@@ -589,13 +589,13 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
             >
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
               {saving ? (
-                "Saving…"
+                t("saving")
               ) : editingId ? (
-                "Save changes"
+                t("save")
               ) : (
                 <>
                   <Plus className="h-4 w-4" />
-                  {isSubMode ? "Create sub-category" : "Create category"}
+                  {isSubMode ? t("createSub") : t("create")}
                 </>
               )}
             </button>
@@ -607,7 +607,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
       <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-neutral-900">
-            {isSubMode ? "All sub-categories" : "All categories"}
+            {isSubMode ? t("listTitleSub") : t("listTitle")}
             {!loading && (
               <span className="ml-2 rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-normal text-neutral-500">
                 {scopedCategories.length}
@@ -616,7 +616,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
           </h2>
           <input
             className="min-w-0 rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 sm:w-60"
-            placeholder="Search by name or slug…"
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -625,7 +625,6 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-neutral-500">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Loading…
           </div>
         ) : error ? (
           <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -636,7 +635,13 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
             data={filtered}
             columns={columns}
             getRowId={(row) => row.id}
-            emptyMessage={isSubMode ? "No sub-categories found." : "No categories found."}
+            emptyMessage={
+              search.trim()
+                ? t("emptySearch")
+                : isSubMode
+                  ? t("emptySub")
+                  : t("empty")
+            }
             initialPageSize={10}
             pageSizeOptions={[10, 20, 50]}
           />
@@ -647,15 +652,15 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
       {deleteTarget ? (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 className="text-lg font-semibold text-neutral-900">Delete category?</h2>
+            <h2 className="text-lg font-semibold text-neutral-900">
+              {isSubMode ? t("deleteTitleSub") : t("deleteTitle")}
+            </h2>
             <p className="mt-2 text-sm text-neutral-600">
-              This will permanently delete <span className="font-semibold">“{deleteTarget.name}”</span>.
-              This action cannot be undone.
+              {t("deleteBody", { name: deleteTarget.name })}
             </p>
             {!isSubMode && deleteTarget.children.length > 0 ? (
               <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                This category has {deleteTarget.children.length} sub-categor
-                {deleteTarget.children.length === 1 ? "y" : "ies"}. Delete or move them first.
+                {t("toasts.hasChildrenBody")}
               </p>
             ) : null}
             <div className="mt-5 flex justify-end gap-3">
@@ -665,7 +670,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
                 disabled={deleting}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
               >
-                Cancel
+                {t("cancel")}
               </button>
               <button
                 type="button"
@@ -674,7 +679,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
                 className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
               >
                 {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                {deleting ? "Deleting…" : "Delete"}
+                {deleting ? t("deleting") : t("deleteConfirm")}
               </button>
             </div>
           </div>

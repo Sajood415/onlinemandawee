@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import type { RefundCaseDetail, RefundDecisionType } from "@/components/refunds/refund-types";
@@ -22,6 +23,7 @@ export function AdminRefundDecisionEditor({
   onSuccess,
   variant = "card",
 }: AdminRefundDecisionEditorProps) {
+  const t = useTranslations("Disputes");
   const decision = refundCase.decision;
   const [decisionType, setDecisionType] = useState<RefundDecisionType>(
     decision?.decisionType ?? "APPROVE"
@@ -91,7 +93,7 @@ export function AdminRefundDecisionEditor({
         >
           {DECISION_TYPES.map((option) => (
             <option key={option} value={option}>
-              {REFUND_DECISION_LABELS[option]}
+              {t(REFUND_DECISION_LABELS[option])}
             </option>
           ))}
         </select>

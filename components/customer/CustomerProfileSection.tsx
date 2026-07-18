@@ -37,6 +37,7 @@ export function CustomerProfileSection({
   variant = "card",
 }: CustomerProfileSectionProps) {
   const t = useTranslations("CustomerProfile");
+  const tCommon = useTranslations("Common");
   const { getValidationMessage } = usePasswordRules();
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -294,7 +295,7 @@ export function CustomerProfileSection({
                 />
               </label>
               <label className="block text-sm text-neutral-700">
-                Email
+                {t("fields.email")}
                 <input
                   className={`${INPUT_CLASS} bg-neutral-50 text-neutral-500`}
                   value={profile?.email ?? ""}
@@ -303,7 +304,7 @@ export function CustomerProfileSection({
                 />
               </label>
               <label className="block text-sm text-neutral-700">
-                Phone
+                {t("fields.phone")}
                 <input
                   className={INPUT_CLASS}
                   type="tel"
@@ -314,9 +315,7 @@ export function CustomerProfileSection({
                 />
               </label>
             </div>
-            <p className="text-xs text-neutral-500">
-              Email cannot be changed here. Contact support if you need to update it.
-            </p>
+            <p className="text-xs text-neutral-500">{t("fields.emailReadonlyHint")}</p>
             {profileError ? <p className="text-sm text-red-600">{profileError}</p> : null}
             <button
               type="submit"
@@ -326,10 +325,10 @@ export function CustomerProfileSection({
               {savingProfile ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Saving...
+                  {t("actions.savingProfile")}
                 </>
               ) : (
-                "Save profile"
+                t("actions.saveProfile")
               )}
             </button>
     </form>
@@ -343,17 +342,15 @@ export function CustomerProfileSection({
       {variant === "card" ? (
         <div className="flex items-center gap-2">
           <KeyRound className="h-4 w-4 text-neutral-500" />
-          <h3 className="text-sm font-semibold text-neutral-900">Change password</h3>
+          <h3 className="text-sm font-semibold text-neutral-900">{t("sections.changePassword")}</h3>
         </div>
       ) : null}
       {variant === "card" ? (
-        <p className="text-sm text-neutral-600">
-          Know your current password? Update it directly below.
-        </p>
+        <p className="text-sm text-neutral-600">{t("sections.changePasswordLead")}</p>
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm text-neutral-700 sm:col-span-2">
-                Current password
+                {t("fields.currentPassword")}
                 <PasswordInput
                   className={INPUT_CLASS}
                   value={currentPassword}
@@ -363,7 +360,7 @@ export function CustomerProfileSection({
                 />
               </label>
               <label className="block text-sm text-neutral-700">
-                New password
+                {t("fields.newPassword")}
                 <PasswordInput
                   className={INPUT_CLASS}
                   value={newPassword}
@@ -373,7 +370,7 @@ export function CustomerProfileSection({
                 />
               </label>
               <label className="block text-sm text-neutral-700">
-                Confirm new password
+                {t("fields.confirmPassword")}
                 <PasswordInput
                   className={INPUT_CLASS}
                   value={confirmPassword}
@@ -393,10 +390,10 @@ export function CustomerProfileSection({
               {savingPassword ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Updating...
+                  {t("actions.updatingPassword")}
                 </>
               ) : (
-                "Update password"
+                t("actions.updatePassword")
               )}
             </button>
     </form>
@@ -407,12 +404,11 @@ export function CustomerProfileSection({
       {variant === "card" ? (
         <div className="flex items-center gap-2">
           <Mail className="h-4 w-4 text-neutral-500" />
-          <h3 className="text-sm font-semibold text-neutral-900">Reset password via email</h3>
+          <h3 className="text-sm font-semibold text-neutral-900">{t("sections.resetViaEmail")}</h3>
         </div>
       ) : null}
             <p className="text-sm text-neutral-600">
-              Forgot your password? We will send a verification code to{" "}
-              <span className="font-medium text-neutral-800">{profile?.email}</span>.
+              {t("reset.forgotPrompt", { email: profile?.email ?? "" })}
             </p>
 
             {resetPhase === "idle" ? (
@@ -425,10 +421,10 @@ export function CustomerProfileSection({
                 {resetBusy ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Sending...
+                    {t("actions.sending")}
                   </>
                 ) : (
-                  "Send reset code to my email"
+                  t("actions.sendResetCode")
                 )}
               </button>
             ) : null}
@@ -436,7 +432,7 @@ export function CustomerProfileSection({
             {resetPhase === "code" ? (
               <form onSubmit={(e) => void verifyResetCode(e)} className="max-w-md space-y-3">
                 <label className="block text-sm text-neutral-700">
-                  Verification code
+                  {t("fields.verificationCode")}
                   <input
                     className={INPUT_CLASS}
                     value={resetCode}
@@ -451,7 +447,7 @@ export function CustomerProfileSection({
                     disabled={resetBusy}
                     className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                   >
-                    {resetBusy ? "Verifying..." : "Verify code"}
+                    {resetBusy ? t("actions.verifying") : t("actions.verifyCode")}
                   </button>
                   <button
                     type="button"
@@ -459,7 +455,7 @@ export function CustomerProfileSection({
                     disabled={resetBusy}
                     className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700"
                   >
-                    Resend code
+                    {t("actions.resendCode")}
                   </button>
                   <button
                     type="button"
@@ -471,7 +467,7 @@ export function CustomerProfileSection({
                     }}
                     className="text-sm font-medium text-neutral-600 hover:underline"
                   >
-                    Cancel
+                    {tCommon("cancel")}
                   </button>
                 </div>
               </form>
@@ -480,7 +476,7 @@ export function CustomerProfileSection({
             {resetPhase === "new" ? (
               <form onSubmit={(e) => void confirmResetPassword(e)} className="max-w-lg space-y-3">
                 <label className="block text-sm text-neutral-700">
-                  New password
+                  {t("fields.newPassword")}
                   <PasswordInput
                     className={INPUT_CLASS}
                     value={resetNewPassword}
@@ -490,7 +486,7 @@ export function CustomerProfileSection({
                   />
                 </label>
                 <label className="block text-sm text-neutral-700">
-                  Confirm new password
+                  {t("fields.confirmPassword")}
                   <PasswordInput
                     className={INPUT_CLASS}
                     value={resetConfirmPassword}
@@ -505,7 +501,7 @@ export function CustomerProfileSection({
                   disabled={resetBusy}
                   className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                 >
-                  {resetBusy ? "Saving..." : "Set new password"}
+                  {resetBusy ? t("actions.savingPassword") : t("actions.setNewPassword")}
                 </button>
               </form>
             ) : null}

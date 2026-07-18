@@ -1,9 +1,14 @@
 "use client";
 
 import { Loader2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
-import { REFUND_REASONS } from "@/components/refunds/refund-types";
+import {
+  REFUND_REASON_CODES,
+  REFUND_REASON_SUBMIT_EN,
+  type RefundReasonCode,
+} from "@/components/refunds/refund-types";
 import { formatRefundMoney } from "@/components/refunds/format-refund-money";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -32,7 +37,8 @@ export function RequestRefundModal({
   orderItem,
   locale,
 }: RequestRefundModalProps) {
-  const [reason, setReason] = useState<string>(REFUND_REASONS[0]);
+  const t = useTranslations("Disputes.request");
+  const [reason, setReason] = useState<RefundReasonCode>(REFUND_REASON_CODES[0]);
   const [customReason, setCustomReason] = useState("");
   const [description, setDescription] = useState("");
   const [requestedAmount, setRequestedAmount] = useState(orderItem.lineTotalAmount);
@@ -43,7 +49,7 @@ export function RequestRefundModal({
 
   useEffect(() => {
     if (open) {
-      setReason(REFUND_REASONS[0]);
+      setReason(REFUND_REASON_CODES[0]);
       setCustomReason("");
       setDescription("");
       setRequestedAmount(orderItem.lineTotalAmount);
@@ -54,7 +60,8 @@ export function RequestRefundModal({
 
   if (!open) return null;
 
-  const resolvedReason = reason === "Other" ? customReason.trim() : reason;
+  const resolvedReason =
+    reason === "other" ? customReason.trim() : REFUND_REASON_SUBMIT_EN[reason];
 
   const handleUpload = async (file: File) => {
     setUploading(true);
@@ -67,9 +74,9 @@ export function RequestRefundModal({
       });
       const data = await parseApiResponse<{ url: string }>(response);
       setEvidenceFileUrl(data.url);
-      toast.success("Evidence uploaded");
+      toast.success(t("uploaded"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
+      toast.error(error instanceof Error ? error.message : t("uploadError"));
     } finally {
       setUploading(false);
     }
@@ -77,7 +84,7 @@ export function RequestRefundModal({
 
   const handleSubmit = async () => {
     if (resolvedReason.length < 3) {
-      toast.error("Please provide a reason");
+      toast.error(t("needReason"));
       return;
     }
 
@@ -96,11 +103,11 @@ export function RequestRefundModal({
         }),
       });
       const created = await parseApiResponse<{ id: string }>(response);
-      toast.success("Refund request submitted");
+      toast.success(t("submitSuccess"));
       onSuccess(created.id);
       onClose();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to submit refund request");
+      toast.error(error instanceof Error ? error.message : t("submitError"));
     } finally {
       setSubmitting(false);
     }
@@ -111,7 +118,7 @@ export function RequestRefundModal({
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
           <div>
-            <h2 className="text-lg font-semibold text-neutral-900">Request refund</h2>
+            <h2 className="text-lg font-semibold text-neutral-900">{t("title")}</h2>
             <p className="text-sm text-neutral-500">{orderItem.productName}</p>
           </div>
           <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-neutral-100">
@@ -122,51 +129,51 @@ export function RequestRefundModal({
         <div className="space-y-4 px-5 py-4">
           <div>
             <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-              Reason
+              {t("reason")}
             </label>
             <select
               value={reason}
-              onChange={(event) => setReason(event.target.value)}
+              onChange={(event) => setReason(event.target.value as RefundReasonCode)}
               className={INPUT_CLASS}
             >
-              {REFUND_REASONS.map((option) => (
+              {REFUND_REASON_CODES.map((option) => (
                 <option key={option} value={option}>
-                  {option}
+                  {t(`reasons.${option}`)}
                 </option>
               ))}
             </select>
           </div>
 
-          {reason === "Other" ? (
+          {reason === "other" ? (
             <div>
               <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                Custom reason
+                {t("customReason")}
               </label>
               <input
                 value={customReason}
                 onChange={(event) => setCustomReason(event.target.value)}
                 className={INPUT_CLASS}
-                placeholder="Describe the issue"
+                placeholder={t("customReasonPlaceholder")}
               />
             </div>
           ) : null}
 
           <div>
             <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-              Description
+              {t("description")}
             </label>
             <textarea
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               rows={3}
               className={INPUT_CLASS}
-              placeholder="Add details to help the vendor review your request"
+              placeholder={t("descriptionPlaceholder")}
             />
           </div>
 
           <div>
             <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-              Requested amount
+              {t("requestedAmount")}
             </label>
             <input
               type="number"
@@ -179,25 +186,27 @@ export function RequestRefundModal({
               className={INPUT_CLASS}
             />
             <p className="mt-1 text-xs text-neutral-500">
-              Max {formatRefundMoney(orderItem.lineTotalAmount, orderItem.currency, locale)}
+              {t("maxAmount", {
+                amount: formatRefundMoney(orderItem.lineTotalAmount, orderItem.currency, locale),
+              })}
             </p>
           </div>
 
           <div>
             <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-              Evidence note
+              {t("evidenceNote")}
             </label>
             <input
               value={evidenceNote}
               onChange={(event) => setEvidenceNote(event.target.value)}
               className={INPUT_CLASS}
-              placeholder="Optional note about your evidence"
+              placeholder={t("evidenceNotePlaceholder")}
             />
           </div>
 
           <div>
             <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-              Evidence file
+              {t("evidenceFile")}
             </label>
             <input
               type="file"
@@ -210,10 +219,10 @@ export function RequestRefundModal({
             />
             {uploading ? (
               <p className="mt-1 inline-flex items-center gap-1 text-xs text-neutral-500">
-                <Loader2 className="h-3 w-3 animate-spin" /> Uploading…
+                <Loader2 className="h-3 w-3 animate-spin" /> {t("uploading")}
               </p>
             ) : evidenceFileUrl ? (
-              <p className="mt-1 text-xs text-emerald-700">Evidence uploaded</p>
+              <p className="mt-1 text-xs text-emerald-700">{t("uploaded")}</p>
             ) : null}
           </div>
         </div>
@@ -224,7 +233,7 @@ export function RequestRefundModal({
             onClick={onClose}
             className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
           >
-            Cancel
+            {t("cancel")}
           </button>
           <button
             type="button"
@@ -233,7 +242,7 @@ export function RequestRefundModal({
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
           >
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Submit request
+            {t("submit")}
           </button>
         </div>
       </div>

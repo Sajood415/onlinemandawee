@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { DataTable } from "@/components/ui/data-table";
@@ -120,45 +121,63 @@ function formatMoney(amount: number) {
   return (amount / 100).toFixed(2);
 }
 
-function computeRuleName(rule: DeliveryRuleRecord) {
-  if (rule.scope === "VENDOR") {
-    return `${rule.method} - ${rule.vendorStoreName ?? rule.vendorStoreSlug ?? "Vendor"}`;
-  }
-  if (rule.scope === "COUNTRY") {
-    return `${rule.method} - ${rule.countryCode ?? "Country"}`;
-  }
-  return `${rule.method} - Global`;
+type DeliveryRulesT = ReturnType<typeof useTranslations<"AdminPages.deliveryRules">>;
+
+function methodLabel(method: DeliveryMethod, t: DeliveryRulesT) {
+  return t(`methods.${method}`);
 }
 
-function computeRuleValue(rule: DeliveryRuleRecord) {
+function computeRuleName(rule: DeliveryRuleRecord, t: DeliveryRulesT) {
+  const method = methodLabel(rule.method, t);
+  if (rule.scope === "VENDOR") {
+    return `${method} - ${rule.vendorStoreName ?? rule.vendorStoreSlug ?? t("values.vendorFallback")}`;
+  }
+  if (rule.scope === "COUNTRY") {
+    return `${method} - ${rule.countryCode ?? t("values.countryFallback")}`;
+  }
+  return `${method} - ${t("values.globalSuffix")}`;
+}
+
+function computeRuleValue(rule: DeliveryRuleRecord, t: DeliveryRulesT) {
   if (isPickupMethod(rule.method)) {
-    return "No delivery charge";
+    return t("values.noCharge");
   }
 
   if (usesTransactionFee(rule.method)) {
     const deliveryLabel =
       allowsPerKmPricing(rule.method) && rule.priceModel === "PER_KM"
-        ? `$${formatMoney(rule.baseFeeAmount)} base + $${formatMoney(rule.perKmRateAmount ?? 0)}/km`
-        : `$${formatMoney(rule.baseFeeAmount)} delivery`;
+        ? t("values.basePlusKm", {
+            base: formatMoney(rule.baseFeeAmount),
+            km: formatMoney(rule.perKmRateAmount ?? 0),
+          })
+        : t("values.deliveryAmount", { amount: formatMoney(rule.baseFeeAmount) });
     const commissionLabel =
       rule.commissionRateBps != null
         ? formatCommissionRateLabel(rule.commissionRateBps)
         : DEFAULT_COMMISSION_LABEL;
-    return `${deliveryLabel} · ${commissionLabel} commission`;
+    return t("values.withCommission", {
+      delivery: deliveryLabel,
+      commission: commissionLabel,
+    });
   }
 
   if (rule.priceModel === "FLAT") {
-    return `Flat ${formatMoney(rule.baseFeeAmount)}`;
+    return t("values.flat", { amount: formatMoney(rule.baseFeeAmount) });
   }
   if (rule.priceModel === "PER_KM") {
-    return `Base ${formatMoney(rule.baseFeeAmount)} + ${formatMoney(rule.perKmRateAmount ?? 0)}/km`;
+    return t("values.baseKm", {
+      base: formatMoney(rule.baseFeeAmount),
+      km: formatMoney(rule.perKmRateAmount ?? 0),
+    });
   }
-  return `Base ${formatMoney(rule.baseFeeAmount)} / free above ${formatMoney(
-    rule.freeAboveAmount ?? 0
-  )}`;
+  return t("values.baseFreeAbove", {
+    base: formatMoney(rule.baseFeeAmount),
+    amount: formatMoney(rule.freeAboveAmount ?? 0),
+  });
 }
 
 export default function AdminDeliveryRulesPage() {
+  const t = useTranslations("AdminPages.deliveryRules");
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [rules, setRules] = useState<DeliveryRuleRecord[]>([]);
   const [vendors, setVendors] = useState<VendorOption[]>([]);
@@ -191,12 +210,12 @@ export default function AdminDeliveryRulesPage() {
       setRules(rulesData);
       setVendors(vendorsData);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Failed to load delivery rules.");
+      setError(loadError instanceof Error ? loadError.message : t("loadError"));
       setRules([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -303,7 +322,7 @@ export default function AdminDeliveryRulesPage() {
 
         if (vendorsWithoutRule.length === 0) {
           throw new Error(
-            `Every vendor already has a ${form.method} vendor-scoped delivery rule.`
+            t("errors.everyVendorHasRule", { method: methodLabel(form.method, t) })
           );
         }
 
@@ -322,13 +341,15 @@ export default function AdminDeliveryRulesPage() {
           } catch (createError) {
             const label = vendor.storeName ?? vendor.storeSlug ?? vendor.id;
             failures.push(
-              createError instanceof Error ? createError.message : `${label}: failed`
+              createError instanceof Error
+                ? createError.message
+                : t("errors.labelFailed", { label })
             );
           }
         }
 
         if (createdCount === 0) {
-          throw new Error(failures[0] ?? "Could not create delivery rules for vendors.");
+          throw new Error(failures[0] ?? t("errors.createVendorsFailed"));
         }
 
         setFormOpen(false);
@@ -338,27 +359,31 @@ export default function AdminDeliveryRulesPage() {
 
         if (failures.length > 0) {
           setError(
-            `Created ${createdCount} rule(s). ${failures.length} vendor(s) failed: ${failures.slice(0, 3).join("; ")}`
+            t("errors.createdPartial", {
+              created: createdCount,
+              failed: failures.length,
+              details: failures.slice(0, 3).join("; "),
+            })
           );
         }
         return;
       }
 
       if (form.scope === "VENDOR" && !form.vendorProfileId) {
-        throw new Error("Select a vendor or choose All vendors.");
+        throw new Error(t("errors.selectVendor"));
       }
 
       if (usesTransactionFee(form.method)) {
         const deliveryFee = Number(form.deliveryFeeAmount);
         if (!Number.isFinite(deliveryFee) || deliveryFee < 0) {
-          throw new Error("Delivery fee must be zero or greater.");
+          throw new Error(t("errors.deliveryFeeMin"));
         }
       }
 
       if (allowsPerKmPricing(form.method) && form.priceModel === "PER_KM") {
         const perKmRate = Number(form.perKmRateAmount);
         if (!Number.isFinite(perKmRate) || perKmRate <= 0) {
-          throw new Error("Per kilometer rate must be greater than zero.");
+          throw new Error(t("errors.perKmMin"));
         }
       }
 
@@ -381,7 +406,7 @@ export default function AdminDeliveryRulesPage() {
       setForm(defaultFormState);
       await loadRules();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Failed to save delivery rule.");
+      setError(submitError instanceof Error ? submitError.message : t("saveError"));
     } finally {
       setSubmitting(false);
     }
@@ -433,13 +458,19 @@ export default function AdminDeliveryRulesPage() {
         } catch (deactivateError) {
           const label = rule.vendorStoreName ?? rule.vendorStoreSlug ?? rule.id;
           failures.push(
-            deactivateError instanceof Error ? `${label}: ${deactivateError.message}` : `${label}: failed`
+            deactivateError instanceof Error
+              ? `${label}: ${deactivateError.message}`
+              : t("errors.labelFailed", { label })
           );
         }
       }
       await loadRules();
       if (failures.length > 0) {
-        setError(`Some vendor overrides could not be deactivated: ${failures.slice(0, 3).join("; ")}`);
+        setError(
+          t("errors.deactivateOverridesFailed", {
+            details: failures.slice(0, 3).join("; "),
+          })
+        );
       }
     } finally {
       setSubmitting(false);
@@ -471,7 +502,7 @@ export default function AdminDeliveryRulesPage() {
       await parseApiResponse(response);
       await loadRules();
     } catch (toggleError) {
-      setError(toggleError instanceof Error ? toggleError.message : "Failed to update rule status.");
+      setError(toggleError instanceof Error ? toggleError.message : t("toggleError"));
     } finally {
       setActionRuleId(null);
     }
@@ -480,10 +511,7 @@ export default function AdminDeliveryRulesPage() {
   const deleteAllRules = async () => {
     if (rules.length === 0) return;
 
-    const confirmed = window.confirm(
-      `Delete ALL ${rules.length} delivery rule(s)? This includes active rules and cannot be undone. ` +
-        `Checkout will have no delivery pricing until you create new rules.`
-    );
+    const confirmed = window.confirm(t("deleteAllConfirm", { count: rules.length }));
     if (!confirmed) return;
 
     setActionRuleId("__ALL__");
@@ -496,9 +524,7 @@ export default function AdminDeliveryRulesPage() {
       await loadRules();
     } catch (deleteAllError) {
       setError(
-        deleteAllError instanceof Error
-          ? deleteAllError.message
-          : "Failed to delete all delivery rules."
+        deleteAllError instanceof Error ? deleteAllError.message : t("deleteAllError")
       );
     } finally {
       setActionRuleId(null);
@@ -516,7 +542,7 @@ export default function AdminDeliveryRulesPage() {
       await parseApiResponse(response);
       await loadRules();
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete delivery rule.");
+      setError(deleteError instanceof Error ? deleteError.message : t("deleteError"));
     } finally {
       setActionRuleId(null);
     }
@@ -525,19 +551,19 @@ export default function AdminDeliveryRulesPage() {
   const columns = useMemo<ColumnDef<DeliveryRuleRecord>[]>(
     () => [
       {
-        header: "Rule Name",
+        header: t("columns.ruleName"),
         id: "ruleName",
         cell: ({ row }) => (
-          <span className="text-neutral-900">{computeRuleName(row.original)}</span>
+          <span className="text-neutral-900">{computeRuleName(row.original, t)}</span>
         ),
       },
       {
-        header: "Method",
+        header: t("columns.method"),
         accessorKey: "method",
-        cell: ({ row }) => row.original.method,
+        cell: ({ row }) => methodLabel(row.original.method, t),
       },
       {
-        header: "Active",
+        header: t("columns.active"),
         id: "active",
         cell: ({ row }) => (
           <span
@@ -547,45 +573,49 @@ export default function AdminDeliveryRulesPage() {
                 : "bg-neutral-100 text-neutral-600"
             }`}
           >
-            {row.original.isActive ? "ACTIVE" : "INACTIVE"}
+            {row.original.isActive ? t("active") : t("inactive")}
           </span>
         ),
       },
       {
-        header: "Pricing Type",
+        header: t("columns.pricingType"),
         id: "pricingType",
         cell: ({ row }) => {
           const rule = row.original;
           if (usesTransactionFee(rule.method)) {
-            return allowsPerKmPricing(rule.method) ? rule.priceModel : "FLAT";
+            return allowsPerKmPricing(rule.method)
+              ? t(`pricingTypes.${rule.priceModel}`)
+              : t("pricingTypes.FLAT");
           }
-          return isPickupMethod(rule.method) ? "NONE" : rule.priceModel;
+          return isPickupMethod(rule.method)
+            ? t("pricingTypes.NONE")
+            : t(`pricingTypes.${rule.priceModel}`);
         },
       },
       {
-        header: "Value",
+        header: t("columns.value"),
         id: "value",
-        cell: ({ row }) => computeRuleValue(row.original),
+        cell: ({ row }) => computeRuleValue(row.original, t),
       },
       {
-        header: "Vendor Scope",
+        header: t("columns.vendorScope"),
         id: "vendorScope",
         cell: ({ row }) => {
           const rule = row.original;
           return rule.scope === "GLOBAL"
-            ? "Global"
+            ? t("scope.global")
             : rule.scope === "COUNTRY"
-              ? `Country (${rule.countryCode ?? "—"})`
-              : rule.vendorStoreName ?? rule.vendorStoreSlug ?? "Vendor";
+              ? `${t("scope.country")} (${rule.countryCode ?? "—"})`
+              : rule.vendorStoreName ?? rule.vendorStoreSlug ?? t("scope.vendor");
         },
       },
       {
-        header: "Created Date",
+        header: t("columns.createdDate"),
         id: "createdDate",
         cell: ({ row }) => displayDate(row.original.createdAt),
       },
       {
-        header: "Actions",
+        header: t("columns.actions"),
         id: "actions",
         cell: ({ row }) => {
           const rule = row.original;
@@ -600,14 +630,14 @@ export default function AdminDeliveryRulesPage() {
                 onClick={() => openDetail(rule)}
                 className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
               >
-                Details
+                {t("details")}
               </button>
               <button
                 type="button"
                 onClick={() => openEdit(rule)}
                 className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
               >
-                Edit
+                {t("edit")}
               </button>
               <button
                 type="button"
@@ -615,7 +645,7 @@ export default function AdminDeliveryRulesPage() {
                 onClick={() => void toggleActive(rule)}
                 className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
               >
-                {rule.isActive ? "Deactivate" : "Activate"}
+                {rule.isActive ? t("deactivate") : t("activate")}
               </button>
               <button
                 type="button"
@@ -623,14 +653,14 @@ export default function AdminDeliveryRulesPage() {
                 onClick={() => void deleteRule(rule)}
                 className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
               >
-                Delete
+                {t("delete")}
               </button>
             </div>
           );
         },
       },
     ],
-    [actionRuleId]
+    [actionRuleId, t]
   );
 
   if (authLoading || !user) {
@@ -645,10 +675,8 @@ export default function AdminDeliveryRulesPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0f3460]">Delivery Rules</h1>
-          <p className="mt-1 text-sm text-neutral-600">
-            Manage PICKUP, EXPRESS, and STANDARD pricing rules for operational checkout safety.
-          </p>
+          <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+          <p className="mt-1 text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -657,7 +685,7 @@ export default function AdminDeliveryRulesPage() {
             className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
           >
             <RefreshCw className="h-4 w-4" />
-            Refresh
+            {t("refresh")}
           </button>
           <button
             type="button"
@@ -666,7 +694,7 @@ export default function AdminDeliveryRulesPage() {
             className="inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
           >
             <Trash2 className="h-4 w-4" />
-            Delete all
+            {t("deleteAll")}
           </button>
           <button
             type="button"
@@ -674,7 +702,7 @@ export default function AdminDeliveryRulesPage() {
             className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-3 py-2 text-sm font-semibold text-white hover:bg-[#0a2847]"
           >
             <Plus className="h-4 w-4" />
-            Create rule
+            {t("createRule")}
           </button>
         </div>
       </div>
@@ -688,10 +716,10 @@ export default function AdminDeliveryRulesPage() {
               setMethodFilter(event.target.value as "ALL" | DeliveryMethod)
             }
           >
-            <option value="ALL">All methods</option>
-            <option value="PICKUP">PICKUP</option>
-            <option value="EXPRESS">EXPRESS</option>
-            <option value="STANDARD">STANDARD</option>
+            <option value="ALL">{t("allMethods")}</option>
+            <option value="PICKUP">{t("methods.PICKUP")}</option>
+            <option value="EXPRESS">{t("methods.EXPRESS")}</option>
+            <option value="STANDARD">{t("methods.STANDARD")}</option>
           </select>
           <select
             className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-700"
@@ -700,9 +728,9 @@ export default function AdminDeliveryRulesPage() {
               setStatusFilter(event.target.value as "ALL" | "ACTIVE" | "INACTIVE")
             }
           >
-            <option value="ALL">All statuses</option>
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
+            <option value="ALL">{t("allStatuses")}</option>
+            <option value="ACTIVE">{t("active")}</option>
+            <option value="INACTIVE">{t("inactive")}</option>
           </select>
         </div>
       </section>
@@ -722,7 +750,7 @@ export default function AdminDeliveryRulesPage() {
           data={filteredRules}
           columns={columns}
           getRowId={(row) => row.id}
-          emptyMessage="No delivery rules match the selected filters."
+          emptyMessage={t("empty")}
           initialPageSize={10}
           pageSizeOptions={[10, 20, 50]}
         />
@@ -732,11 +760,11 @@ export default function AdminDeliveryRulesPage() {
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/45 p-4">
           <div className="w-full max-w-2xl rounded-2xl border border-neutral-200 bg-white p-5 shadow-xl">
             <h2 className="text-lg font-semibold text-neutral-900">
-              {editingRule ? "Edit delivery rule" : "Create delivery rule"}
+              {editingRule ? t("editTitle") : t("createTitle")}
             </h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <label className="text-sm text-neutral-700">
-                Method
+                {t("form.method")}
                 <select
                   className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
                   value={form.method}
@@ -756,13 +784,13 @@ export default function AdminDeliveryRulesPage() {
                     }));
                   }}
                 >
-                  <option value="PICKUP">PICKUP</option>
-                  <option value="EXPRESS">EXPRESS</option>
-                  <option value="STANDARD">STANDARD</option>
+                  <option value="PICKUP">{t("methods.PICKUP")}</option>
+                  <option value="EXPRESS">{t("methods.EXPRESS")}</option>
+                  <option value="STANDARD">{t("methods.STANDARD")}</option>
                 </select>
               </label>
               <label className="text-sm text-neutral-700">
-                Scope
+                {t("form.scope")}
                 <select
                   className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
                   value={form.scope}
@@ -775,14 +803,14 @@ export default function AdminDeliveryRulesPage() {
                     }))
                   }
                 >
-                  <option value="GLOBAL">GLOBAL</option>
-                  <option value="COUNTRY">COUNTRY</option>
-                  <option value="VENDOR">VENDOR</option>
+                  <option value="GLOBAL">{t("scopes.GLOBAL")}</option>
+                  <option value="COUNTRY">{t("scopes.COUNTRY")}</option>
+                  <option value="VENDOR">{t("scopes.VENDOR")}</option>
                 </select>
               </label>
               {form.scope === "VENDOR" ? (
                 <label className="text-sm text-neutral-700 sm:col-span-2">
-                  Vendor
+                  {t("form.vendor")}
                   <select
                     className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
                     value={form.vendorProfileId}
@@ -793,9 +821,9 @@ export default function AdminDeliveryRulesPage() {
                       }))
                     }
                   >
-                    <option value="">Select vendor</option>
+                    <option value="">{t("form.selectVendor")}</option>
                     {!editingRule ? (
-                      <option value={ALL_VENDORS_VALUE}>All vendors</option>
+                      <option value={ALL_VENDORS_VALUE}>{t("form.allVendors")}</option>
                     ) : null}
                     {vendors.map((vendor) => (
                       <option key={vendor.id} value={vendor.id}>
@@ -805,14 +833,14 @@ export default function AdminDeliveryRulesPage() {
                   </select>
                   {!editingRule && form.vendorProfileId === ALL_VENDORS_VALUE ? (
                     <span className="mt-1 block text-xs text-neutral-500">
-                      Creates one {form.method} rule for each vendor that does not already have one.
+                      {t("form.allVendorsHint", { method: methodLabel(form.method, t) })}
                     </span>
                   ) : null}
                 </label>
               ) : null}
               {form.scope === "COUNTRY" ? (
                 <label className="text-sm text-neutral-700 sm:col-span-2">
-                  Country Code
+                  {t("form.countryCode")}
                   <input
                     className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm uppercase"
                     value={form.countryCode}
@@ -829,17 +857,27 @@ export default function AdminDeliveryRulesPage() {
               {form.scope !== "VENDOR" && vendorOverridesForMethod.length > 0 ? (
                 <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:col-span-2">
                   <p className="font-semibold">
-                    {vendorOverridesForMethod.length} vendor-specific {form.method} rule
-                    {vendorOverridesForMethod.length === 1 ? "" : "s"} will override this{" "}
-                    {form.scope.toLowerCase()} rule
+                    {t("overrides.title", {
+                      count: vendorOverridesForMethod.length,
+                      method: methodLabel(form.method, t),
+                      scope: t(`scopes.${form.scope}`),
+                    })}
                   </p>
                   <p className="mt-1 text-xs text-amber-800">
-                    Vendor-scoped rules always take priority over{" "}
-                    {form.scope === "GLOBAL" ? "global" : "country"} rules, so orders from{" "}
-                    {vendorOverridesForMethod
-                      .map((rule) => rule.vendorStoreName ?? rule.vendorStoreSlug ?? "a vendor")
-                      .join(", ")}{" "}
-                    will keep using their own rule instead of the one you&apos;re saving here.
+                    {t("overrides.body", {
+                      scopeLabel:
+                        form.scope === "GLOBAL"
+                          ? t("overrides.global")
+                          : t("overrides.country"),
+                      vendors: vendorOverridesForMethod
+                        .map(
+                          (rule) =>
+                            rule.vendorStoreName ??
+                            rule.vendorStoreSlug ??
+                            t("overrides.aVendor")
+                        )
+                        .join(", "),
+                    })}
                   </p>
                   <button
                     type="button"
@@ -847,8 +885,9 @@ export default function AdminDeliveryRulesPage() {
                     onClick={() => void deactivateVendorOverrides()}
                     className="mt-2 rounded-lg border border-amber-400 bg-white px-2.5 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-60"
                   >
-                    Deactivate all {vendorOverridesForMethod.length} vendor override
-                    {vendorOverridesForMethod.length === 1 ? "" : "s"}
+                    {t("overrides.deactivate", {
+                      count: vendorOverridesForMethod.length,
+                    })}
                   </button>
                 </div>
               ) : null}
@@ -856,7 +895,7 @@ export default function AdminDeliveryRulesPage() {
                 <>
                   {allowsPerKmPricing(form.method) ? (
                     <label className="text-sm text-neutral-700 sm:col-span-2">
-                      Pricing type
+                      {t("form.pricingType")}
                       <select
                         className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
                         value={form.priceModel === "PER_KM" ? "PER_KM" : "FLAT"}
@@ -867,15 +906,15 @@ export default function AdminDeliveryRulesPage() {
                           }))
                         }
                       >
-                        <option value="FLAT">Flat fee per order</option>
-                        <option value="PER_KM">Per kilometer (driving distance)</option>
+                        <option value="FLAT">{t("form.flatPerOrder")}</option>
+                        <option value="PER_KM">{t("form.perKm")}</option>
                       </select>
                     </label>
                   ) : null}
                   <label className="text-sm text-neutral-700 sm:col-span-2">
                     {allowsPerKmPricing(form.method) && form.priceModel === "PER_KM"
-                      ? "Base fee (USD)"
-                      : "Delivery fee (USD)"}
+                      ? t("form.baseFeeUsd")
+                      : t("form.deliveryFeeUsd")}
                     <div className="mt-1 flex items-center gap-2">
                       <span className="text-sm text-neutral-500">$</span>
                       <input
@@ -895,17 +934,15 @@ export default function AdminDeliveryRulesPage() {
                     </div>
                     <span className="mt-1 block text-xs text-neutral-500">
                       {allowsPerKmPricing(form.method) && form.priceModel === "PER_KM"
-                        ? "Flat starting charge added on top of the per-km rate below."
-                        : `Customer delivery charge added to each order${
-                            form.method === "EXPRESS"
-                              ? " (per vendor on multi-vendor express orders)."
-                              : " (one fee per order on standard delivery)."
-                          }`}
+                        ? t("form.baseFeeHint")
+                        : form.method === "EXPRESS"
+                          ? t("form.deliveryFeeHintExpress")
+                          : t("form.deliveryFeeHintStandard")}
                     </span>
                   </label>
                   {allowsPerKmPricing(form.method) && form.priceModel === "PER_KM" ? (
                     <label className="text-sm text-neutral-700 sm:col-span-2">
-                      Per kilometer rate (USD)
+                      {t("form.perKmRateUsd")}
                       <div className="mt-1 flex items-center gap-2">
                         <span className="text-sm text-neutral-500">$</span>
                         <input
@@ -925,33 +962,27 @@ export default function AdminDeliveryRulesPage() {
                       </div>
                       <span className="mt-1 block text-xs text-neutral-500">
                         {form.method === "STANDARD"
-                          ? "Charged per kilometer of driving distance between Mandawee's warehouse (set in Platform settings) and the customer's delivery address, added to the base fee above."
-                          : "Charged per kilometer of driving distance between the vendor's pickup address and the customer's delivery address, added to the base fee above."}
+                          ? t("form.perKmHintStandard")
+                          : t("form.perKmHintExpress")}
                       </span>
                     </label>
                   ) : null}
                   <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 sm:col-span-2">
                     <p className="text-sm font-semibold text-neutral-900">
-                      Platform commission
+                      {t("form.platformCommission")}
                     </p>
                     <p className="mt-1 text-sm text-neutral-700">
-                      {DEFAULT_COMMISSION_PERCENT} of product sales
+                      {t("form.commissionOfSales", { percent: DEFAULT_COMMISSION_PERCENT })}
                     </p>
-                    <p className="mt-2 text-xs text-neutral-500">
-                      Taken from each vendor&apos;s product subtotal (not shipping) on every
-                      paid order. Set by platform configuration, not per delivery rule.
-                    </p>
+                    <p className="mt-2 text-xs text-neutral-500">{t("form.commissionNote")}</p>
                   </div>
                 </>
               ) : isPickupMethod(form.method) ? (
-                <p className="text-sm text-neutral-600 sm:col-span-2">
-                  Pickup has no delivery charge. Configure scope and estimated pickup window
-                  below.
-                </p>
+                <p className="text-sm text-neutral-600 sm:col-span-2">{t("form.pickupNote")}</p>
               ) : (
                 <>
                   <label className="text-sm text-neutral-700">
-                    Pricing Type
+                    {t("form.pricingType")}
                     <select
                       className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
                       value={form.priceModel}
@@ -966,13 +997,13 @@ export default function AdminDeliveryRulesPage() {
                         }))
                       }
                     >
-                      <option value="FLAT">FLAT</option>
-                      <option value="PER_KM">PER_KM</option>
-                      <option value="FREE_ABOVE">FREE_ABOVE</option>
+                      <option value="FLAT">{t("pricingTypes.FLAT")}</option>
+                      <option value="PER_KM">{t("pricingTypes.PER_KM")}</option>
+                      <option value="FREE_ABOVE">{t("pricingTypes.FREE_ABOVE")}</option>
                     </select>
                   </label>
                   <label className="text-sm text-neutral-700">
-                    Base Fee (minor units)
+                    {t("form.baseFeeMinor")}
                     <input
                       type="number"
                       min={0}
@@ -992,7 +1023,7 @@ export default function AdminDeliveryRulesPage() {
               !isPickupMethod(form.method) &&
               form.priceModel === "PER_KM" ? (
                 <label className="text-sm text-neutral-700">
-                  Per Km Rate (minor units)
+                  {t("form.perKmMinor")}
                   <input
                     type="number"
                     min={0}
@@ -1011,7 +1042,7 @@ export default function AdminDeliveryRulesPage() {
               !isPickupMethod(form.method) &&
               form.priceModel === "FREE_ABOVE" ? (
                 <label className="text-sm text-neutral-700">
-                  Free Above Amount (minor units)
+                  {t("form.freeAboveMinor")}
                   <input
                     type="number"
                     min={0}
@@ -1027,7 +1058,7 @@ export default function AdminDeliveryRulesPage() {
                 </label>
               ) : null}
               <label className="text-sm text-neutral-700">
-                ETA Min Days
+                {t("form.etaMinDays")}
                 <input
                   type="number"
                   min={0}
@@ -1042,7 +1073,7 @@ export default function AdminDeliveryRulesPage() {
                 />
               </label>
               <label className="text-sm text-neutral-700">
-                ETA Max Days
+                {t("form.etaMaxDays")}
                 <input
                   type="number"
                   min={0}
@@ -1067,7 +1098,7 @@ export default function AdminDeliveryRulesPage() {
                     }))
                   }
                 />
-                Active
+                {t("form.active")}
               </label>
             </div>
             <div className="mt-5 flex justify-end gap-2">
@@ -1079,7 +1110,7 @@ export default function AdminDeliveryRulesPage() {
                 }}
                 className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
               >
-                Cancel
+                {t("cancel")}
               </button>
               <button
                 type="button"
@@ -1087,7 +1118,11 @@ export default function AdminDeliveryRulesPage() {
                 onClick={() => void submitForm()}
                 className="rounded-lg bg-[#0f3460] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
               >
-                {submitting ? "Saving..." : editingRule ? "Save changes" : "Create rule"}
+                {submitting
+                  ? t("saving")
+                  : editingRule
+                    ? t("saveChanges")
+                    : t("createRule")}
               </button>
             </div>
           </div>
@@ -1097,92 +1132,116 @@ export default function AdminDeliveryRulesPage() {
       {detailOpen && selectedRule ? (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/45 p-4">
           <div className="w-full max-w-xl rounded-2xl border border-neutral-200 bg-white p-5 shadow-xl">
-            <h2 className="text-lg font-semibold text-neutral-900">Rule Detail</h2>
+            <h2 className="text-lg font-semibold text-neutral-900">
+              {t("detailPanel.title")}
+            </h2>
             <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
               <div>
-                <dt className="text-neutral-500">Rule Name</dt>
-                <dd className="font-medium text-neutral-900">{computeRuleName(selectedRule)}</dd>
-              </div>
-              <div>
-                <dt className="text-neutral-500">Method</dt>
-                <dd className="font-medium text-neutral-900">{selectedRule.method}</dd>
-              </div>
-              <div>
-                <dt className="text-neutral-500">Active Status</dt>
+                <dt className="text-neutral-500">{t("detailPanel.ruleName")}</dt>
                 <dd className="font-medium text-neutral-900">
-                  {selectedRule.isActive ? "ACTIVE" : "INACTIVE"}
+                  {computeRuleName(selectedRule, t)}
                 </dd>
               </div>
               <div>
-                <dt className="text-neutral-500">Scope</dt>
-                <dd className="font-medium text-neutral-900">{selectedRule.scope}</dd>
+                <dt className="text-neutral-500">{t("detailPanel.method")}</dt>
+                <dd className="font-medium text-neutral-900">
+                  {methodLabel(selectedRule.method, t)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-neutral-500">{t("detailPanel.activeStatus")}</dt>
+                <dd className="font-medium text-neutral-900">
+                  {selectedRule.isActive ? t("active") : t("inactive")}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-neutral-500">{t("detailPanel.scope")}</dt>
+                <dd className="font-medium text-neutral-900">
+                  {t(`scopes.${selectedRule.scope}`)}
+                </dd>
               </div>
               {usesTransactionFee(selectedRule.method) ? (
                 <>
                   <div>
-                    <dt className="text-neutral-500">Delivery fee</dt>
+                    <dt className="text-neutral-500">{t("detailPanel.deliveryFee")}</dt>
                     <dd className="font-medium text-neutral-900">
                       {allowsPerKmPricing(selectedRule.method) &&
                       selectedRule.priceModel === "PER_KM"
-                        ? `$${formatMoney(selectedRule.baseFeeAmount)} base + $${formatMoney(
-                            selectedRule.perKmRateAmount ?? 0
-                          )}/km`
-                        : `$${formatMoney(selectedRule.baseFeeAmount)} per order`}
+                        ? t("values.basePlusKm", {
+                            base: formatMoney(selectedRule.baseFeeAmount),
+                            km: formatMoney(selectedRule.perKmRateAmount ?? 0),
+                          })
+                        : t("values.perOrder", {
+                            amount: formatMoney(selectedRule.baseFeeAmount),
+                          })}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-neutral-500">Platform commission</dt>
+                    <dt className="text-neutral-500">
+                      {t("detailPanel.platformCommission")}
+                    </dt>
                     <dd className="font-medium text-neutral-900">
                       {selectedRule.commissionRateBps != null
                         ? formatCommissionRateLabel(selectedRule.commissionRateBps)
                         : DEFAULT_COMMISSION_LABEL}{" "}
-                      of sale
+                      {t("values.ofSale")}
                     </dd>
                   </div>
                   {allowsPerKmPricing(selectedRule.method) ? (
                     <div>
-                      <dt className="text-neutral-500">Pricing type</dt>
-                      <dd className="font-medium text-neutral-900">{selectedRule.priceModel}</dd>
+                      <dt className="text-neutral-500">{t("detailPanel.pricingType")}</dt>
+                      <dd className="font-medium text-neutral-900">
+                        {t(`pricingTypes.${selectedRule.priceModel}`)}
+                      </dd>
                     </div>
                   ) : null}
                 </>
               ) : null}
               {!usesTransactionFee(selectedRule.method) ? (
                 <div>
-                  <dt className="text-neutral-500">Delivery charge</dt>
-                  <dd className="font-medium text-neutral-900">{computeRuleValue(selectedRule)}</dd>
+                  <dt className="text-neutral-500">{t("detailPanel.deliveryCharge")}</dt>
+                  <dd className="font-medium text-neutral-900">
+                    {computeRuleValue(selectedRule, t)}
+                  </dd>
                 </div>
               ) : null}
               {!isPickupMethod(selectedRule.method) && !usesTransactionFee(selectedRule.method) ? (
                 <div className="sm:col-span-2">
-                  <dt className="text-neutral-500">Pricing Type</dt>
-                  <dd className="font-medium text-neutral-900">{selectedRule.priceModel}</dd>
+                  <dt className="text-neutral-500">{t("detailPanel.pricingType")}</dt>
+                  <dd className="font-medium text-neutral-900">
+                    {t(`pricingTypes.${selectedRule.priceModel}`)}
+                  </dd>
                 </div>
               ) : null}
               <div>
-                <dt className="text-neutral-500">ETA</dt>
+                <dt className="text-neutral-500">{t("detailPanel.eta")}</dt>
                 <dd className="font-medium text-neutral-900">
-                  {selectedRule.etaMinDays} - {selectedRule.etaMaxDays} days
+                  {t("detailPanel.etaDays", {
+                    min: selectedRule.etaMinDays,
+                    max: selectedRule.etaMaxDays,
+                  })}
                 </dd>
               </div>
               <div>
-                <dt className="text-neutral-500">Country</dt>
-                <dd className="font-medium text-neutral-900">{selectedRule.countryCode ?? "—"}</dd>
+                <dt className="text-neutral-500">{t("detailPanel.country")}</dt>
+                <dd className="font-medium text-neutral-900">
+                  {selectedRule.countryCode ?? "—"}
+                </dd>
               </div>
               <div>
-                <dt className="text-neutral-500">Vendor</dt>
+                <dt className="text-neutral-500">{t("detailPanel.vendor")}</dt>
                 <dd className="font-medium text-neutral-900">
                   {selectedRule.vendorStoreName ?? selectedRule.vendorStoreSlug ?? "—"}
                 </dd>
               </div>
               <div>
-                <dt className="text-neutral-500">Created At</dt>
+                <dt className="text-neutral-500">{t("detailPanel.createdAt")}</dt>
                 <dd className="font-medium text-neutral-900">
                   {displayDate(selectedRule.createdAt)}
                 </dd>
               </div>
               <div className="sm:col-span-2">
-                <dt className="text-neutral-500">Updated At</dt>
+                <dt className="text-neutral-500">{t("detailPanel.updatedAt")}</dt>
                 <dd className="font-medium text-neutral-900">
                   {displayDate(selectedRule.updatedAt)}
                 </dd>
@@ -1197,7 +1256,7 @@ export default function AdminDeliveryRulesPage() {
                 }}
                 className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
               >
-                Close
+                {t("close")}
               </button>
             </div>
           </div>

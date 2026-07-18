@@ -101,11 +101,12 @@ export type RefundListResponse = {
   };
 };
 
-export const REFUND_STATUS_LABELS: Record<RefundCaseStatus, string> = {
-  REQUESTED: "Requested",
-  WAITING_VENDOR: "Waiting for vendor",
-  ESCALATED_ADMIN: "Escalated to admin",
-  RESOLVED: "Resolved",
+/** Message keys under Disputes.statuses.* */
+export const REFUND_STATUS_LABELS: Record<RefundCaseStatus, `statuses.${RefundCaseStatus}`> = {
+  REQUESTED: "statuses.REQUESTED",
+  WAITING_VENDOR: "statuses.WAITING_VENDOR",
+  ESCALATED_ADMIN: "statuses.ESCALATED_ADMIN",
+  RESOLVED: "statuses.RESOLVED",
 };
 
 export const REFUND_STATUS_BADGE: Record<RefundCaseStatus, string> = {
@@ -115,10 +116,14 @@ export const REFUND_STATUS_BADGE: Record<RefundCaseStatus, string> = {
   RESOLVED: "bg-emerald-50 text-emerald-700",
 };
 
-export const REFUND_DECISION_LABELS: Record<RefundDecisionType, string> = {
-  APPROVE: "Approved in full",
-  PARTIAL: "Partially approved",
-  REJECT: "Rejected",
+/** Message keys under Disputes.decisions.* */
+export const REFUND_DECISION_LABELS: Record<
+  RefundDecisionType,
+  `decisions.${RefundDecisionType}`
+> = {
+  APPROVE: "decisions.APPROVE",
+  PARTIAL: "decisions.PARTIAL",
+  REJECT: "decisions.REJECT",
 };
 
 export const REFUND_DECISION_BADGE: Record<RefundDecisionType, string> = {
@@ -133,21 +138,35 @@ export function getRefundOutcomeDisplay(input: {
 }) {
   if (input.decision) {
     return {
-      label: REFUND_DECISION_LABELS[input.decision.decisionType],
+      labelKey: REFUND_DECISION_LABELS[input.decision.decisionType],
       badgeClass: REFUND_DECISION_BADGE[input.decision.decisionType],
     };
   }
 
   return {
-    label: REFUND_STATUS_LABELS[input.status],
+    labelKey: REFUND_STATUS_LABELS[input.status],
     badgeClass: REFUND_STATUS_BADGE[input.status],
   };
 }
 
-export const REFUND_REASONS = [
-  "Item not as described",
-  "Damaged or defective",
-  "Wrong item received",
-  "Not delivered",
-  "Other",
+/** Stable reason codes; translate via Disputes.request.reasons.* at render. */
+export const REFUND_REASON_CODES = [
+  "itemNotAsDescribed",
+  "damagedOrDefective",
+  "wrongItemReceived",
+  "notDelivered",
+  "other",
 ] as const;
+
+export type RefundReasonCode = (typeof REFUND_REASON_CODES)[number];
+
+/** English text stored for non-custom reasons (API / history). */
+export const REFUND_REASON_SUBMIT_EN: Record<
+  Exclude<RefundReasonCode, "other">,
+  string
+> = {
+  itemNotAsDescribed: "Item not as described",
+  damagedOrDefective: "Damaged or defective",
+  wrongItemReceived: "Wrong item received",
+  notDelivered: "Not delivered",
+};

@@ -2,7 +2,7 @@
 
 import { Loader2, RefreshCw, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
@@ -23,6 +23,7 @@ const STATUS_FILTERS: Array<"ALL" | RefundCaseStatus> = [
 
 export default function AdminDisputesPage() {
   const locale = useLocale();
+  const t = useTranslations("AdminPages.disputes");
   const { isLoading: authLoading } = useDashboardGuard("ADMIN");
   const [items, setItems] = useState<RefundCaseListItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>("ESCALATED_ADMIN");
@@ -46,11 +47,11 @@ export default function AdminDisputesPage() {
       setItems(data.items);
       setPagination(data.pagination);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load disputes");
+      toast.error(error instanceof Error ? error.message : t("loadError"));
     } finally {
       setLoading(false);
     }
-  }, [overdueOnly, page, pageSize, searchQuery, statusFilter]);
+  }, [overdueOnly, page, pageSize, searchQuery, statusFilter, t]);
 
   useEffect(() => {
     if (!authLoading) void loadDisputes();
@@ -63,10 +64,14 @@ export default function AdminDisputesPage() {
         method: "POST",
       });
       const data = await parseApiResponse<{ count: number }>(response);
-      toast.success(`${data.count} overdue case${data.count === 1 ? "" : "s"} escalated`);
+      toast.success(
+        data.count === 1
+          ? t("escalated", { count: data.count })
+          : t("escalatedPlural", { count: data.count })
+      );
       await loadDisputes();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to run escalation");
+      toast.error(error instanceof Error ? error.message : t("escalateError"));
     } finally {
       setEscalating(false);
     }
@@ -78,9 +83,9 @@ export default function AdminDisputesPage() {
     <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-neutral-900">Disputes</h1>
+            <h1 className="text-2xl font-semibold text-neutral-900">{t("title")}</h1>
             <p className="mt-1 text-sm text-neutral-600">
-              Review escalated refund cases and record final decisions.
+              {t("subtitle")}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -91,7 +96,7 @@ export default function AdminDisputesPage() {
               className="inline-flex items-center gap-2 rounded-lg border border-orange-300 px-3 py-2 text-sm font-semibold text-orange-700 hover:bg-orange-50 disabled:opacity-50"
             >
               {escalating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Escalate overdue
+              {t("escalateOverdue")}
             </button>
             <button
               type="button"
@@ -99,7 +104,7 @@ export default function AdminDisputesPage() {
               className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
             >
               <RefreshCw className="h-4 w-4" />
-              Refresh
+              {t("refresh")}
             </button>
           </div>
         </div>
@@ -113,7 +118,7 @@ export default function AdminDisputesPage() {
                 setPage(1);
                 setSearchQuery(event.target.value);
               }}
-              placeholder="Search order, customer, product, reason…"
+              placeholder={t("searchPlaceholder")}
               className="w-full rounded-lg border border-neutral-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>
@@ -126,7 +131,7 @@ export default function AdminDisputesPage() {
                 setOverdueOnly(event.target.checked);
               }}
             />
-            Overdue vendor SLA only
+            {t("overdueOnly")}
           </label>
         </div>
 
@@ -143,7 +148,11 @@ export default function AdminDisputesPage() {
                 statusFilter === option ? "bg-primary text-white" : "bg-neutral-100 text-neutral-700"
               }`}
             >
-              {option === "ALL" ? "All" : option.replaceAll("_", " ")}
+              {option === "ALL"
+                ? t("all")
+                : t.has(`statuses.${option}`)
+                  ? t(`statuses.${option}`)
+                  : option.replaceAll("_", " ")}
             </button>
           ))}
         </div>
@@ -154,7 +163,7 @@ export default function AdminDisputesPage() {
           </div>
         ) : empty ? (
           <div className="rounded-xl border border-dashed border-neutral-300 bg-white px-6 py-12 text-center">
-            <p className="text-sm text-neutral-500">No disputes match your filters.</p>
+            <p className="text-sm text-neutral-500">{t("empty")}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -169,7 +178,7 @@ export default function AdminDisputesPage() {
                     <p className="text-sm font-semibold text-neutral-900">{item.order.orderNumber}</p>
                     <p className="mt-1 text-sm text-neutral-700">{item.orderItem.productName}</p>
                     <p className="mt-1 text-xs text-neutral-500">
-                      {item.customer.fullName} · {item.vendor.storeName ?? "Vendor"} ·{" "}
+                      {item.customer.fullName} · {item.vendor.storeName ?? t("vendorFallback")} ·{" "}
                       {formatRefundDate(item.createdAt, locale)}
                     </p>
                   </div>

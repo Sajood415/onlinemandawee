@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Banknote, Loader2, Save } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import {
@@ -26,6 +27,7 @@ const INPUT =
   "w-full max-w-[220px] rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 export default function AdminHawalaExchangeRatesPage() {
+  const t = useTranslations("AdminPages.hawala.exchangeRates");
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [rates, setRates] = useState<Record<HawalaCurrency, string>>(
     Object.fromEntries(HAWALA_CURRENCIES.map((currency) => [currency, ""])) as Record<
@@ -56,13 +58,13 @@ export default function AdminHawalaExchangeRatesPage() {
       setLastUpdated(mostRecent ?? null);
     } catch (error) {
       toast.error(
-        "Failed to load exchange rates",
-        error instanceof Error ? error.message : "Unknown error"
+        t("loadError"),
+        error instanceof Error ? error.message : t("unknownError")
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!authLoading && user) void loadRates();
@@ -80,7 +82,7 @@ export default function AdminHawalaExchangeRatesPage() {
 
       const invalid = payload.rates.find((rate) => !(rate.rateToAfn > 0));
       if (invalid) {
-        toast.error("Invalid rate", `Enter a rate greater than 0 for ${invalid.currency}.`);
+        toast.error(t("invalidRate"), t("invalidRateBody", { currency: invalid.currency }));
         setSaving(false);
         return;
       }
@@ -98,9 +100,9 @@ export default function AdminHawalaExchangeRatesPage() {
         }
         return next;
       });
-      toast.success("Exchange rates saved", "New Hawala transfers will use these rates.");
+      toast.success(t("savedTitle"), t("savedBody"));
     } catch (error) {
-      toast.error("Could not save", error instanceof Error ? error.message : "Unknown error");
+      toast.error(t("saveFailed"), error instanceof Error ? error.message : t("unknownError"));
     } finally {
       setSaving(false);
     }
@@ -122,12 +124,11 @@ export default function AdminHawalaExchangeRatesPage() {
           className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 transition hover:text-[#0f3460]"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Hawala transfers
+          {t("back")}
         </Link>
-        <h1 className="text-2xl font-bold text-[#0f3460]">Hawala exchange rates</h1>
+        <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
         <p className="mt-1 text-sm text-neutral-600">
-          Set how much 1 unit of each currency is worth in Afghan Afghani (AFN). New transfer
-          requests calculate the receiver amount using these rates at submission time.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -137,15 +138,15 @@ export default function AdminHawalaExchangeRatesPage() {
             <Banknote className="h-5 w-5 text-[#0f3460]" />
           </div>
           <div className="flex-1">
-            <h2 className="text-base font-semibold text-neutral-900">Rates to AFN</h2>
+            <h2 className="text-base font-semibold text-neutral-900">{t("ratesTitle")}</h2>
             <p className="mt-1 text-sm text-neutral-600">
-              AFN is the fixed base currency (rate = 1) and cannot be edited.
+              {t("ratesBody")}
             </p>
 
             {loading ? (
               <div className="mt-4 flex items-center gap-2 text-sm text-neutral-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Loading…
+                {t("loading")}
               </div>
             ) : (
               <div className="mt-4 space-y-3">
@@ -189,11 +190,11 @@ export default function AdminHawalaExchangeRatesPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Save rates
+          {t("save")}
         </button>
         {lastUpdated ? (
           <p className="mt-2 text-xs text-neutral-500">
-            Last updated {new Date(lastUpdated).toLocaleString()}
+            {t("lastUpdated", { date: new Date(lastUpdated).toLocaleString() })}
           </p>
         ) : null}
       </div>
