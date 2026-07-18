@@ -17,10 +17,7 @@ import { adminOrderStatusFilters } from "@/domain/order/order-status";
 import type { PayoutStatus } from "@/domain/payment/payment-types";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
-import {
-  resolveOrderDeliveredAtIso,
-  resolveVendorOrderDeliveredAtIso,
-} from "@/lib/orders/resolve-vendor-order-delivered-at";
+import { resolveVendorOrderDeliveredAtIso } from "@/lib/orders/resolve-vendor-order-delivered-at";
 import { Link } from "@/i18n/navigation";
 
 type VendorOption = {
@@ -29,11 +26,15 @@ type VendorOption = {
   storeSlug: string | null;
 };
 
+type DeliveryMethod = "PICKUP" | "EXPRESS" | "STANDARD";
+
 type AdminOrderListItem = {
   id: string;
   orderNumber: string;
   status: OrderStatus;
   paymentStatus: string;
+  deliveryMethod: DeliveryMethod | null;
+  vendorDeliveryMethods: DeliveryMethod[];
   currency: string;
   grandTotalAmount: number;
   createdAt: string;
@@ -87,6 +88,7 @@ type AdminOrderDetail = {
   orderNumber: string;
   status: OrderStatus;
   paymentStatus: string;
+  deliveryMethod: DeliveryMethod | null;
   currency: string;
   subtotalAmount: number;
   deliveryAmount: number;
@@ -115,6 +117,7 @@ type AdminOrderDetail = {
     vendorStoreSlug: string | null;
     vendorStoreName: string | null;
     status: VendorOrderStatus;
+    deliveryMethod: DeliveryMethod | null;
     deliveredAt: string | null;
     currency: string;
     subtotalAmount: number;
@@ -241,6 +244,52 @@ function displayDate(iso: string | null) {
   return date.toLocaleString();
 }
 
+function displayShortDate(iso: string | null) {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString(undefined, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function deliveryMethodLabel(method: DeliveryMethod | null | undefined) {
+  if (method === "PICKUP") return "Pickup";
+  if (method === "EXPRESS") return "Express";
+  if (method === "STANDARD") return "Standard";
+  return "—";
+}
+
+function listDeliveryLabel(order: AdminOrderListItem) {
+  if (order.deliveryMethod) return deliveryMethodLabel(order.deliveryMethod);
+  if (order.vendorDeliveryMethods.length === 1) {
+    return deliveryMethodLabel(order.vendorDeliveryMethods[0]);
+  }
+  if (order.vendorDeliveryMethods.length > 1) return "Mixed";
+  return "—";
+}
+
+function listVendorLabel(order: AdminOrderListItem) {
+  const first = order.vendors[0];
+  const name =
+    first?.vendorStoreName ?? first?.vendorStoreSlug ?? (order.vendorCount ? "Vendor" : "—");
+  if (order.vendorCount <= 1) return name;
+  return `${name} +${order.vendorCount - 1}`;
+}
+
+function listPayoutSummary(order: AdminOrderListItem) {
+  const statuses = order.vendors.map((vendor) => vendor.payout.status);
+  if (statuses.every((status) => status === "SENT")) return "SENT" as const;
+  if (statuses.some((status) => status === "FAILED")) return "FAILED" as const;
+  if (statuses.some((status) => status === "ON_HOLD" || status == null)) {
+    return "ON_HOLD" as const;
+  }
+  if (statuses.some((status) => status === "READY")) return "READY" as const;
+  return statuses[0] ?? null;
+}
+
 function formatMoney(amount: number, currency: string) {
   try {
     return new Intl.NumberFormat("en-US", {
@@ -302,53 +351,10 @@ function warehouseStatusClass(status: string) {
   return "bg-neutral-100 text-neutral-700";
 }
 
-function buildWarehouseTimeline(detail: AdminOrderDetail) {
-  const events: Array<{ label: string; at: string | null; status: string }> = [];
-  if (detail.warehouse.batch) {
-    events.push({
-      label: "Batch created",
-      at: detail.warehouse.batch.createdAt,
-      status: "OPEN",
-    });
-    events.push({
-      label: "Batch ready to consolidate",
-      at: detail.warehouse.batch.readyToConsolidateAt,
-      status: "READY_TO_CONSOLIDATE",
-    });
-  }
-  if (detail.warehouse.outboundShipment) {
-    events.push({
-      label: "Consolidated",
-      at: detail.warehouse.outboundShipment.consolidatedAt,
-      status: "CONSOLIDATED",
-    });
-    events.push({
-      label: "Outbound shipped",
-      at: detail.warehouse.outboundShipment.shippedAt,
-      status: "OUTBOUND_SHIPPED",
-    });
-    events.push({
-      label: "Delivered",
-      at: detail.warehouse.outboundShipment.deliveredAt,
-      status: "DELIVERED",
-    });
-  }
-
-  return events.filter((event) => event.at);
-}
-
 function customerLabel(order: AdminOrderListItem) {
   if (order.customer?.fullName) return order.customer.fullName;
   if (order.guestEmail) return order.guestEmail;
   return order.shippingContact.fullName;
-}
-
-function customerEmail(order: AdminOrderListItem) {
-  return order.customer?.email ?? order.guestEmail ?? "—";
-}
-
-function customerPhone(order: AdminOrderListItem) {
-  return order.customer?.phone ?? order.shippingContact.phone ?? "—";
 }
 
 function buildQueryString(input: {
@@ -674,142 +680,94 @@ export default function AdminOrdersPage() {
         <>
           <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div className="responsive-table-shell overflow-x-auto">
-              <table className="w-full min-w-[1180px] border-collapse">
+              <table className="w-full min-w-[960px] border-collapse">
                 <thead className="bg-neutral-50">
-                  <tr className="border-b border-neutral-200 text-left text-xs font-semibold uppercase tracking-wider text-neutral-600">
+                  <tr className="border-b border-neutral-200 text-start text-xs font-semibold text-neutral-500">
                     <th className="px-4 py-3">Order</th>
                     <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Vendors</th>
-                    <th className="px-4 py-3">Items</th>
+                    <th className="px-4 py-3">Vendor</th>
+                    <th className="px-4 py-3">Delivery</th>
                     <th className="px-4 py-3">Payment</th>
-                    <th className="px-4 py-3">Transaction fee</th>
+                    <th className="px-4 py-3">Fee</th>
                     <th className="px-4 py-3">Payout</th>
                     <th className="px-4 py-3">Total</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order) => (
-                    <tr key={order.id} className="border-b border-neutral-100 hover:bg-neutral-50">
-                      <td className="px-4 py-3 align-top text-sm">
-                        <p className="font-semibold text-neutral-900">{order.orderNumber}</p>
-                        <p className="text-xs text-neutral-500">Placed {displayDate(order.createdAt)}</p>
-                        {(() => {
-                          const deliveredAt = resolveOrderDeliveredAtIso(
-                            order.vendors.map((vendor) => ({
-                              status: vendor.status,
-                              deliveredAt: vendor.deliveredAt,
-                            }))
-                          );
-                          if (!deliveredAt) return null;
-                          return (
-                            <p className="text-xs text-emerald-700">
-                              Delivered on {displayDate(deliveredAt)}
+                  {orders.map((order) => {
+                    const payoutStatus = listPayoutSummary(order);
+                    return (
+                      <tr
+                        key={order.id}
+                        className="border-b border-neutral-100 hover:bg-neutral-50/80"
+                      >
+                        <td className="whitespace-nowrap px-4 py-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-neutral-900">
+                              {order.orderNumber}
                             </p>
-                          );
-                        })()}
-                        <span
-                          className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${platformStatusClass(order.status)}`}
-                        >
-                          {order.status.replaceAll("_", " ")}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 align-top text-sm">
-                        <p className="font-medium text-neutral-900">{customerLabel(order)}</p>
-                        <p className="text-xs text-neutral-500">{customerEmail(order)}</p>
-                      </td>
-                      <td className="px-4 py-3 align-top text-sm">
-                        <div className="space-y-2">
-                          {order.vendors.map((vendor) => (
-                            <div key={vendor.id}>
-                              <p className="font-medium text-neutral-900">
-                                {vendor.vendorStoreName ?? vendor.vendorStoreSlug ?? "Vendor"}
-                              </p>
-                              <span
-                                className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${vendorStatusClass(vendor.status)}`}
-                              >
-                                {vendor.status}
-                              </span>
-                              {vendor.deliveredAt ? (
-                                <p className="mt-1 text-[11px] text-emerald-700">
-                                  Delivered on {displayDate(vendor.deliveredAt)}
-                                </p>
-                              ) : vendor.status === "DELIVERED" ? (
-                                <p className="mt-1 text-[11px] text-neutral-500">
-                                  Delivered — date not recorded
-                                </p>
-                              ) : null}
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 align-top text-sm">
-                        <p className="font-medium text-neutral-900">
-                          {order.itemCount} unit{order.itemCount !== 1 ? "s" : ""}
-                        </p>
-                        <p className="text-xs text-neutral-500">
-                          {order.lineItemCount} line item{order.lineItemCount !== 1 ? "s" : ""}
-                        </p>
-                        {order.itemsPreview.length > 0 ? (
-                          <p className="mt-1 max-w-[180px] truncate text-xs text-neutral-500">
-                            {order.itemsPreview.join(", ")}
-                            {order.lineItemCount > order.itemsPreview.length ? "…" : ""}
+                            <span
+                              className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${platformStatusClass(order.status)}`}
+                            >
+                              {order.status.replaceAll("_", " ")}
+                            </span>
+                          </div>
+                          <p className="mt-0.5 text-xs text-neutral-500">
+                            {displayShortDate(order.createdAt)}
                           </p>
-                        ) : null}
-                      </td>
-                      <td className="px-4 py-3 align-top text-sm">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${paymentStatusClass(order.paymentStatus)}`}
-                        >
-                          {order.paymentStatus.replaceAll("_", " ")}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 align-top text-sm">
-                        <p className="font-semibold text-neutral-900">
+                        </td>
+                        <td className="max-w-[160px] px-4 py-3 text-sm">
+                          <p className="truncate font-medium text-neutral-900">
+                            {customerLabel(order)}
+                          </p>
+                        </td>
+                        <td className="max-w-[160px] px-4 py-3 text-sm">
+                          <p className="truncate font-medium text-neutral-900">
+                            {listVendorLabel(order)}
+                          </p>
+                          <p className="mt-0.5 text-xs text-neutral-500">
+                            {order.itemCount} item{order.itemCount !== 1 ? "s" : ""}
+                          </p>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-neutral-700">
+                          {listDeliveryLabel(order)}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm">
+                          <span
+                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${paymentStatusClass(order.paymentStatus)}`}
+                          >
+                            {order.paymentStatus.replaceAll("_", " ")}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-neutral-900">
                           {order.totalCommissionAmount > 0
                             ? formatMoney(order.totalCommissionAmount, order.currency)
                             : "—"}
-                        </p>
-                        <p className="text-xs text-neutral-500">Per-order fee (allocated)</p>
-                      </td>
-                      <td className="px-4 py-3 align-top text-sm">
-                        <div className="space-y-1">
-                          {order.vendors.map((vendor) => (
-                            <div key={vendor.id}>
-                              <span
-                                className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${payoutStatusClass(vendor.payout.status)}`}
-                              >
-                                {payoutStatusLabel(vendor.payout.status)}
-                              </span>
-                              {vendor.payout.amount != null ? (
-                                <p className="text-xs text-neutral-500">
-                                  {formatMoney(
-                                    vendor.payout.amount,
-                                    vendor.payout.currency ?? vendor.currency
-                                  )}
-                                </p>
-                              ) : null}
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 align-top text-sm">
-                        <p className="font-semibold text-neutral-900">
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${payoutStatusClass(payoutStatus)}`}
+                          >
+                            {payoutStatusLabel(payoutStatus)}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-neutral-900">
                           {formatMoney(order.grandTotalAmount, order.currency)}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3 align-top text-sm">
-                        <button
-                          type="button"
-                          onClick={() => void openDetail(order.id)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <button
+                            type="button"
+                            onClick={() => void openDetail(order.id)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -834,20 +792,41 @@ export default function AdminOrdersPage() {
 
       {detailOrderId ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
-          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-neutral-200 bg-white shadow-xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-200 bg-white px-5 py-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                  Order detail
-                </p>
-                <h2 className="text-xl font-bold text-[#0f3460]">
-                  {detail?.orderNumber ?? "Loading..."}
+          <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl">
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-neutral-200 px-5 py-4">
+              <div className="min-w-0">
+                <h2 className="truncate text-xl font-bold text-neutral-900">
+                  {detail?.orderNumber ?? "Order"}
                 </h2>
+                {detail ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${platformStatusClass(detail.status)}`}
+                    >
+                      {detail.status.replaceAll("_", " ")}
+                    </span>
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${paymentStatusClass(detail.paymentStatus)}`}
+                    >
+                      {detail.paymentStatus.replaceAll("_", " ")}
+                    </span>
+                    <span className="inline-flex rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-700">
+                      {deliveryMethodLabel(
+                        detail.deliveryMethod ??
+                          detail.vendorOrders[0]?.deliveryMethod ??
+                          null
+                      )}
+                    </span>
+                    <span className="text-xs text-neutral-500">
+                      {displayShortDate(detail.createdAt)}
+                    </span>
+                  </div>
+                ) : null}
               </div>
               <button
                 type="button"
                 onClick={closeDetail}
-                className="rounded-lg border border-neutral-300 p-2 text-neutral-600 hover:bg-neutral-50"
+                className="rounded-lg border border-neutral-200 p-2 text-neutral-600 hover:bg-neutral-50"
                 aria-label="Close order detail"
               >
                 <X className="h-4 w-4" />
@@ -859,240 +838,322 @@ export default function AdminOrdersPage() {
                 <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
               </div>
             ) : (
-              <div className="space-y-6 p-5">
-                {(() => {
-                  const timelineEvents = buildWarehouseTimeline(detail);
-                  return (
-                    <section className="rounded-xl border border-neutral-200 p-4">
-                      <h3 className="text-sm font-semibold text-neutral-900">Warehouse workflow</h3>
-                      <div className="mt-3 grid gap-4 md:grid-cols-3">
-                        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                            Batch status
-                          </p>
-                          {detail.warehouse.batch ? (
-                            <>
-                              <span
-                                className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${warehouseStatusClass(detail.warehouse.batch.status)}`}
-                              >
-                                {detail.warehouse.batch.status}
-                              </span>
-                              <p className="mt-2 text-xs text-neutral-600">
-                                Vendor shipments received{" "}
-                                {detail.warehouse.batch.receivedVendorCount}/
-                                {detail.warehouse.batch.expectedVendorCount}
-                              </p>
-                            </>
-                          ) : (
-                            <p className="mt-2 text-sm text-neutral-600">No warehouse batch</p>
-                          )}
-                        </div>
-
-                        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                            Outbound shipment
-                          </p>
-                          {detail.warehouse.outboundShipment ? (
-                            <>
-                              <span
-                                className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${warehouseStatusClass(detail.warehouse.outboundShipment.status)}`}
-                              >
-                                {detail.warehouse.outboundShipment.status}
-                              </span>
-                              <p className="mt-2 text-xs text-neutral-600">
-                                Tracking: {detail.warehouse.outboundShipment.trackingRef ?? "—"}
-                              </p>
-                            </>
-                          ) : (
-                            <p className="mt-2 text-sm text-neutral-600">Not created</p>
-                          )}
-                        </div>
-
-                        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                            Workflow timeline
-                          </p>
-                          {timelineEvents.length === 0 ? (
-                            <p className="mt-2 text-sm text-neutral-600">No warehouse events yet</p>
-                          ) : (
-                            <ul className="mt-2 space-y-2 text-xs text-neutral-700">
-                              {timelineEvents.map((event) => (
-                                <li key={`${event.label}:${event.at}`} className="flex flex-col gap-1">
-                                  <span className="font-medium text-neutral-900">{event.label}</span>
-                                  <span>{displayDate(event.at)}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="mt-4 overflow-x-auto">
-                        <table className="w-full min-w-[760px] border-collapse text-sm">
-                          <thead>
-                            <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500">
-                              <th className="px-2 py-2">Vendor</th>
-                              <th className="px-2 py-2">Products</th>
-                              <th className="px-2 py-2">Qty</th>
-                              <th className="px-2 py-2">Inbound status</th>
-                              <th className="px-2 py-2">Tracking</th>
-                              <th className="px-2 py-2">Inbound shipped</th>
-                              <th className="px-2 py-2">Received</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {detail.warehouse.inboundShipments.length === 0 ? (
-                              <tr>
-                                <td className="px-2 py-3 text-neutral-500" colSpan={7}>
-                                  No inbound shipments for this order.
-                                </td>
-                              </tr>
-                            ) : (
-                              detail.warehouse.inboundShipments.map((shipment) => (
-                                <tr key={shipment.id} className="border-b border-neutral-100">
-                                  <td className="px-2 py-2 text-neutral-900">
-                                    {shipment.vendorStoreName ?? shipment.vendorStoreSlug ?? "Vendor"}
-                                  </td>
-                                  <td className="px-2 py-2 text-neutral-700">
-                                    {shipment.products.length === 0 ? (
-                                      "—"
-                                    ) : (
-                                      <ul className="space-y-1">
-                                        {shipment.products.map((product) => (
-                                          <li key={product.productName}>{product.productName}</li>
-                                        ))}
-                                      </ul>
-                                    )}
-                                  </td>
-                                  <td className="px-2 py-2 text-neutral-900">{shipment.totalQuantity}</td>
-                                  <td className="px-2 py-2">
-                                    <span
-                                      className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${warehouseStatusClass(shipment.status)}`}
-                                    >
-                                      {shipment.status}
-                                    </span>
-                                  </td>
-                                  <td className="px-2 py-2 text-neutral-700">{shipment.trackingRef ?? "—"}</td>
-                                  <td className="px-2 py-2 text-neutral-700">{displayDate(shipment.shippedAt)}</td>
-                                  <td className="px-2 py-2 text-neutral-700">
-                                    {displayDate(shipment.receivedAt)}
-                                  </td>
-                                </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    </section>
-                  );
-                })()}
-
-                <section className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-                    <h3 className="text-sm font-semibold text-neutral-900">Platform status</h3>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${platformStatusClass(detail.status)}`}
-                      >
-                        {detail.status.replaceAll("_", " ")}
-                      </span>
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${paymentStatusClass(detail.paymentStatus)}`}
-                      >
-                        {detail.paymentStatus.replaceAll("_", " ")}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-sm text-neutral-600">
-                      Placed {displayDate(detail.createdAt)}
-                    </p>
-                    {(() => {
-                      const deliveredAt = resolveOrderDeliveredAtIso(
-                        detail.vendorOrders.map((vendorOrder) => ({
-                          status: vendorOrder.status,
-                          deliveredAt: vendorOrder.deliveredAt,
-                          outboundDeliveredAt: detail.warehouse.outboundShipment?.deliveredAt,
-                        }))
-                      );
-                      if (!deliveredAt) return null;
-                      return (
-                        <p className="text-sm font-medium text-emerald-700">
-                          Delivered on {displayDate(deliveredAt)}
-                        </p>
-                      );
-                    })()}
-                    <p className="text-sm text-neutral-600">
-                      Updated {displayDate(detail.updatedAt)}
-                    </p>
-                    {detail.isLockedByCustomerCancellation ? (
-                      <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
-                        <p className="font-semibold">Cancelled by customer</p>
-                        {detail.cancelledAt ? (
-                          <p className="mt-1">Cancelled on {displayDate(detail.cancelledAt)}</p>
-                        ) : null}
-                        {detail.cancellationReason ? (
-                          <p className="mt-1">
-                            Reason: {detail.cancellationReason}
-                          </p>
-                        ) : null}
-                        <p className="mt-2 text-xs text-rose-800">
-                          Order status is locked and cannot be changed through warehouse or vendor
-                          actions.
-                        </p>
-                      </div>
+              <div className="space-y-5 overflow-y-auto p-5">
+                {detail.isLockedByCustomerCancellation ? (
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+                    <p className="font-semibold">Cancelled by customer</p>
+                    {detail.cancelledAt ? (
+                      <p className="mt-1">On {displayShortDate(detail.cancelledAt)}</p>
+                    ) : null}
+                    {detail.cancellationReason ? (
+                      <p className="mt-1">Reason: {detail.cancellationReason}</p>
                     ) : null}
                   </div>
+                ) : null}
 
-                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+                <section className="grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-xl border border-neutral-200 p-4">
                     <h3 className="text-sm font-semibold text-neutral-900">Totals</h3>
-                    <dl className="mt-2 space-y-1 text-sm text-neutral-700">
-                      <div className="flex justify-between">
+                    <dl className="mt-3 space-y-2 text-sm">
+                      <div className="flex justify-between gap-3 text-neutral-600">
                         <dt>Subtotal</dt>
                         <dd>{formatMoney(detail.subtotalAmount, detail.currency)}</dd>
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between gap-3 text-neutral-600">
                         <dt>Delivery</dt>
                         <dd>{formatMoney(detail.deliveryAmount, detail.currency)}</dd>
                       </div>
-                      <div className="flex justify-between">
-                        <dt>Discount</dt>
-                        <dd>{formatMoney(detail.discountAmount, detail.currency)}</dd>
-                      </div>
-                      <div className="flex justify-between font-semibold text-neutral-900">
+                      {detail.discountAmount > 0 ? (
+                        <div className="flex justify-between gap-3 text-neutral-600">
+                          <dt>Discount</dt>
+                          <dd>{formatMoney(detail.discountAmount, detail.currency)}</dd>
+                        </div>
+                      ) : null}
+                      <div className="flex justify-between gap-3 border-t border-neutral-100 pt-2 font-semibold text-neutral-900">
                         <dt>Grand total</dt>
                         <dd>{formatMoney(detail.grandTotalAmount, detail.currency)}</dd>
                       </div>
-                      <div className="flex justify-between font-semibold text-neutral-900">
-                        <dt>Total transaction fee</dt>
+                      <div className="flex justify-between gap-3 text-neutral-600">
+                        <dt>Platform fee</dt>
                         <dd>{formatMoney(detail.totalCommissionAmount, detail.currency)}</dd>
                       </div>
                     </dl>
                   </div>
-                </section>
 
-                <section className="rounded-xl border border-neutral-200 p-4">
-                  <h3 className="text-sm font-semibold text-neutral-900">Customer & delivery</h3>
-                  <div className="mt-3 grid gap-4 md:grid-cols-2">
-                    <div className="text-sm text-neutral-700">
+                  <div className="rounded-xl border border-neutral-200 p-4">
+                    <h3 className="text-sm font-semibold text-neutral-900">Customer</h3>
+                    <div className="mt-3 space-y-1 text-sm text-neutral-700">
                       <p className="font-medium text-neutral-900">
                         {detail.customer?.fullName ?? detail.shippingAddress.fullName}
                       </p>
-                      <p>{detail.customer?.email ?? detail.guestEmail ?? "Guest checkout"}</p>
-                      <p>{detail.customer?.phone ?? detail.shippingAddress.phone}</p>
-                      {detail.guestEmail ? (
-                        <p className="mt-2 text-xs text-neutral-500">
-                          Guest email: {detail.guestEmail}
-                        </p>
-                      ) : null}
-                    </div>
-                    <div className="text-sm text-neutral-700">
-                      <p>{detail.shippingAddress.addressLine1}</p>
                       <p>
-                        {detail.shippingAddress.city}, {detail.shippingAddress.postalCode}
+                        {detail.customer?.email ?? detail.guestEmail ?? "Guest checkout"}
                       </p>
-                      <p>{detail.shippingAddress.country}</p>
+                      <p>{detail.customer?.phone ?? detail.shippingAddress.phone}</p>
                     </div>
+                    {(detail.deliveryMethod ?? detail.vendorOrders[0]?.deliveryMethod) !==
+                    "PICKUP" ? (
+                      <div className="mt-4 border-t border-neutral-100 pt-3 text-sm text-neutral-700">
+                        <p className="text-xs font-medium text-neutral-500">Ship to</p>
+                        <p className="mt-1">{detail.shippingAddress.addressLine1}</p>
+                        <p>
+                          {detail.shippingAddress.city}
+                          {detail.shippingAddress.postalCode
+                            ? `, ${detail.shippingAddress.postalCode}`
+                            : ""}
+                        </p>
+                        <p>{detail.shippingAddress.country}</p>
+                      </div>
+                    ) : (
+                      <p className="mt-4 border-t border-neutral-100 pt-3 text-sm text-neutral-500">
+                        Customer picks up from vendor
+                      </p>
+                    )}
                   </div>
                 </section>
+
+                <section className="space-y-3">
+                  <h3 className="text-sm font-semibold text-neutral-900">Vendors</h3>
+                  {detail.vendorOrders.map((vendorOrder) => {
+                    const deliveredAt = resolveVendorOrderDeliveredAtIso({
+                      status: vendorOrder.status,
+                      deliveredAt: vendorOrder.deliveredAt,
+                      outboundDeliveredAt: detail.warehouse.outboundShipment?.deliveredAt,
+                    });
+                    return (
+                      <article
+                        key={vendorOrder.id}
+                        className="rounded-xl border border-neutral-200 p-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <Link
+                              href={`/admin/vendors/${vendorOrder.vendorProfileId}`}
+                              className="font-semibold text-[#0F3460] hover:underline"
+                            >
+                              {vendorOrder.vendorStoreName ??
+                                vendorOrder.vendorStoreSlug ??
+                                "Vendor"}
+                            </Link>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <span
+                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${vendorStatusClass(vendorOrder.status)}`}
+                              >
+                                {vendorOrder.status.replaceAll("_", " ")}
+                              </span>
+                              <span className="inline-flex rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-700">
+                                {deliveryMethodLabel(vendorOrder.deliveryMethod)}
+                              </span>
+                            </div>
+                            {deliveredAt ? (
+                              <p className="mt-2 text-xs text-emerald-700">
+                                Delivered {displayShortDate(deliveredAt)}
+                              </p>
+                            ) : null}
+                          </div>
+                          <dl className="min-w-[160px] space-y-1 text-sm">
+                            <div className="flex justify-between gap-4">
+                              <dt className="text-neutral-500">Vendor total</dt>
+                              <dd className="font-medium text-neutral-900">
+                                {formatMoney(
+                                  vendorOrder.grandTotalAmount,
+                                  vendorOrder.currency
+                                )}
+                              </dd>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                              <dt className="text-neutral-500">Fee</dt>
+                              <dd className="font-medium text-neutral-900">
+                                {vendorOrder.commission.commissionAmount != null
+                                  ? formatMoney(
+                                      vendorOrder.commission.commissionAmount,
+                                      vendorOrder.commission.currency ??
+                                        vendorOrder.currency
+                                    )
+                                  : "—"}
+                              </dd>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                              <dt className="text-neutral-500">Payout</dt>
+                              <dd>
+                                <span
+                                  className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${payoutStatusClass(vendorOrder.payout.status)}`}
+                                >
+                                  {payoutStatusLabel(vendorOrder.payout.status)}
+                                </span>
+                              </dd>
+                            </div>
+                            {vendorOrder.payout.amount != null ? (
+                              <div className="flex justify-between gap-4">
+                                <dt className="text-neutral-500">Payout amount</dt>
+                                <dd className="font-medium text-neutral-900">
+                                  {formatMoney(
+                                    vendorOrder.payout.amount,
+                                    vendorOrder.payout.currency ?? vendorOrder.currency
+                                  )}
+                                </dd>
+                              </div>
+                            ) : null}
+                            {vendorOrder.payout.holdLabel ? (
+                              <p className="text-xs text-neutral-500">
+                                {vendorOrder.payout.holdLabel}
+                              </p>
+                            ) : vendorOrder.payout.holdUntil ? (
+                              <p className="text-xs text-neutral-500">
+                                Hold until {displayShortDate(vendorOrder.payout.holdUntil)}
+                              </p>
+                            ) : null}
+                          </dl>
+                        </div>
+
+                        <div className="mt-4 overflow-x-auto">
+                          <table className="w-full min-w-[480px] text-sm">
+                            <thead>
+                              <tr className="border-b border-neutral-200 text-start text-xs font-semibold text-neutral-500">
+                                <th className="py-2 pe-3">Item</th>
+                                <th className="py-2 pe-3">Qty</th>
+                                <th className="py-2 pe-3">Unit</th>
+                                <th className="py-2">Line total</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-neutral-100">
+                              {vendorOrder.items.map((item) => (
+                                <tr key={item.id}>
+                                  <td className="py-2 pe-3 text-neutral-900">
+                                    {item.productName}
+                                    {item.variantName ? (
+                                      <span className="block text-xs text-neutral-500">
+                                        {item.variantName}
+                                      </span>
+                                    ) : null}
+                                    {item.productSku ? (
+                                      <span className="block text-xs text-neutral-500">
+                                        {item.productSku}
+                                      </span>
+                                    ) : null}
+                                  </td>
+                                  <td className="py-2 pe-3">{item.quantity}</td>
+                                  <td className="py-2 pe-3">
+                                    {formatMoney(item.unitPriceAmount, item.currency)}
+                                  </td>
+                                  <td className="py-2">
+                                    {formatMoney(item.lineTotalAmount, item.currency)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {vendorOrder.vendorLedgerEntries.length > 0 ? (
+                          <details className="mt-3 rounded-lg border border-neutral-200 px-3 py-2">
+                            <summary className="cursor-pointer text-sm font-medium text-neutral-700">
+                              Ledger ({vendorOrder.vendorLedgerEntries.length})
+                            </summary>
+                            <div className="mt-2 overflow-x-auto">
+                              <table className="w-full min-w-[520px] text-sm">
+                                <thead>
+                                  <tr className="border-b border-neutral-100 text-start text-xs font-semibold text-neutral-500">
+                                    <th className="py-1.5 pe-3">Type</th>
+                                    <th className="py-1.5 pe-3">Amount</th>
+                                    <th className="py-1.5 pe-3">Date</th>
+                                    <th className="py-1.5">Note</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-neutral-100">
+                                  {vendorOrder.vendorLedgerEntries.map((entry) => (
+                                    <tr key={entry.id}>
+                                      <td className="py-1.5 pe-3 text-neutral-700">
+                                        {entry.entryType.replaceAll("_", " ")}
+                                      </td>
+                                      <td className="py-1.5 pe-3">
+                                        {formatMoney(entry.amount, entry.currency)}
+                                      </td>
+                                      <td className="py-1.5 pe-3 text-neutral-500">
+                                        {displayShortDate(entry.createdAt)}
+                                      </td>
+                                      <td className="py-1.5 text-neutral-500">
+                                        {entry.description ?? "—"}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </details>
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </section>
+
+                {detail.warehouse.batch ||
+                detail.warehouse.outboundShipment ||
+                detail.warehouse.inboundShipments.length > 0 ? (
+                  <section className="rounded-xl border border-neutral-200 p-4">
+                    <h3 className="text-sm font-semibold text-neutral-900">
+                      Warehouse (Standard delivery)
+                    </h3>
+                    <div className="mt-3 flex flex-wrap gap-2 text-sm">
+                      {detail.warehouse.batch ? (
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${warehouseStatusClass(detail.warehouse.batch.status)}`}
+                        >
+                          Batch: {detail.warehouse.batch.status.replaceAll("_", " ")}
+                        </span>
+                      ) : null}
+                      {detail.warehouse.outboundShipment ? (
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${warehouseStatusClass(detail.warehouse.outboundShipment.status)}`}
+                        >
+                          Outbound:{" "}
+                          {detail.warehouse.outboundShipment.status.replaceAll("_", " ")}
+                        </span>
+                      ) : null}
+                      {detail.warehouse.outboundShipment?.trackingRef ? (
+                        <span className="text-xs text-neutral-500">
+                          Tracking: {detail.warehouse.outboundShipment.trackingRef}
+                        </span>
+                      ) : null}
+                    </div>
+                    {detail.warehouse.inboundShipments.length > 0 ? (
+                      <div className="mt-3 overflow-x-auto">
+                        <table className="w-full min-w-[560px] text-sm">
+                          <thead>
+                            <tr className="border-b border-neutral-200 text-start text-xs font-semibold text-neutral-500">
+                              <th className="py-2 pe-3">Vendor</th>
+                              <th className="py-2 pe-3">Qty</th>
+                              <th className="py-2 pe-3">Status</th>
+                              <th className="py-2">Tracking</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-neutral-100">
+                            {detail.warehouse.inboundShipments.map((shipment) => (
+                              <tr key={shipment.id}>
+                                <td className="py-2 pe-3">
+                                  {shipment.vendorStoreName ??
+                                    shipment.vendorStoreSlug ??
+                                    "Vendor"}
+                                </td>
+                                <td className="py-2 pe-3">{shipment.totalQuantity}</td>
+                                <td className="py-2 pe-3">
+                                  <span
+                                    className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${warehouseStatusClass(shipment.status)}`}
+                                  >
+                                    {shipment.status.replaceAll("_", " ")}
+                                  </span>
+                                </td>
+                                <td className="py-2 text-neutral-600">
+                                  {shipment.trackingRef ?? "—"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : null}
+                  </section>
+                ) : null}
 
                 <AdminOrderDisputePanel
                   orderId={detail.id}
@@ -1102,185 +1163,6 @@ export default function AdminOrdersPage() {
                   refundCases={detail.refundCases}
                   onUpdated={() => void refreshDetail()}
                 />
-
-                <section className="space-y-4">
-                  <h3 className="text-sm font-semibold text-neutral-900">Vendor splits</h3>
-                  {detail.vendorOrders.map((vendorOrder) => (
-                    <article
-                      key={vendorOrder.id}
-                      className="rounded-xl border border-neutral-200 p-4"
-                    >
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <Link
-                            href={`/admin/vendors/${vendorOrder.vendorProfileId}`}
-                            className="text-base font-semibold text-[#0f3460] underline"
-                          >
-                            {vendorOrder.vendorStoreName ??
-                              vendorOrder.vendorStoreSlug ??
-                              "Vendor"}
-                          </Link>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            <span
-                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${vendorStatusClass(vendorOrder.status)}`}
-                            >
-                              {vendorOrder.status}
-                            </span>
-                          </div>
-                          {vendorOrder.status === "DELIVERED" || vendorOrder.deliveredAt ? (
-                            <p className="mt-2 text-xs text-emerald-700">
-                              Delivered on{" "}
-                              {(() => {
-                                const deliveredAt = resolveVendorOrderDeliveredAtIso({
-                                  status: vendorOrder.status,
-                                  deliveredAt: vendorOrder.deliveredAt,
-                                  outboundDeliveredAt:
-                                    detail.warehouse.outboundShipment?.deliveredAt,
-                                });
-                                return deliveredAt
-                                  ? displayDate(deliveredAt)
-                                  : "— date not recorded";
-                              })()}
-                            </p>
-                          ) : null}
-                        </div>
-                        <div className="text-sm text-neutral-700">
-                          <p>
-                            Vendor total{" "}
-                            <span className="font-semibold text-neutral-900">
-                              {formatMoney(vendorOrder.grandTotalAmount, vendorOrder.currency)}
-                            </span>
-                          </p>
-                          <p>
-                            Transaction fee{" "}
-                            <span className="font-semibold text-neutral-900">
-                              {vendorOrder.commission.commissionAmount != null
-                                ? formatMoney(
-                                    vendorOrder.commission.commissionAmount,
-                                    vendorOrder.commission.currency ?? vendorOrder.currency
-                                  )
-                                : "—"}
-                            </span>
-                          </p>
-                          <p>
-                            Vendor payout{" "}
-                            <span
-                              className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${payoutStatusClass(vendorOrder.payout.status)}`}
-                            >
-                              {payoutStatusLabel(vendorOrder.payout.status)}
-                            </span>
-                          </p>
-                          {vendorOrder.payout.amount != null ? (
-                            <p>
-                              Payout amount{" "}
-                              <span className="font-semibold text-neutral-900">
-                                {formatMoney(
-                                  vendorOrder.payout.amount,
-                                  vendorOrder.payout.currency ?? vendorOrder.currency
-                                )}
-                              </span>
-                            </p>
-                          ) : null}
-                          {vendorOrder.payout.holdLabel ? (
-                            <p className="text-xs text-neutral-500">
-                              Hold {vendorOrder.payout.holdLabel.toLowerCase()}
-                            </p>
-                          ) : vendorOrder.payout.holdUntil ? (
-                            <p className="text-xs text-neutral-500">
-                              Hold until {displayDate(vendorOrder.payout.holdUntil)}
-                            </p>
-                          ) : null}
-                          {vendorOrder.payout.releasedAt ? (
-                            <p className="text-xs text-neutral-500">
-                              Released {displayDate(vendorOrder.payout.releasedAt)}
-                            </p>
-                          ) : null}
-                          {vendorOrder.payout.sentAt ? (
-                            <p className="text-xs text-neutral-500">
-                              Sent {displayDate(vendorOrder.payout.sentAt)}
-                            </p>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      <div className="mt-4 overflow-x-auto">
-                        <table className="w-full min-w-[640px] border-collapse text-sm">
-                          <thead>
-                            <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500">
-                              <th className="px-2 py-2">Item</th>
-                              <th className="px-2 py-2">Qty</th>
-                              <th className="px-2 py-2">Unit</th>
-                              <th className="px-2 py-2">Line total</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {vendorOrder.items.map((item) => (
-                              <tr key={item.id} className="border-b border-neutral-100">
-                                <td className="px-2 py-2 text-neutral-900">
-                                  {item.productName}
-                                  {item.variantName ? (
-                                    <span className="block text-xs text-neutral-500">
-                                      {item.variantName}
-                                    </span>
-                                  ) : null}
-                                  {item.productSku ? (
-                                    <span className="block text-xs text-neutral-500">
-                                      SKU {item.productSku}
-                                    </span>
-                                  ) : null}
-                                </td>
-                                <td className="px-2 py-2">{item.quantity}</td>
-                                <td className="px-2 py-2">
-                                  {formatMoney(item.unitPriceAmount, item.currency)}
-                                </td>
-                                <td className="px-2 py-2">
-                                  {formatMoney(item.lineTotalAmount, item.currency)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div className="mt-4 overflow-x-auto">
-                        <table className="w-full min-w-[680px] border-collapse text-sm">
-                          <thead>
-                            <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500">
-                              <th className="px-2 py-2">Ledger bucket</th>
-                              <th className="px-2 py-2">Entry type</th>
-                              <th className="px-2 py-2">Amount</th>
-                              <th className="px-2 py-2">Timestamp</th>
-                              <th className="px-2 py-2">Description</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {vendorOrder.vendorLedgerEntries.length === 0 ? (
-                              <tr>
-                                <td className="px-2 py-3 text-neutral-500" colSpan={5}>
-                                  No vendor ledger entries for this vendor split.
-                                </td>
-                              </tr>
-                            ) : (
-                              vendorOrder.vendorLedgerEntries.map((entry) => (
-                                <tr key={entry.id} className="border-b border-neutral-100">
-                                  <td className="px-2 py-2">{entry.bucket}</td>
-                                  <td className="px-2 py-2">{entry.entryType}</td>
-                                  <td className="px-2 py-2">
-                                    {formatMoney(entry.amount, entry.currency)}
-                                  </td>
-                                  <td className="px-2 py-2">{displayDate(entry.createdAt)}</td>
-                                  <td className="px-2 py-2 text-neutral-600">
-                                    {entry.description ?? "—"}
-                                  </td>
-                                </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    </article>
-                  ))}
-                </section>
               </div>
             )}
           </div>

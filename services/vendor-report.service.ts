@@ -7,13 +7,12 @@ import {
   getPeriodKey,
   type SalesSummaryGranularity,
 } from "@/lib/reports/period-bucket";
-import { formatFlatTransactionFeeLabel } from "@/lib/platform/transaction-fee";
+import { formatCommissionRateLabel } from "@/lib/platform/transaction-fee";
 import { payoutHoldLabel } from "@/lib/payout/payout-hold";
 import { CommissionLedgerRepository } from "@/repositories/commission-ledger.repository";
 import { MembershipInvoiceRepository } from "@/repositories/membership-invoice.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { PayoutRepository } from "@/repositories/payout.repository";
-import { PlatformSettingsRepository } from "@/repositories/platform-settings.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
 import { OrderSettlementService } from "@/services/order-settlement.service";
 
@@ -43,7 +42,6 @@ export class VendorReportService {
     private readonly commissionLedgerRepository = new CommissionLedgerRepository(),
     private readonly membershipInvoiceRepository = new MembershipInvoiceRepository(),
     private readonly payoutRepository = new PayoutRepository(),
-    private readonly platformSettingsRepository = new PlatformSettingsRepository(),
     private readonly orderSettlementService = new OrderSettlementService()
   ) {}
 
@@ -196,12 +194,11 @@ export class VendorReportService {
   async feeSubscriptionHistory(auth: AuthenticatedUser, range: ReportRange) {
     const vendor = await this.requireActiveVendor(auth.id);
 
-    const [commissionEntries, membershipInvoices, vendorOrders, platformSettings] =
+    const [commissionEntries, membershipInvoices, vendorOrders] =
       await Promise.all([
       this.commissionLedgerRepository.listByVendorProfileId(vendor.id),
       this.membershipInvoiceRepository.listByVendorProfileId(vendor.id),
       this.orderRepository.listByVendorProfileId(vendor.id),
-      this.platformSettingsRepository.getOrCreate(),
     ]);
 
     const orderNumberByOrderId = new Map(
@@ -261,10 +258,8 @@ export class VendorReportService {
       from: range.from?.toISOString() ?? null,
       to: range.to?.toISOString() ?? null,
       rates: {
-        transactionFeeAmountMinor: platformSettings.transactionFeeAmountMinor,
-        transactionFeeLabel: formatFlatTransactionFeeLabel(
-          platformSettings.transactionFeeAmountMinor
-        ),
+        transactionFeeAmountMinor: 0,
+        transactionFeeLabel: formatCommissionRateLabel(env.COMMISSION_RATE_BPS),
         membershipFeeAmount: env.MEMBERSHIP_FEE_AMOUNT,
         membershipCurrency: env.MEMBERSHIP_INVOICE_CURRENCY,
         membershipTrialDays: env.MEMBERSHIP_TRIAL_DAYS,

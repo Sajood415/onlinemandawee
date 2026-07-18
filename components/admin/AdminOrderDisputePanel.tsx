@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Flag, Loader2, RotateCcw } from "lucide-react";
+import { Flag, Loader2, RotateCcw } from "lucide-react";
 
+import { Link } from "@/i18n/navigation";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
-import { Link } from "@/i18n/navigation";
 import { toast } from "@/lib/utils/toast";
 
 type RefundCaseSummary = {
@@ -32,11 +32,11 @@ type Props = {
 };
 
 const INPUT =
-  "w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
+  "w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20";
 
 function formatMoney(amount: number, currency: string) {
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(undefined, {
       style: "currency",
       currency: currency || "USD",
     }).format(amount / 100);
@@ -133,65 +133,48 @@ export function AdminOrderDisputePanel({
   };
 
   return (
-    <section className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 space-y-4">
-      <div className="flex items-start gap-3">
-        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-        <div>
-          <h3 className="text-sm font-semibold text-neutral-900">Dispute intervention</h3>
-          <p className="mt-1 text-sm text-neutral-600">
-            Refunds are normally handled by vendors. Use these tools when you need to step in
-            on a dispute.
-          </p>
-        </div>
-      </div>
+    <section className="rounded-xl border border-neutral-200 p-4">
+      <h3 className="text-sm font-semibold text-neutral-900">Disputes & refunds</h3>
+      <p className="mt-1 text-sm text-neutral-500">
+        Vendors handle most refunds. Use this only when admin needs to step in.
+      </p>
 
       {refundCases.length > 0 ? (
-        <div className="rounded-lg border border-neutral-200 bg-white p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-            Refund cases ({refundCases.length})
-          </p>
-          <ul className="mt-2 space-y-2">
-            {refundCases.map((refundCase) => (
-              <li
-                key={refundCase.id}
-                className="flex flex-wrap items-center justify-between gap-2 text-sm"
+        <ul className="mt-3 space-y-2">
+          {refundCases.map((refundCase) => (
+            <li
+              key={refundCase.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+            >
+              <div className="min-w-0">
+                <p className="truncate font-medium text-neutral-900">{refundCase.reason}</p>
+                <p className="text-xs text-neutral-500">
+                  {formatMoney(refundCase.requestedAmount, currency)} ·{" "}
+                  {refundCase.status.replaceAll("_", " ")}
+                </p>
+              </div>
+              <Link
+                href={`/admin/disputes/${refundCase.id}`}
+                className="text-xs font-semibold text-[#0F3460] hover:underline"
               >
-                <div>
-                  <p className="font-medium text-neutral-900">{refundCase.reason}</p>
-                  <p className="text-xs text-neutral-500">
-                    {formatMoney(refundCase.requestedAmount, currency)} ·{" "}
-                    {refundCase.status.replaceAll("_", " ")}
-                    {refundCase.decision
-                      ? ` · approved ${formatMoney(refundCase.decision.approvedAmount, currency)}`
-                      : ""}
-                  </p>
-                </div>
-                <Link
-                  href={`/admin/disputes/${refundCase.id}`}
-                  className="text-xs font-semibold text-[#0f3460] underline"
-                >
-                  View dispute
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
+                View
+              </Link>
+            </li>
+          ))}
+        </ul>
       ) : (
-        <p className="text-sm text-neutral-600">
-          No customer refund cases yet. You can still flag the order or mark it refunded directly.
-        </p>
+        <p className="mt-3 text-sm text-neutral-500">No refund cases yet.</p>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-lg border border-neutral-200 bg-white p-3 space-y-3">
-          <div className="flex items-center gap-2">
-            <Flag className="h-4 w-4 text-neutral-600" />
-            <p className="text-sm font-semibold text-neutral-900">Flag for dispute review</p>
-          </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-neutral-500">
+            Flag for review
+          </label>
           <textarea
-            rows={3}
+            rows={2}
             className={INPUT}
-            placeholder="Why does this order need admin attention?"
+            placeholder="Why does this need attention?"
             value={flagNote}
             onChange={(e) => setFlagNote(e.target.value)}
             maxLength={1000}
@@ -200,22 +183,25 @@ export function AdminOrderDisputePanel({
             type="button"
             disabled={flagging}
             onClick={() => void onFlag()}
-            className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
           >
-            {flagging ? <Loader2 className="h-4 w-4 animate-spin" /> : <Flag className="h-4 w-4" />}
+            {flagging ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Flag className="h-4 w-4" />
+            )}
             Flag order
           </button>
         </div>
 
-        <div className="rounded-lg border border-neutral-200 bg-white p-3 space-y-3">
-          <div className="flex items-center gap-2">
-            <RotateCcw className="h-4 w-4 text-neutral-600" />
-            <p className="text-sm font-semibold text-neutral-900">Mark as refunded</p>
-          </div>
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-neutral-500">
+            Mark refunded
+          </label>
           <textarea
-            rows={3}
+            rows={2}
             className={INPUT}
-            placeholder="Reason for admin refund (visible in dispute records)"
+            placeholder="Reason for admin refund"
             value={refundReason}
             onChange={(e) => setRefundReason(e.target.value)}
             maxLength={1000}
@@ -225,18 +211,18 @@ export function AdminOrderDisputePanel({
             type="button"
             disabled={refunding || !canRefund}
             onClick={() => void onMarkRefunded()}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-3 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#0F3460] px-3 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
           >
             {refunding ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <RotateCcw className="h-4 w-4" />
             )}
-            Mark order refunded
+            Mark refunded
           </button>
           {!canRefund ? (
             <p className="text-xs text-neutral-500">
-              Only paid or partially refunded orders can be marked refunded.
+              Only paid or partially refunded orders can use this.
             </p>
           ) : null}
         </div>

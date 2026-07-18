@@ -1,13 +1,10 @@
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import { env } from "@/config/env.shared";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { DeliveryRuleRepository } from "@/repositories/delivery-rule.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
-import {
-  FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR,
-  usesFixedTransactionFeeDeliveryMethod,
-} from "@/lib/platform/transaction-fee";
 
 export class AdminDeliveryService {
   constructor(
@@ -267,10 +264,9 @@ export class AdminDeliveryService {
   }) {
     return {
       ...input,
-      transactionFeeAmountMinor: usesFixedTransactionFeeDeliveryMethod(input.method)
-        ? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
-        : null,
-      commissionRateBps: null,
+      // Commission is percentage-based (COMMISSION_RATE_BPS), not stored per rule.
+      transactionFeeAmountMinor: null,
+      commissionRateBps: env.COMMISSION_RATE_BPS,
     };
   }
 
@@ -289,10 +285,8 @@ export class AdminDeliveryService {
       countryCode: rule.countryCode,
       priceModel: rule.priceModel,
       baseFeeAmount: rule.baseFeeAmount,
-      transactionFeeAmountMinor: usesFixedTransactionFeeDeliveryMethod(rule.method)
-        ? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
-        : rule.transactionFeeAmountMinor,
-      commissionRateBps: null,
+      transactionFeeAmountMinor: null,
+      commissionRateBps: env.COMMISSION_RATE_BPS,
       perKmRateAmount: rule.perKmRateAmount,
       freeAboveAmount: rule.freeAboveAmount,
       etaMinDays: rule.etaMinDays,

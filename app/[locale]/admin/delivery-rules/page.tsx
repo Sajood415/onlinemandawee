@@ -11,7 +11,11 @@ import type {
   DeliveryPriceModel,
   DeliveryRuleScope,
 } from "@/domain/delivery/delivery-types";
-import { FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR } from "@/lib/platform/transaction-fee";
+import {
+  DEFAULT_COMMISSION_RATE_BPS,
+  formatCommissionRateLabel,
+  formatCommissionRatePercent,
+} from "@/lib/platform/transaction-fee";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 
@@ -58,8 +62,6 @@ type RuleFormState = {
   isActive: boolean;
 };
 
-const FIXED_TRANSACTION_FEE_MAJOR = FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR / 100;
-
 const defaultFormState: RuleFormState = {
   method: "STANDARD",
   scope: "GLOBAL",
@@ -68,13 +70,16 @@ const defaultFormState: RuleFormState = {
   priceModel: "FLAT",
   baseFeeAmount: 0,
   deliveryFeeAmount: 0,
-  transactionFeeAmount: FIXED_TRANSACTION_FEE_MAJOR,
+  transactionFeeAmount: "",
   perKmRateAmount: "",
   freeAboveAmount: "",
   etaMinDays: 1,
   etaMaxDays: 3,
   isActive: true,
 };
+
+const DEFAULT_COMMISSION_LABEL = formatCommissionRateLabel(DEFAULT_COMMISSION_RATE_BPS);
+const DEFAULT_COMMISSION_PERCENT = formatCommissionRatePercent(DEFAULT_COMMISSION_RATE_BPS);
 
 const ALL_VENDORS_VALUE = "__ALL_VENDORS__";
 
@@ -135,7 +140,11 @@ function computeRuleValue(rule: DeliveryRuleRecord) {
       allowsPerKmPricing(rule.method) && rule.priceModel === "PER_KM"
         ? `$${formatMoney(rule.baseFeeAmount)} base + $${formatMoney(rule.perKmRateAmount ?? 0)}/km`
         : `$${formatMoney(rule.baseFeeAmount)} delivery`;
-    return `${deliveryLabel} · $${FIXED_TRANSACTION_FEE_MAJOR.toFixed(2)} commission / order (fixed)`;
+    const commissionLabel =
+      rule.commissionRateBps != null
+        ? formatCommissionRateLabel(rule.commissionRateBps)
+        : DEFAULT_COMMISSION_LABEL;
+    return `${deliveryLabel} · ${commissionLabel} commission`;
   }
 
   if (rule.priceModel === "FLAT") {
@@ -220,9 +229,7 @@ export default function AdminDeliveryRulesPage() {
       priceModel: rule.priceModel,
       baseFeeAmount: rule.baseFeeAmount,
       deliveryFeeAmount: minorToMajorDisplay(rule.baseFeeAmount),
-      transactionFeeAmount: usesTransactionFee(rule.method)
-        ? FIXED_TRANSACTION_FEE_MAJOR
-        : minorToMajorDisplay(rule.transactionFeeAmountMinor),
+      transactionFeeAmount: "",
       perKmRateAmount: allowsPerKmPricing(rule.method)
         ? minorToMajorDisplay(rule.perKmRateAmount)
         : (rule.perKmRateAmount ?? ""),
@@ -259,9 +266,7 @@ export default function AdminDeliveryRulesPage() {
         : pickupBased
           ? 0
           : form.baseFeeAmount,
-      transactionFeeAmountMinor: transactionFeeBased
-        ? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
-        : undefined,
+      transactionFeeAmountMinor: undefined,
       perKmRateAmount: perKmBased
         ? majorToMinor(Number(form.perKmRateAmount) || 0)
         : !transactionFeeBased && !pickupBased && form.priceModel === "PER_KM"
@@ -416,9 +421,7 @@ export default function AdminDeliveryRulesPage() {
               countryCode: rule.countryCode ?? undefined,
               priceModel: rule.priceModel,
               baseFeeAmount: rule.baseFeeAmount,
-              transactionFeeAmountMinor: usesTransactionFee(rule.method)
-                ? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
-                : (rule.transactionFeeAmountMinor ?? undefined),
+              transactionFeeAmountMinor: undefined,
               perKmRateAmount: rule.perKmRateAmount ?? undefined,
               freeAboveAmount: rule.freeAboveAmount ?? undefined,
               etaMinDays: rule.etaMinDays,
@@ -457,9 +460,7 @@ export default function AdminDeliveryRulesPage() {
           countryCode: rule.countryCode ?? undefined,
           priceModel: rule.priceModel,
           baseFeeAmount: rule.baseFeeAmount,
-          transactionFeeAmountMinor: usesTransactionFee(rule.method)
-            ? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
-            : rule.transactionFeeAmountMinor ?? undefined,
+          transactionFeeAmountMinor: undefined,
           perKmRateAmount: rule.perKmRateAmount ?? undefined,
           freeAboveAmount: rule.freeAboveAmount ?? undefined,
           etaMinDays: rule.etaMinDays,
@@ -745,9 +746,7 @@ export default function AdminDeliveryRulesPage() {
                       ...current,
                       method,
                       priceModel: allowsPerKmPricing(method) ? current.priceModel : "FLAT",
-                      transactionFeeAmount: usesTransactionFee(method)
-                        ? FIXED_TRANSACTION_FEE_MAJOR
-                        : "",
+                      transactionFeeAmount: "",
                       deliveryFeeAmount: usesTransactionFee(method)
                         ? current.deliveryFeeAmount === ""
                           ? 0
@@ -933,14 +932,14 @@ export default function AdminDeliveryRulesPage() {
                   ) : null}
                   <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 sm:col-span-2">
                     <p className="text-sm font-semibold text-neutral-900">
-                      Platform commission (fixed)
+                      Platform commission
                     </p>
                     <p className="mt-1 text-sm text-neutral-700">
-                      ${FIXED_TRANSACTION_FEE_MAJOR.toFixed(2)} per order for {form.method} delivery
+                      {DEFAULT_COMMISSION_PERCENT} of product sales
                     </p>
                     <p className="mt-2 text-xs text-neutral-500">
-                      This commission is fixed at $3.99 and cannot be changed. It is deducted
-                      from vendor payouts and split proportionally on multi-vendor orders.
+                      Taken from each vendor&apos;s product subtotal (not shipping) on every
+                      paid order. Set by platform configuration, not per delivery rule.
                     </p>
                   </div>
                 </>
@@ -1134,7 +1133,10 @@ export default function AdminDeliveryRulesPage() {
                   <div>
                     <dt className="text-neutral-500">Platform commission</dt>
                     <dd className="font-medium text-neutral-900">
-                      ${FIXED_TRANSACTION_FEE_MAJOR.toFixed(2)} per order (fixed)
+                      {selectedRule.commissionRateBps != null
+                        ? formatCommissionRateLabel(selectedRule.commissionRateBps)
+                        : DEFAULT_COMMISSION_LABEL}{" "}
+                      of sale
                     </dd>
                   </div>
                   {allowsPerKmPricing(selectedRule.method) ? (

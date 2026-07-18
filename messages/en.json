@@ -1169,7 +1169,7 @@
           "total": "All fees"
         },
         "orderFeesTitle": "Order fees",
-        "orderFeesEmpty": "No order fees yet. A fee is taken when a customer pays.",
+        "orderFeesEmpty": "No order fees yet. A percentage commission is taken when a customer pays.",
         "membershipTitle": "Monthly membership",
         "membershipEmpty": "No membership bills yet. New sellers get {days} free days first.",
         "columns": {
@@ -1370,7 +1370,7 @@
         "intro": "Please confirm each policy. You must accept all to submit.",
         "vendorTerms": "I agree to the Vendor Terms & Conditions.",
         "membership": "I agree to the membership: {fee} per month, {trialDays} days free for new vendors.",
-        "transactionFee": "I agree to the transaction fee: {fee} per order (allocated from each customer order; not applied to shipping).",
+        "transactionFee": "I agree to the platform commission: {fee} (taken from product sales only; not applied to shipping).",
         "disputes": "I agree Online Mandawee has final decision on escalated disputes/refunds.",
         "delivery": "I agree to follow platform delivery rules."
       },
@@ -2377,7 +2377,7 @@
         "sales": "Total sales",
         "salesSub": "Customer order totals (not platform revenue)",
         "fees": "Transaction fees",
-        "feesSub": "Flat per-order fees collected",
+        "feesSub": "3.99% commission collected from sales",
         "subscriptions": "Membership revenue",
         "subscriptionsSub": "Paid vendor membership invoices",
         "gifts": "Gift request revenue",
@@ -2538,7 +2538,7 @@
           "pendingMembership": "Unpaid membership",
           "pendingInvoices": "{count} unpaid invoice(s)",
           "feesCollected": "Fees collected from orders",
-          "feesCollectedSub": "Total transaction fees from this vendor",
+          "feesCollectedSub": "Total 3.99% commission collected from this vendor",
           "membershipStatus": "Membership status",
           "trialEnds": "Trial ends",
           "periodStart": "Period start",
@@ -3520,7 +3520,7 @@
           "id": "payments-fees",
           "title": "Payments and fees",
           "paragraphs": [
-            "Customer payments are processed through Stripe at checkout. Vendor payouts and platform fees are handled according to your vendor agreement, membership plan, and reporting dashboard.",
+            "Customer payments are processed through Stripe at checkout. Online Mandawee charges a platform commission of 3.99% on product sales (not shipping). Vendor payouts and membership fees are handled according to your vendor agreement, membership plan, and reporting dashboard.",
             "You are responsible for applicable taxes, record keeping, and compliance with local business regulations."
           ]
         },

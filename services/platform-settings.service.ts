@@ -4,8 +4,8 @@ import { AppError } from "@/lib/errors/app-error";
 import { formatMembershipFee } from "@/lib/membership/subscription-policy";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import {
-  FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR,
-  formatFlatTransactionFeeLabel,
+  formatCommissionRateLabel,
+  formatCommissionRatePercent,
 } from "@/lib/platform/transaction-fee";
 import {
   normalizeAvailableCurrencies,
@@ -69,13 +69,16 @@ export class PlatformSettingsService {
   private serialize(
     settings: Awaited<ReturnType<PlatformSettingsRepository["getOrCreate"]>>
   ) {
+    const commissionRateBps = env.COMMISSION_RATE_BPS;
+
     return {
       id: settings.id,
-      transactionFeeAmountMinor: FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR,
-      transactionFeeLabel: formatFlatTransactionFeeLabel(
-        FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
-      ),
-      transactionFeeIsFixed: true,
+      commissionRateBps,
+      commissionRatePercent: formatCommissionRatePercent(commissionRateBps),
+      /** @deprecated Flat-fee cents field — commission is percentage-based. */
+      transactionFeeAmountMinor: 0,
+      transactionFeeLabel: formatCommissionRateLabel(commissionRateBps),
+      transactionFeeIsFixed: false,
       membershipFeeAmount: env.MEMBERSHIP_FEE_AMOUNT,
       membershipCurrency: env.MEMBERSHIP_INVOICE_CURRENCY,
       membershipTrialDays: env.MEMBERSHIP_TRIAL_DAYS,

@@ -27,7 +27,7 @@ type PlatformConfigContextValue = PlatformConfig & {
 };
 
 const defaultConfig: PlatformConfig = {
-  transactionFeeLabel: "$3.99 per order",
+  transactionFeeLabel: "3.99% per sale",
   availableLocales: DEFAULT_AVAILABLE_LOCALES,
   availableCurrencies: DEFAULT_AVAILABLE_CURRENCIES,
 };

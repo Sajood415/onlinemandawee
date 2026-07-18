@@ -732,7 +732,7 @@ export function VendorOnboardingWizard() {
   const [ag3, setAg3] = useState(false);
   const [ag4, setAg4] = useState(false);
   const [ag5, setAg5] = useState(false);
-  const [transactionFeeAmountMinor, setTransactionFeeAmountMinor] = useState(399);
+  const [transactionFeeLabel, setTransactionFeeLabel] = useState("3.99% per sale");
   const [membershipFeeAmount, setMembershipFeeAmount] = useState(499);
   const [membershipCurrency, setMembershipCurrency] = useState("USD");
   const [membershipTrialDays, setMembershipTrialDays] = useState(180);
@@ -744,10 +744,6 @@ export function VendorOnboardingWizard() {
   const membershipFeeLabel = useMemo(
     () => formatMoneyMinor(membershipFeeAmount, membershipCurrency, locale),
     [locale, membershipCurrency, membershipFeeAmount]
-  );
-  const transactionFeeLabel = useMemo(
-    () => formatMoneyMinor(transactionFeeAmountMinor, "USD", locale),
-    [locale, transactionFeeAmountMinor]
   );
 
   const countryOptions = useMemo(
@@ -939,13 +935,13 @@ export function VendorOnboardingWizard() {
         const res = await fetch("/api/platform/settings");
         if (!res.ok) return;
         const data = await parseApiResponse<{
-          transactionFeeAmountMinor: number;
+          transactionFeeLabel: string;
           membershipFeeAmount: number;
           membershipCurrency: string;
           membershipTrialDays: number;
         }>(res);
         if (!cancelled) {
-          setTransactionFeeAmountMinor(data.transactionFeeAmountMinor);
+          setTransactionFeeLabel(data.transactionFeeLabel);
           setMembershipFeeAmount(data.membershipFeeAmount);
           setMembershipCurrency(data.membershipCurrency);
           setMembershipTrialDays(data.membershipTrialDays);

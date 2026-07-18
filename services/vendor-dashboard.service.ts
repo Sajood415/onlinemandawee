@@ -2,11 +2,10 @@ import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { env } from "@/config/env";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
-import { formatFlatTransactionFeeLabel } from "@/lib/platform/transaction-fee";
+import { formatCommissionRateLabel } from "@/lib/platform/transaction-fee";
 import { MembershipInvoiceRepository } from "@/repositories/membership-invoice.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { ProductRepository } from "@/repositories/product.repository";
-import { PlatformSettingsRepository } from "@/repositories/platform-settings.repository";
 import { VendorLedgerEntryRepository } from "@/repositories/vendor-ledger-entry.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
 import { CommissionLedgerRepository } from "@/repositories/commission-ledger.repository";
@@ -20,7 +19,6 @@ export class VendorDashboardService {
     private readonly vendorLedgerEntryRepository = new VendorLedgerEntryRepository(),
     private readonly membershipInvoiceRepository = new MembershipInvoiceRepository(),
     private readonly commissionLedgerRepository = new CommissionLedgerRepository(),
-    private readonly platformSettingsRepository = new PlatformSettingsRepository(),
     private readonly orderSettlementService = new OrderSettlementService()
   ) {}
 
@@ -40,14 +38,13 @@ export class VendorDashboardService {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const [vendorOrders, products, ledgerEntries, membershipInvoices, commissions, platformSettings] =
+    const [vendorOrders, products, ledgerEntries, membershipInvoices, commissions] =
       await Promise.all([
         this.orderRepository.listByVendorProfileId(vendor.id),
         this.productRepository.listByVendor(vendor.id),
         this.vendorLedgerEntryRepository.listByVendorProfileId(vendor.id),
         this.membershipInvoiceRepository.listByVendorProfileId(vendor.id),
         this.commissionLedgerRepository.listByVendorProfileId(vendor.id),
-        this.platformSettingsRepository.getOrCreate(),
       ]);
 
     const commissionedOrderVendorIds = new Set(
@@ -137,8 +134,7 @@ export class VendorDashboardService {
       feeEarnings: this.buildFeeEarningsBoard(
         vendorOrders,
         commissions,
-        membershipInvoices,
-        platformSettings.transactionFeeAmountMinor
+        membershipInvoices
       ),
     };
   }
@@ -150,8 +146,7 @@ export class VendorDashboardService {
     >,
     membershipInvoices: Awaited<
       ReturnType<MembershipInvoiceRepository["listByVendorProfileId"]>
-    >,
-    transactionFeeAmountMinor: number
+    >
   ) {
     const commissionByOrderVendorId = new Map(
       commissions.map((entry) => [entry.orderVendorId, entry])
@@ -185,11 +180,8 @@ export class VendorDashboardService {
 
     return {
       currency,
-      transactionFeeAmountMinor,
-      transactionFeeLabel: formatFlatTransactionFeeLabel(
-        transactionFeeAmountMinor,
-        currency
-      ),
+      transactionFeeAmountMinor: 0,
+      transactionFeeLabel: formatCommissionRateLabel(env.COMMISSION_RATE_BPS),
       subscription: {
         monthlyAmount: env.MEMBERSHIP_FEE_AMOUNT,
         currency: env.MEMBERSHIP_INVOICE_CURRENCY,

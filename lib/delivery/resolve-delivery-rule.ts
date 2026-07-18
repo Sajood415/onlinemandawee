@@ -1,8 +1,4 @@
 import type { DeliveryMethod } from "@/domain/delivery/delivery-types";
-import {
-  FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR,
-  usesFixedTransactionFeeDeliveryMethod,
-} from "@/lib/platform/transaction-fee";
 
 type DeliveryRuleRecord = {
   id: string;
@@ -41,23 +37,16 @@ export function pickBestDeliveryRule<T extends DeliveryRuleRecord>(
   return rules.find((rule) => rule.scope === "GLOBAL") ?? null;
 }
 
-export function resolveTransactionFeeAmountMinor(input: {
+/**
+ * @deprecated Platform commission is percentage-based and resolved at settlement
+ * via COMMISSION_RATE_BPS. Delivery rules no longer store a flat transaction fee.
+ */
+export function resolveTransactionFeeAmountMinor(_input: {
   deliveryMethod?: DeliveryMethod | null;
   ruleTransactionFeeAmountMinor?: number | null;
   fallbackAmountMinor?: number;
 }) {
-  if (usesFixedTransactionFeeDeliveryMethod(input.deliveryMethod ?? null)) {
-    return FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR;
-  }
-
-  if (
-    input.ruleTransactionFeeAmountMinor != null &&
-    input.ruleTransactionFeeAmountMinor >= 0
-  ) {
-    return input.ruleTransactionFeeAmountMinor;
-  }
-
-  return input.fallbackAmountMinor ?? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR;
+  return 0;
 }
 
 export function resolveOrderTransactionFeeTarget(input: {
@@ -68,8 +57,9 @@ export function resolveOrderTransactionFeeTarget(input: {
     : undefined;
 }
 
+/** @deprecated */
 export function defaultTransactionFeeFallback() {
-  return FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR;
+  return 0;
 }
 
 export type { DeliveryMethod };

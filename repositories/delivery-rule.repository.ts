@@ -4,10 +4,6 @@ import type {
   DeliveryRuleScope,
 } from "@/domain/delivery/delivery-types";
 import { pickBestDeliveryRule } from "@/lib/delivery/resolve-delivery-rule";
-import {
-  FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR,
-  usesFixedTransactionFeeDeliveryMethod,
-} from "@/lib/platform/transaction-fee";
 import { prisma } from "@/lib/db/prisma";
 import type { Prisma } from "@prisma/client";
 
@@ -59,10 +55,6 @@ export class DeliveryRuleRepository {
     etaMaxDays: number;
     isActive?: boolean;
   }) {
-    const transactionFeeAmountMinor = usesFixedTransactionFeeDeliveryMethod(input.method)
-      ? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
-      : (input.transactionFeeAmountMinor ?? null);
-
     return prisma.deliveryRule.create({
       data: {
         method: input.method,
@@ -70,8 +62,8 @@ export class DeliveryRuleRepository {
         countryCode: input.countryCode ?? null,
         priceModel: input.priceModel,
         baseFeeAmount: input.baseFeeAmount,
-        transactionFeeAmountMinor,
-        commissionRateBps: null,
+        transactionFeeAmountMinor: null,
+        commissionRateBps: input.commissionRateBps ?? null,
         perKmRateAmount: input.perKmRateAmount ?? null,
         freeAboveAmount: input.freeAboveAmount ?? null,
         etaMinDays: input.etaMinDays,
@@ -101,10 +93,6 @@ export class DeliveryRuleRepository {
     etaMaxDays: number;
     isActive?: boolean;
   }) {
-    const transactionFeeAmountMinor = usesFixedTransactionFeeDeliveryMethod(input.method)
-      ? FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR
-      : (input.transactionFeeAmountMinor ?? null);
-
     return prisma.deliveryRule.update({
       where: { id: input.id },
       data: {
@@ -113,8 +101,8 @@ export class DeliveryRuleRepository {
         countryCode: input.countryCode ?? null,
         priceModel: input.priceModel,
         baseFeeAmount: input.baseFeeAmount,
-        transactionFeeAmountMinor,
-        commissionRateBps: null,
+        transactionFeeAmountMinor: null,
+        commissionRateBps: input.commissionRateBps ?? null,
         perKmRateAmount: input.perKmRateAmount ?? null,
         freeAboveAmount: input.freeAboveAmount ?? null,
         etaMinDays: input.etaMinDays,

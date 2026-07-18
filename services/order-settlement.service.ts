@@ -1,24 +1,10 @@
 import { Prisma } from "@prisma/client";
 
+import { env } from "@/config/env.shared";
 import { computeInitialPayoutHoldUntil } from "@/lib/payout/payout-hold";
-import {
-  DELIVERY_RULE_CURRENCY,
-} from "@/lib/delivery/delivery-rule-currency";
-import {
-  resolveOrderTransactionFeeTarget,
-  resolveTransactionFeeAmountMinor,
-} from "@/lib/delivery/resolve-delivery-rule";
-import { normalizeDeliveryCountryCode } from "@/lib/geo/shipping-locations";
-import { convertMinorUnits } from "@/lib/currency/convert";
-import {
-  allocateFlatFeeToVendorSplit,
-  FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR,
-  usesFixedTransactionFeeDeliveryMethod,
-} from "@/lib/platform/transaction-fee";
+import { calculateCommissionAmountMinor } from "@/lib/platform/transaction-fee";
 import { prisma } from "@/lib/db/prisma";
-import { DeliveryRuleRepository } from "@/repositories/delivery-rule.repository";
 import { OrderRepository } from "@/repositories/order.repository";
-import { PlatformSettingsRepository } from "@/repositories/platform-settings.repository";
 
 type DeliveryMethodForSettlement = "PICKUP" | "EXPRESS" | "STANDARD" | null;
 
@@ -34,14 +20,11 @@ type VendorOrderForSettlement = {
 };
 
 export class OrderSettlementService {
-  constructor(
-    private readonly orderRepository = new OrderRepository(),
-    private readonly deliveryRuleRepository = new DeliveryRuleRepository(),
-    private readonly platformSettingsRepository = new PlatformSettingsRepository()
-  ) {}
+  constructor(private readonly orderRepository = new OrderRepository()) {}
 
   /**
-   * Records platform transaction fee, vendor hold balance, and payout for one vendor split.
+   * Records platform commission (3.99% of product subtotal by default), vendor hold
+   * balance, and payout for one vendor split.
    * Safe to call multiple times (skips if commission already exists).
    */
   async settleVendorOrderSplit(input: {
@@ -50,9 +33,6 @@ export class OrderSettlementService {
     vendorOrder: VendorOrderForSettlement;
     paymentTransactionId?: string;
     deliveryMethod?: DeliveryMethodForSettlement;
-    shippingCountry?: string | null;
-    billableOrderSubtotalAmount: number;
-    flatFeeAmountMinor: number;
   }) {
     const { vendorOrder } = input;
 
@@ -60,13 +40,14 @@ export class OrderSettlementService {
       vendorOrder.deliveryMethod ?? input.deliveryMethod ?? null;
 
     const isPlatformVendor = vendorOrder.sellerType === "PLATFORM";
+    const rateBps = isPlatformVendor ? 0 : env.COMMISSION_RATE_BPS;
+    const baseAmount = Math.max(0, vendorOrder.subtotalAmount);
     const commissionAmount = isPlatformVendor
       ? 0
       : Math.min(
-          allocateFlatFeeToVendorSplit({
-            vendorSubtotalAmount: Math.max(0, vendorOrder.subtotalAmount),
-            orderSubtotalAmount: input.billableOrderSubtotalAmount,
-            flatFeeAmountMinor: input.flatFeeAmountMinor,
+          calculateCommissionAmountMinor({
+            baseAmountMinor: baseAmount,
+            rateBps,
           }),
           vendorOrder.grandTotalAmount
         );
@@ -86,8 +67,8 @@ export class OrderSettlementService {
             orderId: input.orderId,
             orderVendorId: vendorOrder.id,
             vendorProfileId: vendorOrder.vendorProfileId,
-            rateBps: 0,
-            baseAmount: Math.max(0, vendorOrder.subtotalAmount),
+            rateBps,
+            baseAmount,
             commissionAmount,
             currency: vendorOrder.currency,
           },
@@ -156,27 +137,6 @@ export class OrderSettlementService {
     const results = [];
     const order = await this.orderRepository.findById(input.orderId);
     const deliveryMethod: DeliveryMethodForSettlement = order?.deliveryMethod ?? null;
-    const shippingCountry = order?.shippingCountry ?? null;
-
-    const billableVendorOrders = input.vendorOrders.filter(
-      (vendorOrder) => vendorOrder.sellerType !== "PLATFORM"
-    );
-    const billableOrderSubtotalAmount = billableVendorOrders.reduce(
-      (sum, vendorOrder) => sum + Math.max(0, vendorOrder.subtotalAmount),
-      0
-    );
-
-    const flatFeeAmountMinor =
-      billableVendorOrders.length === 0
-        ? 0
-        : await this.resolveOrderTransactionFeeAmountMinor({
-            deliveryMethod,
-            shippingCountry,
-            vendorProfileIds: billableVendorOrders.map(
-              (vendorOrder) => vendorOrder.vendorProfileId
-            ),
-            orderCurrency: input.vendorOrders[0]?.currency ?? "USD",
-          });
 
     for (const vendorOrder of input.vendorOrders) {
       const result = await this.settleVendorOrderSplit({
@@ -185,9 +145,6 @@ export class OrderSettlementService {
         vendorOrder,
         paymentTransactionId: input.paymentTransactionId,
         deliveryMethod,
-        shippingCountry,
-        billableOrderSubtotalAmount,
-        flatFeeAmountMinor,
       });
       results.push({ vendorOrderId: vendorOrder.id, ...result });
     }
@@ -215,51 +172,6 @@ export class OrderSettlementService {
     });
 
     return { settled: true, results };
-  }
-
-  private async resolveOrderTransactionFeeAmountMinor(input: {
-    deliveryMethod: DeliveryMethodForSettlement;
-    shippingCountry?: string | null;
-    vendorProfileIds: string[];
-    orderCurrency: string;
-  }) {
-    if (usesFixedTransactionFeeDeliveryMethod(input.deliveryMethod)) {
-      return convertMinorUnits(
-        FIXED_PLATFORM_TRANSACTION_FEE_AMOUNT_MINOR,
-        DELIVERY_RULE_CURRENCY,
-        input.orderCurrency
-      );
-    }
-
-    const platformSettings = await this.platformSettingsRepository.getOrCreate();
-    const fallbackAmountMinor = convertMinorUnits(
-      platformSettings.transactionFeeAmountMinor,
-      DELIVERY_RULE_CURRENCY,
-      input.orderCurrency
-    );
-
-    if (!input.deliveryMethod) {
-      return fallbackAmountMinor;
-    }
-
-    const rule = await this.deliveryRuleRepository.findBestActiveRule({
-      method: input.deliveryMethod,
-      vendorProfileId: resolveOrderTransactionFeeTarget({
-        vendorProfileIds: input.vendorProfileIds,
-      }),
-      countryCode:
-        normalizeDeliveryCountryCode(input.shippingCountry ?? undefined) ??
-        input.shippingCountry ??
-        undefined,
-    });
-
-    const feeUsdMinor = resolveTransactionFeeAmountMinor({
-      deliveryMethod: input.deliveryMethod,
-      ruleTransactionFeeAmountMinor: rule?.transactionFeeAmountMinor,
-      fallbackAmountMinor: platformSettings.transactionFeeAmountMinor,
-    });
-
-    return convertMinorUnits(feeUsdMinor, DELIVERY_RULE_CURRENCY, input.orderCurrency);
   }
 
   /**

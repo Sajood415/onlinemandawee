@@ -241,11 +241,21 @@ export class AdminOrderService {
       return sum + (vendorOrder.commissionAmount ?? 0);
     }, 0);
 
+    const vendorDeliveryMethods = [
+      ...new Set(
+        order.vendorOrders
+          .map((vendorOrder) => vendorOrder.deliveryMethod)
+          .filter((method): method is NonNullable<typeof method> => method != null)
+      ),
+    ];
+
     return {
       id: order.id,
       orderNumber: order.orderNumber,
       status: order.status,
       paymentStatus: order.paymentStatus,
+      deliveryMethod: order.deliveryMethod,
+      vendorDeliveryMethods,
       currency: order.currency,
       grandTotalAmount: order.grandTotalAmount,
       createdAt: order.createdAt.toISOString(),
@@ -355,6 +365,7 @@ export class AdminOrderService {
       orderNumber: order.orderNumber,
       status: order.status,
       paymentStatus: order.paymentStatus,
+      deliveryMethod: order.deliveryMethod,
       currency: order.currency,
       subtotalAmount: order.subtotalAmount,
       deliveryAmount: order.deliveryAmount,
