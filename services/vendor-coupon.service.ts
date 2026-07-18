@@ -189,6 +189,34 @@ export class VendorCouponService {
     return this.serialize(updated, { productNames });
   }
 
+  async remove(auth: AuthenticatedUser, couponId: string) {
+    const vendor = await this.requireActiveVendor(auth.id);
+    const coupon = await this.vendorCouponRepository.findByVendorAndId(
+      vendor.id,
+      couponId
+    );
+
+    if (!coupon) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Coupon not found",
+        statusCode: 404,
+      });
+    }
+
+    await this.vendorCouponRepository.delete(coupon.id);
+
+    await this.auditLogRepository.create({
+      actorUserId: auth.id,
+      actorRole: auth.role,
+      action: "vendor.coupon_deleted",
+      entityType: "VendorCoupon",
+      entityId: coupon.id,
+    });
+
+    return { id: coupon.id };
+  }
+
   private async assertProductScope(
     vendorProfileId: string,
     appliesToAllProducts: boolean,

@@ -17,3 +17,12 @@ export const PATCH = withErrorHandling(
     return NextResponse.json({ data: result }, { status: 200 });
   })
 );
+
+export const DELETE = withErrorHandling(
+  withRbac(["VENDOR"], async (_request, context) => {
+    const params = parseParams(await context.params, couponIdParamsSchema);
+    const result = await vendorCouponService.remove(context.auth, params.id);
+
+    return NextResponse.json({ data: result }, { status: 200 });
+  })
+);

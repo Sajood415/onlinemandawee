@@ -58,4 +58,8 @@ export class VendorCouponRepository {
       data: input,
     });
   }
+
+  delete(id: string) {
+    return prisma.vendorCoupon.delete({ where: { id } });
+  }
 }

@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { ProductTranslationFields } from "@/components/products/ProductTranslationFields";
 import type { ProductTranslationFormFields } from "@/components/products/product-translation-form";
+import { VendorPortalOverlay } from "@/components/vendor/VendorPortalOverlay";
 import {
   CURRENCIES,
   INPUT,
@@ -84,8 +85,6 @@ export function VendorProductFormModal({
     if (open) setTab("basics");
   }, [open]);
 
-  if (!open) return null;
-
   const isLiveEdit = isEdit && editingProduct?.approvalStatus === "APPROVED";
   const isRejected = isEdit && editingProduct?.approvalStatus === "REJECTED";
   const tabIndex = TABS.indexOf(tab);
@@ -99,13 +98,14 @@ export function VendorProductFormModal({
   };
 
   return (
+    <VendorPortalOverlay open={open}>
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
+      className="fixed inset-0 z-[100] flex min-h-[100dvh] w-screen items-center justify-center bg-black/50 p-3 sm:p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onCloseRequest();
       }}
     >
-      <div className="relative flex max-h-[94vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl">
+      <div className="relative flex max-h-[94dvh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3 sm:px-6 sm:py-4">
           <h2 className="text-base font-semibold text-neutral-900">
             {isEdit ? t("form.editTitle") : t("form.addTitle")}
@@ -668,5 +668,6 @@ export function VendorProductFormModal({
         </div>
       </div>
     </div>
+    </VendorPortalOverlay>
   );
 }

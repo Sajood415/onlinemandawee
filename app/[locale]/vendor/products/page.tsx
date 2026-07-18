@@ -116,28 +116,28 @@ export default function VendorProductsPage() {
 
   const fetchData = useCallback(
     async (silent = false) => {
-      const token = localStorage.getItem("accessToken");
-      if (!token) return;
-      if (!silent) setLoading(true);
-      setError(null);
-      try {
-        const [pr, cr] = await Promise.all([
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+    if (!silent) setLoading(true);
+    setError(null);
+    try {
+      const [pr, cr] = await Promise.all([
           fetch("/api/vendor/products", {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          fetch("/api/catalog/categories"),
-        ]);
-        const [pd, cd] = await Promise.all([
-          parseApiResponse<VendorProduct[]>(pr),
-          parseApiResponse<Category[]>(cr),
-        ]);
-        setProducts(pd);
-        setCategories(cd.filter((c) => c.isActive));
-      } catch (e) {
+        fetch("/api/catalog/categories"),
+      ]);
+      const [pd, cd] = await Promise.all([
+        parseApiResponse<VendorProduct[]>(pr),
+        parseApiResponse<Category[]>(cr),
+      ]);
+      setProducts(pd);
+      setCategories(cd.filter((c) => c.isActive));
+    } catch (e) {
         setError(e instanceof Error ? e.message : t("loadError"));
-      } finally {
-        setLoading(false);
-      }
+    } finally {
+      setLoading(false);
+    }
     },
     [t]
   );
@@ -438,7 +438,7 @@ export default function VendorProductsPage() {
       }
 
       if (isEdit) {
-        toast.success(
+      toast.success(
           t("toasts.updatedTitle"),
           wasLiveOnOpen
             ? t("toasts.updatedLiveBody")
@@ -468,8 +468,8 @@ export default function VendorProductsPage() {
       const res = await fetch(
         `/api/vendor/products/${productId}/submit-for-approval`,
         {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
         }
       );
       await parseApiResponse<VendorProduct>(res);
@@ -497,8 +497,8 @@ export default function VendorProductsPage() {
         const res = await fetch(
           `/api/vendor/products/${p.id}/submit-for-approval`,
           {
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}` },
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
           }
         );
         await parseApiResponse<VendorProduct>(res);
@@ -847,90 +847,90 @@ export default function VendorProductsPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-center">
-            <select
+          <select
               className="w-full min-w-0 rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-            >
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+          >
               <option value="">{t("allCategories")}</option>
-              {categories.map((c) => (
+            {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
-              ))}
-            </select>
+            ))}
+          </select>
 
-            <select
+          <select
               className="w-full min-w-0 rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              value={filterStatus}
+            value={filterStatus}
               onChange={(e) =>
                 setFilterStatus(e.target.value as ProductApprovalStatus | "")
               }
-            >
+          >
               <option value="">{t("allStatuses")}</option>
-              {ALL_STATUSES.map((s) => (
+            {ALL_STATUSES.map((s) => (
                 <option key={s} value={s}>
                   {t(`statuses.${s}`)}
                 </option>
-              ))}
-            </select>
+            ))}
+          </select>
 
             <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row lg:col-span-1 lg:justify-end">
               {products.some((p) => p.approvalStatus === "DRAFT") ? (
-                <button
-                  type="button"
-                  disabled={submittingAll}
-                  onClick={() => void onSubmitAll()}
+            <button
+              type="button"
+              disabled={submittingAll}
+              onClick={() => void onSubmitAll()}
                   className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-blue-300 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-60 sm:w-auto"
-                >
-                  {submittingAll ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <SendHorizonal className="h-4 w-4" />
-                  )}
+            >
+              {submittingAll ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <SendHorizonal className="h-4 w-4" />
+              )}
                   {t("submitAll")}
-                </button>
+            </button>
               ) : null}
 
-              <button
-                type="button"
-                onClick={openCreate}
+          <button
+            type="button"
+            onClick={openCreate}
                 className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-95 sm:w-auto"
-              >
-                <Plus className="h-4 w-4" />
+          >
+            <Plus className="h-4 w-4" />
                 {t("addProduct")}
-              </button>
-            </div>
-          </div>
+          </button>
         </div>
+          </div>
+      </div>
 
-        {loading ? (
+      {loading ? (
           <div className="px-6 py-14 text-center text-sm text-neutral-600">
-            <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin text-neutral-400" />
+          <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin text-neutral-400" />
             {t("loading")}
-          </div>
-        ) : error ? (
+        </div>
+      ) : error ? (
           <div className="px-6 py-4 text-sm text-red-700">{error}</div>
-        ) : filtered.length === 0 ? (
+      ) : filtered.length === 0 ? (
           <div className="px-6 py-14 text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100">
-              <ImageIcon className="h-7 w-7 text-neutral-300" />
-            </div>
-            <p className="text-sm font-medium text-neutral-700">
-              {products.length === 0 ? t("empty") : t("emptyFiltered")}
-            </p>
-            {products.length === 0 ? (
-              <button
-                type="button"
-                onClick={openCreate}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
-              >
-                <Plus className="h-4 w-4" />
-                {t("addFirst")}
-              </button>
-            ) : null}
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100">
+            <ImageIcon className="h-7 w-7 text-neutral-300" />
           </div>
-        ) : (
+          <p className="text-sm font-medium text-neutral-700">
+              {products.length === 0 ? t("empty") : t("emptyFiltered")}
+          </p>
+            {products.length === 0 ? (
+            <button
+              type="button"
+              onClick={openCreate}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
+            >
+              <Plus className="h-4 w-4" />
+                {t("addFirst")}
+            </button>
+            ) : null}
+        </div>
+      ) : (
           <>
             <VendorProductListCards
               products={filtered}
@@ -942,20 +942,20 @@ export default function VendorProductsPage() {
               onSubmit={(id) => void onSubmitForApproval(id)}
             />
             <div className="hidden md:block">
-              <DataTable
-                key={filterResetKey}
-                data={filtered}
-                columns={columns}
-                getRowId={(row) => row.id}
+        <DataTable
+          key={filterResetKey}
+          data={filtered}
+          columns={columns}
+          getRowId={(row) => row.id}
                 emptyMessage={t("emptyFiltered")}
-                initialPageSize={10}
-                pageSizeOptions={[10, 20, 50]}
+          initialPageSize={10}
+          pageSizeOptions={[10, 20, 50]}
                 embedded
               />
-            </div>
-          </>
+                      </div>
+                    </>
         )}
-      </div>
+                  </div>
 
       <VendorProductFormModal
         open={modalOpen}
