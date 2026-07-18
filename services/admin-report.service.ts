@@ -49,22 +49,17 @@ export class AdminReportService {
     const commissions = (await this.commissionLedgerRepository.listAll()).filter(
       (entry) => this.isWithinRange(entry.createdAt, range)
     );
-    const payouts = (await this.payoutRepository.listAll()).filter((payout) =>
+    const allPayouts = await this.payoutRepository.listAll();
+    const payouts = allPayouts.filter((payout) =>
       this.isWithinRange(payout.createdAt, range)
     );
     const membershipInvoices = (await this.membershipInvoiceRepository.listAll()).filter(
       (invoice) => this.isWithinRange(invoice.createdAt, range)
     );
-    const refundCases = (await this.refundCaseRepository.listAll()).filter((refundCase) =>
-      this.isWithinRange(refundCase.createdAt, range)
-    );
+    const allRefundCases = await this.refundCaseRepository.listAll();
     const paidGiftRequests = (await this.giftRequestRepository.listPaidForReporting()).filter(
       (giftRequest) => giftRequest.paidAt && this.isWithinRange(giftRequest.paidAt, range)
     );
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const recentOrdersCount = orders.filter((order) => order.createdAt >= thirtyDaysAgo).length;
-
     const totalCommissionAmount = commissions.reduce(
       (sum, entry) => sum + entry.commissionAmount,
       0
@@ -98,14 +93,14 @@ export class AdminReportService {
       totalGiftRequestRevenue,
       paidGiftRequestsCount: paidGiftRequests.length,
       netRevenueAmount,
-      payoutsOnHoldAmount: payouts
+      payoutsOnHoldAmount: allPayouts
         .filter((payout) => payout.status === "ON_HOLD")
         .reduce((sum, payout) => sum + payout.amount, 0),
       payoutsSentAmount: payouts
         .filter((payout) => payout.status === "SENT")
         .reduce((sum, payout) => sum + payout.amount, 0),
-      recentOrdersCount,
-      openRefundCasesCount: refundCases.filter(
+      recentOrdersCount: orders.length,
+      openRefundCasesCount: allRefundCases.filter(
         (refundCase) => refundCase.status !== "RESOLVED"
       ).length,
     };
