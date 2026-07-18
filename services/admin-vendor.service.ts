@@ -46,6 +46,11 @@ export class AdminVendorService {
       storeSlug: vendor.storeSlug,
       businessType: vendor.businessType,
       sellerType: vendor.sellerType,
+      subscriptionStatus: vendor.subscriptionStatus,
+      suspensionReason: vendor.suspensionReason,
+      membershipBillingSuspended: isMembershipBillingSuspension(
+        vendor.suspensionReason
+      ),
       createdAt: vendor.createdAt.toISOString(),
       submittedAt: vendor.submittedAt?.toISOString() ?? null,
       approvedAt: vendor.approvedAt?.toISOString() ?? null,

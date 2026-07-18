@@ -1,17 +1,20 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Ellipsis, Eye, Search } from "lucide-react";
+import { Ellipsis, Eye, RefreshCw, Search } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
-import type { SellerType } from "@/domain/vendor/vendor-types";
 import { DataTable } from "@/components/ui/data-table";
 import type { VendorStatus } from "@/domain/vendor/vendor-status";
+import type { SellerType } from "@/domain/vendor/vendor-types";
+import { useRouter } from "@/i18n/navigation";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
-import { useRouter } from "@/i18n/navigation";
+
+type SubscriptionStatus = "TRIAL" | "ACTIVE" | "FAILED" | "SUSPENDED";
 
 type VendorListItem = {
   id: string;
@@ -21,6 +24,9 @@ type VendorListItem = {
   storeSlug: string | null;
   businessType: string | null;
   sellerType: SellerType;
+  subscriptionStatus: SubscriptionStatus;
+  suspensionReason: string | null;
+  membershipBillingSuspended: boolean;
   createdAt: string;
   submittedAt: string | null;
   approvedAt: string | null;
@@ -71,22 +77,35 @@ const statusBadgeClass: Record<VendorStatus, string> = {
   SUSPENDED: "bg-neutral-200 text-neutral-700",
 };
 
-const displayDate = (iso: string | null) => {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString();
-};
-
 const sellerTypeClass: Record<SellerType, string> = {
   PLATFORM: "bg-blue-50 text-blue-700",
   THIRD_PARTY: "bg-neutral-100 text-neutral-700",
 };
 
-const toErrorMessage = (error: unknown) =>
-  error instanceof Error && error.message ? error.message : "Something went wrong";
+const membershipBadgeClass: Record<SubscriptionStatus | "exempt", string> = {
+  exempt: "bg-neutral-100 text-neutral-600",
+  TRIAL: "bg-sky-50 text-sky-700",
+  ACTIVE: "bg-emerald-50 text-emerald-700",
+  FAILED: "bg-amber-50 text-amber-800",
+  SUSPENDED: "bg-rose-50 text-rose-700",
+};
+
+const ACTION_MENU_WIDTH = 200;
+const ACTION_MENU_HEIGHT = 280;
+
+function clampActionMenuPosition(rect: DOMRect) {
+  const maxX = Math.max(12, window.innerWidth - ACTION_MENU_WIDTH - 12);
+  const x = Math.min(Math.max(12, rect.right - ACTION_MENU_WIDTH), maxX);
+  let y = rect.bottom + 8;
+  if (y + ACTION_MENU_HEIGHT > window.innerHeight - 12) {
+    y = Math.max(12, rect.top - ACTION_MENU_HEIGHT - 8);
+  }
+  return { x, y };
+}
 
 export function AdminVendorRequests() {
+  const t = useTranslations("AdminPages.vendors");
+  const locale = useLocale();
   const router = useRouter();
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [vendors, setVendors] = useState<VendorListItem[]>([]);
@@ -103,6 +122,33 @@ export function AdminVendorRequests() {
   const [actionSubmitting, setActionSubmitting] = useState(false);
   const [downgradeConfirmed, setDowngradeConfirmed] = useState(false);
 
+  const toErrorMessage = useCallback(
+    (error: unknown) =>
+      error instanceof Error && error.message ? error.message : t("toasts.genericError"),
+    [t]
+  );
+
+  const displayDate = useCallback(
+    (iso: string | null) => {
+      if (!iso) return "—";
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return "—";
+      return date.toLocaleString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    },
+    [locale]
+  );
+
+  const storeLabel = useCallback(
+    (vendor: VendorListItem) => vendor.storeName ?? t("untitledStore"),
+    [t]
+  );
+
   const setVendorBusy = (vendorId: string, busy: boolean) => {
     setBusyMap((prev) => ({ ...prev, [vendorId]: busy }));
   };
@@ -115,11 +161,11 @@ export function AdminVendorRequests() {
       const data = await parseApiResponse<VendorListItem[]>(response);
       setVendors(data);
     } catch (error) {
-      toast.error("Failed to load vendors", toErrorMessage(error));
+      toast.error(t("toasts.loadError"), toErrorMessage(error));
     } finally {
       setLoadingList(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, t, toErrorMessage]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -132,9 +178,16 @@ export function AdminVendorRequests() {
     if (!query) return vendors;
 
     return vendors.filter((vendor) => {
-      const storeName = (vendor.storeName ?? "").toLowerCase();
-      const ownerName = vendor.user.fullName.toLowerCase();
-      return storeName.includes(query) || ownerName.includes(query);
+      const haystack = [
+        vendor.storeName ?? "",
+        vendor.storeSlug ?? "",
+        vendor.user.fullName,
+        vendor.user.email,
+        vendor.user.phone,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
     });
   }, [vendors, searchQuery]);
 
@@ -143,11 +196,8 @@ export function AdminVendorRequests() {
     event: React.MouseEvent<HTMLButtonElement>
   ) => {
     const rect = event.currentTarget.getBoundingClientRect();
-    setActionMenu({
-      vendor,
-      x: Math.max(12, rect.right - 176),
-      y: rect.bottom + 8,
-    });
+    const { x, y } = clampActionMenuPosition(rect);
+    setActionMenu({ vendor, x, y });
   };
 
   const openConfirmModal = (
@@ -171,12 +221,12 @@ export function AdminVendorRequests() {
     const vendorId = pendingAction.vendor.id;
 
     if (pendingAction.type === "reject" && rejectReason.trim().length < 3) {
-      toast.error("Reason is required", "Please provide at least 3 characters.");
+      toast.error(t("toasts.reasonRequired"), t("toasts.reasonMin"));
       return;
     }
 
     if (pendingAction.type === "suspend" && actionReason.trim().length < 3) {
-      toast.error("Reason is required", "Please provide at least 3 characters.");
+      toast.error(t("toasts.reasonRequired"), t("toasts.reasonMin"));
       return;
     }
 
@@ -210,12 +260,12 @@ export function AdminVendorRequests() {
       await parseApiResponse(response);
       toast.success(
         pendingAction.type === "approve"
-          ? "Vendor approved"
+          ? t("toasts.approved")
           : pendingAction.type === "reject"
-            ? "Vendor disapproved"
+            ? t("toasts.rejected")
             : pendingAction.type === "suspend"
-              ? "Vendor suspended"
-              : "Vendor reactivated"
+              ? t("toasts.suspended")
+              : t("toasts.reactivated")
       );
       setPendingAction(null);
       setRejectReason("");
@@ -224,12 +274,12 @@ export function AdminVendorRequests() {
     } catch (error) {
       toast.error(
         pendingAction.type === "approve"
-          ? "Approval failed"
+          ? t("toasts.approveFailed")
           : pendingAction.type === "reject"
-            ? "Disapproval failed"
+            ? t("toasts.rejectFailed")
             : pendingAction.type === "suspend"
-              ? "Suspension failed"
-              : "Reactivation failed",
+              ? t("toasts.suspendFailed")
+              : t("toasts.reactivateFailed"),
         toErrorMessage(error)
       );
     } finally {
@@ -247,7 +297,7 @@ export function AdminVendorRequests() {
       targetSellerType === "THIRD_PARTY" &&
       !downgradeConfirmed
     ) {
-      toast.error("Confirmation required", "Please confirm the downgrade warning.");
+      toast.error(t("toasts.confirmRequired"), t("toasts.confirmDowngrade"));
       return;
     }
 
@@ -266,12 +316,12 @@ export function AdminVendorRequests() {
         }),
       });
       await parseApiResponse(response);
-      toast.success("Seller type updated");
+      toast.success(t("toasts.sellerTypeUpdated"));
       setPendingSellerTypeChange(null);
       setDowngradeConfirmed(false);
       await loadVendors();
     } catch (error) {
-      toast.error("Seller type update failed", toErrorMessage(error));
+      toast.error(t("toasts.sellerTypeFailed"), toErrorMessage(error));
     } finally {
       setActionSubmitting(false);
       setVendorBusy(vendor.id, false);
@@ -281,7 +331,7 @@ export function AdminVendorRequests() {
   const columns = useMemo<ColumnDef<VendorListItem>[]>(
     () => [
       {
-        header: "Vendor",
+        header: t("columns.vendor"),
         accessorKey: "user.fullName",
         cell: ({ row }) => (
           <div className="space-y-0.5">
@@ -291,24 +341,28 @@ export function AdminVendorRequests() {
         ),
       },
       {
-        header: "Store",
+        header: t("columns.store"),
         accessorKey: "storeName",
         cell: ({ row }) => (
           <div className="space-y-0.5">
-            <p className="font-medium text-neutral-800">
-              {row.original.storeName ?? "Untitled store"}
-            </p>
+            <p className="font-medium text-neutral-800">{storeLabel(row.original)}</p>
             <p className="text-xs text-neutral-500">{row.original.storeSlug ?? "—"}</p>
           </div>
         ),
       },
       {
-        header: "Business Type",
+        header: t("columns.businessType"),
         accessorKey: "businessType",
-        cell: ({ row }) => row.original.businessType ?? "—",
+        cell: ({ row }) => {
+          const type = row.original.businessType;
+          if (type === "INDIVIDUAL" || type === "REGISTERED_BUSINESS") {
+            return t(`businessTypes.${type}`);
+          }
+          return type ?? "—";
+        },
       },
       {
-        header: "Seller Type",
+        header: t("columns.sellerType"),
         accessorKey: "sellerType",
         cell: ({ row }) => (
           <span
@@ -316,22 +370,54 @@ export function AdminVendorRequests() {
               sellerTypeClass[row.original.sellerType]
             }`}
           >
-            {row.original.sellerType === "THIRD_PARTY" ? "THIRD PARTY" : "PLATFORM"}
+            {t(`sellerTypes.${row.original.sellerType}`)}
           </span>
         ),
       },
       {
-        header: "Created",
+        header: t("columns.membership"),
+        accessorKey: "subscriptionStatus",
+        cell: ({ row }) => {
+          const vendor = row.original;
+          if (vendor.sellerType === "PLATFORM") {
+            return (
+              <span
+                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${membershipBadgeClass.exempt}`}
+              >
+                {t("membership.exempt")}
+              </span>
+            );
+          }
+          return (
+            <div className="space-y-1">
+              <span
+                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                  membershipBadgeClass[vendor.subscriptionStatus]
+                }`}
+              >
+                {t(`membership.${vendor.subscriptionStatus}`)}
+              </span>
+              {vendor.membershipBillingSuspended ? (
+                <p className="text-[11px] font-medium text-rose-600">
+                  {t("membership.billingHold")}
+                </p>
+              ) : null}
+            </div>
+          );
+        },
+      },
+      {
+        header: t("columns.created"),
         accessorKey: "createdAt",
         cell: ({ row }) => displayDate(row.original.createdAt),
       },
       {
-        header: "Submitted",
+        header: t("columns.submitted"),
         accessorKey: "submittedAt",
         cell: ({ row }) => displayDate(row.original.submittedAt),
       },
       {
-        header: "Status",
+        header: t("columns.status"),
         accessorKey: "status",
         cell: ({ row }) => (
           <span
@@ -339,12 +425,12 @@ export function AdminVendorRequests() {
               statusBadgeClass[row.original.status]
             }`}
           >
-            {row.original.status.replaceAll("_", " ")}
+            {t(`statuses.${row.original.status}`)}
           </span>
         ),
       },
       {
-        header: "Actions",
+        header: t("columns.actions"),
         id: "actions",
         cell: ({ row }) => {
           const vendor = row.original;
@@ -355,8 +441,8 @@ export function AdminVendorRequests() {
                 type="button"
                 onClick={(event) => openActionMenu(vendor, event)}
                 disabled={busy}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-300 bg-white text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Open vendor actions"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label={t("openActions")}
               >
                 <Ellipsis className="h-4 w-4" />
               </button>
@@ -365,56 +451,63 @@ export function AdminVendorRequests() {
         },
       },
     ],
-    [busyMap]
+    [busyMap, displayDate, storeLabel, t]
   );
 
   if (authLoading || !user) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <p className="text-sm text-neutral-600">Loading...</p>
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <p className="text-sm text-neutral-500">{t("loading")}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-[#0f3460]">Vendor Requests</h2>
-            <p className="mt-1 text-sm text-neutral-600">
-              Review submitted vendor applications and approve or disapprove them.
-            </p>
-          </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-            <label className="relative w-full sm:w-64">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search by name"
-                className="w-full rounded-lg border border-neutral-300 bg-white py-2 pe-3 ps-9 text-sm text-neutral-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-              className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-            >
-              {statusFilters.map((status) => (
-                <option key={status} value={status}>
-                  {status === "ALL" ? "All statuses" : status.replaceAll("_", " ")}
-                </option>
-              ))}
-            </select>
-          </div>
+    <div className="w-full min-w-0 space-y-5 pb-8">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">
+            {t("title")}
+          </h1>
+          <p className="mt-1 text-sm text-neutral-500">{t("subtitle")}</p>
         </div>
-      </section>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <label className="relative w-full sm:w-72">
+            <Search className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder={t("searchPlaceholder")}
+              className="w-full rounded-lg border border-neutral-200 bg-white py-2 pe-3 ps-9 text-sm text-neutral-700 outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+            />
+          </label>
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+            className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-700 outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+          >
+            {statusFilters.map((status) => (
+              <option key={status} value={status}>
+                {status === "ALL" ? t("allStatuses") : t(`statuses.${status}`)}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => void loadVendors()}
+            disabled={loadingList}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${loadingList ? "animate-spin" : ""}`} />
+            {t("refresh")}
+          </button>
+        </div>
+      </div>
 
       {loadingList ? (
-        <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center text-sm text-neutral-600 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-          Loading vendors...
+        <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center text-sm text-neutral-500">
+          {t("loadingList")}
         </div>
       ) : (
         <DataTable
@@ -422,9 +515,7 @@ export function AdminVendorRequests() {
           columns={columns}
           getRowId={(row) => row.id}
           emptyMessage={
-            searchQuery.trim()
-              ? "No vendors match your search."
-              : "No vendors match the selected status."
+            searchQuery.trim() ? t("emptySearch") : t("emptyFilter")
           }
           initialPageSize={10}
           pageSizeOptions={[10, 20, 50]}
@@ -437,10 +528,10 @@ export function AdminVendorRequests() {
             type="button"
             className="fixed inset-0 z-40 bg-transparent"
             onClick={() => setActionMenu(null)}
-            aria-label="Close action menu"
+            aria-label={t("closeMenu")}
           />
           <div
-            className="fixed z-50 w-44 overflow-hidden rounded-xl border border-neutral-200 bg-white p-1 shadow-xl"
+            className="fixed z-50 w-[200px] overflow-hidden rounded-xl border border-neutral-200 bg-white p-1 shadow-xl"
             style={{ left: actionMenu.x, top: actionMenu.y }}
           >
             <button
@@ -449,26 +540,26 @@ export function AdminVendorRequests() {
                 setActionMenu(null);
                 router.push(`/admin/vendors/${actionMenu.vendor.id}`);
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-neutral-700 transition hover:bg-neutral-50"
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-sm text-neutral-700 transition hover:bg-neutral-50"
             >
               <Eye className="h-4 w-4" />
-              Review
+              {t("actions.review")}
             </button>
             {actionMenu.vendor.status === "PENDING_APPROVAL" ? (
               <>
                 <button
                   type="button"
                   onClick={() => openConfirmModal("approve", actionMenu.vendor)}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-emerald-700 transition hover:bg-emerald-50"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-sm text-emerald-700 transition hover:bg-emerald-50"
                 >
-                  Approve
+                  {t("actions.approve")}
                 </button>
                 <button
                   type="button"
                   onClick={() => openConfirmModal("reject", actionMenu.vendor)}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rose-700 transition hover:bg-rose-50"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-sm text-rose-700 transition hover:bg-rose-50"
                 >
-                  Disapprove
+                  {t("actions.reject")}
                 </button>
               </>
             ) : null}
@@ -476,36 +567,38 @@ export function AdminVendorRequests() {
               <button
                 type="button"
                 onClick={() => openConfirmModal("suspend", actionMenu.vendor)}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-neutral-700 transition hover:bg-neutral-50"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-sm text-neutral-700 transition hover:bg-neutral-50"
               >
-                Suspend
+                {t("actions.suspend")}
               </button>
             ) : null}
             {actionMenu.vendor.status === "SUSPENDED" ? (
               <button
                 type="button"
                 onClick={() => openConfirmModal("reactivate", actionMenu.vendor)}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-emerald-700 transition hover:bg-emerald-50"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-sm text-emerald-700 transition hover:bg-emerald-50"
               >
-                Reactivate
+                {t("actions.reactivate")}
               </button>
             ) : null}
-            {actionMenu.vendor.sellerType !== "PLATFORM" ? (
+            {actionMenu.vendor.status === "ACTIVE" &&
+            actionMenu.vendor.sellerType !== "PLATFORM" ? (
               <button
                 type="button"
                 onClick={() => openSellerTypeModal(actionMenu.vendor, "PLATFORM")}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-blue-700 transition hover:bg-blue-50"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-sm text-blue-700 transition hover:bg-blue-50"
               >
-                Set as PLATFORM
+                {t("actions.setPlatform")}
               </button>
             ) : null}
-            {actionMenu.vendor.sellerType !== "THIRD_PARTY" ? (
+            {actionMenu.vendor.status === "ACTIVE" &&
+            actionMenu.vendor.sellerType !== "THIRD_PARTY" ? (
               <button
                 type="button"
                 onClick={() => openSellerTypeModal(actionMenu.vendor, "THIRD_PARTY")}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-neutral-700 transition hover:bg-neutral-50"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-sm text-neutral-700 transition hover:bg-neutral-50"
               >
-                Set as THIRD PARTY
+                {t("actions.setThirdParty")}
               </button>
             ) : null}
           </div>
@@ -517,24 +610,26 @@ export function AdminVendorRequests() {
           <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-5 shadow-xl">
             <h4 className="text-lg font-semibold text-neutral-900">
               {pendingAction.type === "approve"
-                ? "Approve vendor?"
+                ? t("confirm.approveTitle")
                 : pendingAction.type === "reject"
-                  ? "Disapprove vendor?"
+                  ? t("confirm.rejectTitle")
                   : pendingAction.type === "suspend"
-                    ? "Suspend vendor?"
-                    : "Reactivate vendor?"}
+                    ? t("confirm.suspendTitle")
+                    : t("confirm.reactivateTitle")}
             </h4>
             <p className="mt-1 text-sm text-neutral-600">
               {pendingAction.type === "approve"
-                ? "This will activate the vendor account."
+                ? t("confirm.approveBody")
                 : pendingAction.type === "reject"
-                  ? "This will reject the vendor request."
+                  ? t("confirm.rejectBody")
                   : pendingAction.type === "suspend"
-                    ? "This will hide their store from customers and block vendor login."
-                    : "This will restore vendor access and show their store again."}
+                    ? t("confirm.suspendBody")
+                    : pendingAction.vendor.membershipBillingSuspended
+                      ? t("confirm.reactivateBillingBody")
+                      : t("confirm.reactivateBody")}
             </p>
             <p className="mt-2 text-sm font-medium text-neutral-800">
-              {pendingAction.vendor.storeName ?? "Untitled store"}
+              {storeLabel(pendingAction.vendor)}
             </p>
 
             {pendingAction.type === "reject" ? (
@@ -542,8 +637,8 @@ export function AdminVendorRequests() {
                 value={rejectReason}
                 onChange={(event) => setRejectReason(event.target.value)}
                 rows={4}
-                className="mt-3 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                placeholder="Reason for disapproval"
+                className="mt-3 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-700 outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+                placeholder={t("confirm.rejectPlaceholder")}
               />
             ) : null}
 
@@ -552,8 +647,8 @@ export function AdminVendorRequests() {
                 value={actionReason}
                 onChange={(event) => setActionReason(event.target.value)}
                 rows={4}
-                className="mt-3 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                placeholder="Reason for suspension"
+                className="mt-3 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-700 outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+                placeholder={t("confirm.suspendPlaceholder")}
               />
             ) : null}
 
@@ -565,9 +660,9 @@ export function AdminVendorRequests() {
                   setRejectReason("");
                   setActionReason("");
                 }}
-                className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+                className="rounded-lg border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
               >
-                Cancel
+                {t("confirm.cancel")}
               </button>
               <button
                 type="button"
@@ -582,14 +677,14 @@ export function AdminVendorRequests() {
                 }`}
               >
                 {actionSubmitting
-                  ? "Submitting..."
+                  ? t("confirm.submitting")
                   : pendingAction.type === "approve"
-                    ? "Approve"
+                    ? t("actions.approve")
                     : pendingAction.type === "reject"
-                      ? "Disapprove"
+                      ? t("actions.reject")
                       : pendingAction.type === "suspend"
-                        ? "Suspend"
-                        : "Reactivate"}
+                        ? t("actions.suspend")
+                        : t("actions.reactivate")}
               </button>
             </div>
           </div>
@@ -599,30 +694,25 @@ export function AdminVendorRequests() {
       {pendingSellerTypeChange ? (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/45 p-4">
           <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-5 shadow-xl">
-            <h4 className="text-lg font-semibold text-neutral-900">Change seller type?</h4>
+            <h4 className="text-lg font-semibold text-neutral-900">
+              {t("confirm.sellerTypeTitle")}
+            </h4>
             <p className="mt-1 text-sm text-neutral-600">
-              Update seller type for{" "}
-              <span className="font-semibold text-neutral-800">
-                {pendingSellerTypeChange.vendor.storeName ?? "Untitled store"}
-              </span>{" "}
-              to{" "}
-              <span className="font-semibold text-neutral-800">
-                {pendingSellerTypeChange.targetSellerType === "THIRD_PARTY"
-                  ? "THIRD PARTY"
-                  : "PLATFORM"}
-              </span>
-              .
+              {t("confirm.sellerTypeBody", {
+                store: storeLabel(pendingSellerTypeChange.vendor),
+                type: t(`sellerTypes.${pendingSellerTypeChange.targetSellerType}`),
+              })}
             </p>
             {pendingSellerTypeChange.targetSellerType === "PLATFORM" ? (
               <p className="mt-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
-                PLATFORM can only be assigned when vendor status is ACTIVE.
+                {t("confirm.platformOnlyActive")}
               </p>
             ) : null}
             {pendingSellerTypeChange.vendor.sellerType === "PLATFORM" &&
             pendingSellerTypeChange.targetSellerType === "THIRD_PARTY" ? (
               <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
                 <p className="text-xs font-semibold text-amber-800">
-                  This vendor may currently be used for platform-owned delivery routing.
+                  {t("confirm.downgradeWarn")}
                 </p>
                 <label className="mt-2 flex items-start gap-2 text-xs text-amber-900">
                   <input
@@ -631,7 +721,7 @@ export function AdminVendorRequests() {
                     onChange={(event) => setDowngradeConfirmed(event.target.checked)}
                     className="mt-0.5"
                   />
-                  I confirm this downgrade and understand routing may be impacted.
+                  {t("confirm.downgradeConfirm")}
                 </label>
               </div>
             ) : null}
@@ -642,9 +732,9 @@ export function AdminVendorRequests() {
                   setPendingSellerTypeChange(null);
                   setDowngradeConfirmed(false);
                 }}
-                className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+                className="rounded-lg border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
               >
-                Cancel
+                {t("confirm.cancel")}
               </button>
               <button
                 type="button"
@@ -657,7 +747,7 @@ export function AdminVendorRequests() {
                 }
                 className="rounded-lg bg-[#0f3460] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
-                {actionSubmitting ? "Saving..." : "Confirm"}
+                {actionSubmitting ? t("confirm.saving") : t("confirm.confirm")}
               </button>
             </div>
           </div>

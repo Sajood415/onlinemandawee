@@ -1,17 +1,19 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import type { SellerType } from "@/domain/vendor/vendor-types";
-import { useClientPagination } from "@/hooks/use-client-pagination";
 import type { VendorStatus } from "@/domain/vendor/vendor-status";
+import { useClientPagination } from "@/hooks/use-client-pagination";
+import { Link } from "@/i18n/navigation";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
+import { isMembershipBillingSuspension } from "@/lib/membership/subscription-policy";
 import { toast } from "@/lib/utils/toast";
-import { Link } from "@/i18n/navigation";
 
 type VendorDetail = {
   id: string;
@@ -63,14 +65,6 @@ type VendorDetail = {
     bankName: string | null;
     stripeEmail: string | null;
   } | null;
-  agreementAcceptance: {
-    agreedToVendorTerms: boolean;
-    agreedToMembershipPolicy: boolean;
-    agreedToCommissionPolicy: boolean;
-    agreedToDisputePolicy: boolean;
-    agreedToDeliveryRules: boolean;
-    acceptedAt: string;
-  } | null;
   outstandingFees: {
     currency: string;
     pendingMembershipAmount: number;
@@ -117,19 +111,14 @@ type VendorDetail = {
     status: string;
     amount: number;
     currency: string;
-    stripeCustomerId: string | null;
-    stripeSubscriptionId: string | null;
     stripeInvoiceId: string | null;
     stripePaymentId: string | null;
-    stripeEventId: string | null;
     failureCode: string | null;
     failureReason: string | null;
     periodStart: string;
     periodEnd: string;
     dueAt: string;
     paidAt: string | null;
-    attemptedAt: string | null;
-    invoiceHostedUrl: string | null;
     waivedReason: string | null;
   }>;
 };
@@ -148,70 +137,51 @@ const statusBadgeClass: Record<VendorStatus, string> = {
   SUSPENDED: "bg-neutral-200 text-neutral-700",
 };
 
-const displayDate = (iso: string | null) => {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString();
-};
-
-const formatMoney = (amount: number, currency: string) => {
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency || "USD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount / 100);
-  } catch {
-    return `${currency} ${(amount / 100).toFixed(2)}`;
-  }
-};
-
-const productStatusClass = (status: string) => {
-  if (status === "APPROVED") return "bg-emerald-50 text-emerald-700";
-  if (status === "PENDING_APPROVAL") return "bg-amber-50 text-amber-700";
-  if (status === "REJECTED") return "bg-rose-50 text-rose-700";
-  if (status === "ARCHIVED") return "bg-neutral-100 text-neutral-600";
-  return "bg-sky-50 text-sky-700";
-};
-
-const invoiceStatusClass = (status: string) => {
-  if (status === "PAID") return "bg-emerald-50 text-emerald-700";
-  if (status === "PENDING") return "bg-amber-50 text-amber-700";
-  if (status === "WAIVED") return "bg-sky-50 text-sky-700";
-  return "bg-neutral-100 text-neutral-600";
-};
-
-const subscriptionStatusClass = (status: VendorDetail["subscription"]["status"]) => {
-  if (status === "ACTIVE") return "bg-emerald-50 text-emerald-700";
-  if (status === "TRIAL") return "bg-blue-50 text-blue-700";
-  if (status === "FAILED") return "bg-amber-50 text-amber-700";
-  return "bg-rose-50 text-rose-700";
-};
-
 const sellerTypeClass: Record<SellerType, string> = {
   PLATFORM: "bg-blue-50 text-blue-700",
   THIRD_PARTY: "bg-neutral-100 text-neutral-700",
 };
 
-const orderStatusClass = (status: string) => {
-  if (status === "DELIVERED") return "bg-emerald-50 text-emerald-700";
-  if (status === "SHIPPED") return "bg-cyan-50 text-cyan-700";
-  if (status === "PREPARING") return "bg-yellow-50 text-yellow-700";
-  if (status === "CANCELLED") return "bg-rose-50 text-rose-700";
-  return "bg-blue-50 text-blue-700";
-};
-
-const toErrorMessage = (error: unknown) =>
-  error instanceof Error && error.message ? error.message : "Something went wrong";
-
-/** How often to pull fresh vendor data while this page is open (vendor payout edits, etc.). */
 const VENDOR_DETAIL_POLL_MS = 15_000;
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+      <h2 className="text-base font-semibold text-neutral-900">{title}</h2>
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs font-medium text-neutral-500">{label}</dt>
+      <dd className="mt-0.5 wrap-break-word text-sm text-neutral-800">{children}</dd>
+    </div>
+  );
+}
+
+function Badge({ className, children }: { className: string; children: React.ReactNode }) {
+  return (
+    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${className}`}>
+      {children}
+    </span>
+  );
+}
 
 export default function AdminVendorDetailPage() {
   const params = useParams<{ id: string }>();
   const vendorId = params?.id;
+  const t = useTranslations("AdminPages.vendors");
+  const td = useTranslations("AdminPages.vendors.detail");
+  const locale = useLocale();
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [vendor, setVendor] = useState<VendorDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -235,27 +205,78 @@ export default function AdminVendorDetailPage() {
     resetKey: vendor?.id,
   });
 
-  const loadVendor = useCallback(async (opts?: { silent?: boolean }) => {
-    if (!vendorId) return;
-    if (!opts?.silent) {
-      setLoading(true);
-    }
-    try {
-      const response = await fetchWithAuth(`/api/admin/vendors/${vendorId}`, {
-        cache: "no-store",
+  const toErrorMessage = useCallback(
+    (error: unknown) =>
+      error instanceof Error && error.message ? error.message : t("toasts.genericError"),
+    [t]
+  );
+
+  const displayDate = useCallback(
+    (iso: string | null) => {
+      if (!iso) return "—";
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return "—";
+      return date.toLocaleString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
-      const data = await parseApiResponse<VendorDetail>(response);
-      setVendor(data);
-    } catch (error) {
-      if (!opts?.silent) {
-        toast.error("Failed to load vendor", toErrorMessage(error));
+    },
+    [locale]
+  );
+
+  const displayDay = useCallback(
+    (iso: string | null) => {
+      if (!iso) return "—";
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return "—";
+      return date.toLocaleDateString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    },
+    [locale]
+  );
+
+  const formatMoney = useCallback(
+    (amount: number, currency: string) => {
+      try {
+        return new Intl.NumberFormat(locale, {
+          style: "currency",
+          currency: currency || "USD",
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(amount / 100);
+      } catch {
+        return `${currency} ${(amount / 100).toFixed(2)}`;
       }
-    } finally {
-      if (!opts?.silent) {
-        setLoading(false);
+    },
+    [locale]
+  );
+
+  const loadVendor = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      if (!vendorId) return;
+      if (!opts?.silent) setLoading(true);
+      try {
+        const response = await fetchWithAuth(`/api/admin/vendors/${vendorId}`, {
+          cache: "no-store",
+        });
+        const data = await parseApiResponse<VendorDetail>(response);
+        setVendor(data);
+      } catch (error) {
+        if (!opts?.silent) {
+          toast.error(td("loadError"), toErrorMessage(error));
+        }
+      } finally {
+        if (!opts?.silent) setLoading(false);
       }
-    }
-  }, [vendorId]);
+    },
+    [td, toErrorMessage, vendorId]
+  );
 
   useEffect(() => {
     if (!authLoading && user && vendorId) {
@@ -263,7 +284,6 @@ export default function AdminVendorDetailPage() {
     }
   }, [authLoading, user, vendorId, loadVendor]);
 
-  /** Keep payout / profile in sync when vendors edit Settings on another session or tab. */
   useEffect(() => {
     if (authLoading || !user || !vendorId || !vendor) return;
 
@@ -289,11 +309,11 @@ export default function AdminVendorDetailPage() {
   const submitAction = async () => {
     if (!vendor || !pendingAction) return;
     if (pendingAction.type === "reject" && rejectReason.trim().length < 3) {
-      toast.error("Reason is required", "Please provide at least 3 characters.");
+      toast.error(t("toasts.reasonRequired"), t("toasts.reasonMin"));
       return;
     }
     if (pendingAction.type === "suspend" && actionReason.trim().length < 3) {
-      toast.error("Reason is required", "Please provide at least 3 characters.");
+      toast.error(t("toasts.reasonRequired"), t("toasts.reasonMin"));
       return;
     }
 
@@ -326,12 +346,12 @@ export default function AdminVendorDetailPage() {
       await parseApiResponse(response);
       toast.success(
         pendingAction.type === "approve"
-          ? "Vendor approved"
+          ? t("toasts.approved")
           : pendingAction.type === "reject"
-            ? "Vendor disapproved"
+            ? t("toasts.rejected")
             : pendingAction.type === "suspend"
-              ? "Vendor suspended"
-              : "Vendor reactivated"
+              ? t("toasts.suspended")
+              : t("toasts.reactivated")
       );
       setPendingAction(null);
       setRejectReason("");
@@ -340,12 +360,12 @@ export default function AdminVendorDetailPage() {
     } catch (error) {
       toast.error(
         pendingAction.type === "approve"
-          ? "Approval failed"
+          ? t("toasts.approveFailed")
           : pendingAction.type === "reject"
-            ? "Disapproval failed"
+            ? t("toasts.rejectFailed")
             : pendingAction.type === "suspend"
-              ? "Suspension failed"
-              : "Reactivation failed",
+              ? t("toasts.suspendFailed")
+              : t("toasts.reactivateFailed"),
         toErrorMessage(error)
       );
     } finally {
@@ -358,25 +378,21 @@ export default function AdminVendorDetailPage() {
     try {
       const response = await fetchWithAuth(
         `/api/admin/membership/invoices/${invoiceId}/mark-paid`,
-        {
-          method: "POST",
-        }
+        { method: "POST" }
       );
       await parseApiResponse(response);
-      toast.success("Invoice marked paid");
+      toast.success(td("toasts.markedPaid"));
       await loadVendor({ silent: true });
     } catch (error) {
-      toast.error("Could not mark invoice paid", toErrorMessage(error));
+      toast.error(td("toasts.markPaidFailed"), toErrorMessage(error));
     } finally {
       setMarkingInvoiceId(null);
     }
   };
 
   const waiveInvoice = async (invoiceId: string) => {
-    const reason = window.prompt("Reason for waiving this month?", "Waived by admin");
-    if (reason == null) {
-      return;
-    }
+    const reason = window.prompt(td("fields.waivePrompt"), td("fields.waiveDefault"));
+    if (reason == null) return;
 
     setWaivingInvoiceId(invoiceId);
     try {
@@ -389,10 +405,10 @@ export default function AdminVendorDetailPage() {
         }
       );
       await parseApiResponse(response);
-      toast.success("Invoice waived");
+      toast.success(td("toasts.waived"));
       await loadVendor({ silent: true });
     } catch (error) {
-      toast.error("Could not waive invoice", toErrorMessage(error));
+      toast.error(td("toasts.waiveFailed"), toErrorMessage(error));
     } finally {
       setWaivingInvoiceId(null);
     }
@@ -400,240 +416,309 @@ export default function AdminVendorDetailPage() {
 
   if (authLoading || !user || loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <p className="text-sm text-neutral-600">Loading...</p>
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <p className="text-sm text-neutral-500">{t("loading")}</p>
       </div>
     );
   }
 
   if (!vendor) {
     return (
-      <div className="space-y-4">
-        <Link href="/admin/vendors" className="text-sm font-semibold text-[#0f3460]">
-          Back to Vendors
+      <div className="space-y-4 pb-8">
+        <Link
+          href="/admin/vendors"
+          className="text-sm font-semibold text-[#0F3460] hover:underline"
+        >
+          {td("back")}
         </Link>
         <div className="rounded-2xl border border-neutral-200 bg-white p-6 text-sm text-neutral-600">
-          Vendor not found.
+          {td("notFound")}
         </div>
       </div>
     );
   }
 
+  const storeName = vendor.storeName ?? t("untitledStore");
+  const billingSuspended = isMembershipBillingSuspension(vendor.suspensionReason);
+  const hasBankDetails = Boolean(
+    vendor.payoutMethod?.accountName ||
+      vendor.payoutMethod?.accountNumberOrIban ||
+      vendor.payoutMethod?.bankName
+  );
+
+  const productStatusLabel = (status: string) => {
+    if (
+      status === "DRAFT" ||
+      status === "PENDING_APPROVAL" ||
+      status === "APPROVED" ||
+      status === "REJECTED" ||
+      status === "ARCHIVED"
+    ) {
+      return td(`productStatuses.${status}`);
+    }
+    return status.replaceAll("_", " ");
+  };
+
+  const productStatusClass = (status: string) => {
+    if (status === "APPROVED") return "bg-emerald-50 text-emerald-700";
+    if (status === "PENDING_APPROVAL") return "bg-amber-50 text-amber-700";
+    if (status === "REJECTED") return "bg-rose-50 text-rose-700";
+    if (status === "ARCHIVED") return "bg-neutral-100 text-neutral-600";
+    return "bg-sky-50 text-sky-700";
+  };
+
+  const invoiceStatusLabel = (status: string) => {
+    if (
+      status === "PENDING" ||
+      status === "PAID" ||
+      status === "WAIVED" ||
+      status === "FAILED"
+    ) {
+      return td(`invoiceStatuses.${status}`);
+    }
+    return status;
+  };
+
+  const invoiceStatusClass = (status: string) => {
+    if (status === "PAID") return "bg-emerald-50 text-emerald-700";
+    if (status === "PENDING") return "bg-amber-50 text-amber-700";
+    if (status === "WAIVED") return "bg-sky-50 text-sky-700";
+    return "bg-neutral-100 text-neutral-600";
+  };
+
+  const membershipClass =
+    vendor.sellerType === "PLATFORM"
+      ? "bg-neutral-100 text-neutral-600"
+      : vendor.subscription.status === "ACTIVE"
+        ? "bg-emerald-50 text-emerald-700"
+        : vendor.subscription.status === "TRIAL"
+          ? "bg-sky-50 text-sky-700"
+          : vendor.subscription.status === "FAILED"
+            ? "bg-amber-50 text-amber-800"
+            : "bg-rose-50 text-rose-700";
+
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <Link
-              href="/admin/vendors"
-              className="text-xs font-semibold uppercase tracking-wider text-[#0f3460] hover:underline"
-            >
-              Back to Vendors
-            </Link>
-            <h2 className="mt-2 text-2xl font-semibold text-[#0f3460]">
-              {vendor.storeName ?? "Untitled store"}
-            </h2>
-            <p className="mt-1 text-sm text-neutral-600">{vendor.user.fullName}</p>
+    <div className="w-full min-w-0 space-y-5 pb-8">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <Link
+            href="/admin/vendors"
+            className="text-sm font-semibold text-[#0F3460] hover:underline"
+          >
+            {td("back")}
+          </Link>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <h1 className="truncate text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">
+              {storeName}
+            </h1>
+            <Badge className={statusBadgeClass[vendor.status]}>
+              {t(`statuses.${vendor.status}`)}
+            </Badge>
           </div>
-          <div className="flex flex-col items-end gap-3">
-            <span
-              className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                statusBadgeClass[vendor.status]
-              }`}
-            >
-              {vendor.status.replaceAll("_", " ")}
-            </span>
-            {vendor.status === "PENDING_APPROVAL" ? (
-              <div className="flex flex-wrap justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPendingAction({ type: "approve" })}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Approve
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPendingAction({ type: "reject" })}
-                  className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Disapprove
-                </button>
-              </div>
-            ) : null}
-            {vendor.status === "ACTIVE" ? (
+          <p className="mt-1 text-sm text-neutral-500">{vendor.user.fullName}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {vendor.status === "PENDING_APPROVAL" ? (
+            <>
               <button
                 type="button"
-                onClick={() => setPendingAction({ type: "suspend" })}
-                className="rounded-lg bg-neutral-800 px-4 py-2 text-sm font-semibold text-white"
-              >
-                Suspend Vendor
-              </button>
-            ) : null}
-            {vendor.status === "SUSPENDED" ? (
-              <button
-                type="button"
-                onClick={() => setPendingAction({ type: "reactivate" })}
+                onClick={() => setPendingAction({ type: "approve" })}
                 className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
               >
-                Reactivate Vendor
+                {t("actions.approve")}
               </button>
-            ) : null}
-          </div>
-        </div>
-      </section>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-2xl border border-neutral-200 bg-white p-5">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-            Vendor Information
-          </h3>
-          <div className="mt-3 space-y-1 text-sm text-neutral-700">
-            <p>Email: {vendor.user.email}</p>
-            <p>Phone: {vendor.user.phone}</p>
-            <p>Store slug: {vendor.storeSlug ?? "—"}</p>
-            <p>
-              Seller type:{" "}
-              <span
-                className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${sellerTypeClass[vendor.sellerType]}`}
+              <button
+                type="button"
+                onClick={() => setPendingAction({ type: "reject" })}
+                className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white"
               >
-                {vendor.sellerType === "THIRD_PARTY" ? "THIRD PARTY" : "PLATFORM"}
-              </span>
-            </p>
-            <p>
-              Seller type updated:{" "}
-              {displayDate(vendor.sellerTypeAudit?.updatedAt ?? null)}
-            </p>
-            <p>Seller type updated by: {vendor.sellerTypeAudit?.updatedBy ?? "—"}</p>
-            <p>Business type: {vendor.businessType ?? "—"}</p>
-            <p>Industry type: {vendor.industryType ? vendor.industryType.replaceAll("_", " ") : "—"}</p>
-            <p>Onboarding step: {vendor.onboardingStep.replaceAll("_", " ")}</p>
-            <p>Submitted at: {displayDate(vendor.submittedAt)}</p>
-            <p>Approved at: {displayDate(vendor.approvedAt)}</p>
-            <p>Rejected at: {displayDate(vendor.rejectedAt)}</p>
-            {vendor.rejectionReason ? <p>Rejection reason: {vendor.rejectionReason}</p> : null}
-            <p>Suspended at: {displayDate(vendor.suspendedAt)}</p>
-            {vendor.suspensionReason ? <p>Suspension reason: {vendor.suspensionReason}</p> : null}
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-neutral-200 bg-white p-5">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-            Address
-          </h3>
-          <div className="mt-3 space-y-2 text-sm text-neutral-700">
-            {vendor.address ? (
-              <>
-                <p>{vendor.address.addressLine1}</p>
-                <p>
-                  {vendor.address.city}, {vendor.address.country} {vendor.address.postalCode}
-                </p>
-                {vendor.address.proofOfAddressUrl ? (
-                  <a
-                    href={vendor.address.proofOfAddressUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    Proof of address ↗
-                  </a>
-                ) : null}
-              </>
-            ) : (
-              <p className="text-neutral-400">No address submitted.</p>
-            )}
-          </div>
-        </section>
-
-        {/* Payout details */}
-        <section className="rounded-2xl border border-neutral-200 bg-white p-5 lg:col-span-2">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-            Payout Details
-          </h3>
-
-          {!vendor.payoutMethod ? (
-            <p className="mt-3 text-sm text-neutral-400">No payout details submitted.</p>
-          ) : (
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {(vendor.payoutMethod.accountName ||
-                vendor.payoutMethod.accountNumberOrIban ||
-                vendor.payoutMethod.bankName) ? (
-                <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">
-                    Bank Account
-                  </p>
-                  <dl className="space-y-1.5 text-sm">
-                    <div className="flex flex-wrap gap-x-2">
-                      <dt className="font-medium text-neutral-500 shrink-0">Account holder:</dt>
-                      <dd className="text-neutral-800">{vendor.payoutMethod.accountName ?? "—"}</dd>
-                    </div>
-                    <div className="flex flex-wrap gap-x-2">
-                      <dt className="font-medium text-neutral-500 shrink-0">Account / IBAN:</dt>
-                      <dd className="break-all text-neutral-800">
-                        {vendor.payoutMethod.accountNumberOrIban ?? "—"}
-                      </dd>
-                    </div>
-                    <div className="flex flex-wrap gap-x-2">
-                      <dt className="font-medium text-neutral-500 shrink-0">Bank:</dt>
-                      <dd className="text-neutral-800">{vendor.payoutMethod.bankName ?? "—"}</dd>
-                    </div>
-                  </dl>
-                </div>
-              ) : (
-                <p className="text-sm text-neutral-400">Payout record exists but no bank details filled in.</p>
-              )}
-            </div>
-          )}
-        </section>
+                {t("actions.reject")}
+              </button>
+            </>
+          ) : null}
+          {vendor.status === "ACTIVE" ? (
+            <button
+              type="button"
+              onClick={() => setPendingAction({ type: "suspend" })}
+              className="rounded-lg bg-neutral-800 px-4 py-2 text-sm font-semibold text-white"
+            >
+              {t("actions.suspend")}
+            </button>
+          ) : null}
+          {vendor.status === "SUSPENDED" ? (
+            <button
+              type="button"
+              onClick={() => setPendingAction({ type: "reactivate" })}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
+            >
+              {t("actions.reactivate")}
+            </button>
+          ) : null}
+        </div>
       </div>
 
-      {vendor.logoUrl ? (
-        <section className="rounded-2xl border border-neutral-200 bg-white p-5">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-            Store Logo
-          </h3>
-          <img
-            src={vendor.logoUrl}
-            alt={`${vendor.storeName ?? "Vendor"} logo`}
-            className="mt-3 h-36 w-36 rounded-xl border border-neutral-200 object-cover"
-          />
-        </section>
-      ) : null}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Section title={td("sections.overview")}>
+          <div className="flex gap-4">
+            {vendor.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={vendor.logoUrl}
+                alt={storeName}
+                className="h-20 w-20 shrink-0 rounded-xl border border-neutral-200 object-cover"
+              />
+            ) : null}
+            <dl className="grid min-w-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field label={td("fields.email")}>{vendor.user.email}</Field>
+              <Field label={td("fields.phone")}>{vendor.user.phone}</Field>
+              <Field label={td("fields.storeSlug")}>{vendor.storeSlug ?? "—"}</Field>
+              <Field label={td("fields.shopType")}>
+                <Badge className={sellerTypeClass[vendor.sellerType]}>
+                  {t(`sellerTypes.${vendor.sellerType}`)}
+                </Badge>
+              </Field>
+              <Field label={td("fields.businessType")}>
+                {vendor.businessType === "INDIVIDUAL" ||
+                vendor.businessType === "REGISTERED_BUSINESS"
+                  ? t(`businessTypes.${vendor.businessType}`)
+                  : (vendor.businessType ?? "—")}
+              </Field>
+              <Field label={td("fields.industry")}>
+                {vendor.industryType
+                  ? vendor.industryType.replaceAll("_", " ")
+                  : "—"}
+              </Field>
+              <Field label={td("fields.onboardingStep")}>
+                {vendor.onboardingStep.replaceAll("_", " ")}
+              </Field>
+              <Field label={td("fields.submittedAt")}>
+                {displayDate(vendor.submittedAt)}
+              </Field>
+              <Field label={td("fields.approvedAt")}>
+                {displayDate(vendor.approvedAt)}
+              </Field>
+              <Field label={td("fields.rejectedAt")}>
+                {displayDate(vendor.rejectedAt)}
+              </Field>
+              {vendor.rejectionReason ? (
+                <Field label={td("fields.rejectionReason")}>
+                  {vendor.rejectionReason}
+                </Field>
+              ) : null}
+              <Field label={td("fields.suspendedAt")}>
+                {displayDate(vendor.suspendedAt)}
+              </Field>
+              {vendor.suspensionReason ? (
+                <Field label={td("fields.suspensionReason")}>
+                  {vendor.suspensionReason}
+                </Field>
+              ) : null}
+              <Field label={td("fields.shopTypeUpdated")}>
+                {displayDate(vendor.sellerTypeAudit?.updatedAt ?? null)}
+              </Field>
+              <Field label={td("fields.shopTypeUpdatedBy")}>
+                {vendor.sellerTypeAudit?.updatedBy ?? "—"}
+              </Field>
+              {vendor.description ? (
+                <div className="sm:col-span-2">
+                  <Field label={td("fields.description")}>{vendor.description}</Field>
+                </div>
+              ) : null}
+            </dl>
+          </div>
+        </Section>
 
-      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-          KYC Documents
-        </h3>
+        <Section title={td("sections.address")}>
+          {vendor.address ? (
+            <div className="space-y-2 text-sm text-neutral-700">
+              <p>{vendor.address.addressLine1}</p>
+              <p>
+                {vendor.address.city}, {vendor.address.country}{" "}
+                {vendor.address.postalCode}
+              </p>
+              {vendor.address.proofOfAddressUrl ? (
+                <a
+                  href={vendor.address.proofOfAddressUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-medium text-[#0F3460] hover:underline"
+                >
+                  {td("fields.proofOfAddress")} ↗
+                </a>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-sm text-neutral-500">{td("fields.noAddress")}</p>
+          )}
+        </Section>
+      </div>
+
+      <Section title={td("sections.payout")}>
+        {!vendor.payoutMethod ? (
+          <p className="text-sm text-neutral-500">{td("fields.noPayout")}</p>
+        ) : hasBankDetails ? (
+          <dl className="grid gap-3 sm:grid-cols-3">
+            <Field label={td("fields.accountHolder")}>
+              {vendor.payoutMethod.accountName ?? "—"}
+            </Field>
+            <Field label={td("fields.accountIban")}>
+              {vendor.payoutMethod.accountNumberOrIban ?? "—"}
+            </Field>
+            <Field label={td("fields.bank")}>
+              {vendor.payoutMethod.bankName ?? "—"}
+            </Field>
+          </dl>
+        ) : (
+          <p className="text-sm text-neutral-500">{td("fields.noBankDetails")}</p>
+        )}
+      </Section>
+
+      <Section title={td("sections.kyc")}>
         {vendor.kycDocuments.length ? (
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             {vendor.kycDocuments.map((doc) => (
-              <article key={doc.id} className="rounded-xl border border-neutral-200 p-4">
-                <p className="text-sm font-semibold text-neutral-800">
-                  {doc.documentType.replaceAll("_", " ")}
-                </p>
-                <p className="mt-1 text-xs text-neutral-500">
-                  Review status: {doc.reviewStatus.replaceAll("_", " ")}
-                </p>
-                <div className="mt-3 space-y-3">
+              <article
+                key={doc.id}
+                className="rounded-xl border border-neutral-200 p-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-neutral-800">
+                    {doc.documentType === "PASSPORT" ||
+                    doc.documentType === "DRIVERS_LICENSE" ||
+                    doc.documentType === "NATIONAL_ID"
+                      ? td(`kycTypes.${doc.documentType}`)
+                      : doc.documentType.replaceAll("_", " ")}
+                  </p>
+                  <Badge className="bg-neutral-100 text-neutral-700">
+                    {doc.reviewStatus === "PENDING" ||
+                    doc.reviewStatus === "APPROVED" ||
+                    doc.reviewStatus === "REJECTED"
+                      ? td(`kycStatuses.${doc.reviewStatus}`)
+                      : doc.reviewStatus.replaceAll("_", " ")}
+                  </Badge>
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <div>
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-neutral-500">
-                      Document
+                    <p className="mb-1 text-xs font-medium text-neutral-500">
+                      {td("fields.document")}
                     </p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={doc.documentUrl}
-                      alt={`${doc.documentType} document`}
-                      className="h-44 w-full rounded-lg border border-neutral-200 object-cover"
+                      alt={doc.documentType}
+                      className="h-40 w-full rounded-lg border border-neutral-200 object-cover"
                     />
                   </div>
                   {doc.selfieWithIdUrl ? (
                     <div>
-                      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-neutral-500">
-                        Selfie with ID
+                      <p className="mb-1 text-xs font-medium text-neutral-500">
+                        {td("fields.selfie")}
                       </p>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={doc.selfieWithIdUrl}
-                        alt={`${doc.documentType} selfie`}
-                        className="h-44 w-full rounded-lg border border-neutral-200 object-cover"
+                        alt="selfie"
+                        className="h-40 w-full rounded-lg border border-neutral-200 object-cover"
                       />
                     </div>
                   ) : null}
@@ -642,18 +727,15 @@ export default function AdminVendorDetailPage() {
             ))}
           </div>
         ) : (
-          <p className="mt-2 text-sm text-neutral-500">No KYC documents available.</p>
+          <p className="text-sm text-neutral-500">{td("fields.noKyc")}</p>
         )}
-      </section>
+      </Section>
 
-      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-          Outstanding Fees
-        </h3>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
-              Pending subscription fees
+      <Section title={td("sections.fees")}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+            <p className="text-xs font-medium text-amber-800">
+              {td("fields.pendingMembership")}
             </p>
             <p className="mt-2 text-2xl font-bold text-neutral-900">
               {formatMoney(
@@ -662,13 +744,14 @@ export default function AdminVendorDetailPage() {
               )}
             </p>
             <p className="mt-1 text-sm text-neutral-600">
-              {vendor.outstandingFees.pendingMembershipCount} unpaid invoice
-              {vendor.outstandingFees.pendingMembershipCount === 1 ? "" : "s"}
+              {td("fields.pendingInvoices", {
+                count: vendor.outstandingFees.pendingMembershipCount,
+              })}
             </p>
           </div>
           <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-              Platform commission collected
+            <p className="text-xs font-medium text-neutral-500">
+              {td("fields.feesCollected")}
             </p>
             <p className="mt-2 text-2xl font-bold text-neutral-900">
               {formatMoney(
@@ -676,320 +759,298 @@ export default function AdminVendorDetailPage() {
                 vendor.outstandingFees.currency
               )}
             </p>
-            <p className="mt-1 text-sm text-neutral-600">Total transaction fees from orders</p>
+            <p className="mt-1 text-sm text-neutral-600">
+              {td("fields.feesCollectedSub")}
+            </p>
           </div>
         </div>
-      </section>
 
-      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-          Stripe Subscription
-        </h3>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-              Status
+          <div className="rounded-xl border border-neutral-200 p-4">
+            <p className="text-xs font-medium text-neutral-500">
+              {td("fields.membershipStatus")}
             </p>
-            <span
-              className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${subscriptionStatusClass(vendor.subscription.status)}`}
-            >
-              {vendor.subscription.status}
-            </span>
-            <div className="mt-3 space-y-1 text-sm text-neutral-700">
-              <p>Trial ends: {displayDate(vendor.subscription.trialEndsAt)}</p>
-              <p>Current period start: {displayDate(vendor.subscription.currentPeriodStart)}</p>
-              <p>Current period end: {displayDate(vendor.subscription.currentPeriodEnd)}</p>
-              <p>Last payment: {displayDate(vendor.subscription.lastPaymentAt)}</p>
-              <p>Next billing: {displayDate(vendor.subscription.nextBillingAt)}</p>
-              <p>Grace period ends: {displayDate(vendor.subscription.gracePeriodEndsAt)}</p>
-              <p>Failed payment count: {vendor.subscription.failedPaymentCount}</p>
+            <div className="mt-2">
+              <Badge className={membershipClass}>
+                {vendor.sellerType === "PLATFORM"
+                  ? t("membership.exempt")
+                  : t(`membership.${vendor.subscription.status}`)}
+              </Badge>
             </div>
-            {vendor.subscription.status === "SUSPENDED" ? (
-              <button
-                type="button"
-                onClick={() => setPendingAction({ type: "reactivate" })}
-                className="mt-3 rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white"
-              >
-                Reactivate from billing panel
-              </button>
+            {vendor.sellerType !== "PLATFORM" ? (
+              <dl className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Field label={td("fields.trialEnds")}>
+                  {displayDate(vendor.subscription.trialEndsAt)}
+                </Field>
+                <Field label={td("fields.nextBilling")}>
+                  {displayDate(vendor.subscription.nextBillingAt)}
+                </Field>
+                <Field label={td("fields.lastPayment")}>
+                  {displayDate(vendor.subscription.lastPaymentAt)}
+                </Field>
+                <Field label={td("fields.graceEnds")}>
+                  {displayDate(vendor.subscription.gracePeriodEndsAt)}
+                </Field>
+                <Field label={td("fields.periodStart")}>
+                  {displayDate(vendor.subscription.currentPeriodStart)}
+                </Field>
+                <Field label={td("fields.periodEnd")}>
+                  {displayDate(vendor.subscription.currentPeriodEnd)}
+                </Field>
+                <Field label={td("fields.failedCount")}>
+                  {vendor.subscription.failedPaymentCount}
+                </Field>
+              </dl>
             ) : null}
           </div>
-          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-              Stripe IDs
-            </p>
-            <div className="mt-3 space-y-2 text-xs text-neutral-700">
-              <p>
-                Customer ID:{" "}
+          <details className="rounded-xl border border-neutral-200 p-4">
+            <summary className="cursor-pointer text-sm font-medium text-neutral-700">
+              {td("fields.stripeIds")}
+            </summary>
+            <dl className="mt-3 space-y-2 text-xs text-neutral-700">
+              <Field label={td("fields.customerId")}>
                 <span className="font-mono">
                   {vendor.subscription.stripeCustomerId ?? "—"}
                 </span>
-              </p>
-              <p>
-                Subscription ID:{" "}
+              </Field>
+              <Field label={td("fields.subscriptionId")}>
                 <span className="font-mono">
                   {vendor.subscription.stripeSubscriptionId ?? "—"}
                 </span>
-              </p>
-              <p>
-                Default Payment Method:{" "}
+              </Field>
+              <Field label={td("fields.paymentMethodId")}>
                 <span className="font-mono">
                   {vendor.subscription.stripeDefaultPaymentMethodId ?? "—"}
                 </span>
-              </p>
-            </div>
-          </div>
+              </Field>
+            </dl>
+          </details>
         </div>
-      </section>
+      </Section>
 
-      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-          Products ({vendor.products.length})
-        </h3>
+      <Section title={`${td("sections.products")} (${vendor.products.length})`}>
         {vendor.products.length ? (
           <>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wider text-neutral-500">
-                  <th className="px-3 py-2">Product</th>
-                  <th className="px-3 py-2">Category</th>
-                  <th className="px-3 py-2">Price</th>
-                  <th className="px-3 py-2">Stock</th>
-                  <th className="px-3 py-2">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {productsPagination.paginatedItems.map((product) => (
-                  <tr key={product.id} className="border-b border-neutral-100">
-                    <td className="px-3 py-3">
-                      <p className="font-medium text-neutral-900">{product.name}</p>
-                      <p className="text-xs text-neutral-500">{product.slug}</p>
-                    </td>
-                    <td className="px-3 py-3 text-neutral-700">{product.categoryName}</td>
-                    <td className="px-3 py-3 text-neutral-700">
-                      {formatMoney(product.priceAmount, product.currency)}
-                    </td>
-                    <td className="px-3 py-3 text-neutral-700">{product.stockQty}</td>
-                    <td className="px-3 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${productStatusClass(product.approvalStatus)}`}
-                      >
-                        {product.approvalStatus.replaceAll("_", " ")}
-                      </span>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-200 text-start text-xs font-semibold text-neutral-500">
+                    <th className="px-3 py-2">{td("fields.product")}</th>
+                    <th className="px-3 py-2">{td("fields.category")}</th>
+                    <th className="px-3 py-2">{td("fields.price")}</th>
+                    <th className="px-3 py-2">{td("fields.stock")}</th>
+                    <th className="px-3 py-2">{t("columns.status")}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <PaginationFooter
-            pageIndex={productsPagination.pageIndex}
-            pageCount={productsPagination.pageCount}
-            pageSize={productsPagination.pageSize}
-            pageSizeOptions={productsPagination.pageSizeOptions}
-            onPageIndexChange={productsPagination.setPageIndex}
-            onPageSizeChange={productsPagination.setPageSize}
-          />
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {productsPagination.paginatedItems.map((product) => (
+                    <tr key={product.id}>
+                      <td className="px-3 py-3">
+                        <p className="font-medium text-neutral-900">{product.name}</p>
+                        <p className="text-xs text-neutral-500">{product.slug}</p>
+                      </td>
+                      <td className="px-3 py-3 text-neutral-700">
+                        {product.categoryName}
+                      </td>
+                      <td className="px-3 py-3 text-neutral-700">
+                        {formatMoney(product.priceAmount, product.currency)}
+                      </td>
+                      <td className="px-3 py-3 text-neutral-700">{product.stockQty}</td>
+                      <td className="px-3 py-3">
+                        <Badge className={productStatusClass(product.approvalStatus)}>
+                          {productStatusLabel(product.approvalStatus)}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationFooter
+              pageIndex={productsPagination.pageIndex}
+              pageCount={productsPagination.pageCount}
+              pageSize={productsPagination.pageSize}
+              pageSizeOptions={productsPagination.pageSizeOptions}
+              onPageIndexChange={productsPagination.setPageIndex}
+              onPageSizeChange={productsPagination.setPageSize}
+            />
           </>
         ) : (
-          <p className="mt-3 text-sm text-neutral-500">No products yet.</p>
+          <p className="text-sm text-neutral-500">{td("fields.noProducts")}</p>
         )}
-      </section>
+      </Section>
 
-      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-          Orders ({vendor.orders.length})
-        </h3>
+      <Section title={`${td("sections.orders")} (${vendor.orders.length})`}>
         {vendor.orders.length ? (
           <>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[720px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wider text-neutral-500">
-                  <th className="px-3 py-2">Order</th>
-                  <th className="px-3 py-2">Date</th>
-                  <th className="px-3 py-2">Items</th>
-                  <th className="px-3 py-2">Total</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Payment</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ordersPagination.paginatedItems.map((order) => (
-                  <tr key={order.id} className="border-b border-neutral-100">
-                    <td className="px-3 py-3 font-medium text-neutral-900">{order.orderNumber}</td>
-                    <td className="px-3 py-3 text-neutral-700">{displayDate(order.createdAt)}</td>
-                    <td className="px-3 py-3 text-neutral-700">{order.itemCount}</td>
-                    <td className="px-3 py-3 text-neutral-700">
-                      {formatMoney(order.grandTotalAmount, order.currency)}
-                    </td>
-                    <td className="px-3 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${orderStatusClass(order.status)}`}
-                      >
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 text-neutral-700">
-                      {order.paymentStatus.replaceAll("_", " ")}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-200 text-start text-xs font-semibold text-neutral-500">
+                    <th className="px-3 py-2">{td("fields.order")}</th>
+                    <th className="px-3 py-2">{td("fields.date")}</th>
+                    <th className="px-3 py-2">{td("fields.items")}</th>
+                    <th className="px-3 py-2">{td("fields.total")}</th>
+                    <th className="px-3 py-2">{t("columns.status")}</th>
+                    <th className="px-3 py-2">{td("fields.payment")}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <PaginationFooter
-            pageIndex={ordersPagination.pageIndex}
-            pageCount={ordersPagination.pageCount}
-            pageSize={ordersPagination.pageSize}
-            pageSizeOptions={ordersPagination.pageSizeOptions}
-            onPageIndexChange={ordersPagination.setPageIndex}
-            onPageSizeChange={ordersPagination.setPageSize}
-          />
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {ordersPagination.paginatedItems.map((order) => (
+                    <tr key={order.id}>
+                      <td className="px-3 py-3 font-medium text-neutral-900">
+                        {order.orderNumber}
+                      </td>
+                      <td className="px-3 py-3 text-neutral-700">
+                        {displayDate(order.createdAt)}
+                      </td>
+                      <td className="px-3 py-3 text-neutral-700">{order.itemCount}</td>
+                      <td className="px-3 py-3 text-neutral-700">
+                        {formatMoney(order.grandTotalAmount, order.currency)}
+                      </td>
+                      <td className="px-3 py-3 text-neutral-700">
+                        {order.status.replaceAll("_", " ")}
+                      </td>
+                      <td className="px-3 py-3 text-neutral-700">
+                        {order.paymentStatus.replaceAll("_", " ")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationFooter
+              pageIndex={ordersPagination.pageIndex}
+              pageCount={ordersPagination.pageCount}
+              pageSize={ordersPagination.pageSize}
+              pageSizeOptions={ordersPagination.pageSizeOptions}
+              onPageIndexChange={ordersPagination.setPageIndex}
+              onPageSizeChange={ordersPagination.setPageSize}
+            />
           </>
         ) : (
-          <p className="mt-3 text-sm text-neutral-500">No orders yet.</p>
+          <p className="text-sm text-neutral-500">{td("fields.noOrders")}</p>
         )}
-      </section>
+      </Section>
 
-      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-          Subscription Payment History
-        </h3>
+      <Section title={td("sections.invoices")}>
         {vendor.subscriptionHistory.length ? (
           <>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[1080px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wider text-neutral-500">
-                  <th className="px-3 py-2">Period</th>
-                  <th className="px-3 py-2">Amount</th>
-                  <th className="px-3 py-2">Due</th>
-                  <th className="px-3 py-2">Attempted</th>
-                  <th className="px-3 py-2">Paid</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Stripe refs</th>
-                  <th className="px-3 py-2">Failure</th>
-                  <th className="px-3 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {subscriptionPagination.paginatedItems.map((invoice) => (
-                  <tr key={invoice.id} className="border-b border-neutral-100">
-                    <td className="px-3 py-3 text-neutral-700">
-                      {new Date(invoice.periodStart).toLocaleDateString()} –{" "}
-                      {new Date(invoice.periodEnd).toLocaleDateString()}
-                    </td>
-                    <td className="px-3 py-3 text-neutral-700">
-                      {formatMoney(invoice.amount, invoice.currency)}
-                    </td>
-                    <td className="px-3 py-3 text-neutral-700">{displayDate(invoice.dueAt)}</td>
-                    <td className="px-3 py-3 text-neutral-700">
-                      {displayDate(invoice.attemptedAt)}
-                    </td>
-                    <td className="px-3 py-3 text-neutral-700">{displayDate(invoice.paidAt)}</td>
-                    <td className="px-3 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${invoiceStatusClass(invoice.status)}`}
-                      >
-                        {invoice.status}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 text-xs text-neutral-600">
-                      <p>
-                        Invoice:{" "}
-                        <span className="font-mono">{invoice.stripeInvoiceId ?? "—"}</span>
-                      </p>
-                      <p className="mt-1">
-                        Payment:{" "}
-                        <span className="font-mono">{invoice.stripePaymentId ?? "—"}</span>
-                      </p>
-                    </td>
-                    <td className="px-3 py-3 text-xs text-neutral-600">
-                      {invoice.failureReason ? (
-                        <>
-                          <p>{invoice.failureReason}</p>
-                          {invoice.failureCode ? (
-                            <p className="mt-1 font-mono">{invoice.failureCode}</p>
-                          ) : null}
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="px-3 py-3">
-                      {invoice.status === "PENDING" ? (
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => void markInvoicePaid(invoice.id)}
-                            disabled={markingInvoiceId === invoice.id}
-                            className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
-                          >
-                            {markingInvoiceId === invoice.id ? "Saving..." : "Mark paid"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void waiveInvoice(invoice.id)}
-                            disabled={waivingInvoiceId === invoice.id}
-                            className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 disabled:opacity-60"
-                          >
-                            {waivingInvoiceId === invoice.id ? "Waiving..." : "Waive month"}
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-neutral-400">—</span>
-                      )}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[800px] text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-200 text-start text-xs font-semibold text-neutral-500">
+                    <th className="px-3 py-2">{td("fields.period")}</th>
+                    <th className="px-3 py-2">{td("fields.amount")}</th>
+                    <th className="px-3 py-2">{td("fields.due")}</th>
+                    <th className="px-3 py-2">{td("fields.paid")}</th>
+                    <th className="px-3 py-2">{t("columns.status")}</th>
+                    <th className="px-3 py-2">{td("fields.failure")}</th>
+                    <th className="px-3 py-2">{t("columns.actions")}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <PaginationFooter
-            pageIndex={subscriptionPagination.pageIndex}
-            pageCount={subscriptionPagination.pageCount}
-            pageSize={subscriptionPagination.pageSize}
-            pageSizeOptions={subscriptionPagination.pageSizeOptions}
-            onPageIndexChange={subscriptionPagination.setPageIndex}
-            onPageSizeChange={subscriptionPagination.setPageSize}
-          />
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {subscriptionPagination.paginatedItems.map((invoice) => (
+                    <tr key={invoice.id}>
+                      <td className="px-3 py-3 text-neutral-700">
+                        {displayDay(invoice.periodStart)} – {displayDay(invoice.periodEnd)}
+                      </td>
+                      <td className="px-3 py-3 text-neutral-700">
+                        {formatMoney(invoice.amount, invoice.currency)}
+                      </td>
+                      <td className="px-3 py-3 text-neutral-700">
+                        {displayDate(invoice.dueAt)}
+                      </td>
+                      <td className="px-3 py-3 text-neutral-700">
+                        {displayDate(invoice.paidAt)}
+                      </td>
+                      <td className="px-3 py-3">
+                        <Badge className={invoiceStatusClass(invoice.status)}>
+                          {invoiceStatusLabel(invoice.status)}
+                        </Badge>
+                      </td>
+                      <td className="max-w-[180px] px-3 py-3 text-xs text-neutral-600">
+                        {invoice.failureReason ?? "—"}
+                      </td>
+                      <td className="px-3 py-3">
+                        {invoice.status === "PENDING" ? (
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => void markInvoicePaid(invoice.id)}
+                              disabled={markingInvoiceId === invoice.id}
+                              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                            >
+                              {markingInvoiceId === invoice.id
+                                ? td("fields.saving")
+                                : td("fields.markPaid")}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void waiveInvoice(invoice.id)}
+                              disabled={waivingInvoiceId === invoice.id}
+                              className="rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 disabled:opacity-60"
+                            >
+                              {waivingInvoiceId === invoice.id
+                                ? td("fields.waiving")
+                                : td("fields.waive")}
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-neutral-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationFooter
+              pageIndex={subscriptionPagination.pageIndex}
+              pageCount={subscriptionPagination.pageCount}
+              pageSize={subscriptionPagination.pageSize}
+              pageSizeOptions={subscriptionPagination.pageSizeOptions}
+              onPageIndexChange={subscriptionPagination.setPageIndex}
+              onPageSizeChange={subscriptionPagination.setPageSize}
+            />
           </>
         ) : (
-          <p className="mt-3 text-sm text-neutral-500">No subscription invoices yet.</p>
+          <p className="text-sm text-neutral-500">{td("fields.noInvoices")}</p>
         )}
-      </section>
+      </Section>
 
       {pendingAction ? (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/45 p-4">
           <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-5 shadow-xl">
             <h4 className="text-lg font-semibold text-neutral-900">
               {pendingAction.type === "approve"
-                ? "Approve vendor?"
+                ? t("confirm.approveTitle")
                 : pendingAction.type === "reject"
-                  ? "Disapprove vendor?"
+                  ? t("confirm.rejectTitle")
                   : pendingAction.type === "suspend"
-                    ? "Suspend vendor?"
-                    : "Reactivate vendor?"}
+                    ? t("confirm.suspendTitle")
+                    : t("confirm.reactivateTitle")}
             </h4>
             <p className="mt-1 text-sm text-neutral-600">
               {pendingAction.type === "approve"
-                ? "This will activate the vendor account."
+                ? t("confirm.approveBody")
                 : pendingAction.type === "reject"
-                  ? "This will reject the vendor request."
+                  ? t("confirm.rejectBody")
                   : pendingAction.type === "suspend"
-                    ? "This will hide their store from customers and block vendor login."
-                    : "This will restore vendor access and show their store again."}
+                    ? t("confirm.suspendBody")
+                    : billingSuspended
+                      ? t("confirm.reactivateBillingBody")
+                      : t("confirm.reactivateBody")}
             </p>
+            <p className="mt-2 text-sm font-medium text-neutral-800">{storeName}</p>
 
             {pendingAction.type === "reject" ? (
               <textarea
                 value={rejectReason}
                 onChange={(event) => setRejectReason(event.target.value)}
                 rows={4}
-                className="mt-3 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                placeholder="Reason for disapproval"
+                className="mt-3 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+                placeholder={t("confirm.rejectPlaceholder")}
               />
             ) : null}
 
@@ -998,8 +1059,8 @@ export default function AdminVendorDetailPage() {
                 value={actionReason}
                 onChange={(event) => setActionReason(event.target.value)}
                 rows={4}
-                className="mt-3 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                placeholder="Reason for suspension"
+                className="mt-3 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+                placeholder={t("confirm.suspendPlaceholder")}
               />
             ) : null}
 
@@ -1011,9 +1072,9 @@ export default function AdminVendorDetailPage() {
                   setRejectReason("");
                   setActionReason("");
                 }}
-                className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+                className="rounded-lg border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
               >
-                Cancel
+                {t("confirm.cancel")}
               </button>
               <button
                 type="button"
@@ -1028,14 +1089,14 @@ export default function AdminVendorDetailPage() {
                 }`}
               >
                 {submitting
-                  ? "Submitting..."
+                  ? t("confirm.submitting")
                   : pendingAction.type === "approve"
-                    ? "Approve"
+                    ? t("actions.approve")
                     : pendingAction.type === "reject"
-                      ? "Disapprove"
+                      ? t("actions.reject")
                       : pendingAction.type === "suspend"
-                        ? "Suspend"
-                        : "Reactivate"}
+                        ? t("actions.suspend")
+                        : t("actions.reactivate")}
               </button>
             </div>
           </div>
