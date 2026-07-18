@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { Mail, Phone, CreditCard } from "lucide-react";
+
+import { Link } from "@/i18n/navigation";
 
 /* ── Route map ───────────────────────────────────────────────────────────── */
 const LINK_MAP: Record<string, string> = {

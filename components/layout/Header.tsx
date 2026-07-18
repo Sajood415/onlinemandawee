@@ -9,7 +9,6 @@ import { useTranslations, useLocale } from "next-intl";
 import { useAuth } from "@/store/auth-context";
 import { useCart } from "@/store/cart-context";
 import { useCurrency } from "@/store/currency-context";
-import Link from "next/link";
 import {
   Search,
   ShoppingBasket,
@@ -161,7 +160,7 @@ function SecondaryNavLink({
   const active = isNavLinkActive(pathname, href);
 
   return (
-    <Link
+    <LocaleLink
       href={href}
       aria-current={active ? "page" : undefined}
       className={`inline-flex items-center gap-1.5 px-2.5 py-2 text-[13px] font-medium whitespace-nowrap transition-colors sm:px-3 ${
@@ -177,7 +176,7 @@ function SecondaryNavLink({
           {badge}
         </span>
       ) : null}
-    </Link>
+    </LocaleLink>
   );
 }
 
@@ -478,7 +477,7 @@ export default function Header() {
         >
           <div className="w-full min-w-0 px-2 py-2.5 sm:px-3 sm:py-3 lg:px-4">
             <div className="flex min-w-0 flex-nowrap items-center gap-2 sm:gap-3 lg:gap-4">
-              <Link href="/" className="order-1 shrink-0">
+              <LocaleLink href="/" className="order-1 shrink-0">
                 <Image
                   src={HEADER_LOGO_SRC}
                   alt="Mandawee"
@@ -487,7 +486,7 @@ export default function Header() {
                   className="h-8 w-auto sm:h-9 md:h-10 transition-opacity hover:opacity-90"
                   priority
                 />
-              </Link>
+              </LocaleLink>
 
               <form
                 onSubmit={handleSearch}
@@ -853,7 +852,7 @@ export default function Header() {
                           {activeMegaCategory ? (
                             <>
                               <div className="mb-4 border-b border-gray-100 pb-3">
-                                <Link
+                                <LocaleLink
                                   href={activeMegaCategory.href}
                                   onClick={closeAll}
                                   className="inline-flex items-center gap-2 text-sm font-semibold text-[#0f3460] hover:text-[#ec1b23]"
@@ -861,7 +860,7 @@ export default function Header() {
                                   <span>{copy.megaAllIn}</span>
                                   <span>{activeMegaCategory.label}</span>
                                   <ChevronRight size={14} />
-                                </Link>
+                                </LocaleLink>
                               </div>
 
                               <div
@@ -878,14 +877,14 @@ export default function Header() {
                                     </h4>
                                     <div className="space-y-2">
                                       {activeMegaCategory.children.map((child) => (
-                                        <Link
+                                        <LocaleLink
                                           key={child.id}
                                           href={child.href}
                                           onClick={closeAll}
                                           className="block text-sm text-gray-600 transition-colors hover:text-[#ec1b23]"
                                         >
                                           {child.label}
-                                        </Link>
+                                        </LocaleLink>
                                       ))}
                                     </div>
                                   </div>
@@ -898,14 +897,14 @@ export default function Header() {
                                     </h4>
                                     <div className="space-y-2">
                                       {column.map((item) => (
-                                        <Link
+                                        <LocaleLink
                                           key={item.id}
                                           href={item.href}
                                           onClick={closeAll}
                                           className="block text-sm text-gray-600 transition-colors hover:text-[#ec1b23]"
                                         >
                                           {item.label}
-                                        </Link>
+                                        </LocaleLink>
                                       ))}
                                     </div>
                                   </div>
@@ -1020,14 +1019,14 @@ export default function Header() {
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.4 }}
                     >
-                      <Link
+                      <LocaleLink
                         href="/products"
                         onClick={() => setIsCartOpen(false)}
                         className="inline-flex items-center gap-2 px-10 py-4 bg-primary text-white rounded-full font-bold shadow-[0_10px_30px_-5px_rgba(220,53,69,0.4)] hover:shadow-[0_15px_40px_-5px_rgba(220,53,69,0.5)] hover:-translate-y-0.5 active:scale-95 transition-all"
                       >
                         <Search size={18} />
                         {copy.browseProducts}
-                      </Link>
+                      </LocaleLink>
                     </motion.div>
                   </div>
                 ) : (
@@ -1157,7 +1156,7 @@ function CategoryTile({
   onClick: () => void;
 }) {
   return (
-    <Link
+    <LocaleLink
       href={href}
       onClick={onClick}
       className="group flex flex-col items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50 p-4 text-center transition-all hover:border-[#ec1b23]/20 hover:bg-white hover:shadow-md"
@@ -1168,7 +1167,7 @@ function CategoryTile({
       <span className="line-clamp-2 text-xs font-medium leading-snug text-gray-700 group-hover:text-gray-900">
         {label}
       </span>
-    </Link>
+    </LocaleLink>
   );
 }
 

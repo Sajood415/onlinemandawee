@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Heart, Loader2, ShoppingBag, Truck } from "lucide-react";
 
 import { CatalogImage } from "@/components/catalog/CatalogImage";

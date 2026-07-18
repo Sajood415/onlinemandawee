@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Baby,
@@ -251,7 +250,7 @@ export function MobileNavMenu({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                 >
-                  <Link
+                  <LocaleLink
                     href={link.href}
                     onClick={() => {
                       setIsOpen(false);
@@ -279,7 +278,7 @@ export function MobileNavMenu({
                         {copy.hot}
                       </span>
                     ) : null}
-                  </Link>
+                  </LocaleLink>
                 </motion.div>
               ))}
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { CreditCard, Receipt, TrendingDown, Wallet } from "lucide-react";
 
 import { PaginationFooter } from "@/components/ui/pagination-footer";
