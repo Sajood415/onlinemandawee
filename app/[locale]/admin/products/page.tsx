@@ -7,22 +7,21 @@ import {
   ImageIcon,
   Loader2,
   Pencil,
+  RefreshCw,
   Search,
   X,
   XCircle,
 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { AdminProductEditPanel } from "@/components/admin/AdminProductEditPanel";
-import { DataTable } from "@/components/ui/data-table";
-
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
+import { DataTable } from "@/components/ui/data-table";
 import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-status";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
-import { toast } from "@/lib/utils/toast";
 import type { ProductTranslations } from "@/lib/localization/product-content";
-
-/* ─── Types ──────────────────────────────────────────────────────────── */
+import { toast } from "@/lib/utils/toast";
 
 type ProductVariant = {
   id: string;
@@ -67,54 +66,48 @@ type VendorOption = {
   user: { fullName: string; email: string };
 };
 
-/* ─── Helpers ─────────────────────────────────────────────────────────── */
-
-const STATUS_TABS: { value: ProductApprovalStatus | "ALL"; label: string }[] = [
-  { value: "ALL",              label: "All" },
-  { value: "PENDING_APPROVAL", label: "Pending review" },
-  { value: "APPROVED",         label: "Approved" },
-  { value: "REJECTED",         label: "Rejected" },
-  { value: "DRAFT",            label: "Draft" },
-  { value: "ARCHIVED",         label: "Archived" },
+const STATUS_TABS: Array<ProductApprovalStatus | "ALL"> = [
+  "ALL",
+  "PENDING_APPROVAL",
+  "APPROVED",
+  "REJECTED",
+  "DRAFT",
+  "ARCHIVED",
 ];
 
 function badgeClass(s: ProductApprovalStatus) {
-  if (s === "APPROVED")         return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  if (s === "PENDING_APPROVAL") return "bg-amber-50  text-amber-700  ring-amber-200";
-  if (s === "REJECTED")         return "bg-red-50    text-red-700    ring-red-200";
-  if (s === "ARCHIVED")         return "bg-neutral-100 text-neutral-600 ring-neutral-200";
+  if (s === "APPROVED") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  if (s === "PENDING_APPROVAL") return "bg-amber-50 text-amber-700 ring-amber-200";
+  if (s === "REJECTED") return "bg-red-50 text-red-700 ring-red-200";
+  if (s === "ARCHIVED") return "bg-neutral-100 text-neutral-600 ring-neutral-200";
   return "bg-blue-50 text-blue-700 ring-blue-200";
 }
 
-/* ─── Page ────────────────────────────────────────────────────────────── */
-
 export default function AdminProductsPage() {
+  const t = useTranslations("AdminPages.products");
+  const locale = useLocale();
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
 
-  const [products, setProducts]       = useState<AdminProduct[]>([]);
-  const [vendors, setVendors]         = useState<VendorOption[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState<string | null>(null);
-  const [activeTab, setActiveTab]     = useState<ProductApprovalStatus | "ALL">("ALL");
-  const [search, setSearch]           = useState("");
+  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [vendors, setVendors] = useState<VendorOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<ProductApprovalStatus | "ALL">("ALL");
+  const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [vendorFilter, setVendorFilter] = useState("");
   const [activeFilter, setActiveFilter] = useState<"" | "true" | "false">("");
   const [pendingCount, setPendingCount] = useState(0);
-  const [actionId, setActionId]       = useState<string | null>(null);
+  const [actionId, setActionId] = useState<string | null>(null);
 
-  /* reject modal */
   const [rejectTarget, setRejectTarget] = useState<AdminProduct | null>(null);
   const [rejectReason, setRejectReason] = useState("");
-  const [rejecting, setRejecting]       = useState(false);
+  const [rejecting, setRejecting] = useState(false);
 
-  /* detail drawer */
   const [detailProduct, setDetailProduct] = useState<AdminProduct | null>(null);
   const [drawerEditing, setDrawerEditing] = useState(false);
   const [drawerVariants, setDrawerVariants] = useState<ProductVariant[]>([]);
   const [drawerVariantsLoading, setDrawerVariantsLoading] = useState(false);
-
-  /* ── Fetch ──────────────────────────────────────────────────────── */
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
@@ -131,23 +124,28 @@ export default function AdminProductsPage() {
     return qs ? `?${qs}` : "";
   }, [activeTab, debouncedSearch, vendorFilter, activeFilter]);
 
-  const fetchProducts = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    setError(null);
-    try {
-      const res = await fetchWithAuth(`/api/admin/products${buildQuery()}`);
-      const data = await parseApiResponse<AdminProduct[]>(res);
-      setProducts(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load products.");
-    } finally {
-      setLoading(false);
-    }
-  }, [buildQuery]);
+  const fetchProducts = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      setError(null);
+      try {
+        const res = await fetchWithAuth(`/api/admin/products${buildQuery()}`);
+        const data = await parseApiResponse<AdminProduct[]>(res);
+        setProducts(data);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : t("loadError"));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [buildQuery, t]
+  );
 
   const fetchPendingCount = useCallback(async () => {
     try {
-      const res = await fetchWithAuth("/api/admin/products?approvalStatus=PENDING_APPROVAL");
+      const res = await fetchWithAuth(
+        "/api/admin/products?approvalStatus=PENDING_APPROVAL"
+      );
       const data = await parseApiResponse<AdminProduct[]>(res);
       setPendingCount(data.length);
     } catch {
@@ -166,7 +164,6 @@ export default function AdminProductsPage() {
     }
   }, [authLoading, user, fetchProducts, fetchPendingCount]);
 
-  /* auto-refresh when admin returns to this tab */
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState === "visible") {
@@ -178,7 +175,6 @@ export default function AdminProductsPage() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [fetchProducts, fetchPendingCount]);
 
-  /* load variants when drawer opens */
   useEffect(() => {
     if (!detailProduct || drawerEditing) {
       if (!detailProduct) setDrawerVariants([]);
@@ -216,7 +212,14 @@ export default function AdminProductsPage() {
     await fetchPendingCount();
   };
 
-  /* ── Approve ────────────────────────────────────────────────────── */
+  const formatMoney = useCallback(
+    (amount: number, currency: string) =>
+      (amount / 100).toLocaleString(locale, {
+        style: "currency",
+        currency: currency || "USD",
+      }),
+    [locale]
+  );
 
   const onApprove = async (product: AdminProduct) => {
     setActionId(product.id);
@@ -225,18 +228,22 @@ export default function AdminProductsPage() {
         method: "POST",
       });
       await parseApiResponse<AdminProduct>(res);
-      toast.success("Approved", `"${product.name}" is now live.`);
+      toast.success(
+        t("toasts.approvedTitle"),
+        t("toasts.approvedBody", { name: product.name })
+      );
       if (detailProduct?.id === product.id) closeDrawer();
       await fetchProducts(true);
       await fetchPendingCount();
     } catch (err) {
-      toast.error("Could not approve", err instanceof Error ? err.message : "Unknown error");
+      toast.error(
+        t("toasts.approveFailed"),
+        err instanceof Error ? err.message : t("toasts.genericError")
+      );
     } finally {
       setActionId(null);
     }
   };
-
-  /* ── Reject ─────────────────────────────────────────────────────── */
 
   const openReject = (product: AdminProduct) => {
     setRejectTarget(product);
@@ -247,19 +254,28 @@ export default function AdminProductsPage() {
     if (!rejectTarget) return;
     setRejecting(true);
     try {
-      const res = await fetchWithAuth(`/api/admin/products/${rejectTarget.id}/reject`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: rejectReason.trim() || undefined }),
-      });
+      const res = await fetchWithAuth(
+        `/api/admin/products/${rejectTarget.id}/reject`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason: rejectReason.trim() || undefined }),
+        }
+      );
       await parseApiResponse<AdminProduct>(res);
-      toast.success("Rejected", `"${rejectTarget.name}" has been rejected.`);
+      toast.success(
+        t("toasts.rejectedTitle"),
+        t("toasts.rejectedBody", { name: rejectTarget.name })
+      );
       if (detailProduct?.id === rejectTarget.id) closeDrawer();
       setRejectTarget(null);
       await fetchProducts(true);
       await fetchPendingCount();
     } catch (err) {
-      toast.error("Could not reject", err instanceof Error ? err.message : "Unknown error");
+      toast.error(
+        t("toasts.rejectFailed"),
+        err instanceof Error ? err.message : t("toasts.genericError")
+      );
     } finally {
       setRejecting(false);
     }
@@ -268,7 +284,7 @@ export default function AdminProductsPage() {
   const columns = useMemo<ColumnDef<AdminProduct>[]>(
     () => [
       {
-        header: "Product",
+        header: t("columns.product"),
         accessorKey: "name",
         cell: ({ row }) => {
           const product = row.original;
@@ -299,37 +315,45 @@ export default function AdminProductsPage() {
         },
       },
       {
-        header: "Vendor",
+        header: t("columns.vendor"),
         id: "vendor",
         cell: ({ row }) => (
           <div>
             <p className="font-medium text-neutral-800">
-              {row.original.vendorProfile.storeName ?? row.original.vendorProfile.user.fullName}
+              {row.original.vendorProfile.storeName ??
+                row.original.vendorProfile.user.fullName}
             </p>
-            <p className="text-xs text-neutral-400">{row.original.vendorProfile.user.email}</p>
+            <p className="text-xs text-neutral-400">
+              {row.original.vendorProfile.user.email}
+            </p>
           </div>
         ),
       },
       {
-        header: "Category",
+        header: t("columns.category"),
         accessorKey: "category.name",
         cell: ({ row }) => row.original.category.name,
       },
       {
-        header: "Price",
+        header: t("columns.price"),
         id: "price",
         cell: ({ row }) =>
-          (row.original.priceAmount / 100).toLocaleString(undefined, {
-            style: "currency",
-            currency: row.original.currency || "USD",
-          }),
+          formatMoney(row.original.priceAmount, row.original.currency),
       },
       {
-        header: "Stock",
+        header: t("columns.stock"),
         accessorKey: "stockQty",
       },
       {
-        header: "Status",
+        header: t("columns.visibility"),
+        id: "visibility",
+        cell: ({ row }) =>
+          row.original.isActive
+            ? t("visibility.active")
+            : t("visibility.inactive"),
+      },
+      {
+        header: t("columns.status"),
         id: "status",
         cell: ({ row }) => {
           const product = row.original;
@@ -338,7 +362,7 @@ export default function AdminProductsPage() {
               <span
                 className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${badgeClass(product.approvalStatus)}`}
               >
-                {product.approvalStatus.replaceAll("_", " ")}
+                {t(`statuses.${product.approvalStatus}`)}
               </span>
               {product.rejectionReason ? (
                 <p
@@ -353,7 +377,7 @@ export default function AdminProductsPage() {
         },
       },
       {
-        header: "Actions",
+        header: t("columns.actions"),
         id: "actions",
         cell: ({ row }) => {
           const product = row.original;
@@ -376,7 +400,7 @@ export default function AdminProductsPage() {
                     ) : (
                       <CheckCircle2 className="h-3.5 w-3.5" />
                     )}
-                    Approve
+                    {t("actions.approve")}
                   </button>
                   <button
                     type="button"
@@ -385,7 +409,7 @@ export default function AdminProductsPage() {
                     className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
                   >
                     <XCircle className="h-3.5 w-3.5" />
-                    Reject
+                    {t("actions.reject")}
                   </button>
                 </>
               ) : null}
@@ -395,114 +419,120 @@ export default function AdminProductsPage() {
                   setDrawerEditing(true);
                   setDetailProduct(product);
                 }}
-                className="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                className="inline-flex items-center gap-1 rounded-md border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
               >
                 <Pencil className="h-3.5 w-3.5" />
-                Edit
+                {t("actions.edit")}
               </button>
             </div>
           );
         },
       },
     ],
-    [actionId]
+    [actionId, formatMoney, t]
   );
-
-  /* ── Guard ──────────────────────────────────────────────────────── */
 
   if (authLoading || !user) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
+        <p className="text-sm text-neutral-500">{t("loading")}</p>
       </div>
     );
   }
 
-  /* ── Render ────────────────────────────────────────────────────── */
-
   return (
-    <div className="space-y-5 pb-16">
-
-      {/* Header */}
+    <div className="w-full min-w-0 space-y-5 pb-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[#0f3460]">
-            Product catalog
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">
+            {t("title")}
           </h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            View, search, and edit products from all vendors. Approve or reject pending listings.
-          </p>
+          <p className="mt-1 text-sm text-neutral-500">{t("subtitle")}</p>
         </div>
-        {pendingCount > 0 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-700 ring-1 ring-amber-200">
-            {pendingCount} pending review
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {pendingCount > 0 ? (
+            <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-700 ring-1 ring-amber-200">
+              {t("pendingCount", { count: pendingCount })}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              void fetchProducts();
+              void fetchPendingCount();
+            }}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            {t("refresh")}
+          </button>
+        </div>
       </div>
 
-      {/* Status tabs */}
       <div className="flex flex-wrap gap-1 rounded-xl border border-neutral-200 bg-neutral-50 p-1">
         {STATUS_TABS.map((tab) => (
           <button
-            key={tab.value}
+            key={tab}
             type="button"
-            onClick={() => setActiveTab(tab.value)}
+            onClick={() => setActiveTab(tab)}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-              activeTab === tab.value
+              activeTab === tab
                 ? "bg-white text-neutral-900 shadow-sm"
                 : "text-neutral-500 hover:text-neutral-700"
             }`}
           >
-            {tab.label}
+            {t(`tabs.${tab}`)}
           </button>
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-0 flex-1 sm:max-w-xs">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
-            <input
-              className="w-full rounded-lg border border-neutral-300 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              placeholder="Search products, vendors, SKU…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <select
-            className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-            value={vendorFilter}
-            onChange={(e) => setVendorFilter(e.target.value)}
-          >
-            <option value="">All vendors</option>
-            {vendors.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.storeName ?? v.user.fullName}
-              </option>
-            ))}
-          </select>
-          <select
-            className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-            value={activeFilter}
-            onChange={(e) => setActiveFilter(e.target.value as "" | "true" | "false")}
-          >
-            <option value="">Any visibility</option>
-            <option value="true">Active only</option>
-            <option value="false">Inactive only</option>
-          </select>
-          <p className="text-sm text-neutral-500">
-            {loading ? "Loading…" : `${products.length} product${products.length !== 1 ? "s" : ""}`}
-          </p>
-        </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="relative min-w-0 flex-1 sm:max-w-xs">
+          <Search className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+          <input
+            className="w-full rounded-lg border border-neutral-200 bg-white py-2 pe-3 ps-9 text-sm outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+            placeholder={t("searchPlaceholder")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
+        <select
+          className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+          value={vendorFilter}
+          onChange={(e) => setVendorFilter(e.target.value)}
+        >
+          <option value="">{t("allVendors")}</option>
+          {vendors.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.storeName ?? v.user.fullName}
+            </option>
+          ))}
+        </select>
+        <select
+          className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+          value={activeFilter}
+          onChange={(e) =>
+            setActiveFilter(e.target.value as "" | "true" | "false")
+          }
+        >
+          <option value="">{t("anyVisibility")}</option>
+          <option value="true">{t("activeOnly")}</option>
+          <option value="false">{t("inactiveOnly")}</option>
+        </select>
+        <p className="text-sm text-neutral-500">
+          {loading
+            ? t("loadingList")
+            : t("count", { count: products.length })}
+        </p>
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center text-sm text-neutral-600 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-          Loading products…
+        <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center text-sm text-neutral-500">
+          {t("loadingList")}
         </div>
       ) : error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-700 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-700">
           {error}
         </div>
       ) : (
@@ -511,30 +541,40 @@ export default function AdminProductsPage() {
           columns={columns}
           getRowId={(row) => row.id}
           onRowClick={openDetail}
-          emptyMessage="No products match your filters."
+          emptyMessage={t("empty")}
           initialPageSize={10}
           pageSizeOptions={[10, 20, 50]}
         />
       )}
 
-      {/* ── Product detail drawer ─────────────────────────────────── */}
-      {detailProduct && (
+      {detailProduct ? (
         <div
           className="fixed inset-0 z-50 flex justify-end bg-black/40"
-          onClick={(e) => { if (e.target === e.currentTarget) closeDrawer(); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeDrawer();
+          }}
         >
-          <div className={`flex h-full w-full flex-col bg-white shadow-2xl ${drawerEditing ? "max-w-xl" : "max-w-md"}`}>
-            {/* drawer header */}
+          <div
+            className={`flex h-full w-full flex-col bg-white shadow-2xl ${
+              drawerEditing ? "max-w-xl" : "max-w-md"
+            }`}
+          >
             <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-4">
               <h3 className="text-base font-semibold text-neutral-900">
-                {drawerEditing ? "Edit product" : "Product details"}
+                {drawerEditing
+                  ? t("drawer.editTitle")
+                  : t("drawer.detailsTitle")}
               </h3>
-              <button type="button" onClick={closeDrawer} className="rounded-lg p-1.5 hover:bg-neutral-100">
+              <button
+                type="button"
+                onClick={closeDrawer}
+                className="rounded-lg p-1.5 hover:bg-neutral-100"
+                aria-label={t("drawer.close")}
+              >
                 <X className="h-5 w-5 text-neutral-500" />
               </button>
             </div>
 
-            {/* drawer body */}
             <div className="flex-1 overflow-y-auto p-5">
               {drawerEditing ? (
                 <AdminProductEditPanel
@@ -544,103 +584,185 @@ export default function AdminProductsPage() {
                 />
               ) : (
                 <div className="space-y-5">
-                  {detailProduct.images.length > 0 && (
+                  {detailProduct.images.length > 0 ? (
                     <div className="grid grid-cols-3 gap-2">
                       {detailProduct.images.map((img, i) => (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img key={i} src={img} alt={detailProduct.name} className="aspect-square w-full rounded-xl object-cover" />
+                        <img
+                          key={i}
+                          src={img}
+                          alt={detailProduct.name}
+                          className="aspect-square w-full rounded-xl object-cover"
+                        />
                       ))}
                     </div>
-                  )}
+                  ) : null}
 
                   <div className="flex items-start justify-between gap-3">
-                    <h4 className="text-lg font-semibold text-neutral-900">{detailProduct.name}</h4>
-                    <span className={`shrink-0 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${badgeClass(detailProduct.approvalStatus)}`}>
-                      {detailProduct.approvalStatus.replaceAll("_", " ")}
+                    <h4 className="text-lg font-semibold text-neutral-900">
+                      {detailProduct.name}
+                    </h4>
+                    <span
+                      className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${badgeClass(detailProduct.approvalStatus)}`}
+                    >
+                      {t(`statuses.${detailProduct.approvalStatus}`)}
                     </span>
                   </div>
 
                   <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                     <div>
-                      <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Price</dt>
+                      <dt className="text-xs font-medium text-neutral-500">
+                        {t("columns.price")}
+                      </dt>
                       <dd className="mt-0.5 font-medium text-neutral-900">
-                        {(detailProduct.priceAmount / 100).toLocaleString(undefined, { style: "currency", currency: detailProduct.currency || "USD" })}
+                        {formatMoney(
+                          detailProduct.priceAmount,
+                          detailProduct.currency
+                        )}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Stock</dt>
-                      <dd className="mt-0.5 font-medium text-neutral-900">{detailProduct.stockQty}</dd>
+                      <dt className="text-xs font-medium text-neutral-500">
+                        {t("columns.stock")}
+                      </dt>
+                      <dd className="mt-0.5 font-medium text-neutral-900">
+                        {detailProduct.stockQty}
+                      </dd>
                     </div>
                     <div>
-                      <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Category</dt>
-                      <dd className="mt-0.5 text-neutral-700">{detailProduct.category.name}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">SKU</dt>
-                      <dd className="mt-0.5 text-neutral-700">{detailProduct.sku ?? "—"}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Visibility</dt>
-                      <dd className="mt-0.5 text-neutral-700">{detailProduct.isActive ? "Active" : "Inactive"}</dd>
-                    </div>
-                    <div className="col-span-2">
-                      <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Vendor</dt>
+                      <dt className="text-xs font-medium text-neutral-500">
+                        {t("columns.category")}
+                      </dt>
                       <dd className="mt-0.5 text-neutral-700">
-                        {detailProduct.vendorProfile.storeName ?? detailProduct.vendorProfile.user.fullName}
-                        <span className="ml-1.5 text-neutral-400">({detailProduct.vendorProfile.user.email})</span>
+                        {detailProduct.category.name}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium text-neutral-500">
+                        {t("drawer.sku")}
+                      </dt>
+                      <dd className="mt-0.5 text-neutral-700">
+                        {detailProduct.sku ?? "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium text-neutral-500">
+                        {t("columns.visibility")}
+                      </dt>
+                      <dd className="mt-0.5 text-neutral-700">
+                        {detailProduct.isActive
+                          ? t("visibility.active")
+                          : t("visibility.inactive")}
                       </dd>
                     </div>
                     <div className="col-span-2">
-                      <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Description</dt>
-                      <dd className="mt-0.5 leading-relaxed text-neutral-700">{detailProduct.description}</dd>
+                      <dt className="text-xs font-medium text-neutral-500">
+                        {t("columns.vendor")}
+                      </dt>
+                      <dd className="mt-0.5 text-neutral-700">
+                        {detailProduct.vendorProfile.storeName ??
+                          detailProduct.vendorProfile.user.fullName}
+                        <span className="ms-1.5 text-neutral-400">
+                          ({detailProduct.vendorProfile.user.email})
+                        </span>
+                      </dd>
                     </div>
-                    {detailProduct.rejectionReason && (
+                    <div className="col-span-2">
+                      <dt className="text-xs font-medium text-neutral-500">
+                        {t("drawer.description")}
+                      </dt>
+                      <dd className="mt-0.5 leading-relaxed text-neutral-700">
+                        {detailProduct.description}
+                      </dd>
+                    </div>
+                    {detailProduct.rejectionReason ? (
                       <div className="col-span-2 rounded-lg border border-red-200 bg-red-50 p-3">
-                        <dt className="text-xs font-semibold uppercase tracking-wider text-red-500">Rejection reason</dt>
-                        <dd className="mt-0.5 text-sm text-red-700">{detailProduct.rejectionReason}</dd>
+                        <dt className="text-xs font-medium text-red-500">
+                          {t("drawer.rejectionReason")}
+                        </dt>
+                        <dd className="mt-0.5 text-sm text-red-700">
+                          {detailProduct.rejectionReason}
+                        </dd>
                       </div>
-                    )}
+                    ) : null}
                   </dl>
 
                   <div>
-                    <h5 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                      Variants {drawerVariants.length > 0 && `(${drawerVariants.length})`}
+                    <h5 className="mb-2 text-xs font-medium text-neutral-500">
+                      {t("drawer.variants")}
+                      {drawerVariants.length > 0
+                        ? ` (${drawerVariants.length})`
+                        : ""}
                     </h5>
                     {drawerVariantsLoading ? (
                       <div className="flex items-center gap-2 text-sm text-neutral-400">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {t("drawer.loadingVariants")}
                       </div>
                     ) : drawerVariants.length === 0 ? (
-                      <p className="text-sm text-neutral-400">No variants defined.</p>
+                      <p className="text-sm text-neutral-400">
+                        {t("drawer.noVariants")}
+                      </p>
                     ) : (
                       <div className="overflow-hidden rounded-xl border border-neutral-200">
                         <table className="min-w-full text-sm">
                           <thead>
-                            <tr className="border-b border-neutral-100 bg-neutral-50 text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                              <th className="px-3 py-2 text-left">Variant</th>
-                              <th className="px-3 py-2 text-right">Price</th>
-                              <th className="px-3 py-2 text-right">Stock</th>
-                              <th className="px-3 py-2 text-left">SKU</th>
-                              <th className="px-3 py-2 text-left">Active</th>
+                            <tr className="border-b border-neutral-100 bg-neutral-50 text-xs font-semibold text-neutral-500">
+                              <th className="px-3 py-2 text-start">
+                                {t("drawer.variant")}
+                              </th>
+                              <th className="px-3 py-2 text-end">
+                                {t("columns.price")}
+                              </th>
+                              <th className="px-3 py-2 text-end">
+                                {t("columns.stock")}
+                              </th>
+                              <th className="px-3 py-2 text-start">
+                                {t("drawer.sku")}
+                              </th>
+                              <th className="px-3 py-2 text-start">
+                                {t("drawer.active")}
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
                             {drawerVariants.map((v) => (
-                              <tr key={v.id} className="border-b border-neutral-100 last:border-0">
-                                <td className="px-3 py-2 font-medium text-neutral-800">{v.name}</td>
-                                <td className="px-3 py-2 text-right tabular-nums text-neutral-600">
-                                  {v.priceAmount != null
-                                    ? (v.priceAmount / 100).toLocaleString(undefined, {
-                                        style: "currency",
-                                        currency: detailProduct.currency || "USD",
-                                      })
-                                    : <span className="text-neutral-400">Base</span>}
+                              <tr
+                                key={v.id}
+                                className="border-b border-neutral-100 last:border-0"
+                              >
+                                <td className="px-3 py-2 font-medium text-neutral-800">
+                                  {v.name}
                                 </td>
-                                <td className="px-3 py-2 text-right tabular-nums">{v.stockQty}</td>
-                                <td className="px-3 py-2 text-neutral-500">{v.sku ?? "—"}</td>
+                                <td className="px-3 py-2 text-end tabular-nums text-neutral-600">
+                                  {v.priceAmount != null ? (
+                                    formatMoney(
+                                      v.priceAmount,
+                                      detailProduct.currency
+                                    )
+                                  ) : (
+                                    <span className="text-neutral-400">
+                                      {t("drawer.basePrice")}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-end tabular-nums">
+                                  {v.stockQty}
+                                </td>
+                                <td className="px-3 py-2 text-neutral-500">
+                                  {v.sku ?? "—"}
+                                </td>
                                 <td className="px-3 py-2">
-                                  <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${v.isActive ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-500"}`}>
-                                    {v.isActive ? "Yes" : "No"}
+                                  <span
+                                    className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                      v.isActive
+                                        ? "bg-emerald-50 text-emerald-700"
+                                        : "bg-neutral-100 text-neutral-500"
+                                    }`}
+                                  >
+                                    {v.isActive
+                                      ? t("drawer.yes")
+                                      : t("drawer.no")}
                                   </span>
                                 </td>
                               </tr>
@@ -654,18 +776,17 @@ export default function AdminProductsPage() {
               )}
             </div>
 
-            {/* drawer footer */}
-            {!drawerEditing && (
+            {!drawerEditing ? (
               <div className="flex items-center gap-3 border-t border-neutral-100 px-5 py-4">
                 <button
                   type="button"
                   onClick={() => setDrawerEditing(true)}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
                 >
                   <Pencil className="h-4 w-4" />
-                  Edit product
+                  {t("drawer.editProduct")}
                 </button>
-                {detailProduct.approvalStatus === "PENDING_APPROVAL" && (
+                {detailProduct.approvalStatus === "PENDING_APPROVAL" ? (
                   <>
                     <button
                       type="button"
@@ -673,49 +794,61 @@ export default function AdminProductsPage() {
                       onClick={() => void onApprove(detailProduct)}
                       className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
                     >
-                      {actionId === detailProduct.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                      Approve
+                      {actionId === detailProduct.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4" />
+                      )}
+                      {t("actions.approve")}
                     </button>
                     <button
                       type="button"
-                      onClick={() => { openReject(detailProduct); closeDrawer(); }}
+                      onClick={() => openReject(detailProduct)}
                       className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50"
                     >
                       <XCircle className="h-4 w-4" />
-                      Reject
+                      {t("actions.reject")}
                     </button>
                   </>
-                )}
+                ) : null}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* ── Reject reason modal ───────────────────────────────────── */}
-      {rejectTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      {rejectTarget ? (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
-              <h3 className="text-base font-semibold text-neutral-900">Reject product</h3>
-              <button type="button" onClick={() => setRejectTarget(null)} className="rounded-lg p-1.5 hover:bg-neutral-100">
+              <h3 className="text-base font-semibold text-neutral-900">
+                {t("reject.title")}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setRejectTarget(null)}
+                className="rounded-lg p-1.5 hover:bg-neutral-100"
+              >
                 <X className="h-5 w-5 text-neutral-500" />
               </button>
             </div>
-            <div className="px-6 py-5 space-y-4">
+            <div className="space-y-4 px-6 py-5">
               <p className="text-sm text-neutral-700">
-                You are rejecting <span className="font-semibold">"{rejectTarget.name}"</span>. Provide an optional reason to help the vendor improve their listing.
+                {t("reject.body", { name: rejectTarget.name })}
               </p>
               <div className="flex flex-col gap-1.5">
                 <label className="block text-sm font-medium text-neutral-700">
-                  Reason <span className="font-normal text-neutral-400">(optional)</span>
+                  {t("reject.reason")}{" "}
+                  <span className="font-normal text-neutral-400">
+                    {t("reject.optional")}
+                  </span>
                 </label>
                 <textarea
                   rows={3}
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder="e.g. Images are low quality, description is too short…"
+                  placeholder={t("reject.placeholder")}
                 />
               </div>
             </div>
@@ -723,9 +856,9 @@ export default function AdminProductsPage() {
               <button
                 type="button"
                 onClick={() => setRejectTarget(null)}
-                className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                className="rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
               >
-                Cancel
+                {t("reject.cancel")}
               </button>
               <button
                 type="button"
@@ -733,13 +866,15 @@ export default function AdminProductsPage() {
                 onClick={() => void onRejectConfirm()}
                 className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
               >
-                {rejecting && <Loader2 className="h-4 w-4 animate-spin" />}
-                Confirm rejection
+                {rejecting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : null}
+                {rejecting ? t("reject.submitting") : t("reject.confirm")}
               </button>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

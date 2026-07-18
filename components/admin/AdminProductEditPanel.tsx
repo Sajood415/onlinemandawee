@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ImageIcon, Loader2, Plus, Trash2, Upload } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { ProductApprovalStatus } from "@/domain/catalog/product-approval-status";
 import { ProductTranslationFields } from "@/components/products/ProductTranslationFields";
@@ -101,6 +102,9 @@ function productToForm(product: EditableProduct): FormState {
 
 
 export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
+  const t = useTranslations("AdminPages.products.edit");
+  const tStatus = useTranslations("AdminPages.products.statuses");
+  const locale = useLocale();
   const [form, setForm] = useState<FormState>(() => productToForm(product));
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -111,6 +115,12 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
   const hasVariants = variants.length > 0;
   const showBasePricingFields = !variantsLoading && variants.length === 0;
 
+  const formatMoney = (amount: number, currency: string) =>
+    (amount / 100).toLocaleString(locale, {
+      style: "currency",
+      currency: currency || "USD",
+    });
+
   useEffect(() => {
     setForm(productToForm(product));
   }, [product]);
@@ -120,9 +130,9 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
     fetchWithAuth("/api/admin/categories")
       .then((res) => parseApiResponse<Category[]>(res))
       .then(setCategories)
-      .catch(() => toast.error("Could not load categories"))
+      .catch(() => toast.error(t("toasts.categoriesFailed")))
       .finally(() => setCategoriesLoading(false));
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     setVariantsLoading(true);
@@ -131,10 +141,10 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
       .then(setVariants)
       .catch(() => {
         setVariants([]);
-        toast.error("Could not load variants");
+        toast.error(t("toasts.variantsFailed"));
       })
       .finally(() => setVariantsLoading(false));
-  }, [product.id]);
+  }, [product.id, t]);
 
   const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -210,15 +220,15 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
     e.preventDefault();
 
     if (!form.categoryId) {
-      toast.error("Category required", "Select a category.");
+      toast.error(t("toasts.categoryRequired"), t("toasts.categoryRequiredBody"));
       return;
     }
     if (form.name.trim().length < 2) {
-      toast.error("Name too short", "At least 2 characters.");
+      toast.error(t("toasts.nameShort"), t("toasts.nameShortBody"));
       return;
     }
     if (form.description.trim().length < 10) {
-      toast.error("Description too short", "At least 10 characters.");
+      toast.error(t("toasts.descShort"), t("toasts.descShortBody"));
       return;
     }
 
@@ -232,14 +242,14 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
       stockQty = derived.stockQty;
     } else {
       if (!Number.isFinite(priceRaw) || priceRaw <= 0) {
-        toast.error("Invalid price", "Enter a price greater than 0.");
+        toast.error(t("toasts.priceInvalid"), t("toasts.priceInvalidBody"));
         return;
       }
       priceAmount = Math.round(priceRaw * 100);
 
       stockQty = Number(form.stockQty);
       if (!Number.isInteger(stockQty) || stockQty < 0) {
-        toast.error("Invalid stock", "Must be 0 or more.");
+        toast.error(t("toasts.stockInvalid"), t("toasts.stockInvalidBody"));
         return;
       }
     }
@@ -256,7 +266,7 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
         }
       }
       if (!resolvedUrls.length) {
-        toast.error("Images required", "Add at least one image.");
+        toast.error(t("toasts.imagesRequired"), t("toasts.imagesRequiredBody"));
         setSaving(false);
         return;
       }
@@ -287,12 +297,15 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
         body: JSON.stringify(payload),
       });
       const saved = await parseApiResponse<EditableProduct>(res);
-      toast.success("Product updated", `"${saved.name}" has been saved.`);
+      toast.success(
+        t("toasts.savedTitle"),
+        t("toasts.savedBody", { name: saved.name })
+      );
       onSaved(saved);
     } catch (err) {
       toast.error(
-        "Could not save",
-        err instanceof Error ? err.message : "Unknown error"
+        t("toasts.saveFailed"),
+        err instanceof Error ? err.message : t("toasts.genericError")
       );
     } finally {
       setSaving(false);
@@ -303,7 +316,7 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
     <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5 sm:col-span-2">
-          <label className={LABEL}>Product name (English)</label>
+          <label className={LABEL}>{t("nameEn")}</label>
           <input
             className={INPUT}
             value={form.name}
@@ -313,25 +326,25 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className={LABEL}>Category</label>
+          <label className={LABEL}>{t("category")}</label>
           <select
             className={INPUT}
             value={form.categoryId}
             onChange={(e) => updateField("categoryId", e.target.value)}
             disabled={categoriesLoading}
           >
-            <option value="">Select category</option>
+            <option value="">{t("selectCategory")}</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
-                {!c.isActive ? " (inactive)" : ""}
+                {!c.isActive ? ` ${t("inactiveCategory")}` : ""}
               </option>
             ))}
           </select>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className={LABEL}>Approval status</label>
+          <label className={LABEL}>{t("approvalStatus")}</label>
           <select
             className={INPUT}
             value={form.approvalStatus}
@@ -344,7 +357,7 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
           >
             {APPROVAL_STATUSES.map((s) => (
               <option key={s} value={s}>
-                {s.replaceAll("_", " ")}
+                {tStatus(s)}
               </option>
             ))}
           </select>
@@ -360,7 +373,7 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
 
       <div className={`grid gap-4 ${showBasePricingFields ? "sm:grid-cols-4" : "sm:grid-cols-1"}`}>
         <div className="flex flex-col gap-1.5">
-          <label className={LABEL}>Currency</label>
+          <label className={LABEL}>{t("currency")}</label>
           <select
             className={INPUT}
             value={form.currency}
@@ -376,7 +389,7 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
         {showBasePricingFields ? (
           <>
             <div className="flex flex-col gap-1.5">
-              <label className={LABEL}>Price</label>
+              <label className={LABEL}>{t("price")}</label>
               <input
                 type="number"
                 min="0.01"
@@ -387,7 +400,7 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className={LABEL}>Stock</label>
+              <label className={LABEL}>{t("stock")}</label>
               <input
                 type="number"
                 min="0"
@@ -398,7 +411,7 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className={LABEL}>SKU</label>
+              <label className={LABEL}>{t("sku")}</label>
               <input
                 className={INPUT}
                 value={form.sku}
@@ -413,47 +426,41 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
       {variantsLoading ? (
         <div className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-500">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Loading variant details…
+          {t("loadingVariants")}
         </div>
       ) : hasVariants ? (
         <div className="space-y-2 rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
           <div className="flex items-center justify-between gap-2">
             <label className={LABEL}>
-              Variants ({variants.length})
+              {t("variants", { count: variants.length })}
             </label>
-            <span className="text-xs text-neutral-500">Managed by vendor</span>
+            <span className="text-xs text-neutral-500">{t("managedByVendor")}</span>
           </div>
           <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-neutral-100 bg-neutral-50 text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                  <th className="px-3 py-2 text-left">Variant</th>
-                  <th className="px-3 py-2 text-right">Price</th>
-                  <th className="px-3 py-2 text-right">Stock</th>
-                  <th className="px-3 py-2 text-left">SKU</th>
-                  <th className="px-3 py-2 text-left">Active</th>
+                <tr className="border-b border-neutral-100 bg-neutral-50 text-xs font-semibold text-neutral-500">
+                  <th className="px-3 py-2 text-start">{t("variant")}</th>
+                  <th className="px-3 py-2 text-end">{t("price")}</th>
+                  <th className="px-3 py-2 text-end">{t("stock")}</th>
+                  <th className="px-3 py-2 text-start">{t("sku")}</th>
+                  <th className="px-3 py-2 text-start">{t("active")}</th>
                 </tr>
               </thead>
               <tbody>
                 {variants.map((variant) => (
                   <tr key={variant.id} className="border-b border-neutral-100 last:border-0">
                     <td className="px-3 py-2 font-medium text-neutral-800">{variant.name}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-neutral-600">
+                    <td className="px-3 py-2 text-end tabular-nums text-neutral-600">
                       {variant.priceAmount != null
-                        ? (variant.priceAmount / 100).toLocaleString(undefined, {
-                            style: "currency",
-                            currency: form.currency || "USD",
-                          })
+                        ? formatMoney(variant.priceAmount, form.currency)
                         : (
                           <span className="text-neutral-400">
-                            {(product.priceAmount / 100).toLocaleString(undefined, {
-                              style: "currency",
-                              currency: form.currency || "USD",
-                            })}
+                            {formatMoney(product.priceAmount, form.currency)}
                           </span>
                         )}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums">{variant.stockQty}</td>
+                    <td className="px-3 py-2 text-end tabular-nums">{variant.stockQty}</td>
                     <td className="px-3 py-2 text-neutral-500">{variant.sku ?? "—"}</td>
                     <td className="px-3 py-2">
                       <span
@@ -463,7 +470,7 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
                             : "bg-neutral-100 text-neutral-500"
                         }`}
                       >
-                        {variant.isActive ? "Yes" : "No"}
+                        {variant.isActive ? t("yes") : t("no")}
                       </span>
                     </td>
                   </tr>
@@ -481,12 +488,12 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
           onChange={(e) => updateField("isActive", e.target.checked)}
           className="rounded border-neutral-300"
         />
-        Active on storefront
+        {t("activeStorefront")}
       </label>
 
       {form.approvalStatus === "REJECTED" && (
         <div className="flex flex-col gap-1.5">
-          <label className={LABEL}>Rejection reason</label>
+          <label className={LABEL}>{t("rejectionReason")}</label>
           <textarea
             rows={2}
             className={INPUT}
@@ -498,7 +505,7 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
       )}
 
       <div className="flex flex-col gap-1.5">
-        <label className={LABEL}>Description (English)</label>
+        <label className={LABEL}>{t("descriptionEn")}</label>
         <textarea
           rows={4}
           className={INPUT}
@@ -510,19 +517,19 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className={LABEL}>Images</label>
+          <label className={LABEL}>{t("images")}</label>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={addUrlSlot}
-              className="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+              className="inline-flex items-center gap-1 rounded-md border border-neutral-200 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
             >
               <Plus className="h-3.5 w-3.5" />
-              URL
+              {t("addUrl")}
             </button>
-            <label className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-neutral-300 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+            <label className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-neutral-200 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
               <Upload className="h-3.5 w-3.5" />
-              Upload
+              {t("upload")}
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
@@ -537,7 +544,7 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
         {form.images.length === 0 ? (
           <div className="flex items-center gap-2 rounded-lg border border-dashed border-neutral-200 px-3 py-6 text-sm text-neutral-400">
             <ImageIcon className="h-4 w-4" />
-            No images yet
+            {t("noImages")}
           </div>
         ) : (
           <div className="space-y-2">
@@ -567,11 +574,11 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
                     className={`${INPUT} min-w-0 flex-1`}
                     value={slot.url}
                     onChange={(e) => updateUrlSlot(i, e.target.value)}
-                    placeholder="https://…"
+                    placeholder={t("urlPlaceholder")}
                   />
                 ) : (
                   <span className="min-w-0 flex-1 truncate text-xs text-neutral-500">
-                    {slot.uploading ? "Uploading…" : slot.file.name}
+                    {slot.uploading ? t("uploading") : slot.file.name}
                   </span>
                 )}
                 <button
@@ -591,18 +598,18 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
         <button
           type="submit"
           disabled={saving}
-          className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-60"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#0F3460] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
         >
-          {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-          Save changes
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {saving ? t("saving") : t("save")}
         </button>
         <button
           type="button"
           onClick={onCancel}
           disabled={saving}
-          className="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
+          className="rounded-lg border border-neutral-200 px-4 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
         >
-          Cancel
+          {t("cancel")}
         </button>
       </div>
     </form>

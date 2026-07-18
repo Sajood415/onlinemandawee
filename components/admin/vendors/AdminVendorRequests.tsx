@@ -41,6 +41,7 @@ type VendorListItem = {
 };
 
 type StatusFilter = "ALL" | VendorStatus;
+type SellerTypeFilter = "ALL" | SellerType;
 
 type PendingAction =
   | {
@@ -110,6 +111,8 @@ export function AdminVendorRequests() {
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [vendors, setVendors] = useState<VendorListItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [sellerTypeFilter, setSellerTypeFilter] =
+    useState<SellerTypeFilter>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingList, setLoadingList] = useState(true);
   const [busyMap, setBusyMap] = useState<Record<string, boolean>>({});
@@ -175,9 +178,17 @@ export function AdminVendorRequests() {
 
   const filteredVendors = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return vendors;
 
     return vendors.filter((vendor) => {
+      if (
+        sellerTypeFilter !== "ALL" &&
+        vendor.sellerType !== sellerTypeFilter
+      ) {
+        return false;
+      }
+
+      if (!query) return true;
+
       const haystack = [
         vendor.storeName ?? "",
         vendor.storeSlug ?? "",
@@ -189,7 +200,7 @@ export function AdminVendorRequests() {
         .toLowerCase();
       return haystack.includes(query);
     });
-  }, [vendors, searchQuery]);
+  }, [vendors, searchQuery, sellerTypeFilter]);
 
   const openActionMenu = (
     vendor: VendorListItem,
@@ -492,6 +503,17 @@ export function AdminVendorRequests() {
                 {status === "ALL" ? t("allStatuses") : t(`statuses.${status}`)}
               </option>
             ))}
+          </select>
+          <select
+            value={sellerTypeFilter}
+            onChange={(event) =>
+              setSellerTypeFilter(event.target.value as SellerTypeFilter)
+            }
+            className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-700 outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+          >
+            <option value="ALL">{t("allShopTypes")}</option>
+            <option value="THIRD_PARTY">{t("sellerTypes.THIRD_PARTY")}</option>
+            <option value="PLATFORM">{t("sellerTypes.PLATFORM")}</option>
           </select>
           <button
             type="button"
