@@ -592,7 +592,57 @@
   "VendorPages": {
     "dashboard": {
       "title": "Vendor Dashboard",
-      "subtitle": "Here's an overview of your store's performance."
+      "subtitle": "See what needs attention, then jump into orders or products.",
+      "refresh": "Refresh",
+      "loading": "Loading…",
+      "loadError": "Could not load dashboard data.",
+      "tiles": {
+        "openOrders": "Open orders",
+        "openOrdersSub": "Orders still in progress",
+        "sales30d": "Sales (30 days)",
+        "sales30dSub": "{count} orders in the last 30 days",
+        "available": "Available to withdraw",
+        "availableSub": "{hold} still on hold",
+        "availableSubNone": "Ready for payout when processed",
+        "pendingProducts": "Products pending",
+        "pendingProductsSub": "{active} live · {total} total",
+        "needsReview": "Needs review",
+        "allClear": "All clear"
+      },
+      "recentOrders": {
+        "title": "Recent orders",
+        "viewAll": "View all orders",
+        "empty": "No orders yet. New customer orders will show up here.",
+        "order": "Order",
+        "status": "Status",
+        "total": "Total",
+        "date": "Date"
+      },
+      "actions": {
+        "orders": "Go to orders",
+        "products": "Manage products",
+        "reports": "Fees & reports"
+      },
+      "statuses": {
+        "NEW": "New",
+        "PREPARING": "Preparing",
+        "INBOUND_SHIPPED": "Inbound shipped",
+        "RECEIVED_AT_WAREHOUSE": "At warehouse",
+        "SHIPPED": "Shipped",
+        "DELIVERED": "Delivered",
+        "CANCELLED": "Cancelled"
+      }
+    },
+    "billingBanner": {
+      "suspendedTitle": "Shop suspended — unpaid membership",
+      "suspendedBody": "Your store is hidden from customers because membership payment was not completed within the {grace} grace period ({fee}/month after the free trial). Update your billing card and complete payment to restore your shop.",
+      "updateBilling": "Update billing card in settings",
+      "failedTitle": "Membership payment failed",
+      "reminderTitle": "Membership payment reminder",
+      "failedBody": "We could not charge your membership ({fee}/month). You have {grace} to update your card and complete payment{deadline}. Failed attempts: {count}.",
+      "deadlineUntil": " (until {date})",
+      "reminderBody": "Please keep your billing card up to date for membership charges ({fee}/month after your free trial).",
+      "manageBilling": "Manage billing card"
     },
     "products": {
       "title": "Product Management"

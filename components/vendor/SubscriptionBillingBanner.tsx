@@ -2,6 +2,7 @@
 
 import { AlertTriangle, CreditCard } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import {
@@ -22,6 +23,7 @@ type SubscriptionStatus = {
 };
 
 export function SubscriptionBillingBanner() {
+  const t = useTranslations("VendorPages.billingBanner");
   const [status, setStatus] = useState<SubscriptionStatus | null>(null);
 
   useEffect(() => {
@@ -58,18 +60,15 @@ export function SubscriptionBillingBanner() {
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
           <div>
-            <p className="font-semibold">Shop suspended — unpaid membership</p>
+            <p className="font-semibold">{t("suspendedTitle")}</p>
             <p className="mt-1 text-red-800">
-              Your store is hidden from customers because membership payment was not
-              completed within the {graceLabel} grace period ({feeLabel}/month after the
-              3-month free trial). Update your billing card and complete payment to restore
-              your shop.
+              {t("suspendedBody", { grace: graceLabel, fee: feeLabel })}
             </p>
             <Link
               href="/vendor/settings"
               className="mt-2 inline-block font-medium text-red-900 underline"
             >
-              Update billing card in settings
+              {t("updateBilling")}
             </Link>
           </div>
         </div>
@@ -95,22 +94,25 @@ export function SubscriptionBillingBanner() {
         )}
         <div>
           <p className="font-semibold">
-            {isCritical
-              ? "Membership payment failed"
-              : "Membership payment reminder"}
+            {isCritical ? t("failedTitle") : t("reminderTitle")}
           </p>
           <p className="mt-1">
             {isCritical
-              ? `We could not charge your membership (${feeLabel}/month). You have ${graceLabel} to update your card and complete payment${
-                  graceDeadline ? ` (until ${graceDeadline})` : ""
-                }. Failed attempts: ${status.failedPaymentCount}.`
-              : `Please keep your billing card up to date for membership charges (${feeLabel}/month after your free trial).`}
+              ? t("failedBody", {
+                  fee: feeLabel,
+                  grace: graceLabel,
+                  deadline: graceDeadline
+                    ? t("deadlineUntil", { date: graceDeadline })
+                    : "",
+                  count: status.failedPaymentCount,
+                })
+              : t("reminderBody", { fee: feeLabel })}
           </p>
           <Link
             href="/vendor/settings"
             className="mt-2 inline-block font-medium underline"
           >
-            Manage billing card
+            {t("manageBilling")}
           </Link>
         </div>
       </div>

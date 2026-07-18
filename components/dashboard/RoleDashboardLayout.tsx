@@ -1,13 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { LogOut, PanelLeft, X } from "lucide-react";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
+import { LanguageSelector } from "@/components/layout/header/LanguageSelector";
+import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { HEADER_LOGO_SRC } from "@/components/layout/header/header-copy";
+import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { useAuth } from "@/store/auth-context";
 
 type DashboardNavItem = {
@@ -28,7 +31,6 @@ const navScrollClass =
 function isSidebarItemActive(pathname: string, href: string) {
   if (pathname === href || pathname.endsWith(href)) return true;
   if (/\/dashboard\/?$/.test(href)) return false;
-  // /account overview should not stay active on /account/settings
   if (href === "/account") return false;
   const base = href.replace(/\/$/, "");
   return pathname.startsWith(`${base}/`);
@@ -41,10 +43,26 @@ export function RoleDashboardLayout({
 }: RoleDashboardLayoutProps) {
   const t = useTranslations("Dashboard.shell");
   const tc = useTranslations("Common");
+  const tAuth = useTranslations("Auth");
+  const locale = useLocale() as SupportedLocale;
+  const { availableLocales } = usePlatformConfig();
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
+  const isRtl = locale === "ps" || locale === "fa-AF";
+
+  const languageOptions = useMemo(
+    () =>
+      [
+        { code: "en", label: tAuth("languages.en"), flag: "🇺🇸" },
+        { code: "ps", label: tAuth("languages.ps"), flag: "🇦🇫" },
+        { code: "fa-AF", label: tAuth("languages.fa-AF"), flag: "🇦🇫" },
+      ].filter((language) =>
+        availableLocales.includes(language.code as SupportedLocale)
+      ),
+    [availableLocales, tAuth]
+  );
 
   const handleLogout = () => {
     logout();
@@ -53,16 +71,23 @@ export function RoleDashboardLayout({
   };
 
   return (
-    <div className="flex h-full min-h-0 w-full overflow-hidden bg-[#f3f6fb]">
+    <div
+      dir={isRtl ? "rtl" : "ltr"}
+      className="flex h-full min-h-0 w-full overflow-hidden bg-[#f3f6fb]"
+    >
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-full w-64 max-w-[min(18rem,88vw)] flex-col border-r border-white/10 bg-linear-to-b from-[#0f3460] to-[#123f74] py-4 text-white transition-transform duration-200 ease-out lg:static lg:z-auto lg:max-w-none lg:shrink-0 lg:translate-x-0 lg:border-r lg:shadow-none ${
-          open ? "translate-x-0 shadow-[4px_0_32px_rgba(15,52,96,0.25)]" : "-translate-x-full lg:translate-x-0 lg:shadow-none"
+        className={`flex h-full w-64 shrink-0 flex-col border-e border-white/10 bg-linear-to-b from-[#0f3460] to-[#123f74] py-4 text-white transition-transform duration-200 ease-out max-lg:fixed max-lg:inset-y-0 max-lg:start-0 max-lg:z-50 max-lg:max-w-[min(18rem,88vw)] ${
+          open
+            ? "max-lg:translate-x-0 max-lg:shadow-[4px_0_32px_rgba(15,52,96,0.25)] max-lg:rtl:shadow-[-4px_0_32px_rgba(15,52,96,0.25)]"
+            : isRtl
+              ? "max-lg:translate-x-full"
+              : "max-lg:-translate-x-full"
         }`}
       >
         <div className="relative flex shrink-0 flex-col items-center border-b border-white/15 px-4 pb-6 pt-2">
           <button
             type="button"
-            className="absolute inset-e-3 top-3 rounded-lg p-2 text-white/85 hover:bg-white/10 lg:hidden"
+            className="absolute end-3 top-3 rounded-lg p-2 text-white/85 hover:bg-white/10 lg:hidden"
             onClick={() => setOpen(false)}
             aria-label={t("closeSidebar")}
           >
@@ -135,11 +160,22 @@ export function RoleDashboardLayout({
             onClick={() => setOpen(true)}
             aria-label={t("openSidebar")}
           >
-            <PanelLeft className="h-5 w-5 stroke-2" />
+            <PanelLeft className="h-5 w-5 stroke-2 rtl:rotate-180" />
           </button>
           <h1 className="min-w-0 flex-1 truncate text-base font-semibold tracking-tight text-[#0f3460] sm:text-lg lg:text-xl">
             {topBarTitle}
           </h1>
+          {languageOptions.length > 1 ? (
+            <div className="shrink-0">
+              <LanguageSelector
+                locale={locale}
+                label={tAuth("languages.select")}
+                isRtl={isRtl}
+                variant="default"
+                languages={languageOptions}
+              />
+            </div>
+          ) : null}
         </header>
 
         <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 sm:p-6 lg:p-8">
