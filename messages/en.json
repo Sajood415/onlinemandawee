@@ -899,7 +899,92 @@
       }
     },
     "promotions": {
-      "title": "Store promotions"
+      "title": "Store promotions",
+      "subtitle": "Add sale banners to your shop. You can also show a coupon code on the banner.",
+      "newBanner": "New banner",
+      "createTitle": "Create banner",
+      "editTitle": "Edit banner",
+      "save": "Save changes",
+      "create": "Create banner",
+      "cancel": "Cancel",
+      "loading": "Loading promotions…",
+      "loadError": "Could not load promotions.",
+      "empty": "No promotional banners yet",
+      "emptyHint": "Create a banner to highlight a sale on your storefront.",
+      "emptyFiltered": "No banners match your filters",
+      "addFirst": "Create your first banner",
+      "goToCoupons": "Go to coupons",
+      "searchPlaceholder": "Search by title…",
+      "allStatuses": "All statuses",
+      "edit": "Edit",
+      "delete": "Delete",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "codeLabel": "Code: {code}",
+      "sortLabel": "Sort {order}",
+      "heroBadge": "Store hero",
+      "starts": "Starts {date}",
+      "expires": "Expires {date}",
+      "imageHint": "Wide image works best (about 1200×400). JPEG, PNG, or WebP.",
+      "statuses": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "scheduled": "Scheduled",
+        "expired": "Expired"
+      },
+      "form": {
+        "title": "Headline",
+        "titlePlaceholder": "Eid Sale 20% Off",
+        "subtitle": "Subtitle (optional)",
+        "subtitlePlaceholder": "Use code SAVE20 at checkout",
+        "image": "Banner image",
+        "upload": "Upload image",
+        "uploading": "Uploading…",
+        "coupon": "Linked coupon (optional)",
+        "noCoupon": "No coupon",
+        "sortOrder": "Sort order",
+        "sortHelp": "0 shows first and becomes the store hero image. Max 100.",
+        "startsAt": "Starts at (optional)",
+        "expiresAt": "Expires at (optional)",
+        "isActive": "Active — visible on your store when in date"
+      },
+      "deactivateConfirm": {
+        "title": "Deactivate this banner?",
+        "body": "It will hide from your store until you activate it again.",
+        "confirm": "Deactivate",
+        "cancel": "Keep active"
+      },
+      "activateConfirm": {
+        "title": "Activate this banner?",
+        "body": "It will show on your store if it is still in date.",
+        "confirm": "Activate",
+        "cancel": "Keep inactive"
+      },
+      "deleteConfirm": {
+        "title": "Delete this banner?",
+        "body": "This permanently removes the promotional banner from your store.",
+        "confirm": "Delete banner",
+        "cancel": "Keep banner"
+      },
+      "toasts": {
+        "created": "Banner created",
+        "updated": "Banner updated",
+        "deleted": "Banner deleted",
+        "activated": "Banner activated",
+        "deactivated": "Banner deactivated",
+        "uploaded": "Banner image uploaded",
+        "uploadError": "Upload failed",
+        "saveError": "Could not save banner",
+        "deleteError": "Could not delete banner",
+        "updateError": "Could not update banner",
+        "validationTitle": "Check the form",
+        "titleShort": "Headline needs at least 2 characters.",
+        "titleLong": "Headline must be at most 120 characters.",
+        "subtitleLong": "Subtitle must be at most 200 characters.",
+        "imageRequired": "Upload a banner image.",
+        "sortInvalid": "Sort order must be between 0 and 100.",
+        "dateOrder": "Start date must be before expiry date."
+      }
     },
     "orders": {
       "title": "Orders",
