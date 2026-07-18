@@ -1,30 +1,34 @@
 "use client";
 
-import { CardElement, Elements, useElements, useStripe } from "@stripe/react-stripe-js";
-import { getStripePromise } from "@/lib/stripe/client";
+import {
+  CardElement,
+  Elements,
+  useElements,
+  useStripe,
+} from "@stripe/react-stripe-js";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Building2,
-  CreditCard,
-  Loader2,
-  Upload,
-  CheckCircle2,
   AlertCircle,
+  Building2,
+  CalendarDays,
+  CreditCard,
   ImageIcon,
-  User,
   Landmark,
+  Loader2,
   MapPin,
+  Upload,
 } from "lucide-react";
 
 import { AddressAutocompleteInput } from "@/components/address/AddressAutocompleteInput";
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
-import { invalidateVendorStoreNameCache } from "@/lib/vendor/store-name-cache";
-import { parseApiResponse } from "@/lib/http/parse-api-response";
-import { toast } from "@/lib/utils/toast";
-import { industryTypes, industryTypeLabels } from "@/domain/vendor/vendor-types";
+import { VendorPortalOverlay } from "@/components/vendor/VendorPortalOverlay";
+import { industryTypes } from "@/domain/vendor/vendor-types";
 import type { IndustryType } from "@/domain/vendor/vendor-types";
-
-/* ─── types ──────────────────────────────────────────────────────────── */
+import { parseApiResponse } from "@/lib/http/parse-api-response";
+import { getStripePromise } from "@/lib/stripe/client";
+import { toast } from "@/lib/utils/toast";
+import { invalidateVendorStoreNameCache } from "@/lib/vendor/store-name-cache";
 
 type VendorAddress = {
   addressLine1: string;
@@ -78,40 +82,49 @@ type SetupIntentResponse = {
 
 const stripePromise = getStripePromise();
 
-/* ─── style constants ────────────────────────────────────────────────── */
-
 const CONTROL =
-  "w-full min-h-11 rounded-lg border border-neutral-300 bg-white px-3.5 py-2.5 text-sm leading-snug text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60";
-const LABEL = "block text-[11px] font-semibold uppercase tracking-wider text-neutral-600";
-const FIELD = "flex flex-col gap-2";
-const SECTION = "rounded-xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8";
-const SECTION_TITLE = "text-base font-semibold text-neutral-900";
-const SECTION_LEAD = "mt-1 text-sm leading-relaxed text-neutral-500";
+  "w-full min-h-11 rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm leading-snug text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-60";
+const LABEL =
+  "block text-xs font-medium text-neutral-600";
+const FIELD = "flex flex-col gap-1.5";
 
-/* ─── sub-components ─────────────────────────────────────────────────── */
+type Tab = "business" | "payout";
 
-function RequiredMark() {
+function RequiredMark({ title }: { title: string }) {
   return (
-    <abbr className="ml-0.5 font-semibold text-red-500 no-underline" title="Required">*</abbr>
+    <abbr
+      className="ms-0.5 font-semibold text-red-500 no-underline"
+      title={title}
+    >
+      *
+    </abbr>
   );
 }
 
-function SaveButton({ saving, label }: { saving: boolean; label: string }) {
+function SaveButton({
+  saving,
+  label,
+  savingLabel,
+}: {
+  saving: boolean;
+  label: string;
+  savingLabel: string;
+}) {
   return (
     <button
       type="submit"
       disabled={saving}
-      className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-95 disabled:opacity-50"
+      className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-50"
     >
-      {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-      {saving ? "Saving…" : label}
+      {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+      {saving ? savingLabel : label}
     </button>
   );
 }
 
-function formatCurrency(amount: number, currency: string) {
+function formatCurrency(amount: number, currency: string, locale: string) {
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency: currency || "USD",
       minimumFractionDigits: 2,
@@ -122,11 +135,179 @@ function formatCurrency(amount: number, currency: string) {
   }
 }
 
-function formatDate(iso: string | null) {
+function formatDate(iso: string | null, locale: string) {
   if (!iso) return "—";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString();
+  return date.toLocaleDateString(locale, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatDateLong(iso: string | null, locale: string) {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString(locale, {
+    weekday: "short",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function daysUntil(iso: string | null) {
+  if (!iso) return null;
+  const end = new Date(iso);
+  if (Number.isNaN(end.getTime())) return null;
+  const now = new Date();
+  const startToday = Date.UTC(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+  const startEnd = Date.UTC(
+    end.getFullYear(),
+    end.getMonth(),
+    end.getDate()
+  );
+  return Math.round((startEnd - startToday) / (24 * 60 * 60 * 1000));
+}
+
+function MembershipPanel({
+  status,
+  loading,
+  locale,
+  attachingCard,
+  billingLoading,
+  onAddCard,
+  onManageBilling,
+}: {
+  status: VendorSubscriptionStatus | null;
+  loading: boolean;
+  locale: string;
+  attachingCard: boolean;
+  billingLoading: boolean;
+  onAddCard: () => void;
+  onManageBilling: () => void;
+}) {
+  const t = useTranslations("VendorPages.settings.billing");
+  const isTrial = status?.status === "TRIAL";
+  const hasCard = Boolean(status?.defaultPaymentMethodAttached);
+  const fee = status
+    ? formatCurrency(status.monthlyAmount, status.currency, locale)
+    : "—";
+  const remaining = isTrial ? daysUntil(status?.trialEndsAt ?? null) : null;
+
+  const tone =
+    status?.status === "FAILED" || status?.status === "SUSPENDED"
+      ? "border-red-200 bg-red-50/80"
+      : isTrial
+        ? "border-primary/20 bg-gradient-to-br from-primary/10 via-white to-white"
+        : "border-neutral-200 bg-white";
+
+  return (
+    <section className={`overflow-hidden rounded-2xl border ${tone}`}>
+      <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-stretch lg:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold text-neutral-900">
+              {t("title")}
+            </span>
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin text-neutral-400" />
+            ) : status ? (
+              <span
+                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                  status.status === "TRIAL"
+                    ? "bg-primary/10 text-primary"
+                    : status.status === "ACTIVE"
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-red-100 text-red-700"
+                }`}
+              >
+                {t(`statuses.${status.status}`)}
+              </span>
+            ) : null}
+          </div>
+
+          {loading && !status ? (
+            <div className="mt-5 h-20 animate-pulse rounded-xl bg-neutral-100" />
+          ) : isTrial ? (
+            <div className="mt-4">
+              <p className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-neutral-500">
+                <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+                {t("freeUntil")}
+              </p>
+              <p className="mt-1 text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl">
+                {formatDateLong(status?.trialEndsAt ?? null, locale)}
+              </p>
+              {remaining != null ? (
+                <p className="mt-1.5 text-sm font-medium text-primary">
+                  {remaining < 0
+                    ? t("trialEnded")
+                    : t("daysLeft", { count: remaining })}
+                </p>
+              ) : null}
+              <p className="mt-3 text-sm text-neutral-600">
+                {t("afterTrial", { fee })}
+              </p>
+              <p className="mt-1 text-sm text-neutral-600">
+                {hasCard ? t("cardReady") : t("cardNeeded")}
+              </p>
+            </div>
+          ) : (
+            <div className="mt-4 space-y-1.5 text-sm text-neutral-700">
+              <p>
+                {t("nextBilling")}:{" "}
+                <span className="font-semibold text-neutral-900">
+                  {formatDate(status?.nextBillingAt ?? null, locale)}
+                </span>
+              </p>
+              <p>
+                {t("monthlyFee")}:{" "}
+                <span className="font-semibold text-neutral-900">{fee}</span>
+              </p>
+              <p>
+                {hasCard ? t("cardAttached") : t("cardMissing")}
+              </p>
+              {status && status.failedPaymentCount > 0 ? (
+                <p className="font-medium text-red-700">
+                  {t("failedCount")}: {status.failedPaymentCount}
+                </p>
+              ) : null}
+            </div>
+          )}
+        </div>
+
+        <div className="flex shrink-0 flex-col justify-center gap-2 sm:flex-row lg:flex-col lg:items-stretch">
+          <button
+            type="button"
+            onClick={onAddCard}
+            disabled={attachingCard || loading}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-60"
+          >
+            <CreditCard className="h-4 w-4" aria-hidden />
+            {attachingCard
+              ? t("starting")
+              : hasCard
+                ? t("update")
+                : t("attach")}
+          </button>
+          <button
+            type="button"
+            onClick={onManageBilling}
+            disabled={billingLoading || loading}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
+          >
+            {billingLoading ? t("opening") : t("manage")}
+          </button>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function CardSetupForm({
@@ -142,34 +323,39 @@ function CardSetupForm({
   onSuccess: () => void;
   onCancel: () => void;
 }) {
+  const t = useTranslations("VendorPages.settings.billing");
+  const tRoot = useTranslations("VendorPages.settings");
   const stripe = useStripe();
   const elements = useElements();
   const [saving, setSaving] = useState(false);
 
   const saveCard = async () => {
     if (!stripe || !elements) {
-      toast.error("Stripe not ready", "Please wait a second and try again.");
+      toast.error(t("cardSaveError"), t("stripeNotReady"));
       return;
     }
     const cardElement = elements.getElement(CardElement);
     if (!cardElement) {
-      toast.error("Card form unavailable", "Please refresh and try again.");
+      toast.error(t("cardSaveError"), t("cardUnavailable"));
       return;
     }
 
     setSaving(true);
     try {
-      const { error, setupIntent } = await stripe.confirmCardSetup(clientSecret, {
-        payment_method: {
-          card: cardElement,
-        },
-      });
+      const { error, setupIntent } = await stripe.confirmCardSetup(
+        clientSecret,
+        {
+          payment_method: {
+            card: cardElement,
+          },
+        }
+      );
 
       if (error) {
-        throw new Error(error.message || "Failed to save card");
+        throw new Error(error.message || t("cardSaveError"));
       }
       if (!setupIntent || setupIntent.status !== "succeeded") {
-        throw new Error("Card setup did not complete");
+        throw new Error(t("cardSaveError"));
       }
 
       const response = await fetch("/api/vendor/subscription", {
@@ -184,12 +370,12 @@ function CardSetupForm({
         }),
       });
       await parseApiResponse(response);
-      toast.success("Card saved", "Your subscription billing card is updated.");
+      toast.success(t("cardSaved"), t("cardSavedBody"));
       onSuccess();
     } catch (error) {
       toast.error(
-        "Could not save card",
-        error instanceof Error ? error.message : "Unknown error"
+        t("cardSaveError"),
+        error instanceof Error ? error.message : undefined
       );
     } finally {
       setSaving(false);
@@ -197,56 +383,53 @@ function CardSetupForm({
   };
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/45 p-4">
-      <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-5 shadow-xl">
-        <h3 className="text-lg font-semibold text-neutral-900">Save billing card</h3>
-        <p className="mt-1 text-sm text-neutral-600">
-          This card will be used for automatic membership charges.
-        </p>
-        <div className="mt-4 rounded-lg border border-neutral-300 bg-white p-3">
-          <CardElement
-            options={{
-              hidePostalCode: true,
-              style: {
-                base: {
-                  fontSize: "14px",
+    <VendorPortalOverlay open>
+      <div
+        className="fixed inset-0 z-[100] flex min-h-[100dvh] w-screen items-center justify-center bg-black/50 p-4"
+        onClick={(e) => {
+          if (e.target === e.currentTarget && !saving) onCancel();
+        }}
+      >
+        <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-5 shadow-xl sm:p-6">
+          <h3 className="text-lg font-semibold text-neutral-900">
+            {t("modalTitle")}
+          </h3>
+          <p className="mt-1 text-sm text-neutral-600">{t("modalHelp")}</p>
+          <div className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+            <CardElement
+              options={{
+                hidePostalCode: true,
+                style: {
+                  base: {
+                    fontSize: "14px",
+                  },
                 },
-              },
-            }}
-          />
-        </div>
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => void saveCard()}
-            disabled={saving || !stripe}
-            className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
-          >
-            {saving ? "Saving..." : "Save card"}
-          </button>
+              }}
+            />
+          </div>
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={saving}
+              className="rounded-xl border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700 disabled:opacity-60"
+            >
+              {t("modalCancel")}
+            </button>
+            <button
+              type="button"
+              onClick={() => void saveCard()}
+              disabled={saving || !stripe}
+              className="rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {saving ? tRoot("saving") : t("modalSave")}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </VendorPortalOverlay>
   );
 }
-
-/* ─── tabs ─────────────────────────────────────────────────────────── */
-
-type Tab = "business" | "payout";
-
-const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: "business", label: "Business Info", icon: <Building2 className="h-4 w-4" /> },
-  { id: "payout", label: "Bank Details", icon: <CreditCard className="h-4 w-4" /> },
-];
-
-/* ─── Business Info tab ─────────────────────────────────────────────── */
 
 function BusinessInfoTab({
   profile,
@@ -257,23 +440,33 @@ function BusinessInfoTab({
   token: string;
   onSaved: (updated: Partial<VendorProfile>) => void;
 }) {
-  const [storeName, setStoreName] = useState(profile.storeName);
-  const [businessType, setBusinessType] = useState<"INDIVIDUAL" | "REGISTERED_BUSINESS">(
-    profile.businessType ?? "INDIVIDUAL"
+  const t = useTranslations("VendorPages.settings");
+  const tIndustry = useTranslations(
+    "VendorPages.register.wizard.store.industryTypes"
   );
+  const [storeName, setStoreName] = useState(profile.storeName);
+  const [businessType, setBusinessType] = useState<
+    "INDIVIDUAL" | "REGISTERED_BUSINESS"
+  >(profile.businessType ?? "INDIVIDUAL");
   const [industryType, setIndustryType] = useState<IndustryType | "">(
     profile.industryType ?? ""
   );
   const [description, setDescription] = useState(profile.description);
   const [logoUrl, setLogoUrl] = useState(profile.logoUrl);
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(profile.logoUrl || null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(
+    profile.logoUrl || null
+  );
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [addressLine1, setAddressLine1] = useState(profile.address?.addressLine1 ?? "");
+  const [addressLine1, setAddressLine1] = useState(
+    profile.address?.addressLine1 ?? ""
+  );
   const [city, setCity] = useState(profile.address?.city ?? "");
   const [country, setCountry] = useState(profile.address?.country ?? "");
-  const [postalCode, setPostalCode] = useState(profile.address?.postalCode ?? "");
+  const [postalCode, setPostalCode] = useState(
+    profile.address?.postalCode ?? ""
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const descLen = description.trim().length;
@@ -289,11 +482,11 @@ function BusinessInfoTab({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!storeName.trim()) {
-      toast.error("Store name", "Store name is required.");
+      toast.error(t("store.saveError"), t("store.nameRequired"));
       return;
     }
     if (descOver) {
-      toast.error("Description too long", "Keep description under 500 characters.");
+      toast.error(t("store.saveError"), t("store.descTooLong"));
       return;
     }
     if (
@@ -302,7 +495,7 @@ function BusinessInfoTab({
       !country.trim() ||
       !postalCode.trim()
     ) {
-      toast.error("Store address", "Fill in your full pickup address so delivery can be calculated.");
+      toast.error(t("store.saveError"), t("store.addressRequired"));
       return;
     }
 
@@ -362,9 +555,12 @@ function BusinessInfoTab({
       const addressData = await parseApiResponse<VendorAddress>(addressRes);
       invalidateVendorStoreNameCache();
       onSaved({ ...data, address: addressData });
-      toast.success("Saved", "Business info and store address updated.");
-    } catch (e) {
-      toast.error("Could not save", e instanceof Error ? e.message : "Unknown error");
+      toast.success(t("store.saved"));
+    } catch (error) {
+      toast.error(
+        t("store.saveError"),
+        error instanceof Error ? error.message : undefined
+      );
     } finally {
       setSaving(false);
       setUploadingLogo(false);
@@ -372,65 +568,79 @@ function BusinessInfoTab({
   };
 
   return (
-    <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-8">
-      {/* Account info (read-only) */}
-      <div className={SECTION}>
-        <h2 className={SECTION_TITLE}>
-          <User className="mr-2 inline h-4 w-4 text-neutral-400" />
-          Account details
-        </h2>
-        <p className={SECTION_LEAD}>Your login credentials. Contact support to change email or phone.</p>
-        <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
+    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-8">
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">
+          {t("account.title")}
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">{t("account.help")}</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {[
-            { label: "Full name", value: profile.user.fullName },
-            { label: "Email", value: profile.user.email },
-            { label: "Phone", value: profile.user.phone },
+            { label: t("account.fullName"), value: profile.user.fullName },
+            { label: t("account.email"), value: profile.user.email },
+            { label: t("account.phone"), value: profile.user.phone },
           ].map(({ label, value }) => (
-            <div key={label} className={FIELD}>
-              <span className={LABEL}>{label}</span>
-              <div className="min-h-11 rounded-lg border border-neutral-200 bg-neutral-50 px-3.5 py-2.5 text-sm text-neutral-700">
-                {value}
-              </div>
+            <div
+              key={label}
+              className="rounded-xl border border-neutral-100 bg-neutral-50/80 px-3.5 py-3"
+            >
+              <p className="text-xs text-neutral-500">{label}</p>
+              <p className="mt-0.5 truncate text-sm font-medium text-neutral-800">
+                {value || "—"}
+              </p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Store info */}
-      <div className={SECTION}>
-        <h2 className={SECTION_TITLE}>
-          <Building2 className="mr-2 inline h-4 w-4 text-neutral-400" />
-          Store information
-        </h2>
-        <p className={SECTION_LEAD}>Update your public store name, type, logo, and description.</p>
+      <div className="border-t border-neutral-100 pt-8">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+            <Building2 className="h-5 w-5 text-primary" aria-hidden />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-neutral-900">
+              {t("store.title")}
+            </h2>
+            <p className="mt-0.5 text-sm text-neutral-500">{t("store.help")}</p>
+          </div>
+        </div>
 
-        <div className="mt-6 flex flex-col gap-6">
-          {/* Logo */}
+        <div className="mt-6 flex flex-col gap-5">
           <div className={FIELD}>
-            <span className={LABEL}>Store logo</span>
+            <span className={LABEL}>{t("store.logo")}</span>
             <div className="flex flex-wrap items-center gap-4">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50">
                 {logoPreview ? (
-                  <img src={logoPreview} alt="Store logo" className="h-full w-full object-cover" />
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={logoPreview}
+                    alt={t("store.logoAlt")}
+                    className="h-full w-full object-cover"
+                  />
                 ) : (
                   <ImageIcon className="h-8 w-8 text-neutral-300" />
                 )}
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingLogo || saving}
-                  className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
                 >
                   {uploadingLogo ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Upload className="h-4 w-4" />
                   )}
-                  {uploadingLogo ? "Uploading…" : logoFile ? logoFile.name : "Change logo"}
+                  {uploadingLogo
+                    ? t("store.uploading")
+                    : logoFile
+                      ? logoFile.name
+                      : t("store.changeLogo")}
                 </button>
-                <p className="text-xs text-neutral-400">JPG, PNG, or WebP — max 10 MB</p>
+                <p className="text-xs text-neutral-400">{t("store.logoHint")}</p>
               </div>
             </div>
             <input
@@ -446,78 +656,97 @@ function BusinessInfoTab({
             />
           </div>
 
-          {/* Store name */}
-          <div className={FIELD}>
-            <label htmlFor="store-name" className={LABEL}>
-              Store name <RequiredMark />
-            </label>
-            <input
-              id="store-name"
-              className={CONTROL}
-              value={storeName}
-              onChange={(e) => setStoreName(e.target.value)}
-              maxLength={120}
-              placeholder="My Awesome Store"
-            />
-          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className={`${FIELD} sm:col-span-2`}>
+              <label htmlFor="store-name" className={LABEL}>
+                {t("store.storeName")} <RequiredMark title={t("required")} />
+              </label>
+              <input
+                id="store-name"
+                className={CONTROL}
+                value={storeName}
+                onChange={(e) => setStoreName(e.target.value)}
+                maxLength={120}
+                placeholder={t("store.storeNamePlaceholder")}
+              />
+            </div>
 
-          {/* Business type */}
-          <div className={FIELD}>
-            <label htmlFor="business-type" className={LABEL}>
-              Business type <RequiredMark />
-            </label>
-            <select
-              id="business-type"
-              className={CONTROL}
-              value={businessType}
-              onChange={(e) =>
-                setBusinessType(e.target.value as "INDIVIDUAL" | "REGISTERED_BUSINESS")
-              }
-            >
-              <option value="INDIVIDUAL">Individual</option>
-              <option value="REGISTERED_BUSINESS">Registered business</option>
-            </select>
-          </div>
-
-          {/* Industry type */}
-          <div className={FIELD}>
-            <label htmlFor="industry-type" className={LABEL}>
-              Industry type
-              <span className="ml-1 font-normal normal-case text-neutral-400">(optional)</span>
-            </label>
-            <select
-              id="industry-type"
-              className={CONTROL}
-              value={industryType}
-              onChange={(e) => setIndustryType(e.target.value as IndustryType | "")}
-            >
-              <option value="">— Select industry —</option>
-              {industryTypes.map((t) => (
-                <option key={t} value={t}>
-                  {industryTypeLabels[t]}
+            <div className={FIELD}>
+              <label htmlFor="business-type" className={LABEL}>
+                {t("store.businessType")} <RequiredMark title={t("required")} />
+              </label>
+              <select
+                id="business-type"
+                className={CONTROL}
+                value={businessType}
+                onChange={(e) =>
+                  setBusinessType(
+                    e.target.value as "INDIVIDUAL" | "REGISTERED_BUSINESS"
+                  )
+                }
+              >
+                <option value="INDIVIDUAL">{t("store.individual")}</option>
+                <option value="REGISTERED_BUSINESS">
+                  {t("store.registered")}
                 </option>
-              ))}
-            </select>
-            <p className="text-xs text-neutral-400">Helps customers find your store by category.</p>
+              </select>
+            </div>
+
+            <div className={FIELD}>
+              <label htmlFor="industry-type" className={LABEL}>
+                {t("store.industry")}
+                <span className="ms-1 font-normal text-neutral-400">
+                  ({t("optional")})
+                </span>
+              </label>
+              <select
+                id="industry-type"
+                className={CONTROL}
+                value={industryType}
+                onChange={(e) =>
+                  setIndustryType(e.target.value as IndustryType | "")
+                }
+              >
+                <option value="">{t("store.selectIndustry")}</option>
+                {industryTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {tIndustry(type)}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* Description */}
           <div className={FIELD}>
             <label htmlFor="store-desc" className={LABEL}>
-              Description
-              <span className="ml-1 font-normal normal-case text-neutral-400">(optional)</span>
+              {t("store.description")}
+              <span className="ms-1 font-normal text-neutral-400">
+                ({t("optional")})
+              </span>
             </label>
             <textarea
               id="store-desc"
               rows={4}
-              className={`${CONTROL} resize-y ${descOver ? "border-red-400 focus:border-red-500 focus:ring-red-500/20" : ""}`}
+              className={`${CONTROL} resize-y ${
+                descOver
+                  ? "border-red-400 focus:border-red-500 focus:ring-red-500/20"
+                  : ""
+              }`}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Tell customers about your store…"
+              placeholder={t("store.descriptionPlaceholder")}
             />
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs text-neutral-400">Max 500 characters</p>
-              <p className={`text-xs tabular-nums ${descOver ? "font-semibold text-red-600" : "text-neutral-400"}`}>
+              <p className="text-xs text-neutral-400">
+                {t("store.descriptionMax")}
+              </p>
+              <p
+                className={`text-xs tabular-nums ${
+                  descOver
+                    ? "font-semibold text-red-600"
+                    : "text-neutral-400"
+                }`}
+              >
                 {descLen} / 500
               </p>
             </div>
@@ -525,27 +754,35 @@ function BusinessInfoTab({
         </div>
       </div>
 
-      {/* Store pickup address */}
-      <div className={SECTION}>
-        <h2 className={SECTION_TITLE}>
-          <MapPin className="mr-2 inline h-4 w-4 text-neutral-400" />
-          Store pickup address
-        </h2>
-        <p className={SECTION_LEAD}>
-          Where orders are prepared and shipped from. Customers see delivery cost based on driving
-          distance from this address to their delivery location.
-        </p>
+      <div className="border-t border-neutral-100 pt-8">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+            <MapPin className="h-5 w-5 text-primary" aria-hidden />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-neutral-900">
+              {t("address.title")}
+            </h2>
+            <p className="mt-0.5 text-sm text-neutral-500">{t("address.help")}</p>
+          </div>
+        </div>
 
-        <div className="mt-6 flex flex-col gap-5">
+        <div className="mt-6 flex flex-col gap-4">
+          {!profile.address ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {t("address.requiredBanner")}
+            </div>
+          ) : null}
+
           <div className={FIELD}>
             <label htmlFor="store-address-line1" className={LABEL}>
-              Street address <RequiredMark />
+              {t("address.street")} <RequiredMark title={t("required")} />
             </label>
             <AddressAutocompleteInput
               id="store-address-line1"
               className={CONTROL}
               value={addressLine1}
-              placeholder="123 Main Street, Shop 4"
+              placeholder={t("address.streetPlaceholder")}
               maxLength={255}
               onTextChange={setAddressLine1}
               onPlaceSelect={(place) => {
@@ -557,30 +794,30 @@ function BusinessInfoTab({
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className={FIELD}>
               <label htmlFor="store-city" className={LABEL}>
-                City <RequiredMark />
+                {t("address.city")} <RequiredMark title={t("required")} />
               </label>
               <input
                 id="store-city"
                 className={CONTROL}
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                placeholder="Kabul"
+                placeholder={t("address.cityPlaceholder")}
                 maxLength={120}
               />
             </div>
             <div className={FIELD}>
               <label htmlFor="store-postal-code" className={LABEL}>
-                Postal code <RequiredMark />
+                {t("address.postal")} <RequiredMark title={t("required")} />
               </label>
               <input
                 id="store-postal-code"
                 className={CONTROL}
                 value={postalCode}
                 onChange={(e) => setPostalCode(e.target.value)}
-                placeholder="1001"
+                placeholder={t("address.postalPlaceholder")}
                 maxLength={40}
               />
             </div>
@@ -588,35 +825,35 @@ function BusinessInfoTab({
 
           <div className={FIELD}>
             <label htmlFor="store-country" className={LABEL}>
-              Country <RequiredMark />
+              {t("address.country")} <RequiredMark title={t("required")} />
             </label>
             <input
               id="store-country"
               className={CONTROL}
               value={country}
               onChange={(e) => setCountry(e.target.value)}
-              placeholder="Afghanistan"
+              placeholder={t("address.countryPlaceholder")}
               maxLength={120}
             />
           </div>
-
-          {!profile.address ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">
-              <strong>Required for checkout:</strong> Add your pickup address so customers can see
-              delivery pricing when they buy from your store.
-            </div>
-          ) : null}
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <SaveButton saving={saving} label="Save business info" />
+      <div className="sticky bottom-0 z-10 -mx-4 border-t border-neutral-100 bg-white/95 px-4 py-4 backdrop-blur sm:-mx-5 sm:px-5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="hidden text-xs text-neutral-400 sm:block">
+            {t("saveHint")}
+          </p>
+          <SaveButton
+            saving={saving}
+            label={t("store.save")}
+            savingLabel={t("saving")}
+          />
+        </div>
       </div>
     </form>
   );
 }
-
-/* ─── Bank / Payout Details tab ──────────────────────────────────────── */
 
 function PayoutDetailsTab({
   profile,
@@ -627,9 +864,12 @@ function PayoutDetailsTab({
   token: string;
   onPayoutSaved?: () => void;
 }) {
+  const t = useTranslations("VendorPages.settings");
   const pm = profile.payoutMethod;
   const [accountName, setAccountName] = useState(pm?.accountName ?? "");
-  const [accountNumber, setAccountNumber] = useState(pm?.accountNumberOrIban ?? "");
+  const [accountNumber, setAccountNumber] = useState(
+    pm?.accountNumberOrIban ?? ""
+  );
   const [bankName, setBankName] = useState(pm?.bankName ?? "");
   const [saving, setSaving] = useState(false);
 
@@ -648,15 +888,15 @@ function PayoutDetailsTab({
     e.preventDefault();
 
     if (!accountName.trim()) {
-      toast.error("Account name required", "Account holder name is required.");
+      toast.error(t("payout.saveError"), t("payout.nameRequired"));
       return;
     }
     if (!accountNumber.trim()) {
-      toast.error("Account number required", "Account number or IBAN is required.");
+      toast.error(t("payout.saveError"), t("payout.numberRequired"));
       return;
     }
     if (!bankName.trim()) {
-      toast.error("Bank name required", "Bank name is required.");
+      toast.error(t("payout.saveError"), t("payout.bankRequired"));
       return;
     }
 
@@ -676,79 +916,95 @@ function PayoutDetailsTab({
         }),
       });
       await parseApiResponse(res);
-      toast.success("Saved", "Payout details updated.");
+      toast.success(t("payout.saved"));
       onPayoutSaved?.();
-    } catch (e) {
-      toast.error("Could not save", e instanceof Error ? e.message : "Unknown error");
+    } catch (error) {
+      toast.error(
+        t("payout.saveError"),
+        error instanceof Error ? error.message : undefined
+      );
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-8">
-      <div className={SECTION}>
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-100 pb-4">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-500/10">
-              <Landmark className="h-5 w-5 text-sky-800" aria-hidden />
-            </div>
-            <div>
-              <h2 className={SECTION_TITLE}>Bank account</h2>
-              <p className={SECTION_LEAD}>
-                Payouts are sent by bank transfer. Enter the account that should receive your earnings.
-              </p>
-            </div>
+    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-8">
+      <div>
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+            <Landmark className="h-5 w-5 text-primary" aria-hidden />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-neutral-900">
+              {t("payout.title")}
+            </h2>
+            <p className="mt-0.5 text-sm text-neutral-500">{t("payout.help")}</p>
           </div>
         </div>
 
-        <div className="mt-6 flex flex-col gap-5">
+        <div className="mt-6 flex max-w-xl flex-col gap-4">
           <div className={FIELD}>
-            <label htmlFor="account-name" className={LABEL}>Account holder name</label>
+            <label htmlFor="account-name" className={LABEL}>
+              {t("payout.accountName")}
+            </label>
             <input
               id="account-name"
               className={CONTROL}
               value={accountName}
               onChange={(e) => setAccountName(e.target.value)}
-              placeholder="Full legal name as on the bank account"
+              placeholder={t("payout.accountNamePlaceholder")}
             />
           </div>
           <div className={FIELD}>
-            <label htmlFor="account-number" className={LABEL}>Account number / IBAN</label>
+            <label htmlFor="account-number" className={LABEL}>
+              {t("payout.accountNumber")}
+            </label>
             <input
               id="account-number"
               className={CONTROL}
               value={accountNumber}
               onChange={(e) => setAccountNumber(e.target.value)}
-              placeholder="e.g. GB29NWBK60161331926819"
+              placeholder={t("payout.accountNumberPlaceholder")}
             />
           </div>
           <div className={FIELD}>
-            <label htmlFor="bank-name" className={LABEL}>Bank name</label>
+            <label htmlFor="bank-name" className={LABEL}>
+              {t("payout.bankName")}
+            </label>
             <input
               id="bank-name"
               className={CONTROL}
               value={bankName}
               onChange={(e) => setBankName(e.target.value)}
-              placeholder="e.g. Barclays, Standard Chartered"
+              placeholder={t("payout.bankNamePlaceholder")}
             />
           </div>
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">
-            <strong>Note:</strong> Payouts are sent in USD. Your bank may apply conversion fees. Ensure the account accepts foreign wire transfers.
-          </div>
+          <p className="text-sm leading-relaxed text-neutral-500">
+            {t("payout.note")}
+          </p>
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <SaveButton saving={saving} label="Save payout details" />
+      <div className="sticky bottom-0 z-10 -mx-4 border-t border-neutral-100 bg-white/95 px-4 py-4 backdrop-blur sm:-mx-5 sm:px-5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="hidden text-xs text-neutral-400 sm:block">
+            {t("saveHint")}
+          </p>
+          <SaveButton
+            saving={saving}
+            label={t("payout.save")}
+            savingLabel={t("saving")}
+          />
+        </div>
       </div>
     </form>
   );
 }
 
-/* ─── Page ───────────────────────────────────────────────────────────── */
-
 export default function VendorSettingsPage() {
+  const t = useTranslations("VendorPages.settings");
+  const locale = useLocale();
   const { isLoading: authLoading, user } = useDashboardGuard("VENDOR");
   const [tab, setTab] = useState<Tab>("business");
   const [profile, setProfile] = useState<VendorProfile | null>(null);
@@ -764,30 +1020,35 @@ export default function VendorSettingsPage() {
     setupIntentId: string;
   } | null>(null);
 
-  const fetchProfile = useCallback(async (opts?: { silent?: boolean }) => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) return;
-    if (!opts?.silent) {
-      setDataLoading(true);
-    }
-    setError(null);
-    try {
-      const res = await fetch("/api/vendor/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await parseApiResponse<VendorProfile>(res);
-      setProfile(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load profile.");
-    } finally {
+  const fetchProfile = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      const accessToken = localStorage.getItem("accessToken");
+      if (!accessToken) return;
       if (!opts?.silent) {
-        setDataLoading(false);
+        setDataLoading(true);
       }
-    }
-  }, []);
+      setError(null);
+      try {
+        const res = await fetch("/api/vendor/profile", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const data = await parseApiResponse<VendorProfile>(res);
+        setProfile(data);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : t("loadError"));
+      } finally {
+        if (!opts?.silent) {
+          setDataLoading(false);
+        }
+      }
+    },
+    [t]
+  );
 
   const token =
-    typeof window !== "undefined" ? (localStorage.getItem("accessToken") ?? "") : "";
+    typeof window !== "undefined"
+      ? (localStorage.getItem("accessToken") ?? "")
+      : "";
 
   const loadSubscriptionStatus = useCallback(async () => {
     if (!token) return;
@@ -802,25 +1063,22 @@ export default function VendorSettingsPage() {
       setSubscriptionStatus(data);
     } catch (e) {
       toast.error(
-        "Could not load subscription status",
-        e instanceof Error ? e.message : "Unknown error"
+        t("billing.loadError"),
+        e instanceof Error ? e.message : undefined
       );
       setSubscriptionStatus(null);
     } finally {
       setSubscriptionLoading(false);
     }
-  }, [token]);
+  }, [t, token]);
 
   const startCardAttach = useCallback(async () => {
     if (!token) {
-      toast.error("Please sign in again", "Your session is missing.");
+      toast.error(t("billing.sessionMissing"), t("billing.sessionMissingBody"));
       return;
     }
     if (!stripePromise) {
-      toast.error(
-        "Stripe publishable key missing",
-        "Add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY and refresh."
-      );
+      toast.error(t("billing.stripeMissing"), t("billing.stripeMissingBody"));
       return;
     }
 
@@ -838,7 +1096,7 @@ export default function VendorSettingsPage() {
       });
       const data = await parseApiResponse<SetupIntentResponse>(response);
       if (!data.clientSecret) {
-        throw new Error("Stripe did not return a setup client secret");
+        throw new Error(t("billing.cardStartError"));
       }
       setCardSetup({
         clientSecret: data.clientSecret,
@@ -846,17 +1104,17 @@ export default function VendorSettingsPage() {
       });
     } catch (e) {
       toast.error(
-        "Could not start card setup",
-        e instanceof Error ? e.message : "Unknown error"
+        t("billing.cardStartError"),
+        e instanceof Error ? e.message : undefined
       );
     } finally {
       setAttachingCard(false);
     }
-  }, [token]);
+  }, [t, token]);
 
   const openBillingPortal = useCallback(async () => {
     if (!token) {
-      toast.error("Please sign in again", "Your session is missing.");
+      toast.error(t("billing.sessionMissing"), t("billing.sessionMissingBody"));
       return;
     }
     setBillingLoading(true);
@@ -875,11 +1133,14 @@ export default function VendorSettingsPage() {
       const data = await parseApiResponse<{ url: string }>(response);
       window.location.href = data.url;
     } catch (e) {
-      toast.error("Billing portal unavailable", e instanceof Error ? e.message : "Unknown error");
+      toast.error(
+        t("billing.portalError"),
+        e instanceof Error ? e.message : undefined
+      );
     } finally {
       setBillingLoading(false);
     }
-  }, [token]);
+  }, [t, token]);
 
   useEffect(() => {
     if (!authLoading && user) void fetchProfile();
@@ -892,168 +1153,118 @@ export default function VendorSettingsPage() {
   if (authLoading || !user) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-sm text-neutral-500">Loading…</p>
+        <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
       </div>
     );
   }
 
+  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+    {
+      id: "business",
+      label: t("tabs.business"),
+      icon: <Building2 className="h-4 w-4" />,
+    },
+    {
+      id: "payout",
+      label: t("tabs.payout"),
+      icon: <Landmark className="h-4 w-4" />,
+    },
+  ];
+
   return (
-    <div className="min-h-screen w-full bg-neutral-50 pb-16">
-      {/* Header */}
-      <div className="border-b border-neutral-200 bg-white px-6 py-6 sm:px-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">
-              Settings
-            </h1>
-            <p className="mt-1 text-sm text-neutral-500">
-              Manage your business profile, store address, and payout details.
-            </p>
-          </div>
+    <div className="space-y-5 pb-16">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-primary">
+          {t("title")}
+        </h1>
+        <p className="mt-1 max-w-xl text-sm text-neutral-600">{t("subtitle")}</p>
+      </div>
+
+      <MembershipPanel
+        status={subscriptionStatus}
+        loading={subscriptionLoading}
+        locale={locale}
+        attachingCard={attachingCard}
+        billingLoading={billingLoading}
+        onAddCard={() => void startCardAttach()}
+        onManageBilling={() => void openBillingPortal()}
+      />
+
+      {error ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span className="inline-flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {error}
+          </span>
           <button
             type="button"
-            onClick={() => void openBillingPortal()}
-            disabled={billingLoading}
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 disabled:opacity-60"
+            onClick={() => void fetchProfile()}
+            className="font-medium underline"
           >
-            <CreditCard className="h-4 w-4" />
-            {billingLoading ? "Opening billing..." : "Manage subscription & card"}
+            {t("tryAgain")}
           </button>
+        </div>
+      ) : null}
+
+      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+        <div
+          role="tablist"
+          aria-label={t("title")}
+          className="flex gap-0 overflow-x-auto border-b border-neutral-200"
+        >
+          {tabs.map((item) => {
+            const active = tab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setTab(item.id)}
+                className={`relative inline-flex shrink-0 items-center gap-2 whitespace-nowrap px-5 py-3.5 text-sm font-semibold transition sm:px-6 ${
+                  active
+                    ? "text-primary"
+                    : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800"
+                }`}
+              >
+                {item.icon}
+                {item.label}
+                {active ? (
+                  <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-primary sm:inset-x-4" />
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="px-4 py-5 sm:px-5">
+          {dataLoading || !profile ? (
+            <div className="flex min-h-[24vh] items-center justify-center">
+              <Loader2 className="h-7 w-7 animate-spin text-neutral-400" />
+            </div>
+          ) : tab === "business" ? (
+            <BusinessInfoTab
+              profile={profile}
+              token={token}
+              onSaved={(updated) =>
+                setProfile((prev) => (prev ? { ...prev, ...updated } : prev))
+              }
+            />
+          ) : (
+            <PayoutDetailsTab
+              profile={profile}
+              token={token}
+              onPayoutSaved={() => void fetchProfile({ silent: true })}
+            />
+          )}
         </div>
       </div>
 
-      {/* Tab bar */}
-      <div className="sticky top-0 z-10 border-b border-neutral-200 bg-white px-6 sm:px-8">
-        <nav className="-mb-px flex gap-0" role="tablist">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              role="tab"
-              aria-selected={tab === t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={`inline-flex items-center gap-2 border-b-2 px-5 py-4 text-sm font-medium transition ${
-                tab === t.id
-                  ? "border-primary text-primary"
-                  : "border-transparent text-neutral-500 hover:border-neutral-300 hover:text-neutral-700"
-              }`}
-            >
-              {t.icon}
-              {t.label}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Content */}
-      <div className="mx-auto max-w-3xl px-6 py-8 sm:px-8">
-        {error && (
-          <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            {error}
-          </div>
-        )}
-
-        <section className="mb-6 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold text-neutral-900">
-                Membership Billing
-              </h2>
-              <p className="mt-1 text-sm text-neutral-500">
-                Attach or update your billing card for automatic monthly membership charges.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => void startCardAttach()}
-                disabled={attachingCard}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              >
-                <CreditCard className="h-4 w-4" />
-                {attachingCard
-                  ? "Starting..."
-                  : subscriptionStatus?.defaultPaymentMethodAttached
-                    ? "Update card"
-                    : "Attach card"}
-              </button>
-              <button
-                type="button"
-                onClick={() => void loadSubscriptionStatus()}
-                disabled={subscriptionLoading}
-                className="inline-flex min-h-10 items-center rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 disabled:opacity-60"
-              >
-                {subscriptionLoading ? "Refreshing..." : "Refresh status"}
-              </button>
-            </div>
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700">
-              <p>
-                Status:{" "}
-                <span className="font-semibold">{subscriptionStatus?.status ?? "—"}</span>
-              </p>
-              <p className="mt-1">Trial ends: {formatDate(subscriptionStatus?.trialEndsAt ?? null)}</p>
-              <p className="mt-1">
-                Next billing: {formatDate(subscriptionStatus?.nextBillingAt ?? null)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700">
-              <p>
-                Card attached:{" "}
-                <span className="font-semibold">
-                  {subscriptionStatus?.defaultPaymentMethodAttached ? "Yes" : "No"}
-                </span>
-              </p>
-              <p className="mt-1">
-                Monthly fee:{" "}
-                {subscriptionStatus
-                  ? formatCurrency(
-                      subscriptionStatus.monthlyAmount,
-                      subscriptionStatus.currency
-                    )
-                  : "—"}
-              </p>
-              <p className="mt-1">
-                Failed payment count: {subscriptionStatus?.failedPaymentCount ?? 0}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {dataLoading || !profile ? (
-          /* skeleton */
-          <div className="flex flex-col gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-32 animate-pulse rounded-xl bg-white border border-neutral-200" />
-            ))}
-          </div>
-        ) : tab === "business" ? (
-          <BusinessInfoTab
-            profile={profile}
-            token={token}
-            onSaved={(updated) => setProfile((prev) => prev ? { ...prev, ...updated } : prev)}
-          />
-        ) : (
-          <PayoutDetailsTab
-            profile={profile}
-            token={token}
-            onPayoutSaved={() => void fetchProfile({ silent: true })}
-          />
-        )}
-
-        {/* Saved indicator */}
-        {!dataLoading && profile && (
-          <div className="mt-6 flex items-center gap-2 text-xs text-neutral-400">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            Changes are saved immediately when you click Save.
-          </div>
-        )}
-      </div>
-
       {cardSetup ? (
-        <Elements stripe={stripePromise} options={{ clientSecret: cardSetup.clientSecret }}>
+        <Elements
+          stripe={stripePromise}
+          options={{ clientSecret: cardSetup.clientSecret }}
+        >
           <CardSetupForm
             clientSecret={cardSetup.clientSecret}
             setupIntentId={cardSetup.setupIntentId}
