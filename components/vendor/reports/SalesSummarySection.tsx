@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   BarChart3,
-  CalendarRange,
   Loader2,
   RefreshCw,
   ShoppingCart,
@@ -11,12 +10,13 @@ import {
   TrendingUp,
   Wallet,
 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
+import { PaginationFooter } from "@/components/ui/pagination-footer";
+import { useClientPagination } from "@/hooks/use-client-pagination";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
-import { PaginationFooter } from "@/components/ui/pagination-footer";
-import { useClientPagination } from "@/hooks/use-client-pagination";
 
 type Granularity = "day" | "week" | "month";
 
@@ -42,8 +42,8 @@ type SalesSummaryReport = {
   periods: SalesSummaryPeriod[];
 };
 
-function formatCurrency(amount: number, currency: string) {
-  return new Intl.NumberFormat("en-US", {
+function formatCurrency(amount: number, currency: string, locale: string) {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: currency || "USD",
     minimumFractionDigits: 2,
@@ -52,7 +52,9 @@ function formatCurrency(amount: number, currency: string) {
 }
 
 function startOfUtcDay(date: Date) {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+  );
 }
 
 function getRangeForGranularity(granularity: Granularity) {
@@ -87,7 +89,7 @@ function SummaryCard({
   accent: string;
 }) {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
       <div className="flex items-start gap-3">
         <div
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white ${accent}`}
@@ -95,8 +97,8 @@ function SummaryCard({
           {icon}
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</p>
-          <p className="mt-1 text-xl font-bold text-[#0f3460]">{value}</p>
+          <p className="text-xs font-medium text-neutral-500">{label}</p>
+          <p className="mt-1 text-xl font-bold text-primary">{value}</p>
           {sub ? <p className="mt-0.5 text-xs text-neutral-500">{sub}</p> : null}
         </div>
       </div>
@@ -105,15 +107,11 @@ function SummaryCard({
 }
 
 export function SalesSummarySection() {
+  const t = useTranslations("VendorPages.reports");
+  const locale = useLocale();
   const [granularity, setGranularity] = useState<Granularity>("day");
   const [report, setReport] = useState<SalesSummaryReport | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const rangeLabel = useMemo(() => {
-    if (granularity === "day") return "Last 30 days";
-    if (granularity === "week") return "Last 12 weeks";
-    return "Last 12 months";
-  }, [granularity]);
 
   const loadReport = useCallback(async () => {
     setLoading(true);
@@ -124,16 +122,20 @@ export function SalesSummarySection() {
         from: from.toISOString(),
         to: to.toISOString(),
       });
-      const response = await fetchWithAuth(`/api/vendor/reports/sales-summary?${params}`);
+      const response = await fetchWithAuth(
+        `/api/vendor/reports/sales-summary?${params}`
+      );
       const data = await parseApiResponse<SalesSummaryReport>(response);
       setReport(data);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not load sales report.");
+      toast.error(
+        error instanceof Error ? error.message : t("common.loadError")
+      );
       setReport(null);
     } finally {
       setLoading(false);
     }
-  }, [granularity]);
+  }, [granularity, t]);
 
   useEffect(() => {
     void loadReport();
@@ -147,141 +149,207 @@ export function SalesSummarySection() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-end gap-3">
-        <div className="inline-flex rounded-lg border border-neutral-200 bg-white p-1 shadow-sm">
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
           {(
             [
-              { id: "day" as const, label: "Daily" },
-              { id: "week" as const, label: "Weekly" },
-              { id: "month" as const, label: "Monthly" },
+              { id: "day" as const, hint: t("sales.rangeDay") },
+              { id: "week" as const, hint: t("sales.rangeWeek") },
+              { id: "month" as const, hint: t("sales.rangeMonth") },
             ] as const
           ).map((option) => (
             <button
               key={option.id}
               type="button"
+              title={option.hint}
               onClick={() => setGranularity(option.id)}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition ${
+              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
                 granularity === option.id
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-neutral-600 hover:bg-neutral-50"
+                  ? "bg-primary text-white"
+                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
               }`}
             >
-              {option.label}
+              {t(`sales.granularity.${option.id}`)}
             </button>
           ))}
         </div>
-        <span className="inline-flex items-center gap-1.5 text-sm text-neutral-500">
-          <CalendarRange className="h-4 w-4" />
-          {rangeLabel}
-        </span>
         <button
           type="button"
           onClick={() => void loadReport()}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-60"
+          className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          Refresh
+          <RefreshCw
+            size={15}
+            className={loading ? "animate-spin" : undefined}
+          />
+          {t("refresh")}
         </button>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
+        <div className="flex min-h-[24vh] items-center justify-center">
           <Loader2 className="h-7 w-7 animate-spin text-neutral-400" />
         </div>
       ) : !report ? (
-        <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-16 text-center text-sm text-neutral-600">
-          No report data available.
+        <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-6 py-12 text-center">
+          <p className="text-sm font-medium text-neutral-800">
+            {t("common.empty")}
+          </p>
+          <button
+            type="button"
+            onClick={() => void loadReport()}
+            className="mt-3 text-sm font-medium text-primary hover:underline"
+          >
+            {t("common.tryAgain")}
+          </button>
         </div>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <SummaryCard
               icon={<ShoppingCart className="h-5 w-5" />}
-              label="Orders"
+              label={t("sales.cards.orders")}
               value={String(totals?.orderCount ?? 0)}
-              sub={`${totals?.itemsSold ?? 0} items sold`}
-              accent="bg-[#0f3460]"
-            />
-            <SummaryCard
-              icon={<TrendingUp className="h-5 w-5" />}
-              label="Gross sales (before fees)"
-              value={formatCurrency(totals?.grossSalesAmount ?? 0, currency)}
-              sub="Customer totals incl. delivery"
+              sub={t("sales.cards.ordersSub", {
+                count: totals?.itemsSold ?? 0,
+              })}
               accent="bg-primary"
             />
             <SummaryCard
+              icon={<TrendingUp className="h-5 w-5" />}
+              label={t("sales.cards.gross")}
+              value={formatCurrency(
+                totals?.grossSalesAmount ?? 0,
+                currency,
+                locale
+              )}
+              sub={t("sales.cards.grossSub")}
+              accent="bg-sky-600"
+            />
+            <SummaryCard
               icon={<TrendingDown className="h-5 w-5" />}
-              label="Platform fees"
-              value={formatCurrency(totals?.commissionAmount ?? 0, currency)}
-              sub="Commission on product subtotals"
+              label={t("sales.cards.fees")}
+              value={formatCurrency(
+                totals?.commissionAmount ?? 0,
+                currency,
+                locale
+              )}
+              sub={t("sales.cards.feesSub")}
               accent="bg-amber-500"
             />
             <SummaryCard
               icon={<Wallet className="h-5 w-5" />}
-              label="Net earnings (after fees)"
-              value={formatCurrency(totals?.netEarningsAmount ?? 0, currency)}
-              sub="Your share after commission"
+              label={t("sales.cards.net")}
+              value={formatCurrency(
+                totals?.netEarningsAmount ?? 0,
+                currency,
+                locale
+              )}
+              sub={t("sales.cards.netSub")}
               accent="bg-emerald-600"
             />
           </div>
 
-          <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div className="flex items-center gap-2 border-b border-neutral-200 px-5 py-4">
+          <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+            <div className="flex items-center gap-2 border-b border-neutral-100 px-4 py-3 sm:px-5">
               <BarChart3 className="h-5 w-5 text-primary" />
-              <h2 className="text-base font-semibold text-neutral-900">Breakdown by period</h2>
+              <h2 className="text-sm font-semibold text-neutral-900">
+                {t("sales.tableTitle")}
+              </h2>
             </div>
 
             {report.periods.length === 0 ? (
               <p className="px-5 py-12 text-center text-sm text-neutral-500">
-                No paid orders in this period yet.
+                {t("sales.emptyPeriods")}
               </p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="bg-neutral-50 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                  <thead className="bg-neutral-50 text-xs font-semibold text-neutral-500">
                     <tr>
-                      <th className="px-5 py-3">Period</th>
-                      <th className="px-5 py-3 text-right">Orders</th>
-                      <th className="px-5 py-3 text-right">Gross sales</th>
-                      <th className="px-5 py-3 text-right">Fees</th>
-                      <th className="px-5 py-3 text-right">Net earnings</th>
+                      <th className="px-4 py-3 sm:px-5">
+                        {t("sales.columns.period")}
+                      </th>
+                      <th className="px-4 py-3 text-right sm:px-5">
+                        {t("sales.columns.orders")}
+                      </th>
+                      <th className="px-4 py-3 text-right sm:px-5">
+                        {t("sales.columns.gross")}
+                      </th>
+                      <th className="px-4 py-3 text-right sm:px-5">
+                        {t("sales.columns.fees")}
+                      </th>
+                      <th className="px-4 py-3 text-right sm:px-5">
+                        {t("sales.columns.net")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-100">
                     {periodsPagination.paginatedItems.map((period) => (
-                      <tr key={period.periodKey} className="hover:bg-neutral-50/80">
-                        <td className="px-5 py-3 font-medium text-neutral-900">
+                      <tr
+                        key={period.periodKey}
+                        className="hover:bg-neutral-50/80"
+                      >
+                        <td className="px-4 py-3 font-medium text-neutral-900 sm:px-5">
                           {period.periodLabel}
                         </td>
-                        <td className="px-5 py-3 text-right text-neutral-700">
+                        <td className="px-4 py-3 text-right text-neutral-700 sm:px-5">
                           {period.orderCount}
                         </td>
-                        <td className="px-5 py-3 text-right text-neutral-700">
-                          {formatCurrency(period.grossSalesAmount, currency)}
+                        <td className="px-4 py-3 text-right text-neutral-700 sm:px-5">
+                          {formatCurrency(
+                            period.grossSalesAmount,
+                            currency,
+                            locale
+                          )}
                         </td>
-                        <td className="px-5 py-3 text-right text-amber-700">
-                          {formatCurrency(period.commissionAmount, currency)}
+                        <td className="px-4 py-3 text-right text-amber-700 sm:px-5">
+                          {formatCurrency(
+                            period.commissionAmount,
+                            currency,
+                            locale
+                          )}
                         </td>
-                        <td className="px-5 py-3 text-right font-semibold text-emerald-700">
-                          {formatCurrency(period.netEarningsAmount, currency)}
+                        <td className="px-4 py-3 text-right font-semibold text-emerald-700 sm:px-5">
+                          {formatCurrency(
+                            period.netEarningsAmount,
+                            currency,
+                            locale
+                          )}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot className="border-t border-neutral-200 bg-neutral-50 font-semibold text-neutral-900">
                     <tr>
-                      <td className="px-5 py-3">Total</td>
-                      <td className="px-5 py-3 text-right">{totals?.orderCount ?? 0}</td>
-                      <td className="px-5 py-3 text-right">
-                        {formatCurrency(totals?.grossSalesAmount ?? 0, currency)}
+                      <td className="px-4 py-3 sm:px-5">
+                        {t("common.total")}
                       </td>
-                      <td className="px-5 py-3 text-right text-amber-700">
-                        {formatCurrency(totals?.commissionAmount ?? 0, currency)}
+                      <td className="px-4 py-3 text-right sm:px-5">
+                        {totals?.orderCount ?? 0}
                       </td>
-                      <td className="px-5 py-3 text-right text-emerald-700">
-                        {formatCurrency(totals?.netEarningsAmount ?? 0, currency)}
+                      <td className="px-4 py-3 text-right sm:px-5">
+                        {formatCurrency(
+                          totals?.grossSalesAmount ?? 0,
+                          currency,
+                          locale
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right text-amber-700 sm:px-5">
+                        {formatCurrency(
+                          totals?.commissionAmount ?? 0,
+                          currency,
+                          locale
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right text-emerald-700 sm:px-5">
+                        {formatCurrency(
+                          totals?.netEarningsAmount ?? 0,
+                          currency,
+                          locale
+                        )}
                       </td>
                     </tr>
                   </tfoot>

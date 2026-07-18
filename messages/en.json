@@ -1115,10 +1115,128 @@
     },
     "reports": {
       "title": "Reports",
+      "subtitle": "See your sales, fees, and money sent to your account.",
+      "refresh": "Refresh",
+      "settingsLink": "Payout settings",
       "tabs": {
-        "sales": "Sales summary",
-        "fees": "Fees & subscription",
-        "payouts": "Payout history"
+        "sales": "Sales",
+        "fees": "Fees",
+        "payouts": "Payouts"
+      },
+      "common": {
+        "loadError": "Could not load this report.",
+        "empty": "Nothing to show yet",
+        "tryAgain": "Try again",
+        "total": "Total",
+        "last12Months": "Last 12 months"
+      },
+      "sales": {
+        "rangeDay": "Last 30 days",
+        "rangeWeek": "Last 12 weeks",
+        "rangeMonth": "Last 12 months",
+        "granularity": {
+          "day": "Daily",
+          "week": "Weekly",
+          "month": "Monthly"
+        },
+        "cards": {
+          "orders": "Orders",
+          "ordersSub": "{count} items sold",
+          "gross": "Money from customers",
+          "grossSub": "Includes delivery",
+          "fees": "Mandawee fees",
+          "feesSub": "Taken from your sales",
+          "net": "Your earnings",
+          "netSub": "After fees"
+        },
+        "tableTitle": "By period",
+        "emptyPeriods": "No paid orders in this period yet.",
+        "columns": {
+          "period": "Period",
+          "orders": "Orders",
+          "gross": "From customers",
+          "fees": "Fees",
+          "net": "Your earnings"
+        }
+      },
+      "fees": {
+        "intro": "Fees taken from orders, and your monthly membership.",
+        "cards": {
+          "orderFees": "Order fees",
+          "orderFeesSub": "{count} orders · {rate}",
+          "membership": "Membership paid",
+          "membershipSub": "{count} invoices · {rate}",
+          "total": "All fees"
+        },
+        "orderFeesTitle": "Order fees",
+        "orderFeesEmpty": "No order fees yet. A fee is taken when a customer pays.",
+        "membershipTitle": "Monthly membership",
+        "membershipEmpty": "No membership bills yet. New sellers get {days} free days first.",
+        "columns": {
+          "date": "Date",
+          "order": "Order",
+          "subtotal": "Order total",
+          "fee": "Fee",
+          "period": "Billing period",
+          "due": "Due",
+          "status": "Status",
+          "invoice": "Bill amount",
+          "charged": "Charged"
+        },
+        "membershipStatus": {
+          "PAID": "Paid",
+          "PENDING": "Pending",
+          "WAIVED": "Waived",
+          "VOID": "Cancelled"
+        },
+        "chargedPending": "Pending",
+        "lastAttempt": "Last try: {date}",
+        "failure": "Problem: {reason}"
+      },
+      "payouts": {
+        "intro": "Money from your orders — held, ready, or already sent to you.",
+        "cards": {
+          "sent": "Sent to you",
+          "sentSub": "{count} payouts",
+          "onHold": "On hold",
+          "onHoldSub": "Waiting period",
+          "ready": "Ready to send",
+          "readySub": "Waiting for transfer",
+          "all": "All payouts"
+        },
+        "filters": {
+          "all": "All",
+          "SENT": "Sent",
+          "ON_HOLD": "On hold",
+          "READY": "Ready",
+          "FAILED": "Failed"
+        },
+        "statuses": {
+          "SENT": "Sent",
+          "ON_HOLD": "On hold",
+          "READY": "Ready",
+          "FAILED": "Failed"
+        },
+        "dateLabels": {
+          "sent": "Sent",
+          "released": "Ready",
+          "onHold": "On hold",
+          "holdUntil": "Hold until",
+          "created": "Created"
+        },
+        "holdLabels": {
+          "untilDelivered": "Until delivered",
+          "deliveredReady": "Delivered — ready soon"
+        },
+        "tableTitle": "Payout list",
+        "emptyFilter": "No payouts match this filter.",
+        "empty": "No payouts yet.",
+        "columns": {
+          "order": "Order",
+          "status": "Status",
+          "date": "Date",
+          "amount": "Amount"
+        }
       }
     },
     "settings": {

@@ -1115,10 +1115,128 @@
     },
     "reports": {
       "title": "راپورونه",
+      "subtitle": "خپل پلور، فیسونه، او خپل حساب ته لیږل شوې پیسې وګورئ.",
+      "refresh": "بیا تازه کړئ",
+      "settingsLink": "د تادیې تنظیمات",
       "tabs": {
-        "sales": "د پلور لنډیز",
-        "fees": "فیسونه او غړیتوب",
-        "payouts": "د تادیې تاریخچه"
+        "sales": "پلور",
+        "fees": "فیسونه",
+        "payouts": "تادیې"
+      },
+      "common": {
+        "loadError": "دا راپور پورته نشو.",
+        "empty": "تر اوسه هیڅ نشته",
+        "tryAgain": "بیا هڅه",
+        "total": "ټول",
+        "last12Months": "تیر ۱۲ میاشتې"
+      },
+      "sales": {
+        "rangeDay": "تیر ۳۰ ورځې",
+        "rangeWeek": "تیر ۱۲ اونۍ",
+        "rangeMonth": "تیر ۱۲ میاشتې",
+        "granularity": {
+          "day": "ورځنی",
+          "week": "اونیز",
+          "month": "میاشتني"
+        },
+        "cards": {
+          "orders": "فرمایشونه",
+          "ordersSub": "{count} توکي پلورل شوي",
+          "gross": "د پیرودونکو پیسې",
+          "grossSub": "تحویل پکې دی",
+          "fees": "د Mandawee فیسونه",
+          "feesSub": "ستاسو له پلور څخه اخیستل شوي",
+          "net": "ستاسو عاید",
+          "netSub": "له فیسونو وروسته"
+        },
+        "tableTitle": "د مودې له مخې",
+        "emptyPeriods": "په دې موده کې هیڅ تادیه شوي فرمایش نشته.",
+        "columns": {
+          "period": "موده",
+          "orders": "فرمایشونه",
+          "gross": "له پیرودونکو",
+          "fees": "فیسونه",
+          "net": "ستاسو عاید"
+        }
+      },
+      "fees": {
+        "intro": "د فرمایشونو فیسونه او ستاسو میاشتنی غړیتوب.",
+        "cards": {
+          "orderFees": "د فرمایش فیسونه",
+          "orderFeesSub": "{count} فرمایشونه · {rate}",
+          "membership": "تادیه شوی غړیتوب",
+          "membershipSub": "{count} بلونه · {rate}",
+          "total": "ټول فیسونه"
+        },
+        "orderFeesTitle": "د فرمایش فیسونه",
+        "orderFeesEmpty": "تر اوسه هیڅ د فرمایش فیس نشته. کله چې پیرودونکی تادیه کوي فیس اخیستل کیږي.",
+        "membershipTitle": "میاشتنی غړیتوب",
+        "membershipEmpty": "تر اوسه هیڅ د غړیتوب بل نشته. نوي پلورونکي لومړی {days} وړیا ورځې لري.",
+        "columns": {
+          "date": "نیټه",
+          "order": "فرمایش",
+          "subtotal": "د فرمایش مجموعه",
+          "fee": "فیس",
+          "period": "د بل موده",
+          "due": "د تادیې نیټه",
+          "status": "حالت",
+          "invoice": "د بل اندازه",
+          "charged": "اخیستل شوی"
+        },
+        "membershipStatus": {
+          "PAID": "تادیه شوی",
+          "PENDING": "پاتې",
+          "WAIVED": "معاف",
+          "VOID": "لغوه"
+        },
+        "chargedPending": "پاتې",
+        "lastAttempt": "وروستۍ هڅه: {date}",
+        "failure": "ستونزه: {reason}"
+      },
+      "payouts": {
+        "intro": "ستاسو د فرمایشونو پیسې — ساتل شوي، چمتو، یا تاسو ته لیږل شوي.",
+        "cards": {
+          "sent": "تاسو ته لیږل شوي",
+          "sentSub": "{count} تادیې",
+          "onHold": "ساتل شوي",
+          "onHoldSub": "د انتظار موده",
+          "ready": "د لیږلو چمتو",
+          "readySub": "د لیږد په تمه",
+          "all": "ټولې تادیې"
+        },
+        "filters": {
+          "all": "ټول",
+          "SENT": "لیږل شوي",
+          "ON_HOLD": "ساتل شوي",
+          "READY": "چمتو",
+          "FAILED": "ناکام"
+        },
+        "statuses": {
+          "SENT": "لیږل شوی",
+          "ON_HOLD": "ساتل شوی",
+          "READY": "چمتو",
+          "FAILED": "ناکام"
+        },
+        "dateLabels": {
+          "sent": "لیږل شوی",
+          "released": "چمتو",
+          "onHold": "ساتل شوی",
+          "holdUntil": "تر",
+          "created": "جوړ شوی"
+        },
+        "holdLabels": {
+          "untilDelivered": "تر تحویل پورې",
+          "deliveredReady": "تحویل شو — ژر چمتو"
+        },
+        "tableTitle": "د تادیو لیست",
+        "emptyFilter": "هیڅ تادیه دې فلټر سره برابره نه ده.",
+        "empty": "تر اوسه هیڅ تادیه نشته.",
+        "columns": {
+          "order": "فرمایش",
+          "status": "حالت",
+          "date": "نیټه",
+          "amount": "مقدار"
+        }
       }
     },
     "settings": {

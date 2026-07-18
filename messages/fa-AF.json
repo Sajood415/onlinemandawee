@@ -1115,10 +1115,128 @@
     },
     "reports": {
       "title": "گزارش‌ها",
+      "subtitle": "فروش، هزینه‌ها و پول ارسال‌شده به حسابتان را ببینید.",
+      "refresh": "تازه‌سازی",
+      "settingsLink": "تنظیمات پرداخت",
       "tabs": {
-        "sales": "خلاصه فروش",
-        "fees": "هزینه‌ها و اشتراک",
-        "payouts": "تاریخچه پرداخت"
+        "sales": "فروش",
+        "fees": "هزینه‌ها",
+        "payouts": "پرداخت‌ها"
+      },
+      "common": {
+        "loadError": "بارگذاری این گزارش ممکن نشد.",
+        "empty": "هنوز چیزی برای نمایش نیست",
+        "tryAgain": "دوباره تلاش",
+        "total": "جمع",
+        "last12Months": "۱۲ ماه گذشته"
+      },
+      "sales": {
+        "rangeDay": "۳۰ روز گذشته",
+        "rangeWeek": "۱۲ هفته گذشته",
+        "rangeMonth": "۱۲ ماه گذشته",
+        "granularity": {
+          "day": "روزانه",
+          "week": "هفتگی",
+          "month": "ماهانه"
+        },
+        "cards": {
+          "orders": "سفارش‌ها",
+          "ordersSub": "{count} کالا فروخته‌شده",
+          "gross": "پول از مشتریان",
+          "grossSub": "شامل هزینه تحویل",
+          "fees": "هزینه Mandawee",
+          "feesSub": "از فروش شما کسر شده",
+          "net": "درآمد شما",
+          "netSub": "پس از هزینه‌ها"
+        },
+        "tableTitle": "بر اساس دوره",
+        "emptyPeriods": "در این دوره سفارش پرداخت‌شده‌ای نیست.",
+        "columns": {
+          "period": "دوره",
+          "orders": "سفارش‌ها",
+          "gross": "از مشتریان",
+          "fees": "هزینه‌ها",
+          "net": "درآمد شما"
+        }
+      },
+      "fees": {
+        "intro": "هزینه سفارش‌ها و عضویت ماهانه شما.",
+        "cards": {
+          "orderFees": "هزینه سفارش",
+          "orderFeesSub": "{count} سفارش · {rate}",
+          "membership": "عضویت پرداخت‌شده",
+          "membershipSub": "{count} صورتحساب · {rate}",
+          "total": "همه هزینه‌ها"
+        },
+        "orderFeesTitle": "هزینه سفارش",
+        "orderFeesEmpty": "هنوز هزینه سفارشی نیست. وقتی مشتری پرداخت کند، هزینه کسر می‌شود.",
+        "membershipTitle": "عضویت ماهانه",
+        "membershipEmpty": "هنوز صورتحساب عضویت نیست. فروشندگان جدید اول {days} روز رایگان دارند.",
+        "columns": {
+          "date": "تاریخ",
+          "order": "سفارش",
+          "subtotal": "جمع سفارش",
+          "fee": "هزینه",
+          "period": "دوره صورتحساب",
+          "due": "سررسید",
+          "status": "وضعیت",
+          "invoice": "مبلغ صورتحساب",
+          "charged": "کسرشده"
+        },
+        "membershipStatus": {
+          "PAID": "پرداخت‌شده",
+          "PENDING": "در انتظار",
+          "WAIVED": "معاف",
+          "VOID": "لغو شده"
+        },
+        "chargedPending": "در انتظار",
+        "lastAttempt": "آخرین تلاش: {date}",
+        "failure": "مشکل: {reason}"
+      },
+      "payouts": {
+        "intro": "پول سفارش‌های شما — نگه داشته، آماده، یا برایتان ارسال شده.",
+        "cards": {
+          "sent": "ارسال به شما",
+          "sentSub": "{count} پرداخت",
+          "onHold": "در انتظار",
+          "onHoldSub": "دوره نگه‌داری",
+          "ready": "آماده ارسال",
+          "readySub": "منتظر انتقال",
+          "all": "همه پرداخت‌ها"
+        },
+        "filters": {
+          "all": "همه",
+          "SENT": "ارسال‌شده",
+          "ON_HOLD": "در انتظار",
+          "READY": "آماده",
+          "FAILED": "ناموفق"
+        },
+        "statuses": {
+          "SENT": "ارسال‌شده",
+          "ON_HOLD": "در انتظار",
+          "READY": "آماده",
+          "FAILED": "ناموفق"
+        },
+        "dateLabels": {
+          "sent": "ارسال‌شده",
+          "released": "آماده",
+          "onHold": "در انتظار",
+          "holdUntil": "تا",
+          "created": "ایجاد شده"
+        },
+        "holdLabels": {
+          "untilDelivered": "تا زمان تحویل",
+          "deliveredReady": "تحویل شد — به‌زودی آماده"
+        },
+        "tableTitle": "فهرست پرداخت‌ها",
+        "emptyFilter": "هیچ پرداختی با این فیلتر نیست.",
+        "empty": "هنوز پرداختی نیست.",
+        "columns": {
+          "order": "سفارش",
+          "status": "وضعیت",
+          "date": "تاریخ",
+          "amount": "مبلغ"
+        }
       }
     },
     "settings": {
