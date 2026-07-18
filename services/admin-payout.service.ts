@@ -1,7 +1,11 @@
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
-import { isPayoutEligibleForRelease, payoutHoldLabel } from "@/lib/payout/payout-hold";
+import {
+  isPayoutEligibleForRelease,
+  payoutHoldLabel,
+  resolveEffectiveHoldUntil,
+} from "@/lib/payout/payout-hold";
 import { sendVendorPayoutNotification } from "@/lib/mail/send-vendor-payout-notifications";
 import { PayoutRepository } from "@/repositories/payout.repository";
 import { PayoutReleaseService } from "@/services/payout-release.service";
@@ -189,17 +193,21 @@ export class AdminPayoutService {
   ) {
     const vendorLabel = payout.vendorProfile.storeName ?? payout.vendorProfile.storeSlug ?? "Vendor";
     const orderVendor = payout.orderVendor;
+    const effectiveHoldUntil = resolveEffectiveHoldUntil({
+      holdUntil: payout.holdUntil,
+      payoutCreatedAt: payout.createdAt,
+    });
     return {
       id: payout.id,
       status: payout.status,
       amount: payout.amount,
       currency: payout.currency,
-      holdUntil: payout.holdUntil.toISOString(),
+      holdUntil: effectiveHoldUntil.toISOString(),
       holdLabel: payoutHoldLabel({
         deliveryMethod: orderVendor.deliveryMethod,
         vendorOrderStatus: orderVendor.status,
         deliveredAt: orderVendor.deliveredAt,
-        holdUntil: payout.holdUntil,
+        holdUntil: effectiveHoldUntil,
         status: payout.status,
       }),
       releasedAt: payout.releasedAt?.toISOString() ?? null,
@@ -219,10 +227,8 @@ export class AdminPayoutService {
       eligibleForRelease:
         payout.status === "ON_HOLD" &&
         isPayoutEligibleForRelease({
-          deliveryMethod: orderVendor.deliveryMethod,
-          vendorOrderStatus: orderVendor.status,
-          deliveredAt: orderVendor.deliveredAt,
-          holdUntil: payout.holdUntil,
+          holdUntil: effectiveHoldUntil,
+          payoutCreatedAt: payout.createdAt,
           now,
         }),
     };

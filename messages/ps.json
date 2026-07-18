@@ -1225,7 +1225,7 @@
           "created": "جوړ شوی"
         },
         "holdLabels": {
-          "untilDelivered": "تر تحویل پورې",
+          "untilDelivered": "له تادیې وروسته په بند کې",
           "deliveredReady": "تحویل شو — ژر چمتو"
         },
         "tableTitle": "د تادیو لیست",

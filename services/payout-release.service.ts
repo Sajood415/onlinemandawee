@@ -3,9 +3,9 @@ import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { prisma } from "@/lib/db/prisma";
 import {
-  computeExpressPayoutHoldUntilAfterDelivery,
   isExpressPendingDeliveryHold,
   isPayoutEligibleForRelease,
+  resolveEffectiveHoldUntil,
 } from "@/lib/payout/payout-hold";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { OrderRepository } from "@/repositories/order.repository";
@@ -39,8 +39,8 @@ export class PayoutReleaseService {
       return existing;
     }
 
-    await this.requireReleasablePayout(payoutId);
-    await this.moveHoldToAvailableAndMarkReleased(existing, now);
+    const releasable = await this.requireReleasablePayout(payoutId);
+    await this.moveHoldToAvailableAndMarkReleased(releasable, now);
 
     const updated = await this.payoutRepository.findById(payoutId);
     if (!updated) {
@@ -74,24 +74,29 @@ export class PayoutReleaseService {
       return { transferred: false, reason: "not_on_hold" as const };
     }
 
-    const vendorOrder = await this.orderRepository.findVendorOrderById(
-      payout.orderVendorId
-    );
-
     if (
-      !vendorOrder ||
       !isPayoutEligibleForRelease({
-        deliveryMethod: vendorOrder.deliveryMethod,
-        vendorOrderStatus: vendorOrder.status,
-        deliveredAt: vendorOrder.deliveredAt,
         holdUntil: payout.holdUntil,
+        payoutCreatedAt: payout.createdAt,
       })
     ) {
       return { transferred: false, reason: "hold_not_elapsed" as const };
     }
 
+    const effectiveHoldUntil = resolveEffectiveHoldUntil({
+      holdUntil: payout.holdUntil,
+      payoutCreatedAt: payout.createdAt,
+    });
+    if (isExpressPendingDeliveryHold(payout.holdUntil)) {
+      await this.payoutRepository.updateHoldUntil(payout.id, effectiveHoldUntil);
+    }
+
     const now = new Date();
-    await this.moveHoldToAvailableAndMarkReleased(payout, now);
+    const refreshed = {
+      ...payout,
+      holdUntil: effectiveHoldUntil,
+    };
+    await this.moveHoldToAvailableAndMarkReleased(refreshed, now);
     const updated = await this.markSent(payout.id);
 
     await this.auditLogRepository.create({
@@ -211,11 +216,17 @@ export class PayoutReleaseService {
     await this.requireReleasablePayout(payoutId);
   }
 
-  /** Express payouts stay on hold until the vendor marks the order delivered. */
+  /**
+   * Legacy cleanup: old Express payouts used a far-future sentinel hold.
+   * Rewrite those to the universal calendar hold from payment (payout.createdAt).
+   * Delivery no longer shortens or ends the hold.
+   */
   async syncExpressHoldOnDelivery(input: {
     orderVendorId: string;
     deliveredAt: Date;
   }) {
+    void input.deliveredAt;
+
     const [payout, vendorOrder] = await Promise.all([
       this.payoutRepository.findByOrderVendorId(input.orderVendorId),
       this.orderRepository.findVendorOrderById(input.orderVendorId),
@@ -225,12 +236,16 @@ export class PayoutReleaseService {
       !payout ||
       payout.status !== "ON_HOLD" ||
       !vendorOrder ||
-      vendorOrder.deliveryMethod !== "EXPRESS"
+      vendorOrder.deliveryMethod !== "EXPRESS" ||
+      !isExpressPendingDeliveryHold(payout.holdUntil)
     ) {
       return { updated: false as const };
     }
 
-    const holdUntil = computeExpressPayoutHoldUntilAfterDelivery(input.deliveredAt);
+    const holdUntil = resolveEffectiveHoldUntil({
+      holdUntil: payout.holdUntil,
+      payoutCreatedAt: payout.createdAt,
+    });
     await this.payoutRepository.updateHoldUntil(payout.id, holdUntil);
 
     return { updated: true as const, holdUntil };
@@ -260,16 +275,12 @@ export class PayoutReleaseService {
       });
     }
 
-    let effectiveHoldUntil = payout.holdUntil;
-    if (
-      vendorOrder.deliveryMethod === "EXPRESS" &&
-      vendorOrder.status === "DELIVERED" &&
-      vendorOrder.deliveredAt &&
-      isExpressPendingDeliveryHold(payout.holdUntil)
-    ) {
-      effectiveHoldUntil = computeExpressPayoutHoldUntilAfterDelivery(
-        vendorOrder.deliveredAt
-      );
+    const effectiveHoldUntil = resolveEffectiveHoldUntil({
+      holdUntil: payout.holdUntil,
+      payoutCreatedAt: payout.createdAt,
+    });
+
+    if (isExpressPendingDeliveryHold(payout.holdUntil)) {
       await this.payoutRepository.updateHoldUntil(payout.id, effectiveHoldUntil);
     }
 
@@ -283,24 +294,22 @@ export class PayoutReleaseService {
 
     if (
       !isPayoutEligibleForRelease({
-        deliveryMethod: vendorOrder.deliveryMethod,
-        vendorOrderStatus: vendorOrder.status,
-        deliveredAt: vendorOrder.deliveredAt,
         holdUntil: effectiveHoldUntil,
+        payoutCreatedAt: payout.createdAt,
         now,
       })
     ) {
       throw new AppError({
         code: ERROR_CODE.BAD_REQUEST,
-        message:
-          vendorOrder.deliveryMethod === "EXPRESS"
-            ? "Express payout cannot be released until the order is delivered"
-            : "Payout is not ready for release",
+        message: "Payout hold period has not ended yet",
         statusCode: 400,
       });
     }
 
-    return payout;
+    return {
+      ...payout,
+      holdUntil: effectiveHoldUntil,
+    };
   }
 
   private async moveHoldToAvailableAndMarkReleased(
@@ -360,5 +369,4 @@ export class PayoutReleaseService {
       });
     });
   }
-
 }

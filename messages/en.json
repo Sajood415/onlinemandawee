@@ -1225,8 +1225,8 @@
           "created": "Created"
         },
         "holdLabels": {
-          "untilDelivered": "Until delivered",
-          "deliveredReady": "Delivered — ready soon"
+          "untilDelivered": "On hold after payment",
+          "deliveredReady": "Hold period ending"
         },
         "tableTitle": "Payout list",
         "emptyFilter": "No payouts match this filter.",

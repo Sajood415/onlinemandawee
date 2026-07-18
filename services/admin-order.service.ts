@@ -1,7 +1,7 @@
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import type { DeliveryMethod } from "@/domain/delivery/delivery-types";
-import { payoutHoldLabel } from "@/lib/payout/payout-hold";
+import { payoutHoldLabel, resolveEffectiveHoldUntil } from "@/lib/payout/payout-hold";
 import { CommissionLedgerRepository } from "@/repositories/commission-ledger.repository";
 import {
   OrderRepository,
@@ -185,17 +185,22 @@ export class AdminOrderService {
       };
     }
 
+    const effectiveHoldUntil = resolveEffectiveHoldUntil({
+      holdUntil: row.holdUntil,
+      payoutCreatedAt: row.createdAt,
+    });
+
     return {
       status: row.status,
       amount: row.amount,
       currency: row.currency,
-      holdUntil: row.holdUntil.toISOString(),
+      holdUntil: effectiveHoldUntil.toISOString(),
       holdLabel: vendorOrder
         ? payoutHoldLabel({
             deliveryMethod: vendorOrder.deliveryMethod,
             vendorOrderStatus: vendorOrder.status,
             deliveredAt: vendorOrder.deliveredAt,
-            holdUntil: row.holdUntil,
+            holdUntil: effectiveHoldUntil,
             status: row.status,
           })
         : null,

@@ -1225,8 +1225,8 @@
           "created": "ایجاد شده"
         },
         "holdLabels": {
-          "untilDelivered": "تا زمان تحویل",
-          "deliveredReady": "تحویل شد — به‌زودی آماده"
+          "untilDelivered": "در نگهداشت پس از پرداخت",
+          "deliveredReady": "دوره نگهداشت در حال پایان"
         },
         "tableTitle": "فهرست پرداخت‌ها",
         "emptyFilter": "هیچ پرداختی با این فیلتر نیست.",

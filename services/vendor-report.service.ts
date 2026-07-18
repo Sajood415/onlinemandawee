@@ -8,7 +8,7 @@ import {
   type SalesSummaryGranularity,
 } from "@/lib/reports/period-bucket";
 import { formatCommissionRateLabel } from "@/lib/platform/transaction-fee";
-import { payoutHoldLabel } from "@/lib/payout/payout-hold";
+import { payoutHoldLabel, resolveEffectiveHoldUntil } from "@/lib/payout/payout-hold";
 import { CommissionLedgerRepository } from "@/repositories/commission-ledger.repository";
 import { MembershipInvoiceRepository } from "@/repositories/membership-invoice.repository";
 import { OrderRepository } from "@/repositories/order.repository";
@@ -342,13 +342,19 @@ export class VendorReportService {
         amount: payout.amount,
         currency: payout.currency,
         status: payout.status,
-        holdUntil: payout.holdUntil.toISOString(),
+        holdUntil: resolveEffectiveHoldUntil({
+          holdUntil: payout.holdUntil,
+          payoutCreatedAt: payout.createdAt,
+        }).toISOString(),
         holdLabel: orderRef
           ? payoutHoldLabel({
               deliveryMethod: orderRef.deliveryMethod,
               vendorOrderStatus: orderRef.status,
               deliveredAt: orderRef.deliveredAt,
-              holdUntil: payout.holdUntil,
+              holdUntil: resolveEffectiveHoldUntil({
+                holdUntil: payout.holdUntil,
+                payoutCreatedAt: payout.createdAt,
+              }),
               status: payout.status,
             })
           : null,
