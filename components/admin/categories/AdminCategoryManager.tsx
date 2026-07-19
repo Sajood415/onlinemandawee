@@ -2,7 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Loader2, Pencil, Plus, Trash2, ToggleLeft, ToggleRight, X } from "lucide-react";
+import {
+  Loader2,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+  ToggleLeft,
+  ToggleRight,
+  X,
+} from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
@@ -18,11 +28,10 @@ import {
   parseCategoryImageUrl,
   type CategoryTranslations,
 } from "@/lib/localization/category-content";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { toast } from "@/lib/utils/toast";
-
-/* ─── Types ──────────────────────────────────────────────────────────── */
 
 type Category = {
   id: string;
@@ -37,29 +46,25 @@ type Category = {
   _count?: { products: number };
 };
 
-export type AdminCategoryManagerMode = "top-level" | "sub";
-
-type AdminCategoryManagerProps = {
-  mode: AdminCategoryManagerMode;
-};
-
-/* ─── Style helpers ──────────────────────────────────────────────────── */
+type CategoryTab = "main" | "sub";
 
 const INPUT =
   "w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm outline-none placeholder:text-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-60";
 const LABEL = "block text-sm font-medium text-neutral-700";
 
-/* ─── Page ────────────────────────────────────────────────────────────── */
-
-export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
+export function AdminCategoryManager() {
   const t = useTranslations("AdminPages.categories");
-  const isSubMode = mode === "sub";
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
+
+  const [tab, setTab] = useState<CategoryTab>("main");
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
-  /* form state */
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formName, setFormName] = useState("");
   const [formTranslations, setFormTranslations] = useState<CategoryTranslationFormFields>(
@@ -74,31 +79,53 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [deleting, setDeleting] = useState(false);
-
   const [search, setSearch] = useState("");
   const formSectionRef = useRef<HTMLDivElement>(null);
 
-  /* ── Fetch ──────────────────────────────────────────────────────── */
+  const isSubMode = tab === "sub";
 
-  const fetchCategories = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    setError(null);
-    try {
-      const res = await fetchWithAuth("/api/admin/categories");
-      const data = await parseApiResponse<Category[]>(res);
-      setCategories(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("toasts.loadError"));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
+  useEffect(() => {
+    const fromQuery = searchParams.get("tab");
+    setTab(fromQuery === "sub" ? "sub" : "main");
+  }, [searchParams]);
+
+  const selectTab = useCallback(
+    (next: CategoryTab) => {
+      setTab(next);
+      setSearch("");
+      resetForm();
+      setShowForm(false);
+      const params = new URLSearchParams(searchParams.toString());
+      if (next === "sub") params.set("tab", "sub");
+      else params.delete("tab");
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    // resetForm is stable enough via closure; avoid dep loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pathname, router, searchParams]
+  );
+
+  const fetchCategories = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      setError(null);
+      try {
+        const res = await fetchWithAuth("/api/admin/categories");
+        const data = await parseApiResponse<Category[]>(res);
+        setCategories(data);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : t("toasts.loadError"));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [t]
+  );
 
   useEffect(() => {
     if (!authLoading && user) void fetchCategories();
   }, [authLoading, user, fetchCategories]);
-
-  /* ── Scoped lists ───────────────────────────────────────────────── */
 
   const topLevelCategories = useMemo(
     () => categories.filter((c) => !c.parentId),
@@ -110,8 +137,6 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
   );
   const scopedCategories = isSubMode ? subCategories : topLevelCategories;
 
-  /* ── Form helpers ───────────────────────────────────────────────── */
-
   const resetForm = () => {
     setEditingId(null);
     setFormName("");
@@ -122,6 +147,14 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
     setFormIsActive(true);
   };
 
+  const openCreate = () => {
+    resetForm();
+    setShowForm(true);
+    requestAnimationFrame(() => {
+      formSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
   const startEdit = (cat: Category) => {
     setEditingId(cat.id);
     setFormName(cat.name);
@@ -130,9 +163,15 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
     setFormSortOrder(String(cat.sortOrder));
     setFormParentId(cat.parentId ?? "");
     setFormIsActive(cat.isActive);
+    setShowForm(true);
     requestAnimationFrame(() => {
       formSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+  };
+
+  const closeForm = () => {
+    resetForm();
+    setShowForm(false);
   };
 
   const onUploadCategoryImage = async (file: File) => {
@@ -156,8 +195,6 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
       setUploadingImage(false);
     }
   };
-
-  /* ── Submit (create or update) ──────────────────────────────────── */
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,7 +235,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
       });
       await parseApiResponse<Category>(res);
       toast.success(editingId ? t("toasts.saved") : t("toasts.created"));
-      resetForm();
+      closeForm();
       await fetchCategories(true);
     } catch (err) {
       toast.error(
@@ -209,8 +246,6 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
       setSaving(false);
     }
   };
-
-  /* ── Toggle active / inactive ───────────────────────────────────── */
 
   const toggleActive = async (cat: Category) => {
     setTogglingId(cat.id);
@@ -238,8 +273,6 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
     }
   };
 
-  /* ── Delete ─────────────────────────────────────────────────────── */
-
   const confirmDelete = async () => {
     if (!deleteTarget) return;
 
@@ -260,7 +293,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
         t("toasts.deletedBody", { name: deleteTarget.name })
       );
       setCategories((current) => current.filter((c) => c.id !== deleteTarget.id));
-      if (editingId === deleteTarget.id) resetForm();
+      if (editingId === deleteTarget.id) closeForm();
       setDeleteTarget(null);
     } catch (err) {
       toast.error(
@@ -271,8 +304,6 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
       setDeleting(false);
     }
   };
-
-  /* ── Filtered list ──────────────────────────────────────────────── */
 
   const filtered = search.trim()
     ? scopedCategories.filter(
@@ -311,14 +342,16 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
       base.push({
         header: t("columns.children"),
         id: "children",
-        cell: ({ row }) =>
-          row.original.children?.length > 0 ? (
-            <span className="text-xs text-neutral-500">
-              {row.original.children.map((c) => c.name).join(", ")}
+        cell: ({ row }) => {
+          const count = row.original.children?.length ?? 0;
+          return count > 0 ? (
+            <span className="text-xs text-neutral-600">
+              {t("childrenCount", { count })}
             </span>
           ) : (
             <span className="text-neutral-300">—</span>
-          ),
+          );
+        },
       });
     }
 
@@ -353,6 +386,7 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
         id: "actions",
         cell: ({ row }) => {
           const cat = row.original;
+          const hasChildren = !isSubMode && cat.children.length > 0;
           return (
             <div
               className="flex items-center gap-2"
@@ -388,8 +422,10 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
               </button>
               <button
                 type="button"
+                disabled={hasChildren}
+                title={hasChildren ? t("toasts.hasChildrenBody") : undefined}
                 onClick={() => setDeleteTarget(cat)}
-                className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50"
+                className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 {t("delete")}
@@ -403,7 +439,10 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
     return base;
   }, [isSubMode, togglingId, t]);
 
-  /* ── Guard ──────────────────────────────────────────────────────── */
+  const tabs: Array<{ id: CategoryTab; label: string; count: number }> = [
+    { id: "main", label: t("tabs.main"), count: topLevelCategories.length },
+    { id: "sub", label: t("tabs.sub"), count: subCategories.length },
+  ];
 
   if (authLoading || !user) {
     return (
@@ -413,262 +452,302 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
     );
   }
 
-  /* ── Render ─────────────────────────────────────────────────────── */
-
   return (
-    <div className="space-y-6 pb-16">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-[#0f3460]">
-          {isSubMode ? t("titleSub") : t("title")}
-        </h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          {isSubMode ? t("subtitleSub") : t("subtitle")}
-        </p>
+    <div className="space-y-4 pb-16">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+          <p className="mt-1 max-w-2xl text-sm text-neutral-600">{t("subtitle")}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => void fetchCategories()}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            {t("refresh")}
+          </button>
+          <button
+            type="button"
+            onClick={openCreate}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-3 py-2 text-sm font-semibold text-white hover:bg-[#0a2847]"
+          >
+            <Plus className="h-4 w-4" />
+            {isSubMode ? t("newSubCategory") : t("newCategory")}
+          </button>
+        </div>
       </div>
 
-      {/* ── Create / Edit form ──────────────────────────────────── */}
-      <div
-        ref={formSectionRef}
-        className={`scroll-mt-4 rounded-2xl border bg-white p-5 shadow-sm sm:p-6 ${
-          editingId ? "border-primary/30 ring-2 ring-primary/15" : "border-neutral-200"
-        }`}
-      >
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-neutral-900">
-              {editingId
-                ? isSubMode
-                  ? t("editSubCategory")
-                  : t("editCategory")
-                : isSubMode
-                  ? t("newSubCategory")
-                  : t("newCategory")}
-            </h2>
-            {editingId ? (
-              <p className="mt-1 text-sm text-neutral-500">{t("editHint")}</p>
-            ) : null}
-          </div>
-          {editingId && (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-            >
-              <X className="h-3.5 w-3.5" />
-              {t("cancel")}
-            </button>
-          )}
+      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+        <div
+          role="tablist"
+          aria-label={t("title")}
+          className="flex gap-0 overflow-x-auto border-b border-neutral-200"
+        >
+          {tabs.map((item) => {
+            const active = tab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => selectTab(item.id)}
+                className={`relative inline-flex shrink-0 items-center gap-2 whitespace-nowrap px-5 py-3.5 text-sm font-semibold transition sm:px-6 ${
+                  active
+                    ? "text-[#0f3460]"
+                    : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800"
+                }`}
+              >
+                {item.label}
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                    active
+                      ? "bg-[#0f3460]/10 text-[#0f3460]"
+                      : "bg-neutral-100 text-neutral-600"
+                  }`}
+                >
+                  {item.count}
+                </span>
+                {active ? (
+                  <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-[#0f3460] sm:inset-x-4" />
+                ) : null}
+              </button>
+            );
+          })}
         </div>
 
-        <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Name */}
-            <div className="flex flex-col gap-1.5 lg:col-span-2">
-              <label className={LABEL}>
-                {t("nameEn")} <span className="text-red-500">*</span>
-              </label>
-              <input
-                className={INPUT}
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                maxLength={120}
-                placeholder={isSubMode ? "e.g. Almonds" : "e.g. Dried Fruits & Nuts"}
-              />
-            </div>
+        <div className="border-b border-neutral-100 px-4 py-3">
+          <p className="text-sm text-neutral-600">{t(`tabsHelp.${tab}`)}</p>
+        </div>
 
-            {editingId ? (
-              <div className="flex flex-col gap-1.5 lg:col-span-2">
-                <label className={LABEL}>{t("slug")}</label>
-                <input
-                  className={`${INPUT} bg-neutral-50 text-neutral-500`}
-                  value={categories.find((category) => category.id === editingId)?.slug ?? ""}
-                  readOnly
-                  aria-readonly
-                />
-              </div>
-            ) : null}
-
-            {/* Parent category (sub-categories only) */}
-            {isSubMode ? (
-              <div className="flex flex-col gap-1.5">
-                <label className={LABEL}>
-                  {t("parentCategory")} <span className="text-red-500">*</span>
-                </label>
-                <select
-                  className={INPUT}
-                  value={formParentId}
-                  onChange={(e) => setFormParentId(e.target.value)}
-                >
-                  <option value="">{t("selectParent")}</option>
-                  {topLevelCategories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
-
-            {/* Sort order */}
-            <div className="flex flex-col gap-1.5">
-              <label className={LABEL}>{t("sortOrder")}</label>
-              <input
-                type="number"
-                min="0"
-                className={INPUT}
-                value={formSortOrder}
-                onChange={(e) => setFormSortOrder(e.target.value)}
-                placeholder="0"
-              />
-            </div>
-
-            {/* Category image */}
-            <div className="flex flex-col gap-1.5 lg:col-span-2">
-              <label className={LABEL}>{t("categoryImage")}</label>
-              <div className="flex flex-col gap-2">
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">
-                  {uploadingImage ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Plus className="h-4 w-4" />
-                  )}
-                  {t("uploadImage")}
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className="hidden"
-                    disabled={uploadingImage}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        void onUploadCategoryImage(file);
-                      }
-                      e.currentTarget.value = "";
-                    }}
-                  />
-                </label>
-                {formImageUrl ? (
-                  <p className="text-xs text-emerald-700">{t("toasts.uploadedBody")}</p>
+        {showForm ? (
+          <div
+            ref={formSectionRef}
+            className={`scroll-mt-4 border-b border-neutral-100 px-4 py-5 sm:px-5 ${
+              editingId ? "bg-primary/5" : "bg-white"
+            }`}
+          >
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold text-neutral-900">
+                  {editingId
+                    ? isSubMode
+                      ? t("editSubCategory")
+                      : t("editCategory")
+                    : isSubMode
+                      ? t("newSubCategory")
+                      : t("newCategory")}
+                </h2>
+                {editingId ? (
+                  <p className="mt-1 text-sm text-neutral-500">{t("editHint")}</p>
                 ) : null}
               </div>
+              <button
+                type="button"
+                onClick={closeForm}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+              >
+                <X className="h-3.5 w-3.5" />
+                {t("cancel")}
+              </button>
             </div>
-          </div>
 
-          <CategoryTranslationFields
-            fields={formTranslations}
-            onChange={(key, value) =>
-              setFormTranslations((prev) => ({ ...prev, [key]: value }))
-            }
-            inputClassName={INPUT}
-            labelClassName={LABEL}
-          />
+            <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="flex flex-col gap-1.5 lg:col-span-2">
+                  <label className={LABEL}>
+                    {t("nameEn")} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    className={INPUT}
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    maxLength={120}
+                    placeholder={
+                      isSubMode ? t("namePlaceholderSub") : t("namePlaceholder")
+                    }
+                  />
+                </div>
 
-          {/* Active toggle */}
-          <label className="inline-flex cursor-pointer items-center gap-2.5">
-            <span className="relative inline-flex h-5 w-9 shrink-0">
-              <input
-                type="checkbox"
-                checked={formIsActive}
-                onChange={(e) => setFormIsActive(e.target.checked)}
-                className="peer sr-only"
+                {editingId ? (
+                  <div className="flex flex-col gap-1.5 lg:col-span-2">
+                    <label className={LABEL}>{t("slug")}</label>
+                    <input
+                      className={`${INPUT} bg-neutral-50 text-neutral-500`}
+                      value={
+                        categories.find((category) => category.id === editingId)?.slug ??
+                        ""
+                      }
+                      readOnly
+                      aria-readonly
+                    />
+                  </div>
+                ) : null}
+
+                {isSubMode ? (
+                  <div className="flex flex-col gap-1.5">
+                    <label className={LABEL}>
+                      {t("parentCategory")} <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      className={INPUT}
+                      value={formParentId}
+                      onChange={(e) => setFormParentId(e.target.value)}
+                    >
+                      <option value="">{t("selectParent")}</option>
+                      {topLevelCategories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
+
+                <div className="flex flex-col gap-1.5">
+                  <label className={LABEL}>{t("sortOrder")}</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className={INPUT}
+                    value={formSortOrder}
+                    onChange={(e) => setFormSortOrder(e.target.value)}
+                    placeholder={t("sortPlaceholder")}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5 lg:col-span-2">
+                  <label className={LABEL}>{t("categoryImage")}</label>
+                  <div className="flex flex-col gap-2">
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">
+                      {uploadingImage ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Plus className="h-4 w-4" />
+                      )}
+                      {t("uploadImage")}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        disabled={uploadingImage}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) void onUploadCategoryImage(file);
+                          e.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                    {formImageUrl ? (
+                      <p className="text-xs text-emerald-700">{t("imageReady")}</p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <CategoryTranslationFields
+                fields={formTranslations}
+                onChange={(key, value) =>
+                  setFormTranslations((prev) => ({ ...prev, [key]: value }))
+                }
+                inputClassName={INPUT}
+                labelClassName={LABEL}
               />
-              <span className="absolute inset-0 rounded-full bg-neutral-300 transition peer-checked:bg-primary" />
-              <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition peer-checked:translate-x-4" />
-            </span>
-            <span className="text-sm font-medium text-neutral-700">
-              {formIsActive ? t("active") : t("inactive")}
-            </span>
-          </label>
 
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-60"
-            >
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              {saving ? (
-                t("saving")
-              ) : editingId ? (
-                t("save")
-              ) : (
-                <>
-                  <Plus className="h-4 w-4" />
-                  {isSubMode ? t("createSub") : t("create")}
-                </>
-              )}
-            </button>
+              <label className="inline-flex cursor-pointer items-center gap-2.5">
+                <span className="relative inline-flex h-5 w-9 shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={formIsActive}
+                    onChange={(e) => setFormIsActive(e.target.checked)}
+                    className="peer sr-only"
+                  />
+                  <span className="absolute inset-0 rounded-full bg-neutral-300 transition peer-checked:bg-primary" />
+                  <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition peer-checked:translate-x-4" />
+                </span>
+                <span className="text-sm font-medium text-neutral-700">
+                  {formIsActive ? t("active") : t("inactive")}
+                </span>
+              </label>
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+                >
+                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {saving
+                    ? t("saving")
+                    : editingId
+                      ? t("save")
+                      : isSubMode
+                        ? t("createSub")
+                        : t("create")}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
+        ) : null}
 
-      {/* ── Categories list ──────────────────────────────────────── */}
-      <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-neutral-900">
-            {isSubMode ? t("listTitleSub") : t("listTitle")}
-            {!loading && (
-              <span className="ml-2 rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-normal text-neutral-500">
-                {scopedCategories.length}
-              </span>
-            )}
-          </h2>
-          <input
-            className="min-w-0 rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 sm:w-60"
-            placeholder={t("searchPlaceholder")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="p-4 sm:p-5">
+          <div className="mb-4">
+            <input
+              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 sm:max-w-xs"
+              placeholder={t("searchPlaceholder")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          {loading ? (
+            <div className="flex min-h-[160px] items-center justify-center">
+              <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
+            </div>
+          ) : error ? (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </p>
+          ) : (
+            <DataTable
+              embedded
+              data={filtered}
+              columns={columns}
+              getRowId={(row) => row.id}
+              emptyMessage={
+                search.trim()
+                  ? isSubMode
+                    ? t("emptySearchSub")
+                    : t("emptySearch")
+                  : isSubMode
+                    ? t("emptySub")
+                    : t("empty")
+              }
+              initialPageSize={10}
+              pageSizeOptions={[10, 20, 50]}
+            />
+          )}
         </div>
-
-        {loading ? (
-          <div className="flex items-center gap-2 text-sm text-neutral-500">
-            <Loader2 className="h-4 w-4 animate-spin" />
-          </div>
-        ) : error ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </p>
-        ) : (
-          <DataTable
-            data={filtered}
-            columns={columns}
-            getRowId={(row) => row.id}
-            emptyMessage={
-              search.trim()
-                ? t("emptySearch")
-                : isSubMode
-                  ? t("emptySub")
-                  : t("empty")
-            }
-            initialPageSize={10}
-            pageSizeOptions={[10, 20, 50]}
-          />
-        )}
       </div>
 
-      {/* ── Delete confirmation modal ────────────────────────────── */}
       {deleteTarget ? (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/45 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl">
             <h2 className="text-lg font-semibold text-neutral-900">
               {isSubMode ? t("deleteTitleSub") : t("deleteTitle")}
             </h2>
             <p className="mt-2 text-sm text-neutral-600">
               {t("deleteBody", { name: deleteTarget.name })}
             </p>
-            {!isSubMode && deleteTarget.children.length > 0 ? (
-              <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                {t("toasts.hasChildrenBody")}
-              </p>
-            ) : null}
             <div className="mt-5 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
                 disabled={deleting}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
+                className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
               >
                 {t("cancel")}
               </button>
@@ -678,7 +757,11 @@ export function AdminCategoryManager({ mode }: AdminCategoryManagerProps) {
                 disabled={deleting}
                 className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
               >
-                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                {deleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
                 {deleting ? t("deleting") : t("deleteConfirm")}
               </button>
             </div>

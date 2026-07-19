@@ -1,7 +1,10 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { AdminCategoryManager } from "@/components/admin/categories/AdminCategoryManager";
+type Props = {
+  params: Promise<{ locale: string }>;
+};
 
-export default function AdminSubCategoriesPage() {
-  return <AdminCategoryManager mode="sub" />;
+export default async function AdminSubCategoriesRedirectPage({ params }: Props) {
+  const { locale } = await params;
+  redirect(`/${locale}/admin/categories?tab=sub`);
 }

@@ -15,7 +15,6 @@ import {
   ShoppingBag,
   Star,
   Tag,
-  Tags,
   Truck,
   Wallet,
 } from "lucide-react";
@@ -47,11 +46,6 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
           icon: <BarChart3 size={16} />,
         },
         { label: t("nav.categories"), href: "/admin/categories", icon: <Tag size={16} /> },
-        {
-          label: t("nav.subCategories"),
-          href: "/admin/categories/subcategories",
-          icon: <Tags size={16} />,
-        },
         { label: t("nav.banners"), href: "/admin/banners", icon: <ImageIcon size={16} /> },
         { label: t("nav.reviews"), href: "/admin/reviews", icon: <Star size={16} /> },
         { label: t("nav.giftRequests"), href: "/admin/gift-requests", icon: <Gift size={16} /> },
