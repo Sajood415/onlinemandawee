@@ -2933,84 +2933,86 @@
       }
     },
     "payouts": {
-      "title": "Payout Operations",
-      "subtitle": "Release held vendor earnings and send payouts via bank transfer from this screen.",
+      "title": "Payouts",
+      "subtitle": "Pay shops after the waiting period. Money goes by bank transfer.",
       "refresh": "Refresh",
-      "loadError": "Failed to load payouts.",
-      "detailLoadError": "Failed to load payout details.",
-      "actionError": "Payout action failed.",
-      "tiles": {
-        "onHold": "On hold",
-        "ready": "Ready to release",
-        "released": "Released / sent"
+      "loadError": "Could not load payouts.",
+      "detailLoadError": "Could not load payout details.",
+      "actionError": "That payout action failed.",
+      "tabs": {
+        "waiting": "Waiting",
+        "ready": "Ready to pay",
+        "paid": "Paid"
       },
-      "hold": {
-        "title": "Hold queue",
-        "subtitle": "Held for 7 days after the customer pays, then ready to release. Same for Pickup, Express, and Standard.",
-        "empty": "No payouts waiting on hold conditions."
+      "tabsHelp": {
+        "waiting": "Waiting ~7 days after the customer pays. No action needed yet.",
+        "ready": "Waiting is over. Approve pay, then send money to the shop’s bank.",
+        "paid": "Approved or already sent to the shop."
       },
-      "ready": {
-        "title": "Ready queue",
-        "subtitle": "Eligible for release — includes delivered express orders.",
-        "empty": "No payouts eligible for release.",
-        "readyBadge": "Ready"
+      "empty": {
+        "waiting": "Nothing waiting right now.",
+        "ready": "Nothing ready to pay right now.",
+        "paid": "No paid payouts yet."
       },
-      "released": {
-        "title": "Released queue",
-        "empty": "No released or sent payouts."
-      },
+      "readyBadge": "Ready",
       "columns": {
-        "vendor": "Vendor",
+        "vendor": "Shop",
         "order": "Order",
-        "netPayout": "Net payout",
+        "amount": "Amount",
         "created": "Created",
-        "holdUntil": "Hold until",
-        "holdStatus": "Hold status",
+        "availableOn": "Available on",
         "status": "Status",
-        "releasedAt": "Released at",
-        "sentAt": "Sent at",
+        "approvedAt": "Approved",
+        "sentAt": "Sent",
         "actions": "Actions",
         "product": "Product",
-        "skuVariant": "SKU / variant",
         "qty": "Qty",
-        "unit": "Unit",
-        "lineTotal": "Line total"
+        "lineTotal": "Total"
       },
       "actions": {
-        "viewDetails": "View details",
-        "release": "Release payout",
-        "releasing": "Releasing...",
-        "markSent": "Mark sent (bank)",
-        "markSentBank": "Mark sent via bank transfer",
-        "marking": "Marking...",
+        "viewDetails": "Details",
+        "approvePay": "Approve pay",
+        "approving": "Approving…",
+        "markSent": "Mark sent",
+        "markSentBank": "Mark sent (bank done)",
+        "marking": "Saving…",
         "close": "Close"
       },
+      "confirmApprove": {
+        "title": "Approve this pay?",
+        "body": "Approve {amount} for {shop} (order {order}). Next you send the money by bank, then mark sent.",
+        "confirm": "Yes, approve",
+        "cancel": "Cancel"
+      },
+      "toasts": {
+        "approveTitle": "Pay approved",
+        "approveBody": "{shop} · order {order}",
+        "sentTitle": "Marked as sent",
+        "sentBody": "This payout is recorded as sent to the shop."
+      },
       "statuses": {
-        "ON_HOLD": "ON HOLD",
-        "READY": "RELEASED",
-        "SENT": "SENT",
-        "FAILED": "FAILED"
+        "ON_HOLD": "Waiting",
+        "READY": "Approved",
+        "SENT": "Sent",
+        "FAILED": "Failed"
       },
       "detail": {
         "title": "Payout details",
-        "subtitle": "Review vendor bank details and complete the bank transfer from this screen.",
+        "subtitle": "Check the shop bank details, send the money, then mark sent.",
         "closeAria": "Close",
-        "itemsSubtotal": "Items subtotal",
-        "netPayout": "Net payout to vendor",
+        "itemsSubtotal": "Products total",
+        "netPayout": "Pay to shop",
         "status": "Status",
-        "vendorOrderTotal": "Vendor order total",
-        "transactionFee": "Transaction fee",
-        "deliveryMethod": "Delivery method",
-        "orderStatus": "Order status",
-        "holdUntil": "Hold until",
-        "lineItemsTitle": "Order line items",
-        "lineItemsSubtitle": "SKU-level prices captured when the order was placed.",
-        "bankTitle": "Send via bank transfer",
-        "bankBody": "Transfer the payout amount to the vendor's bank account below, then mark the payout as sent.",
+        "commission": "Commission kept",
+        "deliveryMethod": "Delivery",
+        "availableOn": "Available on",
+        "lineItemsTitle": "Products in this payout",
+        "bankTitle": "Shop bank details",
+        "bankBody": "Send this amount to the bank account below, then mark sent.",
         "accountName": "Account name",
         "bankName": "Bank name",
         "accountIban": "Account / IBAN",
-        "noBank": "This vendor has not submitted bank details yet. Ask them to complete payout information in vendor settings before sending funds."
+        "noBank": "This shop has not added bank details yet. Ask them to add it in Vendor Settings → Bank."
       }
     },
     "orders": {

@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, CheckCircle2, Loader2, RefreshCw, X } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { useClientPagination } from "@/hooks/use-client-pagination";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
+import { toast } from "@/lib/utils/toast";
 
 type AdminPayoutItem = {
   id: string;
@@ -77,9 +78,11 @@ type AdminPayoutQueuesResponse = {
   released: AdminPayoutItem[];
 };
 
-function formatMoney(amount: number, currency: string) {
+type PayoutTab = "waiting" | "ready" | "paid";
+
+function formatMoney(amount: number, currency: string, locale: string) {
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency: currency || "USD",
       minimumFractionDigits: 2,
@@ -90,15 +93,17 @@ function formatMoney(amount: number, currency: string) {
   }
 }
 
-function formatHoldUntil(payout: Pick<AdminPayoutItem, "holdUntil" | "holdLabel">) {
-  return payout.holdLabel ?? formatDate(payout.holdUntil);
-}
-
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale: string) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString();
+  return date.toLocaleString(locale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function payoutStatusClass(status: AdminPayoutItem["status"]) {
@@ -110,15 +115,27 @@ function payoutStatusClass(status: AdminPayoutItem["status"]) {
 
 export default function AdminPayoutsPage() {
   const t = useTranslations("AdminPages.payouts");
+  const locale = useLocale();
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
 
   const [data, setData] = useState<AdminPayoutQueuesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<PayoutTab>("waiting");
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detail, setDetail] = useState<AdminPayoutDetail | null>(null);
+  const [approveTarget, setApproveTarget] = useState<AdminPayoutItem | null>(null);
+
+  const money = useCallback(
+    (amount: number, currency: string) => formatMoney(amount, currency, locale),
+    [locale]
+  );
+  const dateLabel = useCallback(
+    (value: string | null) => formatDate(value, locale),
+    [locale]
+  );
 
   const payoutStatusLabel = useCallback(
     (status: AdminPayoutItem["status"]) =>
@@ -173,12 +190,13 @@ export default function AdminPayoutsPage() {
   }, []);
 
   const runAction = useCallback(
-    async (payoutId: string, type: "release" | "sent") => {
+    async (payoutId: string, type: "release" | "sent", meta?: AdminPayoutItem | null) => {
       if (activeActionId) return;
       setActiveActionId(payoutId);
       setError(null);
       try {
-        const endpoint = type === "release" ? "/api/admin/payouts/release" : "/api/admin/payouts/sent";
+        const endpoint =
+          type === "release" ? "/api/admin/payouts/release" : "/api/admin/payouts/sent";
         const body =
           type === "release"
             ? { payoutId }
@@ -189,50 +207,64 @@ export default function AdminPayoutsPage() {
           body: JSON.stringify(body),
         });
         await parseApiResponse(res);
+        if (type === "release") {
+          const shop = meta?.vendor.label ?? detail?.vendor.label ?? "—";
+          const order = meta?.order.orderNumber ?? detail?.order.orderNumber ?? "—";
+          toast.success(
+            t("toasts.approveTitle"),
+            t("toasts.approveBody", { shop, order })
+          );
+          setApproveTarget(null);
+        } else {
+          toast.success(t("toasts.sentTitle"), t("toasts.sentBody"));
+        }
         await loadPayouts();
         if (detailOpen && detail?.id === payoutId) {
           await openDetail(payoutId);
         }
       } catch (actionError) {
-        setError(actionError instanceof Error ? actionError.message : t("actionError"));
+        const message =
+          actionError instanceof Error ? actionError.message : t("actionError");
+        setError(message);
+        toast.error(t("actionError"), message);
       } finally {
         setActiveActionId(null);
       }
     },
-    [activeActionId, detail?.id, detailOpen, loadPayouts, openDetail, t]
+    [activeActionId, detail, detailOpen, loadPayouts, openDetail, t]
   );
 
+  const confirmApprove = useCallback(() => {
+    if (!approveTarget) return;
+    void runAction(approveTarget.id, "release", approveTarget);
+  }, [approveTarget, runAction]);
+
   const queueCounts = useMemo(() => {
-    if (!data) return { hold: 0, ready: 0, released: 0 };
+    if (!data) return { waiting: 0, ready: 0, paid: 0 };
     return {
-      hold: data.hold.length,
+      waiting: data.hold.length,
       ready: data.ready.length,
-      released: data.released.length,
+      paid: data.released.length,
     };
   }, [data]);
 
-  const holdPagination = useClientPagination(data?.hold ?? [], {
+  const activeRows = useMemo(() => {
+    if (!data) return [];
+    if (tab === "waiting") return data.hold;
+    if (tab === "ready") return data.ready;
+    return data.released;
+  }, [data, tab]);
+
+  const pagination = useClientPagination(activeRows, {
     initialPageSize: 10,
-    resetKey: data?.now,
-  });
-  const readyPagination = useClientPagination(data?.ready ?? [], {
-    initialPageSize: 10,
-    resetKey: data?.now,
-  });
-  const releasedPagination = useClientPagination(data?.released ?? [], {
-    initialPageSize: 10,
-    resetKey: data?.now,
+    resetKey: `${data?.now ?? ""}-${tab}`,
   });
 
-  const renderViewDetailsButton = (payoutId: string) => (
-    <button
-      type="button"
-      onClick={() => void openDetail(payoutId)}
-      className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
-    >
-      {t("actions.viewDetails")}
-    </button>
-  );
+  const tabs: Array<{ id: PayoutTab; label: string; count: number }> = [
+    { id: "waiting", label: t("tabs.waiting"), count: queueCounts.waiting },
+    { id: "ready", label: t("tabs.ready"), count: queueCounts.ready },
+    { id: "paid", label: t("tabs.paid"), count: queueCounts.paid },
+  ];
 
   if (authLoading || !user) {
     return (
@@ -243,16 +275,16 @@ export default function AdminPayoutsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
-          <p className="mt-1 text-sm text-neutral-600">{t("subtitle")}</p>
+          <p className="mt-1 max-w-2xl text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <button
           type="button"
           onClick={() => void loadPayouts()}
-          className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+          className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
         >
           <RefreshCw className="h-4 w-4" />
           {t("refresh")}
@@ -266,134 +298,155 @@ export default function AdminPayoutsPage() {
       ) : null}
 
       {loading ? (
-        <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-neutral-200 bg-white">
+        <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-neutral-200 bg-white">
           <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
         </div>
       ) : !data ? null : (
-        <>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-                {t("tiles.onHold")}
-              </p>
-              <p className="mt-1 text-2xl font-bold text-amber-900">{queueCounts.hold}</p>
-            </div>
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
-                {t("tiles.ready")}
-              </p>
-              <p className="mt-1 text-2xl font-bold text-emerald-900">{queueCounts.ready}</p>
-            </div>
-            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-800">
-                {t("tiles.released")}
-              </p>
-              <p className="mt-1 text-2xl font-bold text-blue-900">{queueCounts.released}</p>
-            </div>
+        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+          <div
+            role="tablist"
+            aria-label={t("title")}
+            className="flex gap-0 overflow-x-auto border-b border-neutral-200"
+          >
+            {tabs.map((item) => {
+              const active = tab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setTab(item.id)}
+                  className={`relative inline-flex shrink-0 items-center gap-2 whitespace-nowrap px-5 py-3.5 text-sm font-semibold transition sm:px-6 ${
+                    active
+                      ? "text-[#0f3460]"
+                      : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800"
+                  }`}
+                >
+                  {item.label}
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      active
+                        ? "bg-[#0f3460]/10 text-[#0f3460]"
+                        : "bg-neutral-100 text-neutral-600"
+                    }`}
+                  >
+                    {item.count}
+                  </span>
+                  {active ? (
+                    <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-[#0f3460] sm:inset-x-4" />
+                  ) : null}
+                </button>
+              );
+            })}
           </div>
 
-          <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div className="border-b border-neutral-200 px-4 py-3">
-              <h2 className="text-sm font-semibold text-neutral-900">{t("hold.title")}</h2>
-              <p className="mt-0.5 text-xs text-neutral-500">{t("hold.subtitle")}</p>
-            </div>
-            <div className="responsive-table-shell overflow-x-auto">
+          <div className="border-b border-neutral-100 px-4 py-3">
+            <p className="text-sm text-neutral-600">{t(`tabsHelp.${tab}`)}</p>
+          </div>
+
+          <div className="responsive-table-shell overflow-x-auto">
+            {tab === "waiting" ? (
               <table className="w-full min-w-[860px] border-collapse text-sm">
                 <thead className="bg-neutral-50">
                   <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-600">
                     <th className="px-4 py-2">{t("columns.vendor")}</th>
                     <th className="px-4 py-2">{t("columns.order")}</th>
-                    <th className="px-4 py-2">{t("columns.netPayout")}</th>
+                    <th className="px-4 py-2">{t("columns.amount")}</th>
                     <th className="px-4 py-2">{t("columns.created")}</th>
-                    <th className="px-4 py-2">{t("columns.holdUntil")}</th>
+                    <th className="px-4 py-2">{t("columns.availableOn")}</th>
                     <th className="px-4 py-2">{t("columns.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.hold.length === 0 ? (
+                  {activeRows.length === 0 ? (
                     <tr>
-                      <td className="px-4 py-6 text-neutral-500" colSpan={6}>
-                        {t("hold.empty")}
+                      <td className="px-4 py-8 text-neutral-500" colSpan={6}>
+                        {t("empty.waiting")}
                       </td>
                     </tr>
                   ) : (
-                    holdPagination.paginatedItems.map((payout) => (
+                    pagination.paginatedItems.map((payout) => (
                       <tr key={payout.id} className="border-b border-neutral-100">
                         <td className="px-4 py-3 text-neutral-900">{payout.vendor.label}</td>
-                        <td className="px-4 py-3 text-neutral-700">{payout.order.orderNumber}</td>
-                        <td className="px-4 py-3 text-neutral-900">
-                          {formatMoney(payout.amount, payout.currency)}
+                        <td className="px-4 py-3 text-neutral-700">
+                          {payout.order.orderNumber}
                         </td>
-                        <td className="px-4 py-3 text-neutral-700">{formatDate(payout.createdAt)}</td>
-                        <td className="px-4 py-3 text-neutral-700">{formatHoldUntil(payout)}</td>
-                        <td className="px-4 py-3">{renderViewDetailsButton(payout.id)}</td>
+                        <td className="px-4 py-3 text-neutral-900">
+                          {money(payout.amount, payout.currency)}
+                        </td>
+                        <td className="px-4 py-3 text-neutral-700">
+                          {dateLabel(payout.createdAt)}
+                        </td>
+                        <td className="px-4 py-3 text-neutral-700">
+                          {payout.holdLabel ?? dateLabel(payout.holdUntil)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={() => void openDetail(payout.id)}
+                            className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                          >
+                            {t("actions.viewDetails")}
+                          </button>
+                        </td>
                       </tr>
                     ))
                   )}
                 </tbody>
               </table>
-            </div>
-            {data.hold.length > 0 ? (
-              <PaginationFooter
-                pageIndex={holdPagination.pageIndex}
-                pageCount={holdPagination.pageCount}
-                pageSize={holdPagination.pageSize}
-                pageSizeOptions={holdPagination.pageSizeOptions}
-                onPageIndexChange={holdPagination.setPageIndex}
-                onPageSizeChange={holdPagination.setPageSize}
-              />
             ) : null}
-          </section>
 
-          <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div className="border-b border-neutral-200 px-4 py-3">
-              <h2 className="text-sm font-semibold text-neutral-900">{t("ready.title")}</h2>
-              <p className="mt-0.5 text-xs text-neutral-500">{t("ready.subtitle")}</p>
-            </div>
-            <div className="responsive-table-shell overflow-x-auto">
+            {tab === "ready" ? (
               <table className="w-full min-w-[860px] border-collapse text-sm">
                 <thead className="bg-neutral-50">
                   <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-600">
                     <th className="px-4 py-2">{t("columns.vendor")}</th>
                     <th className="px-4 py-2">{t("columns.order")}</th>
-                    <th className="px-4 py-2">{t("columns.netPayout")}</th>
-                    <th className="px-4 py-2">{t("columns.holdStatus")}</th>
+                    <th className="px-4 py-2">{t("columns.amount")}</th>
+                    <th className="px-4 py-2">{t("columns.status")}</th>
                     <th className="px-4 py-2">{t("columns.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.ready.length === 0 ? (
+                  {activeRows.length === 0 ? (
                     <tr>
-                      <td className="px-4 py-6 text-neutral-500" colSpan={5}>
-                        {t("ready.empty")}
+                      <td className="px-4 py-8 text-neutral-500" colSpan={5}>
+                        {t("empty.ready")}
                       </td>
                     </tr>
                   ) : (
-                    readyPagination.paginatedItems.map((payout) => (
+                    pagination.paginatedItems.map((payout) => (
                       <tr key={payout.id} className="border-b border-neutral-100">
                         <td className="px-4 py-3 text-neutral-900">{payout.vendor.label}</td>
-                        <td className="px-4 py-3 text-neutral-700">{payout.order.orderNumber}</td>
+                        <td className="px-4 py-3 text-neutral-700">
+                          {payout.order.orderNumber}
+                        </td>
                         <td className="px-4 py-3 font-medium text-neutral-900">
-                          {formatMoney(payout.amount, payout.currency)}
+                          {money(payout.amount, payout.currency)}
                         </td>
                         <td className="px-4 py-3">
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                             <CheckCircle2 className="h-3.5 w-3.5" />
-                            {payout.holdLabel ?? t("ready.readyBadge")}
+                            {payout.holdLabel ?? t("readyBadge")}
                           </span>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-2">
-                            {renderViewDetailsButton(payout.id)}
                             <button
                               type="button"
-                              onClick={() => void runAction(payout.id, "release")}
+                              onClick={() => void openDetail(payout.id)}
+                              className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                            >
+                              {t("actions.viewDetails")}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setApproveTarget(payout)}
                               disabled={activeActionId === payout.id}
                               className="rounded-lg bg-[#0f3460] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
                             >
-                              {activeActionId === payout.id
-                                ? t("actions.releasing")
-                                : t("actions.release")}
+                              {t("actions.approvePay")}
                             </button>
                           </div>
                         </td>
@@ -402,48 +455,35 @@ export default function AdminPayoutsPage() {
                   )}
                 </tbody>
               </table>
-            </div>
-            {data.ready.length > 0 ? (
-              <PaginationFooter
-                pageIndex={readyPagination.pageIndex}
-                pageCount={readyPagination.pageCount}
-                pageSize={readyPagination.pageSize}
-                pageSizeOptions={readyPagination.pageSizeOptions}
-                onPageIndexChange={readyPagination.setPageIndex}
-                onPageSizeChange={readyPagination.setPageSize}
-              />
             ) : null}
-          </section>
 
-          <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div className="border-b border-neutral-200 px-4 py-3">
-              <h2 className="text-sm font-semibold text-neutral-900">{t("released.title")}</h2>
-            </div>
-            <div className="responsive-table-shell overflow-x-auto">
+            {tab === "paid" ? (
               <table className="w-full min-w-[980px] border-collapse text-sm">
                 <thead className="bg-neutral-50">
                   <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-600">
                     <th className="px-4 py-2">{t("columns.vendor")}</th>
                     <th className="px-4 py-2">{t("columns.order")}</th>
                     <th className="px-4 py-2">{t("columns.status")}</th>
-                    <th className="px-4 py-2">{t("columns.netPayout")}</th>
-                    <th className="px-4 py-2">{t("columns.releasedAt")}</th>
+                    <th className="px-4 py-2">{t("columns.amount")}</th>
+                    <th className="px-4 py-2">{t("columns.approvedAt")}</th>
                     <th className="px-4 py-2">{t("columns.sentAt")}</th>
                     <th className="px-4 py-2">{t("columns.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.released.length === 0 ? (
+                  {activeRows.length === 0 ? (
                     <tr>
-                      <td className="px-4 py-6 text-neutral-500" colSpan={7}>
-                        {t("released.empty")}
+                      <td className="px-4 py-8 text-neutral-500" colSpan={7}>
+                        {t("empty.paid")}
                       </td>
                     </tr>
                   ) : (
-                    releasedPagination.paginatedItems.map((payout) => (
+                    pagination.paginatedItems.map((payout) => (
                       <tr key={payout.id} className="border-b border-neutral-100">
                         <td className="px-4 py-3 text-neutral-900">{payout.vendor.label}</td>
-                        <td className="px-4 py-3 text-neutral-700">{payout.order.orderNumber}</td>
+                        <td className="px-4 py-3 text-neutral-700">
+                          {payout.order.orderNumber}
+                        </td>
                         <td className="px-4 py-3">
                           <span
                             className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${payoutStatusClass(
@@ -454,13 +494,23 @@ export default function AdminPayoutsPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-neutral-900">
-                          {formatMoney(payout.amount, payout.currency)}
+                          {money(payout.amount, payout.currency)}
                         </td>
-                        <td className="px-4 py-3 text-neutral-700">{formatDate(payout.releasedAt)}</td>
-                        <td className="px-4 py-3 text-neutral-700">{formatDate(payout.sentAt)}</td>
+                        <td className="px-4 py-3 text-neutral-700">
+                          {dateLabel(payout.releasedAt)}
+                        </td>
+                        <td className="px-4 py-3 text-neutral-700">
+                          {dateLabel(payout.sentAt)}
+                        </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-2">
-                            {renderViewDetailsButton(payout.id)}
+                            <button
+                              type="button"
+                              onClick={() => void openDetail(payout.id)}
+                              className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                            >
+                              {t("actions.viewDetails")}
+                            </button>
                             {payout.status === "READY" ? (
                               <button
                                 type="button"
@@ -480,25 +530,83 @@ export default function AdminPayoutsPage() {
                   )}
                 </tbody>
               </table>
-            </div>
-            {data.released.length > 0 ? (
-              <PaginationFooter
-                pageIndex={releasedPagination.pageIndex}
-                pageCount={releasedPagination.pageCount}
-                pageSize={releasedPagination.pageSize}
-                pageSizeOptions={releasedPagination.pageSizeOptions}
-                onPageIndexChange={releasedPagination.setPageIndex}
-                onPageSizeChange={releasedPagination.setPageSize}
-              />
             ) : null}
-          </section>
-        </>
+          </div>
+
+          {activeRows.length > 0 ? (
+            <PaginationFooter
+              pageIndex={pagination.pageIndex}
+              pageCount={pagination.pageCount}
+              pageSize={pagination.pageSize}
+              pageSizeOptions={pagination.pageSizeOptions}
+              onPageIndexChange={pagination.setPageIndex}
+              onPageSizeChange={pagination.setPageSize}
+            />
+          ) : null}
+        </div>
       )}
 
+      {approveTarget ? (
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/45 p-3 sm:p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !activeActionId) {
+              setApproveTarget(null);
+            }
+          }}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="approve-pay-title"
+            className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-5 shadow-xl sm:p-6"
+          >
+            <h2
+              id="approve-pay-title"
+              className="text-lg font-semibold text-neutral-900"
+            >
+              {t("confirmApprove.title")}
+            </h2>
+            <p className="mt-2 text-sm text-neutral-600">
+              {t("confirmApprove.body", {
+                shop: approveTarget.vendor.label,
+                order: approveTarget.order.orderNumber,
+                amount: money(approveTarget.amount, approveTarget.currency),
+              })}
+            </p>
+            <div className="mt-6 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                disabled={Boolean(activeActionId)}
+                onClick={() => setApproveTarget(null)}
+                className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
+              >
+                {t("confirmApprove.cancel")}
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(activeActionId)}
+                onClick={confirmApprove}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+              >
+                {activeActionId === approveTarget.id ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t("actions.approving")}
+                  </>
+                ) : (
+                  t("confirmApprove.confirm")
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {detailOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-neutral-200 bg-white shadow-xl">
-            <div className="flex items-start justify-between border-b border-neutral-200 px-5 py-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3 sm:p-4">
+          <div className="flex max-h-[min(92vh,900px)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl">
+            <div className="flex shrink-0 items-start justify-between border-b border-neutral-200 px-5 py-4">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-900">{t("detail.title")}</h2>
                 <p className="mt-1 text-sm text-neutral-600">{t("detail.subtitle")}</p>
@@ -518,7 +626,7 @@ export default function AdminPayoutsPage() {
                 <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
               </div>
             ) : (
-              <div className="space-y-5 px-5 py-5">
+              <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
                 <dl className="grid gap-3 text-sm sm:grid-cols-2">
                   <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
                     <dt className="text-xs uppercase tracking-wide text-neutral-500">
@@ -530,14 +638,16 @@ export default function AdminPayoutsPage() {
                     <dt className="text-xs uppercase tracking-wide text-neutral-500">
                       {t("columns.order")}
                     </dt>
-                    <dd className="mt-1 font-medium text-neutral-900">{detail.order.orderNumber}</dd>
+                    <dd className="mt-1 font-medium text-neutral-900">
+                      {detail.order.orderNumber}
+                    </dd>
                   </div>
                   <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
                     <dt className="text-xs uppercase tracking-wide text-neutral-500">
                       {t("detail.itemsSubtotal")}
                     </dt>
                     <dd className="mt-1 font-medium text-neutral-900">
-                      {formatMoney(detail.vendorOrder.subtotalAmount, detail.vendorOrder.currency)}
+                      {money(detail.vendorOrder.subtotalAmount, detail.vendorOrder.currency)}
                     </dd>
                   </div>
                   <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
@@ -545,7 +655,7 @@ export default function AdminPayoutsPage() {
                       {t("detail.netPayout")}
                     </dt>
                     <dd className="mt-1 text-lg font-bold text-[#0f3460]">
-                      {formatMoney(detail.amount, detail.currency)}
+                      {money(detail.amount, detail.currency)}
                     </dd>
                   </div>
                   <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
@@ -558,19 +668,14 @@ export default function AdminPayoutsPage() {
                   </div>
                   <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
                     <dt className="text-xs uppercase tracking-wide text-neutral-500">
-                      {t("detail.vendorOrderTotal")}
-                    </dt>
-                    <dd className="mt-1 font-medium text-neutral-900">
-                      {formatMoney(detail.vendorOrder.grandTotalAmount, detail.vendorOrder.currency)}
-                    </dd>
-                  </div>
-                  <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                    <dt className="text-xs uppercase tracking-wide text-neutral-500">
-                      {t("detail.transactionFee")}
+                      {t("detail.commission")}
                     </dt>
                     <dd className="mt-1 font-medium text-neutral-900">
                       {detail.commission
-                        ? formatMoney(detail.commission.commissionAmount, detail.commission.currency)
+                        ? money(
+                            detail.commission.commissionAmount,
+                            detail.commission.currency
+                          )
                         : "—"}
                     </dd>
                   </div>
@@ -584,15 +689,11 @@ export default function AdminPayoutsPage() {
                   </div>
                   <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
                     <dt className="text-xs uppercase tracking-wide text-neutral-500">
-                      {t("detail.orderStatus")}
+                      {t("detail.availableOn")}
                     </dt>
-                    <dd className="mt-1 font-medium text-neutral-900">{detail.vendorOrder.status}</dd>
-                  </div>
-                  <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 sm:col-span-2">
-                    <dt className="text-xs uppercase tracking-wide text-neutral-500">
-                      {t("detail.holdUntil")}
-                    </dt>
-                    <dd className="mt-1 font-medium text-neutral-900">{formatHoldUntil(detail)}</dd>
+                    <dd className="mt-1 font-medium text-neutral-900">
+                      {detail.holdLabel ?? dateLabel(detail.holdUntil)}
+                    </dd>
                   </div>
                 </dl>
 
@@ -602,34 +703,33 @@ export default function AdminPayoutsPage() {
                       <h3 className="text-sm font-semibold text-neutral-900">
                         {t("detail.lineItemsTitle")}
                       </h3>
-                      <p className="mt-0.5 text-xs text-neutral-500">
-                        {t("detail.lineItemsSubtitle")}
-                      </p>
                     </div>
                     <div className="responsive-table-shell overflow-x-auto">
                       <table className="w-full min-w-[520px] border-collapse text-sm">
                         <thead className="bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-600">
                           <tr>
                             <th className="px-4 py-2">{t("columns.product")}</th>
-                            <th className="px-4 py-2">{t("columns.skuVariant")}</th>
                             <th className="px-4 py-2">{t("columns.qty")}</th>
-                            <th className="px-4 py-2">{t("columns.unit")}</th>
                             <th className="px-4 py-2">{t("columns.lineTotal")}</th>
                           </tr>
                         </thead>
                         <tbody>
                           {detail.lineItems.map((item, index) => (
-                            <tr key={`${item.productSku ?? item.productName}-${index}`} className="border-t border-neutral-100">
-                              <td className="px-4 py-2 text-neutral-900">{item.productName}</td>
-                              <td className="px-4 py-2 text-neutral-600">
-                                {[item.productSku, item.variantName].filter(Boolean).join(" · ") || "—"}
+                            <tr
+                              key={`${item.productSku ?? item.productName}-${index}`}
+                              className="border-t border-neutral-100"
+                            >
+                              <td className="px-4 py-2 text-neutral-900">
+                                {item.productName}
+                                {item.variantName ? (
+                                  <span className="block text-xs text-neutral-500">
+                                    {item.variantName}
+                                  </span>
+                                ) : null}
                               </td>
                               <td className="px-4 py-2 text-neutral-700">{item.quantity}</td>
-                              <td className="px-4 py-2 text-neutral-700">
-                                {formatMoney(item.unitPriceAmount, item.currency)}
-                              </td>
                               <td className="px-4 py-2 font-medium text-neutral-900">
-                                {formatMoney(item.lineTotalAmount, item.currency)}
+                                {money(item.lineTotalAmount, item.currency)}
                               </td>
                             </tr>
                           ))}
@@ -642,7 +742,9 @@ export default function AdminPayoutsPage() {
                 <section className="rounded-xl border border-[#0f3460]/20 bg-[#0f3460]/5 p-4">
                   <div className="flex items-center gap-2">
                     <Building2 className="h-5 w-5 text-[#0f3460]" />
-                    <h3 className="text-sm font-semibold text-[#0f3460]">{t("detail.bankTitle")}</h3>
+                    <h3 className="text-sm font-semibold text-[#0f3460]">
+                      {t("detail.bankTitle")}
+                    </h3>
                   </div>
                   <p className="mt-2 text-sm text-neutral-600">{t("detail.bankBody")}</p>
 
@@ -681,42 +783,42 @@ export default function AdminPayoutsPage() {
                     </p>
                   )}
                 </section>
-
-                <div className="flex flex-wrap justify-end gap-2 border-t border-neutral-200 pt-4">
-                  <button
-                    type="button"
-                    onClick={closeDetail}
-                    className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
-                  >
-                    {t("actions.close")}
-                  </button>
-                  {detail.status === "ON_HOLD" && detail.eligibleForRelease ? (
-                    <button
-                      type="button"
-                      onClick={() => void runAction(detail.id, "release")}
-                      disabled={activeActionId === detail.id}
-                      className="rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
-                    >
-                      {activeActionId === detail.id
-                        ? t("actions.releasing")
-                        : t("actions.release")}
-                    </button>
-                  ) : null}
-                  {detail.status === "READY" ? (
-                    <button
-                      type="button"
-                      onClick={() => void runAction(detail.id, "sent")}
-                      disabled={activeActionId === detail.id}
-                      className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-                    >
-                      {activeActionId === detail.id
-                        ? t("actions.marking")
-                        : t("actions.markSentBank")}
-                    </button>
-                  ) : null}
-                </div>
               </div>
             )}
+
+            {detail && !detailLoading ? (
+              <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-neutral-200 px-5 py-3">
+                <button
+                  type="button"
+                  onClick={closeDetail}
+                  className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+                >
+                  {t("actions.close")}
+                </button>
+                {detail.status === "ON_HOLD" && detail.eligibleForRelease ? (
+                  <button
+                    type="button"
+                    onClick={() => setApproveTarget(detail)}
+                    disabled={activeActionId === detail.id}
+                    className="rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+                  >
+                    {t("actions.approvePay")}
+                  </button>
+                ) : null}
+                {detail.status === "READY" ? (
+                  <button
+                    type="button"
+                    onClick={() => void runAction(detail.id, "sent")}
+                    disabled={activeActionId === detail.id}
+                    className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                  >
+                    {activeActionId === detail.id
+                      ? t("actions.marking")
+                      : t("actions.markSentBank")}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
