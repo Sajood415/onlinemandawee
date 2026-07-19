@@ -4,7 +4,6 @@ import { useTranslations } from "next-intl";
 import {
   Banknote,
   BarChart3,
-  CreditCard,
   Gift,
   ImageIcon,
   LayoutDashboard,
@@ -44,13 +43,8 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
         { label: t("nav.disputes"), href: "/admin/disputes", icon: <Scale size={16} /> },
         {
           label: t("nav.reports"),
-          href: "/admin/reports?tab=salesByCategory",
+          href: "/admin/reports",
           icon: <BarChart3 size={16} />,
-        },
-        {
-          label: t("nav.membershipFees"),
-          href: "/admin/reports?tab=membership",
-          icon: <CreditCard size={16} />,
         },
         { label: t("nav.categories"), href: "/admin/categories", icon: <Tag size={16} /> },
         {
