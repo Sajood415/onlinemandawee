@@ -2851,8 +2851,8 @@
       }
     },
     "warehouse": {
-      "title": "Standard Delivery Warehouse",
-      "subtitle": "For Standard delivery orders: receive vendor packages at the warehouse, combine them into one shipment, then deliver to the customer.",
+      "title": "Warehouse",
+      "subtitle": "Standard delivery: receive shop packages, pack into one shipment, then send to the customer.",
       "refresh": "Refresh",
       "search": "Search",
       "searchPlaceholder": "Order # or tracking number…",
@@ -2860,20 +2860,28 @@
         "loadFailed": "Could not load warehouse lists.",
         "actionFailed": "That warehouse action failed."
       },
-      "guide": {
-        "title": "How Standard delivery works",
-        "step1": "Each row is one vendor package for an order (not one product). Qty is the total units in that package.",
-        "step2": "Vendors send items to the Mandawee warehouse (Vendor Orders → Send to warehouse).",
-        "step3": "When a package arrives, mark it received at the warehouse.",
-        "step4": "When every vendor package has arrived, pack them into one customer shipment, then mark it shipped and delivered."
+      "tabs": {
+        "incoming": "Incoming",
+        "pack": "Pack",
+        "toCustomer": "To customer"
+      },
+      "tabsHelp": {
+        "incoming": "Packages from shops arriving at the warehouse.",
+        "pack": "When every shop package has arrived, pack one shipment for the customer.",
+        "toCustomer": "Send the packed shipment and mark it delivered."
+      },
+      "empty": {
+        "incoming": "No incoming packages right now.",
+        "pack": "Nothing to pack right now.",
+        "toCustomer": "No customer shipments right now."
       },
       "common": {
         "status": "Status",
         "all": "All",
         "order": "Order",
-        "vendor": "Vendor",
+        "shop": "Shop",
         "products": "Products",
-        "qty": "Qty",
+        "quantity": "Quantity",
         "tracking": "Tracking",
         "shipped": "Shipped",
         "received": "Received",
@@ -2881,38 +2889,56 @@
         "actions": "Actions"
       },
       "inbound": {
-        "title": "Packages from vendors (incoming)",
         "packageStatus": "Package status",
-        "orderProgress": "Order progress",
-        "recordShip": "Mark vendor shipped",
-        "markReceived": "Mark received at warehouse",
-        "promptTracking": "Vendor tracking number (optional):",
-        "waitingForShip": "Waiting for vendor to ship, or use Mark vendor shipped",
+        "recordShip": "Record shop shipped",
+        "markReceived": "Mark received",
+        "waitingForShip": "Waiting for the shop to ship, or use Record shop shipped",
         "alreadyReceived": "Already received at warehouse"
       },
-      "consolidation": {
-        "title": "Combine packages (when all arrived)",
-        "orderProgress": "Order progress",
+      "pack": {
         "receivedProgress": "Packages received",
-        "vendorProgress": "{received} of {expected} vendors received",
-        "readyAt": "All ready at",
+        "shopProgress": "{received} of {expected} shops received",
+        "readySince": "Ready since",
         "customerShipment": "Customer shipment",
-        "notCreated": "Not created yet",
+        "notCreated": "Not packed yet",
         "combine": "Pack for customer",
-        "promptTracking": "Customer tracking number (optional):"
+        "waitingPackages": "Waiting for all shop packages",
+        "alreadyPacked": "Already packed",
+        "cancelled": "This order was cancelled"
       },
-      "outbound": {
-        "title": "Final delivery to customer",
+      "toCustomer": {
         "shipmentStatus": "Shipment status",
-        "orderProgress": "Order progress",
         "packedAt": "Packed at",
-        "markShipped": "Mark sent to customer",
-        "markDelivered": "Mark delivered to customer",
-        "promptTracking": "Tracking number (optional):"
+        "markShipped": "Mark sent",
+        "markDelivered": "Mark delivered",
+        "alreadyShipped": "Already sent to customer",
+        "alreadyDelivered": "Already delivered",
+        "needShipFirst": "Mark sent first"
+      },
+      "trackingModal": {
+        "shopShipTitle": "Record shop shipped",
+        "shopShipBody": "Record that {shop} shipped order {order}. Tracking is optional.",
+        "packTitle": "Pack for customer",
+        "packBody": "Pack all shop packages for order {order} into one shipment. Tracking is optional.",
+        "sendTitle": "Mark sent to customer",
+        "sendBody": "Mark order {order} as sent to the customer. Tracking is optional.",
+        "trackingLabel": "Tracking number",
+        "trackingPlaceholder": "Enter tracking number…",
+        "optionalHint": "You can leave this blank.",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "saving": "Saving…"
+      },
+      "toasts": {
+        "shopShipped": "Shop shipment recorded",
+        "received": "Package marked received",
+        "packed": "Packed for customer",
+        "sent": "Marked as sent",
+        "delivered": "Marked as delivered"
       },
       "statuses": {
         "inbound": {
-          "PENDING_SHIPMENT": "Waiting for vendor to ship",
+          "PENDING_SHIPMENT": "Waiting for shop to ship",
           "INBOUND_SHIPPED": "On the way to warehouse",
           "RECEIVED": "Received at warehouse"
         },
