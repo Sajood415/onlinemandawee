@@ -1,8 +1,6 @@
-import "server-only";
-
 import Stripe from "stripe";
 
-import { env } from "@/config/env";
+import { env } from "@/config/env.shared";
 
 let stripeClient: Stripe | null = null;
 

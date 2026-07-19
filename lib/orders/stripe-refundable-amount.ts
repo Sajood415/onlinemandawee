@@ -1,5 +1,3 @@
-import "server-only";
-
 import type Stripe from "stripe";
 
 import { getStripeServerClient } from "@/lib/stripe/server";
