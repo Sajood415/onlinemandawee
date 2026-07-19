@@ -66,6 +66,7 @@ type CustomerVendorOrder = {
   status: VendorOrderStatus;
   deliveredAt: string | null;
   deliveryMethod: "PICKUP" | "EXPRESS" | "STANDARD" | null;
+  trackingRef: string | null;
   refundEligibility: "not_yet_delivered" | "open" | "expired";
   currency: string;
   grandTotalAmount: number;
@@ -146,6 +147,16 @@ const STATUS_COLORS: Record<VendorOrderStatus, string> = {
 function formatDateTime(value: string | null, locale: string) {
   if (!value) return "—";
   return new Date(value).toLocaleString(locale);
+}
+
+function getCustomerFacingTrackingRef(vendorOrder: CustomerVendorOrder) {
+  if (vendorOrder.deliveryMethod === "STANDARD") {
+    return vendorOrder.warehouse.outboundShipment?.trackingRef?.trim() || null;
+  }
+  if (vendorOrder.deliveryMethod === "EXPRESS") {
+    return vendorOrder.trackingRef?.trim() || null;
+  }
+  return null;
 }
 
 function getCustomerWarehouseStatus(vendorOrder: CustomerVendorOrder) {
@@ -357,7 +368,9 @@ function OrderCard({
             </div>
           ) : null}
 
-          {order.vendorOrders.map((vendorOrder) => (
+          {order.vendorOrders.map((vendorOrder) => {
+            const customerTrackingRef = getCustomerFacingTrackingRef(vendorOrder);
+            return (
             <div
               key={vendorOrder.id}
               className="rounded-xl border border-neutral-200 bg-neutral-50 p-4"
@@ -398,6 +411,24 @@ function OrderCard({
                   </p>
                 );
               })()}
+
+              {vendorOrder.deliveryMethod === "STANDARD" ||
+              vendorOrder.deliveryMethod === "EXPRESS" ? (
+                <div className="mt-3 rounded-lg border border-[#0F3460]/15 bg-[#0F3460]/5 px-3 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#0F3460]">
+                    {t("orders.trackingNumber")}
+                  </p>
+                  {customerTrackingRef ? (
+                    <p className="mt-1 font-mono text-sm font-bold text-neutral-900">
+                      {customerTrackingRef}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-xs text-neutral-600">
+                      {t("orders.trackingPending")}
+                    </p>
+                  )}
+                </div>
+              ) : null}
 
               {vendorOrder.deliveryMethod === "STANDARD" ? (
                 <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/40 p-3">
@@ -491,7 +522,8 @@ function OrderCard({
                 })}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       ) : null}
 

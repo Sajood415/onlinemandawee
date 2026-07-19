@@ -511,12 +511,19 @@ export class OrderRepository {
     });
   }
 
-  updateVendorOrderStatus(id: string, status: VendorOrderStatus) {
+  updateVendorOrderStatus(
+    id: string,
+    status: VendorOrderStatus,
+    options?: { trackingRef?: string | null }
+  ) {
     return prisma.orderVendor.update({
       where: { id },
       data: {
         status,
         ...(status === "DELIVERED" ? { deliveredAt: new Date() } : {}),
+        ...(options?.trackingRef !== undefined
+          ? { trackingRef: options.trackingRef }
+          : {}),
       },
       include: {
         order: true,

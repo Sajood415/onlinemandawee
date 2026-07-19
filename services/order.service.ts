@@ -19,7 +19,7 @@ import { CartRepository } from "@/repositories/cart.repository";
 import { CustomerAddressRepository } from "@/repositories/customer-address.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
-import { buildGuestOrderTrackingUrl } from "@/lib/orders/build-order-tracking-url";
+import { buildCustomerOrderTrackingUrl } from "@/lib/orders/build-order-tracking-url";
 import { resolveDistanceDeliveryQuote } from "@/lib/delivery/resolve-distance-delivery";
 import { resolveVendorSettlementDeliveryAmount } from "@/lib/delivery/vendor-settlement-delivery";
 import { getRefundEligibility } from "@/lib/refunds/refund-eligibility";
@@ -347,6 +347,7 @@ export class OrderService {
       status: vendorOrder.status,
       sellerType: vendorOrder.vendorProfile.sellerType,
       deliveryMethod: vendorOrder.deliveryMethod,
+      trackingRef: vendorOrder.trackingRef ?? null,
       currency: vendorOrder.currency,
       subtotalAmount: vendorOrder.subtotalAmount,
       deliveryAmount: vendorOrder.deliveryAmount,
@@ -414,7 +415,8 @@ export class OrderService {
   async updateVendorOrderStatus(
     auth: AuthenticatedUser,
     vendorOrderId: string,
-    status: VendorOrderStatus
+    status: VendorOrderStatus,
+    options?: { trackingRef?: string }
   ) {
     const vendor = await this.requireActiveVendor(auth.id);
     const vendorOrder = await this.orderRepository.findVendorOrderById(vendorOrderId);
@@ -454,9 +456,17 @@ export class OrderService {
       });
     }
 
+    const trackingRef =
+      status === "SHIPPED" &&
+      vendorOrder.deliveryMethod === "EXPRESS" &&
+      options?.trackingRef?.trim()
+        ? options.trackingRef.trim()
+        : undefined;
+
     const updatedVendorOrder = await this.orderRepository.updateVendorOrderStatus(
       vendorOrderId,
-      status
+      status,
+      trackingRef !== undefined ? { trackingRef } : undefined
     );
     const overallStatus = await this.recalculateOrderStatus(updatedVendorOrder.orderId);
 
@@ -763,10 +773,11 @@ export class OrderService {
       const customerName = order.shippingFullName;
       if (!customerEmail) return;
 
-      const trackingUrl =
-        order.guestTrackingToken && order.guestEmail
-          ? buildGuestOrderTrackingUrl(order.guestTrackingToken)
-          : undefined;
+      const trackingUrl = buildCustomerOrderTrackingUrl({
+        guestTrackingToken: order.guestTrackingToken,
+        guestEmail: order.guestEmail,
+        hasUserAccount: Boolean(order.userId),
+      });
 
       const ctx = {
         customerName,
@@ -839,7 +850,14 @@ export class OrderService {
           return;
         }
 
-        emailPayload = buildOrderShippedEmail(ctx);
+        const expressTrackingRef =
+          updatedVendorOrder?.deliveryMethod === "EXPRESS"
+            ? updatedVendorOrder.trackingRef
+            : null;
+
+        emailPayload = buildOrderShippedEmail(ctx, {
+          trackingRef: expressTrackingRef,
+        });
       } else if (input.status === "DELIVERED") {
         emailPayload = buildOrderDeliveredEmail(ctx);
       } else {
@@ -1007,6 +1025,7 @@ export class OrderService {
             }
           : null,
         status: vendorOrder.status,
+        trackingRef: vendorOrder.trackingRef ?? null,
         deliveredAt: vendorOrder.deliveredAt?.toISOString() ?? null,
         refundEligibility: getRefundEligibility({
           vendorOrderStatus: vendorOrder.status,

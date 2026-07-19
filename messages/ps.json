@@ -317,7 +317,9 @@
         "cancelModalDismiss": "فرمایش وساتئ",
         "cancelModalConfirm": "لغوه او بیرته ورکړه",
         "cancelling": "لغوه کېږي…",
-        "cancelSuccess": "فرمایش لغوه شو. ستاسو بیرته ورکول پیل شول."
+        "cancelSuccess": "فرمایش لغوه شو. ستاسو بیرته ورکول پیل شول.",
+        "trackingNumber": "د تعقیب شمېره",
+        "trackingPending": "کله چې ستاسو بسته ولیږل شي دلته د تعقیب شمېره ښکاري."
       },
       "addresses": {
         "title": "خوندي پتې",

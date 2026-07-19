@@ -105,7 +105,7 @@ export function HelpShowcase() {
         />
         <div className="relative mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
-            MandawEE · {t("eyebrow")}
+            Mandawee · {t("eyebrow")}
           </p>
           <h1 className="mt-3 max-w-2xl text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
             {t("title")}

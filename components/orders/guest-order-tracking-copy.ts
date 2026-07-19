@@ -9,10 +9,16 @@ export function getGuestOrderTrackingCopy(locale: SupportedLocale) {
     breadcrumb: en ? "Breadcrumb" : ps ? "لارښود" : "مسیر صفحه",
     eyebrow: en ? "Order tracking" : ps ? "د امر تعقیب" : "پیگیری سفارش",
     heroImageAlt: en
-      ? "MandawEE order tracking"
+      ? "Mandawee order tracking"
       : ps
-        ? "د MandawEE امر تعقیب"
-        : "پیگیری سفارش MandawEE",
+        ? "د Mandawee امر تعقیب"
+        : "پیگیری سفارش Mandawee",
+    trackingNumber: en ? "Tracking number" : ps ? "د تعقیب شمېره" : "شماره پیگیری",
+    trackingPending: en
+      ? "Tracking number will appear here when your package ships."
+      : ps
+        ? "کله چې ستاسو بسته ولیږل شي دلته د تعقیب شمېره ښکاري."
+        : "شماره پیگیری پس از ارسال بسته اینجا نشان داده می‌شود.",
     trackOrder: en ? "Track order" : ps ? "امر تعقیب کړئ" : "پیگیری سفارش",
     lookupTitle: en ? "Track your order" : ps ? "خپل امر تعقیب کړئ" : "سفارش خود را پیگیری کنید",
     lookupSubtitle: en

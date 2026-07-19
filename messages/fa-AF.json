@@ -317,7 +317,9 @@
         "cancelModalDismiss": "نگه‌داشتن سفارش",
         "cancelModalConfirm": "لغو و بازپرداخت",
         "cancelling": "در حال لغو…",
-        "cancelSuccess": "سفارش لغو شد. بازپرداخت شما شروع شد."
+        "cancelSuccess": "سفارش لغو شد. بازپرداخت شما شروع شد.",
+        "trackingNumber": "شماره پیگیری",
+        "trackingPending": "شماره پیگیری پس از ارسال بسته اینجا نشان داده می‌شود."
       },
       "addresses": {
         "title": "آدرس‌های ذخیره‌شده",

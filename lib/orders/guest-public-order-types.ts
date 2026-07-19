@@ -12,6 +12,8 @@ export type GuestPublicVendorOrder = {
   status: string;
   deliveredAt: string | null;
   deliveryMethod: "PICKUP" | "EXPRESS" | "STANDARD" | null;
+  /** Customer-facing carrier tracking (Express). Standard uses outboundShipment.trackingRef. */
+  trackingRef: string | null;
   currency: string;
   subtotalAmount: number;
   deliveryAmount: number;

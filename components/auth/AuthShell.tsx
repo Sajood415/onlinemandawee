@@ -51,7 +51,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
           <Link href="/" className="inline-flex items-center gap-2">
             <Image
               src={HEADER_LOGO_SRC}
-              alt="MandawEE"
+              alt="Mandawee"
               width={140}
               height={36}
               className="h-8 w-auto brightness-0 invert"
@@ -68,7 +68,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
 
         <div className="border border-neutral-200/80 bg-white px-5 py-7 shadow-sm sm:px-7 sm:py-8">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#0F3460]/70">
-            MandawEE
+            Mandawee
           </p>
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-neutral-900">{title}</h1>
           {subtitle ? (

@@ -53,6 +53,7 @@ type VendorOrder = {
   status: VendorOrderStatus;
   sellerType: "PLATFORM" | "THIRD_PARTY";
   deliveryMethod: "PICKUP" | "EXPRESS" | "STANDARD" | null;
+  trackingRef: string | null;
   currency: string;
   subtotalAmount: number;
   deliveryAmount: number;
@@ -366,7 +367,8 @@ function OrderRow({
   locale: string;
   onStatusChange: (
     vendorOrderId: string,
-    status: VendorOrderStatus
+    status: VendorOrderStatus,
+    trackingRef?: string
   ) => Promise<void>;
   onRequestCancel: (order: VendorOrder) => void;
   onInboundShip: (vendorOrderId: string, trackingRef?: string) => Promise<void>;
@@ -375,6 +377,9 @@ function OrderRow({
   const [expanded, setExpanded] = useState(false);
   const [trackingRef, setTrackingRef] = useState(
     order.warehouse.inboundShipment?.trackingRef ?? ""
+  );
+  const [expressTrackingRef, setExpressTrackingRef] = useState(
+    order.trackingRef ?? ""
   );
   const [submitting, setSubmitting] = useState(false);
   const [updating, setUpdating] = useState<VendorOrderStatus | null>(null);
@@ -415,7 +420,11 @@ function OrderRow({
   const runStatus = async (status: VendorOrderStatus) => {
     setUpdating(status);
     try {
-      await onStatusChange(order.id, status);
+      const trackingForShip =
+        status === "SHIPPED" && order.deliveryMethod === "EXPRESS"
+          ? expressTrackingRef.trim() || undefined
+          : undefined;
+      await onStatusChange(order.id, status, trackingForShip);
     } finally {
       setUpdating(null);
     }
@@ -558,7 +567,25 @@ function OrderRow({
             </div>
 
             {!standard ? (
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-3">
+                {order.deliveryMethod === "EXPRESS" && order.status === "PREPARING" ? (
+                  <label className="block text-sm text-neutral-700">
+                    {t("actions.trackingOptional")}
+                    <input
+                      value={expressTrackingRef}
+                      onChange={(e) => setExpressTrackingRef(e.target.value)}
+                      disabled={Boolean(updating)}
+                      placeholder={t("actions.trackingPlaceholder")}
+                      className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+                    />
+                  </label>
+                ) : null}
+                {order.deliveryMethod === "EXPRESS" && order.trackingRef ? (
+                  <p className="text-sm text-neutral-700">
+                    {t("actions.trackingLabel", { ref: order.trackingRef })}
+                  </p>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
                 {order.status === "NEW" ? (
                   <button
                     type="button"
@@ -613,6 +640,7 @@ function OrderRow({
                     {t("noActionNeeded")}
                   </p>
                 ) : null}
+                </div>
               </div>
             ) : (
               <div className="space-y-3">
@@ -857,14 +885,21 @@ export default function VendorOrdersPage() {
   );
 
   const applyStatus = useCallback(
-    async (vendorOrderId: string, status: VendorOrderStatus) => {
+    async (
+      vendorOrderId: string,
+      status: VendorOrderStatus,
+      trackingRef?: string
+    ) => {
       try {
         const res = await fetchWithAuth(
           `/api/vendor/orders/${vendorOrderId}/status`,
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status }),
+            body: JSON.stringify({
+              status,
+              ...(trackingRef ? { trackingRef } : {}),
+            }),
           }
         );
         if (!res.ok) {

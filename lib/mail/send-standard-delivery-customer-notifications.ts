@@ -2,7 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/db/prisma";
 import { aggregateOrderLineItemsByProduct } from "@/lib/orders/aggregate-order-line-items";
-import { buildGuestOrderTrackingUrl } from "@/lib/orders/build-order-tracking-url";
+import { buildCustomerOrderTrackingUrl } from "@/lib/orders/build-order-tracking-url";
 import {
   buildOrderDeliveredEmail,
   buildOrderShippedEmail,
@@ -60,10 +60,11 @@ async function loadOrderEmailContext(orderId: string): Promise<{
   const ctx: OrderEmailContext = {
     customerName: order.shippingFullName,
     orderNumber: order.orderNumber,
-    trackingUrl:
-      order.guestTrackingToken && order.guestEmail
-        ? buildGuestOrderTrackingUrl(order.guestTrackingToken)
-        : undefined,
+    trackingUrl: buildCustomerOrderTrackingUrl({
+      guestTrackingToken: order.guestTrackingToken,
+      guestEmail: order.guestEmail,
+      hasUserAccount: Boolean(order.userId),
+    }),
     grandTotalAmount: order.grandTotalAmount,
     currency: order.currency,
     shippingAddress: {

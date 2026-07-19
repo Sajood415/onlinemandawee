@@ -692,6 +692,8 @@ model OrderVendor {
   vendorProfileId  String            @db.ObjectId
   status           VendorOrderStatus @default(NEW)
   deliveryMethod   DeliveryMethod?
+  /** Customer-facing carrier tracking (Express / direct ship). Standard uses outboundShipment.trackingRef. */
+  trackingRef      String?
   deliveredAt      DateTime?
   currency         String
   subtotalAmount   Int

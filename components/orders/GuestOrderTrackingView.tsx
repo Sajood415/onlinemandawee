@@ -71,6 +71,18 @@ function deliveryMethodLabel(
   return "—";
 }
 
+function customerFacingTrackingRef(
+  vendorOrder: GuestPublicOrder["vendorOrders"][number]
+): string | null {
+  if (vendorOrder.deliveryMethod === "STANDARD") {
+    return vendorOrder.warehouse.outboundShipment?.trackingRef?.trim() || null;
+  }
+  if (vendorOrder.deliveryMethod === "EXPRESS") {
+    return vendorOrder.trackingRef?.trim() || null;
+  }
+  return null;
+}
+
 type GuestOrderTrackingViewProps = {
   order: GuestPublicOrder;
   showLookupPrompt?: boolean;
@@ -213,6 +225,10 @@ export function GuestOrderTrackingView({
 
         {order.vendorOrders.map((vendorOrder, vendorIndex) => {
           const facingStatus = customerFacingVendorStatus(vendorOrder);
+          const trackingNumber = customerFacingTrackingRef(vendorOrder);
+          const showTracking =
+            vendorOrder.deliveryMethod === "STANDARD" ||
+            vendorOrder.deliveryMethod === "EXPRESS";
           return (
             <section
               key={`${vendorOrder.storeName ?? "vendor"}-${vendorIndex}`}
@@ -234,6 +250,21 @@ export function GuestOrderTrackingView({
                   {GUEST_VENDOR_STATUS_LABELS[facingStatus]?.[locale] ?? facingStatus}
                 </span>
               </div>
+
+              {showTracking ? (
+                <div className="mt-4 rounded-lg border border-[#0F3460]/15 bg-[#0F3460]/5 px-3 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#0F3460]">
+                    {copy.trackingNumber}
+                  </p>
+                  {trackingNumber ? (
+                    <p className="mt-1 font-mono text-base font-bold text-neutral-900">
+                      {trackingNumber}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-sm text-neutral-600">{copy.trackingPending}</p>
+                  )}
+                </div>
+              ) : null}
 
               <ul className="divide-y divide-neutral-100">
                 {vendorOrder.items.map((item, itemIndex) => (

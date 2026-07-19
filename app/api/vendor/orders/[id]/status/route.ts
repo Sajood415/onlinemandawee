@@ -18,7 +18,8 @@ export const PATCH = withErrorHandling(
     const result = await orderService.updateVendorOrderStatus(
       context.auth,
       params.id,
-      input.status
+      input.status,
+      { trackingRef: input.trackingRef }
     );
 
     return NextResponse.json({ data: result }, { status: 200 });

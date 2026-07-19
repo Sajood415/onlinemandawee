@@ -39,6 +39,7 @@ export const vendorOrderStatusSchema = z.object({
       value === "CANCELLED",
     "Unsupported status update"
   ),
+  trackingRef: z.string().trim().min(1).max(120).optional(),
 });
 
 export const cancelOrderBodySchema = z.object({

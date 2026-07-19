@@ -64,6 +64,7 @@ export function serializeGuestPublicOrder(order: GuestTrackingOrderRecord): Gues
       status: vendorOrder.status,
       deliveredAt: vendorOrder.deliveredAt?.toISOString() ?? null,
       deliveryMethod: vendorOrder.deliveryMethod,
+      trackingRef: vendorOrder.trackingRef ?? null,
       currency: vendorOrder.currency,
       subtotalAmount: vendorOrder.subtotalAmount,
       deliveryAmount: vendorOrder.deliveryAmount,

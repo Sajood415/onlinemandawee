@@ -59,7 +59,7 @@ export function AboutShowcase() {
               />
               <div className="relative flex h-full flex-col justify-center px-4 py-10 sm:px-7 lg:px-10">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
-                  MandawEE · {t("eyebrow")}
+                  Mandawee · {t("eyebrow")}
                 </p>
                 <h1 className="mt-4 max-w-xl text-2xl font-bold leading-tight sm:text-3xl lg:text-[2.35rem]">
                   {t("title")}

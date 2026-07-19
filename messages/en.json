@@ -317,7 +317,9 @@
         "cancelModalDismiss": "Keep order",
         "cancelModalConfirm": "Cancel & refund",
         "cancelling": "Cancelling…",
-        "cancelSuccess": "Order cancelled. Your refund has been started."
+        "cancelSuccess": "Order cancelled. Your refund has been started.",
+        "trackingNumber": "Tracking number",
+        "trackingPending": "Tracking number will appear here when your package ships."
       },
       "addresses": {
         "title": "Saved addresses",

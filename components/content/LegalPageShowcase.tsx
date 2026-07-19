@@ -113,7 +113,7 @@ export function LegalPageShowcase({ pageKey }: LegalPageShowcaseProps) {
           </nav>
 
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
-            MandawEE · {t("eyebrow")}
+            Mandawee · {t("eyebrow")}
           </p>
           <h1 className="mt-3 max-w-3xl break-words text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
             {t("title")}
