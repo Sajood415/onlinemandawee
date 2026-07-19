@@ -1,4 +1,6 @@
 import { env } from "@/config/env";
+import { prisma } from "@/lib/db/prisma";
+import { CategoryRepository } from "@/repositories/category.repository";
 import { CommissionLedgerRepository } from "@/repositories/commission-ledger.repository";
 import { GiftRequestRepository } from "@/repositories/gift-request.repository";
 import { MembershipInvoiceRepository } from "@/repositories/membership-invoice.repository";
@@ -13,6 +15,13 @@ type ReportRange = {
   to?: Date;
 };
 
+type CategorySalesBucket = {
+  salesAmount: number;
+  unitsSold: number;
+  lineCount: number;
+  orderIds: Set<string>;
+};
+
 export class AdminReportService {
   constructor(
     private readonly userRepository = new UserRepository(),
@@ -22,7 +31,8 @@ export class AdminReportService {
     private readonly payoutRepository = new PayoutRepository(),
     private readonly membershipInvoiceRepository = new MembershipInvoiceRepository(),
     private readonly refundCaseRepository = new RefundCaseRepository(),
-    private readonly giftRequestRepository = new GiftRequestRepository()
+    private readonly giftRequestRepository = new GiftRequestRepository(),
+    private readonly categoryRepository = new CategoryRepository()
   ) {}
 
   async overview(range: ReportRange) {
@@ -208,6 +218,167 @@ export class AdminReportService {
         grandTotalAmount: order.grandTotalAmount,
         createdAt: order.createdAt.toISOString(),
       })),
+    };
+  }
+
+  async salesByCategory(range: ReportRange) {
+    const createdAtFilter =
+      range.from || range.to
+        ? {
+            ...(range.from ? { gte: range.from } : {}),
+            ...(range.to ? { lte: range.to } : {}),
+          }
+        : undefined;
+
+    const [orders, categories] = await Promise.all([
+      prisma.order.findMany({
+        where: {
+          paymentStatus: { in: ["PAID", "PARTIALLY_REFUNDED", "REFUNDED"] },
+          status: { not: "CANCELLED" },
+          ...(createdAtFilter ? { createdAt: createdAtFilter } : {}),
+        },
+        select: {
+          id: true,
+          currency: true,
+          createdAt: true,
+          vendorOrders: {
+            select: {
+              items: {
+                select: {
+                  categoryId: true,
+                  quantity: true,
+                  lineTotalAmount: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      this.categoryRepository.listAll(),
+    ]);
+
+    const categoryById = new Map(
+      categories.map((category) => [category.id, category] as const)
+    );
+
+    const resolveRootCategoryId = (categoryId: string): string => {
+      let currentId = categoryId;
+      const seen = new Set<string>();
+      while (true) {
+        if (seen.has(currentId)) return currentId;
+        seen.add(currentId);
+        const category = categoryById.get(currentId);
+        if (!category?.parentId) return currentId;
+        currentId = category.parentId;
+      }
+    };
+
+    const emptyBucket = (): CategorySalesBucket => ({
+      salesAmount: 0,
+      unitsSold: 0,
+      lineCount: 0,
+      orderIds: new Set<string>(),
+    });
+
+    const byCategoryId = new Map<string, CategorySalesBucket>();
+    const byTopLevelId = new Map<string, CategorySalesBucket>();
+    const currencyCounts = new Map<string, number>();
+    let totalSalesAmount = 0;
+    let totalUnitsSold = 0;
+    let totalLineCount = 0;
+    const allOrderIds = new Set<string>();
+
+    for (const order of orders) {
+      currencyCounts.set(
+        order.currency,
+        (currencyCounts.get(order.currency) ?? 0) + 1
+      );
+
+      for (const vendorOrder of order.vendorOrders) {
+        for (const item of vendorOrder.items) {
+          const direct =
+            byCategoryId.get(item.categoryId) ?? emptyBucket();
+          direct.salesAmount += item.lineTotalAmount;
+          direct.unitsSold += item.quantity;
+          direct.lineCount += 1;
+          direct.orderIds.add(order.id);
+          byCategoryId.set(item.categoryId, direct);
+
+          const rootId = resolveRootCategoryId(item.categoryId);
+          const top =
+            byTopLevelId.get(rootId) ?? emptyBucket();
+          top.salesAmount += item.lineTotalAmount;
+          top.unitsSold += item.quantity;
+          top.lineCount += 1;
+          top.orderIds.add(order.id);
+          byTopLevelId.set(rootId, top);
+
+          totalSalesAmount += item.lineTotalAmount;
+          totalUnitsSold += item.quantity;
+          totalLineCount += 1;
+          allOrderIds.add(order.id);
+        }
+      }
+    }
+
+    const currency =
+      [...currencyCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ??
+      "USD";
+
+    const toSharePercent = (amount: number) =>
+      totalSalesAmount > 0
+        ? Math.round((amount / totalSalesAmount) * 10000) / 100
+        : 0;
+
+    const categoriesReport = [...byCategoryId.entries()]
+      .map(([categoryId, bucket]) => {
+        const category = categoryById.get(categoryId);
+        const parent = category?.parentId
+          ? categoryById.get(category.parentId)
+          : null;
+        return {
+          categoryId,
+          name: category?.name ?? "Unknown category",
+          slug: category?.slug ?? null,
+          parentId: category?.parentId ?? null,
+          parentName: parent?.name ?? null,
+          salesAmount: bucket.salesAmount,
+          unitsSold: bucket.unitsSold,
+          lineCount: bucket.lineCount,
+          orderCount: bucket.orderIds.size,
+          sharePercent: toSharePercent(bucket.salesAmount),
+        };
+      })
+      .sort((a, b) => b.salesAmount - a.salesAmount);
+
+    const topLevelReport = [...byTopLevelId.entries()]
+      .map(([categoryId, bucket]) => {
+        const category = categoryById.get(categoryId);
+        return {
+          categoryId,
+          name: category?.name ?? "Unknown category",
+          slug: category?.slug ?? null,
+          salesAmount: bucket.salesAmount,
+          unitsSold: bucket.unitsSold,
+          lineCount: bucket.lineCount,
+          orderCount: bucket.orderIds.size,
+          sharePercent: toSharePercent(bucket.salesAmount),
+        };
+      })
+      .sort((a, b) => b.salesAmount - a.salesAmount);
+
+    return {
+      currency,
+      mixedCurrencies: currencyCounts.size > 1,
+      periodFrom: range.from?.toISOString() ?? null,
+      periodTo: range.to?.toISOString() ?? null,
+      totalSalesAmount,
+      totalUnitsSold,
+      totalLineCount,
+      paidOrdersCount: allOrderIds.size,
+      topLevelCategories: topLevelReport,
+      categories: categoriesReport,
     };
   }
 

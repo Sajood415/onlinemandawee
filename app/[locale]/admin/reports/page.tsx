@@ -11,6 +11,8 @@ import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
 
+type ReportTab = "membership" | "salesByCategory";
+
 type MembershipInvoiceItem = {
   id: string;
   vendorProfileId: string;
@@ -45,6 +47,32 @@ type MembershipReport = {
   recentInvoices: MembershipInvoiceItem[];
 };
 
+type CategorySalesRow = {
+  categoryId: string;
+  name: string;
+  slug: string | null;
+  parentId?: string | null;
+  parentName?: string | null;
+  salesAmount: number;
+  unitsSold: number;
+  lineCount: number;
+  orderCount: number;
+  sharePercent: number;
+};
+
+type SalesByCategoryReport = {
+  currency: string;
+  mixedCurrencies: boolean;
+  periodFrom: string | null;
+  periodTo: string | null;
+  totalSalesAmount: number;
+  totalUnitsSold: number;
+  totalLineCount: number;
+  paidOrdersCount: number;
+  topLevelCategories: CategorySalesRow[];
+  categories: CategorySalesRow[];
+};
+
 function formatMoney(amount: number, currency: string) {
   try {
     return new Intl.NumberFormat("en-US", {
@@ -65,38 +93,74 @@ function formatDate(iso: string | null) {
   return date.toLocaleString();
 }
 
+function buildDefaultRange() {
+  const now = new Date();
+  const from = new Date();
+  from.setUTCFullYear(from.getUTCFullYear() - 1);
+  from.setUTCHours(0, 0, 0, 0);
+  return {
+    from: from.toISOString(),
+    to: now.toISOString(),
+  };
+}
+
 export default function AdminReportsPage() {
   const t = useTranslations("AdminPages.reports");
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
-  const [report, setReport] = useState<MembershipReport | null>(null);
+  const [tab, setTab] = useState<ReportTab>("salesByCategory");
+  const [membershipReport, setMembershipReport] = useState<MembershipReport | null>(null);
+  const [salesReport, setSalesReport] = useState<SalesByCategoryReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [actingInvoiceId, setActingInvoiceId] = useState<string | null>(null);
   const [reactivatingVendorId, setReactivatingVendorId] = useState<string | null>(null);
 
-  const loadReport = useCallback(async () => {
+  const loadMembershipReport = useCallback(async () => {
     setLoading(true);
     try {
-      const now = new Date();
-      const from = new Date();
-      from.setUTCFullYear(from.getUTCFullYear() - 1);
-      from.setUTCHours(0, 0, 0, 0);
-      const params = new URLSearchParams({
-        from: from.toISOString(),
-        to: now.toISOString(),
-      });
+      const range = buildDefaultRange();
+      const params = new URLSearchParams(range);
       const response = await fetchWithAuth(`/api/admin/reports/membership?${params}`);
       const data = await parseApiResponse<MembershipReport>(response);
-      setReport(data);
+      setMembershipReport(data);
     } catch (error) {
       toast.error(
         t("loadError"),
         error instanceof Error ? error.message : t("unknownError")
       );
-      setReport(null);
+      setMembershipReport(null);
     } finally {
       setLoading(false);
     }
   }, [t]);
+
+  const loadSalesByCategoryReport = useCallback(async () => {
+    setLoading(true);
+    try {
+      const range = buildDefaultRange();
+      const params = new URLSearchParams(range);
+      const response = await fetchWithAuth(
+        `/api/admin/reports/sales-by-category?${params}`
+      );
+      const data = await parseApiResponse<SalesByCategoryReport>(response);
+      setSalesReport(data);
+    } catch (error) {
+      toast.error(
+        t("salesByCategory.loadError"),
+        error instanceof Error ? error.message : t("unknownError")
+      );
+      setSalesReport(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
+  const loadActiveTab = useCallback(async () => {
+    if (tab === "membership") {
+      await loadMembershipReport();
+      return;
+    }
+    await loadSalesByCategoryReport();
+  }, [tab, loadMembershipReport, loadSalesByCategoryReport]);
 
   const markInvoicePaid = useCallback(
     async (invoiceId: string) => {
@@ -110,7 +174,7 @@ export default function AdminReportsPage() {
         );
         await parseApiResponse(response);
         toast.success(t("markedPaid"));
-        await loadReport();
+        await loadMembershipReport();
       } catch (error) {
         toast.error(
           t("markPaidFailed"),
@@ -120,7 +184,7 @@ export default function AdminReportsPage() {
         setActingInvoiceId(null);
       }
     },
-    [loadReport, t]
+    [loadMembershipReport, t]
   );
 
   const waiveInvoice = useCallback(
@@ -142,7 +206,7 @@ export default function AdminReportsPage() {
         );
         await parseApiResponse(response);
         toast.success(t("waived"));
-        await loadReport();
+        await loadMembershipReport();
       } catch (error) {
         toast.error(
           t("waiveFailed"),
@@ -152,7 +216,7 @@ export default function AdminReportsPage() {
         setActingInvoiceId(null);
       }
     },
-    [loadReport, t]
+    [loadMembershipReport, t]
   );
 
   const reactivateVendor = useCallback(
@@ -167,7 +231,7 @@ export default function AdminReportsPage() {
         );
         await parseApiResponse(response);
         toast.success(t("reactivated"));
-        await loadReport();
+        await loadMembershipReport();
       } catch (error) {
         toast.error(
           t("reactivateFailed"),
@@ -177,14 +241,14 @@ export default function AdminReportsPage() {
         setReactivatingVendorId(null);
       }
     },
-    [loadReport, t]
+    [loadMembershipReport, t]
   );
 
   useEffect(() => {
     if (!authLoading && user) {
-      void loadReport();
+      void loadActiveTab();
     }
-  }, [authLoading, user, loadReport]);
+  }, [authLoading, user, loadActiveTab]);
 
   const invoiceColumns = useMemo<ColumnDef<MembershipInvoiceItem>[]>(
     () => [
@@ -316,6 +380,84 @@ export default function AdminReportsPage() {
     [actingInvoiceId, reactivatingVendorId, markInvoicePaid, waiveInvoice, reactivateVendor, t]
   );
 
+  const topLevelColumns = useMemo<ColumnDef<CategorySalesRow>[]>(
+    () => [
+      {
+        header: t("salesByCategory.columns.category"),
+        accessorKey: "name",
+        cell: ({ row }) => (
+          <div>
+            <p className="font-medium text-neutral-900">{row.original.name}</p>
+            {row.original.slug ? (
+              <p className="text-xs text-neutral-500">{row.original.slug}</p>
+            ) : null}
+          </div>
+        ),
+      },
+      {
+        header: t("salesByCategory.columns.orders"),
+        accessorKey: "orderCount",
+      },
+      {
+        header: t("salesByCategory.columns.units"),
+        accessorKey: "unitsSold",
+      },
+      {
+        header: t("salesByCategory.columns.sales"),
+        id: "sales",
+        cell: ({ row }) =>
+          formatMoney(row.original.salesAmount, salesReport?.currency ?? "USD"),
+      },
+      {
+        header: t("salesByCategory.columns.share"),
+        id: "share",
+        cell: ({ row }) => `${row.original.sharePercent.toFixed(1)}%`,
+      },
+    ],
+    [salesReport?.currency, t]
+  );
+
+  const detailColumns = useMemo<ColumnDef<CategorySalesRow>[]>(
+    () => [
+      {
+        header: t("salesByCategory.columns.category"),
+        accessorKey: "name",
+        cell: ({ row }) => (
+          <div>
+            <p className="font-medium text-neutral-900">{row.original.name}</p>
+            {row.original.parentName ? (
+              <p className="text-xs text-neutral-500">
+                {t("salesByCategory.parentOf", { parent: row.original.parentName })}
+              </p>
+            ) : (
+              <p className="text-xs text-neutral-500">{t("salesByCategory.topLevel")}</p>
+            )}
+          </div>
+        ),
+      },
+      {
+        header: t("salesByCategory.columns.orders"),
+        accessorKey: "orderCount",
+      },
+      {
+        header: t("salesByCategory.columns.units"),
+        accessorKey: "unitsSold",
+      },
+      {
+        header: t("salesByCategory.columns.sales"),
+        id: "sales",
+        cell: ({ row }) =>
+          formatMoney(row.original.salesAmount, salesReport?.currency ?? "USD"),
+      },
+      {
+        header: t("salesByCategory.columns.share"),
+        id: "share",
+        cell: ({ row }) => `${row.original.sharePercent.toFixed(1)}%`,
+      },
+    ],
+    [salesReport?.currency, t]
+  );
+
   if (authLoading || !user) {
     return (
       <div className="flex min-h-[45vh] items-center justify-center">
@@ -330,20 +472,45 @@ export default function AdminReportsPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold text-[#0f3460]">
-              {t("title")}
+              {t("pageTitle")}
             </h1>
             <p className="mt-1 text-sm text-neutral-600">
-              {t("subtitle")}
+              {t("pageSubtitle")}
             </p>
           </div>
           <button
             type="button"
-            onClick={() => void loadReport()}
+            onClick={() => void loadActiveTab()}
             disabled={loading}
             className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             {t("refresh")}
+          </button>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setTab("salesByCategory")}
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+              tab === "salesByCategory"
+                ? "bg-[#0f3460] text-white"
+                : "border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50"
+            }`}
+          >
+            {t("tabs.salesByCategory")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("membership")}
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+              tab === "membership"
+                ? "bg-[#0f3460] text-white"
+                : "border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50"
+            }`}
+          >
+            {t("tabs.membership")}
           </button>
         </div>
       </section>
@@ -352,7 +519,86 @@ export default function AdminReportsPage() {
         <div className="flex min-h-[35vh] items-center justify-center rounded-2xl border border-neutral-200 bg-white">
           <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
         </div>
-      ) : !report ? (
+      ) : tab === "salesByCategory" ? (
+        !salesReport ? (
+          <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-12 text-center text-sm text-neutral-600">
+            {t("salesByCategory.empty")}
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="rounded-xl border border-neutral-200 bg-white p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                  {t("salesByCategory.totalSales")}
+                </p>
+                <p className="mt-2 text-2xl font-bold text-emerald-700">
+                  {formatMoney(salesReport.totalSalesAmount, salesReport.currency)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-neutral-200 bg-white p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                  {t("salesByCategory.paidOrders")}
+                </p>
+                <p className="mt-2 text-2xl font-bold text-neutral-900">
+                  {salesReport.paidOrdersCount}
+                </p>
+              </div>
+              <div className="rounded-xl border border-neutral-200 bg-white p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                  {t("salesByCategory.unitsSold")}
+                </p>
+                <p className="mt-2 text-2xl font-bold text-neutral-900">
+                  {salesReport.totalUnitsSold}
+                </p>
+              </div>
+            </div>
+
+            {salesReport.mixedCurrencies ? (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                {t("salesByCategory.mixedCurrencyNote")}
+              </p>
+            ) : null}
+
+            <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
+                {t("salesByCategory.topLevelTitle")}
+              </h2>
+              <p className="mt-1 text-sm text-neutral-600">
+                {t("salesByCategory.topLevelSubtitle")}
+              </p>
+              <div className="mt-4">
+                <DataTable
+                  data={salesReport.topLevelCategories}
+                  columns={topLevelColumns}
+                  getRowId={(row) => row.categoryId}
+                  emptyMessage={t("salesByCategory.emptyCategories")}
+                  initialPageSize={10}
+                  pageSizeOptions={[10, 20, 50]}
+                />
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
+                {t("salesByCategory.detailTitle")}
+              </h2>
+              <p className="mt-1 text-sm text-neutral-600">
+                {t("salesByCategory.detailSubtitle")}
+              </p>
+              <div className="mt-4">
+                <DataTable
+                  data={salesReport.categories}
+                  columns={detailColumns}
+                  getRowId={(row) => row.categoryId}
+                  emptyMessage={t("salesByCategory.emptyCategories")}
+                  initialPageSize={10}
+                  pageSizeOptions={[10, 20, 50]}
+                />
+              </div>
+            </section>
+          </>
+        )
+      ) : !membershipReport ? (
         <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-12 text-center text-sm text-neutral-600">
           {t("empty")}
         </div>
@@ -364,7 +610,7 @@ export default function AdminReportsPage() {
                 {t("paidAmount")}
               </p>
               <p className="mt-2 text-2xl font-bold text-emerald-700">
-                {formatMoney(report.paidAmount, report.currency)}
+                {formatMoney(membershipReport.paidAmount, membershipReport.currency)}
               </p>
             </div>
             <div className="rounded-xl border border-neutral-200 bg-white p-4">
@@ -372,7 +618,7 @@ export default function AdminReportsPage() {
                 {t("pendingAmount")}
               </p>
               <p className="mt-2 text-2xl font-bold text-amber-700">
-                {formatMoney(report.pendingAmount, report.currency)}
+                {formatMoney(membershipReport.pendingAmount, membershipReport.currency)}
               </p>
             </div>
             <div className="rounded-xl border border-neutral-200 bg-white p-4">
@@ -380,7 +626,7 @@ export default function AdminReportsPage() {
                 {t("totalInvoices")}
               </p>
               <p className="mt-2 text-2xl font-bold text-neutral-900">
-                {report.totalInvoices}
+                {membershipReport.totalInvoices}
               </p>
             </div>
           </div>
@@ -391,7 +637,7 @@ export default function AdminReportsPage() {
             </h2>
             <div className="mt-4">
               <DataTable
-                data={report.recentInvoices}
+                data={membershipReport.recentInvoices}
                 columns={invoiceColumns}
                 getRowId={(row) => row.id}
                 emptyMessage={t("emptyInvoices")}

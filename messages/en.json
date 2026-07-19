@@ -3545,6 +3545,8 @@
       }
     },
     "reports": {
+      "pageTitle": "Reports",
+      "pageSubtitle": "Sales by category and membership billing.",
       "title": "Membership Billing Report",
       "subtitle": "Stripe subscription invoices, payment status, and failure reasons.",
       "refresh": "Refresh",
@@ -3570,6 +3572,32 @@
       "reactivated": "Vendor reactivated",
       "reactivateFailed": "Could not reactivate vendor",
       "unknownError": "Unknown error",
+      "tabs": {
+        "salesByCategory": "Sales by category",
+        "membership": "Membership billing"
+      },
+      "salesByCategory": {
+        "loadError": "Failed to load sales by category",
+        "empty": "No sales by category data available.",
+        "emptyCategories": "No paid product sales in this period yet.",
+        "totalSales": "Product sales",
+        "paidOrders": "Paid orders",
+        "unitsSold": "Units sold",
+        "mixedCurrencyNote": "Orders used more than one currency. Totals mix those amounts — check currency carefully.",
+        "topLevelTitle": "Top categories",
+        "topLevelSubtitle": "Parent categories with child sales rolled up (e.g. clothes, jewelry, perfume).",
+        "detailTitle": "All categories",
+        "detailSubtitle": "Exact category on each sold line item.",
+        "topLevel": "Top-level category",
+        "parentOf": "Under {parent}",
+        "columns": {
+          "category": "Category",
+          "orders": "Orders",
+          "units": "Units",
+          "sales": "Sales",
+          "share": "Share"
+        }
+      },
       "columns": {
         "vendor": "Vendor",
         "period": "Period",
