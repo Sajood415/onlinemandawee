@@ -79,9 +79,12 @@ export default async function middleware(request: NextRequest) {
   const response = intlMiddleware(request);
 
   if (!request.cookies.get(CURRENCY_COOKIE)?.value) {
+    // Production (VPS): Cloudflare Free proxy sends cf-ipcountry.
+    // Local / bare VPS without CF: set GEO_COUNTRY_OVERRIDE=US|CA|GB|FR in .env.local
     const country =
-      request.headers.get("x-vercel-ip-country") ??
       request.headers.get("cf-ipcountry") ??
+      request.headers.get("x-vercel-ip-country") ??
+      process.env.GEO_COUNTRY_OVERRIDE?.trim() ??
       null;
     const detected = detectCurrencyFromCountry(country) ?? DEFAULT_CURRENCY;
     const currency = platformSettings.availableCurrencies.includes(detected)
