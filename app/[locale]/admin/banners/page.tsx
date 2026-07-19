@@ -2,21 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ImagePlus, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { ImagePlus, Loader2, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { DataTable } from "@/components/ui/data-table";
 import {
-  HOME_BANNER_PLACEMENT_LABELS,
   homeBannerPlacements,
   type HomeBannerPlacement,
 } from "@/domain/home/home-banner-placement";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
-
-type BannersT = ReturnType<typeof useTranslations<"AdminPages.banners">>;
 
 type HomeBanner = {
   id: string;
@@ -58,7 +55,7 @@ function emptyForm(): FormState {
     imageUrl: "",
     imageMobileUrl: "",
     href: "/products",
-    ctaLabel: "Shop now",
+    ctaLabel: "",
     isActive: true,
     sortOrder: "0",
     startsAt: "",
@@ -78,15 +75,21 @@ function fromDatetimeLocal(value: string) {
   return new Date(value).toISOString();
 }
 
-function formatSchedule(banner: HomeBanner, t: BannersT) {
-  if (!banner.startsAt && !banner.expiresAt) return t("alwaysOn");
-  const start = banner.startsAt ? new Date(banner.startsAt).toLocaleString() : t("anytime");
-  const end = banner.expiresAt ? new Date(banner.expiresAt).toLocaleString() : t("noEnd");
-  return `${start} → ${end}`;
+function formatDateLabel(iso: string, locale: string) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString(locale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export default function AdminBannersPage() {
   const t = useTranslations("AdminPages.banners");
+  const locale = useLocale();
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [banners, setBanners] = useState<HomeBanner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,9 +97,33 @@ export default function AdminBannersPage() {
   const [uploadingField, setUploadingField] = useState<"desktop" | "mobile" | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<HomeBanner | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState<FormState>(() => emptyForm());
   const desktopFileRef = useRef<HTMLInputElement>(null);
   const mobileFileRef = useRef<HTMLInputElement>(null);
+
+  const placementLabel = useCallback(
+    (placement: HomeBannerPlacement) =>
+      t.has(`placements.${placement}`)
+        ? t(`placements.${placement}`)
+        : placement,
+    [t]
+  );
+
+  const formatSchedule = useCallback(
+    (banner: HomeBanner) => {
+      if (!banner.startsAt && !banner.expiresAt) return t("alwaysOn");
+      const start = banner.startsAt
+        ? formatDateLabel(banner.startsAt, locale)
+        : t("anytime");
+      const end = banner.expiresAt
+        ? formatDateLabel(banner.expiresAt, locale)
+        : t("noEnd");
+      return `${start} → ${end}`;
+    },
+    [locale, t]
+  );
 
   const loadBanners = useCallback(async () => {
     setLoading(true);
@@ -172,7 +199,7 @@ export default function AdminBannersPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim() || !form.imageUrl || !form.href.trim()) {
-      toast.error("Missing fields", "Title, desktop image, and link are required.");
+      toast.error(t("missingFieldsTitle"), t("missingFieldsBody"));
       return;
     }
 
@@ -211,15 +238,21 @@ export default function AdminBannersPage() {
     }
   };
 
-  const onDelete = async (banner: HomeBanner) => {
-    if (!window.confirm(t("deleteConfirm"))) return;
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await fetchWithAuth(`/api/admin/home-banners/${banner.id}`, { method: "DELETE" });
+      await fetchWithAuth(`/api/admin/home-banners/${deleteTarget.id}`, {
+        method: "DELETE",
+      });
       toast.success(t("deleted"));
-      if (editingId === banner.id) closeForm();
+      if (editingId === deleteTarget.id) closeForm();
+      setDeleteTarget(null);
       await loadBanners();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("deleteFailed"));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -250,13 +283,13 @@ export default function AdminBannersPage() {
       {
         header: t("columns.placement"),
         id: "placement",
-        cell: ({ row }) => HOME_BANNER_PLACEMENT_LABELS[row.original.placement],
+        cell: ({ row }) => placementLabel(row.original.placement),
       },
       {
         header: t("columns.schedule"),
         id: "schedule",
         cell: ({ row }) => (
-          <span className="text-xs text-neutral-600">{formatSchedule(row.original, t)}</span>
+          <span className="text-xs text-neutral-600">{formatSchedule(row.original)}</span>
         ),
       },
       {
@@ -295,7 +328,7 @@ export default function AdminBannersPage() {
               </button>
               <button
                 type="button"
-                onClick={() => void onDelete(banner)}
+                onClick={() => setDeleteTarget(banner)}
                 className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -306,7 +339,7 @@ export default function AdminBannersPage() {
         },
       },
     ],
-    [t]
+    [formatSchedule, placementLabel, t]
   );
 
   if (authLoading || !user) {
@@ -318,24 +351,33 @@ export default function AdminBannersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[#0f3460]">
-            {t("title")}
-          </h1>
-          <p className="mt-1 text-sm text-neutral-500">{t("subtitle")}</p>
+          <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+          <p className="mt-1 max-w-2xl text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
-        {!showForm ? (
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={openCreate}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-95"
+            onClick={() => void loadBanners()}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
           >
-            <Plus className="h-4 w-4" />
-            {t("newBanner")}
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            {t("refresh")}
           </button>
-        ) : null}
+          {!showForm ? (
+            <button
+              type="button"
+              onClick={openCreate}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0a2847]"
+            >
+              <Plus className="h-4 w-4" />
+              {t("newBanner")}
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {showForm ? (
@@ -359,25 +401,31 @@ export default function AdminBannersPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label className="text-sm font-medium text-neutral-700">{t("form.title")} *</label>
+              <label className="text-sm font-medium text-neutral-700">
+                {t("form.title")} *
+              </label>
               <input
                 className={INPUT}
                 value={form.title}
                 onChange={(e) => setForm((c) => ({ ...c, title: e.target.value }))}
-                placeholder="Ramadan essentials"
+                placeholder={t("form.titlePlaceholder")}
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-sm font-medium text-neutral-700">{t("form.subtitle")}</label>
+              <label className="text-sm font-medium text-neutral-700">
+                {t("form.subtitle")}
+              </label>
               <input
                 className={INPUT}
                 value={form.subtitle}
                 onChange={(e) => setForm((c) => ({ ...c, subtitle: e.target.value }))}
-                placeholder="Optional supporting line"
+                placeholder={t("form.subtitlePlaceholder")}
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-neutral-700">{t("form.placement")} *</label>
+              <label className="text-sm font-medium text-neutral-700">
+                {t("form.placement")} *
+              </label>
               <select
                 className={INPUT}
                 value={form.placement}
@@ -390,13 +438,15 @@ export default function AdminBannersPage() {
               >
                 {homeBannerPlacements.map((placement) => (
                   <option key={placement} value={placement}>
-                    {HOME_BANNER_PLACEMENT_LABELS[placement]}
+                    {placementLabel(placement)}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-neutral-700">{t("form.sortOrder")}</label>
+              <label className="text-sm font-medium text-neutral-700">
+                {t("form.sortOrder")}
+              </label>
               <input
                 type="number"
                 min="0"
@@ -406,16 +456,20 @@ export default function AdminBannersPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-neutral-700">{t("form.link")} *</label>
+              <label className="text-sm font-medium text-neutral-700">
+                {t("form.link")} *
+              </label>
               <input
                 className={INPUT}
                 value={form.href}
                 onChange={(e) => setForm((c) => ({ ...c, href: e.target.value }))}
-                placeholder="/products or /category/grocery"
+                placeholder={t("form.linkPlaceholder")}
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-neutral-700">{t("form.cta")}</label>
+              <label className="text-sm font-medium text-neutral-700">
+                {t("form.cta")}
+              </label>
               <input
                 className={INPUT}
                 value={form.ctaLabel}
@@ -424,7 +478,9 @@ export default function AdminBannersPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-neutral-700">{t("form.displayFrom")}</label>
+              <label className="text-sm font-medium text-neutral-700">
+                {t("form.displayFrom")}
+              </label>
               <input
                 type="datetime-local"
                 className={INPUT}
@@ -433,7 +489,9 @@ export default function AdminBannersPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-neutral-700">{t("form.displayUntil")}</label>
+              <label className="text-sm font-medium text-neutral-700">
+                {t("form.displayUntil")}
+              </label>
               <input
                 type="datetime-local"
                 className={INPUT}
@@ -442,7 +500,9 @@ export default function AdminBannersPage() {
               />
             </div>
             <div className="sm:col-span-2">
-              <span className="text-sm font-medium text-neutral-700">{t("form.desktopImage")} *</span>
+              <span className="text-sm font-medium text-neutral-700">
+                {t("form.desktopImage")} *
+              </span>
               <div className="mt-1 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
@@ -473,7 +533,7 @@ export default function AdminBannersPage() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={form.imageUrl}
-                      alt="Desktop preview"
+                      alt={t("form.desktopPreviewAlt")}
                       className="h-full w-full object-cover"
                     />
                   </div>
@@ -514,7 +574,7 @@ export default function AdminBannersPage() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={form.imageMobileUrl}
-                      alt="Mobile preview"
+                      alt={t("form.mobilePreviewAlt")}
                       className="h-full w-full object-cover"
                     />
                   </div>
@@ -535,7 +595,7 @@ export default function AdminBannersPage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {saving ? t("saving") : t("save")}
@@ -545,22 +605,68 @@ export default function AdminBannersPage() {
       ) : null}
 
       {!showForm ? (
-      <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-        {loading ? (
-          <div className="flex items-center gap-2 text-sm text-neutral-500">
-            <Loader2 className="h-4 w-4 animate-spin" />
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          {loading ? (
+            <div className="flex min-h-[160px] items-center justify-center">
+              <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
+            </div>
+          ) : (
+            <DataTable
+              embedded
+              data={banners}
+              columns={columns}
+              getRowId={(row) => row.id}
+              emptyMessage={t("empty")}
+              initialPageSize={10}
+              pageSizeOptions={[10, 20, 50]}
+            />
+          )}
+        </div>
+      ) : null}
+
+      {deleteTarget ? (
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/45 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !deleting) setDeleteTarget(null);
+          }}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-banner-title"
+            className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl"
+          >
+            <h2
+              id="delete-banner-title"
+              className="text-lg font-semibold text-neutral-900"
+            >
+              {t("deleteModal.title")}
+            </h2>
+            <p className="mt-2 text-sm text-neutral-600">
+              {t("deleteModal.body", { title: deleteTarget.title })}
+            </p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeleteTarget(null)}
+                className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
+              >
+                {t("cancel")}
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => void confirmDelete()}
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {deleting ? t("deleteModal.deleting") : t("deleteModal.confirm")}
+              </button>
+            </div>
           </div>
-        ) : (
-          <DataTable
-            data={banners}
-            columns={columns}
-            getRowId={(row) => row.id}
-            emptyMessage={t("empty")}
-            initialPageSize={10}
-            pageSizeOptions={[10, 20, 50]}
-          />
-        )}
-      </div>
+        </div>
       ) : null}
     </div>
   );
