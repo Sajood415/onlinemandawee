@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Banknote, Loader2, Save } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import {
@@ -28,6 +28,7 @@ const INPUT =
 
 export default function AdminHawalaExchangeRatesPage() {
   const t = useTranslations("AdminPages.hawala.exchangeRates");
+  const locale = useLocale();
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [rates, setRates] = useState<Record<HawalaCurrency, string>>(
     Object.fromEntries(HAWALA_CURRENCIES.map((currency) => [currency, ""])) as Record<
@@ -194,7 +195,15 @@ export default function AdminHawalaExchangeRatesPage() {
         </button>
         {lastUpdated ? (
           <p className="mt-2 text-xs text-neutral-500">
-            {t("lastUpdated", { date: new Date(lastUpdated).toLocaleString() })}
+            {t("lastUpdated", {
+              date: new Date(lastUpdated).toLocaleString(locale, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            })}
           </p>
         ) : null}
       </div>
