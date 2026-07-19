@@ -59,6 +59,7 @@ export class VendorProfileService {
       storeSlug: vendor.storeSlug ?? "",
       businessType: vendor.businessType,
       industryType: vendor.industryType ?? null,
+      sellerType: vendor.sellerType,
       logoUrl: vendor.logoUrl ?? "",
       description: vendor.description ?? "",
       status: vendor.status,

@@ -1272,7 +1272,7 @@
     },
     "settings": {
       "title": "Settings",
-      "subtitle": "Your store, bank payouts, and membership.",
+      "subtitle": "Your store, Express delivery fee, bank payouts, and membership.",
       "loading": "Loading…",
       "loadError": "Could not load your settings.",
       "tryAgain": "Try again",
@@ -1282,7 +1282,23 @@
       "saveHint": "Save when you finish editing.",
       "tabs": {
         "business": "Store",
+        "delivery": "Delivery",
         "payout": "Bank"
+      },
+      "delivery": {
+        "title": "Express delivery fee",
+        "help": "When a customer chooses Express, you ship to them and keep this delivery fee.",
+        "feeLabel": "Your Express fee (USD)",
+        "feeHint": "Example: 5.00. Customer pays this when they pick Express from your shop.",
+        "offerExpress": "Offer Express delivery",
+        "noRuleYet": "You have not set a fee yet. Save one so checkout can use your price.",
+        "save": "Save fee",
+        "saving": "Saving…",
+        "saved": "Express fee saved",
+        "loadError": "Could not load Express fee",
+        "saveError": "Could not save Express fee",
+        "invalidFee": "Enter a valid fee (0 or more).",
+        "platformNote": "Mandawee shop delivery is priced by distance from the warehouse. You do not set an Express fee here."
       },
       "billing": {
         "title": "Membership",
@@ -3235,8 +3251,21 @@
     },
     "deliveryRules": {
       "title": "Delivery rules",
-      "subtitle": "Set Pickup, Express, and Standard delivery prices for checkout.",
-      "searchPlaceholder": "Search shop, country, method…",
+      "subtitle": "Set platform delivery prices (All countries or one country). Outside shops set their own Express fee in Vendor Settings.",
+      "searchPlaceholder": "Search country, method, shop fee…",
+      "setup": {
+        "title": "Afghanistan delivery not ready",
+        "body": "For Mandawee shop orders in Afghanistan, price is by km from the warehouse. Turn on the AF Standard rule (or create it).",
+        "warehouseOk": "Warehouse address is saved.",
+        "warehouseMissing": "Warehouse address is missing.",
+        "openSettings": "Open Settings",
+        "afRuleOk": "AF Standard per-km rule is on.",
+        "afRuleMissing": "AF Standard per-km rule is missing.",
+        "activateAfRule": "Turn on AF Standard rule",
+        "createAfRule": "Create AF Standard rule (${base} + ${km}/km)",
+        "hint": "Mandawee shop + Standard in AF uses warehouse → customer distance."
+      },
+      "openActions": "Open actions",
       "refresh": "Refresh",
       "deleteAll": "Delete all",
       "createRule": "Create rule",
@@ -3271,7 +3300,7 @@
       "scopes": {
         "GLOBAL": "All countries",
         "COUNTRY": "One country",
-        "VENDOR": "One shop"
+        "VENDOR": "Shop fee"
       },
       "pricingTypes": {
         "FLAT": "Flat",
@@ -3290,9 +3319,10 @@
         "actions": "Actions"
       },
       "scope": {
-        "global": "Global",
-        "vendor": "Vendor",
-        "country": "Country"
+        "global": "All countries",
+        "vendor": "shop",
+        "country": "Country",
+        "shopFee": "Shop fee · {shop}"
       },
       "values": {
         "noCharge": "No delivery charge",
@@ -3309,31 +3339,18 @@
         "ofSale": ""
       },
       "errors": {
-        "selectVendor": "Select a shop, or choose All active shops.",
         "deliveryFeeMin": "Delivery fee must be zero or greater.",
         "perKmMin": "Per kilometer rate must be greater than zero.",
-        "createVendorsFailed": "Could not create delivery rules for vendors.",
-        "everyVendorHasRule": "Every active shop already has a {method} shop rule.",
-        "createdPartial": "Created {created} rule(s). {failed} vendor(s) failed: {details}",
-        "deactivateOverridesFailed": "Some vendor overrides could not be deactivated: {details}",
+        "shopFeeReadOnly": "This Express fee was set by the shop. Change it in that vendor’s Settings → Delivery, or deactivate it here.",
+        "afSetupFailed": "Could not create the Afghanistan per-km rule.",
         "labelFailed": "{label}: failed",
         "countryRequired": "Enter a 2-letter country code (example: AF)."
-      },
-      "overrides": {
-        "title": "{count} shop rule(s) will ignore this {scope} {method} rule",
-        "body": "These shops use their own price instead: {vendors}. Turn them off if you want this {scopeLabel} rule to apply.",
-        "deactivate": "Turn off {count} shop rule(s)",
-        "aVendor": "a shop",
-        "global": "all-countries",
-        "country": "country"
       },
       "form": {
         "method": "Method",
         "scope": "Applies to",
-        "vendor": "Shop",
-        "allVendors": "All active shops",
-        "selectVendor": "Select shop",
-        "allVendorsHint": "Makes one {method} rule for each active shop that does not already have one.",
+        "scopeHint": "Use All countries or One country only. Outside shops set Express fees themselves.",
+        "expressAdminNote": "This is a fallback Express price. Shops that set their own Express fee in Vendor Settings will override this.",
         "countryCode": "Country code",
         "pricingType": "Price type",
         "flat": "Flat fee",
@@ -3349,13 +3366,7 @@
         "perKmRateUsd": "Price per km (USD)",
         "perKmHintStandard": "Distance from Mandawee warehouse to customer address.",
         "perKmHintExpress": "Distance from shop address to customer address.",
-        "platformCommission": "Platform commission",
-        "commissionOfSales": "{percent} of product sales",
-        "commissionNote": "Taken from each vendor's product subtotal (not shipping) on every paid order. Set by platform configuration, not per delivery rule.",
         "pickupNote": "Pickup has no delivery fee. Set the days below only.",
-        "baseFeeMinor": "Base fee (minor units)",
-        "perKmMinor": "Per km rate (minor units)",
-        "freeAboveMinor": "Free above amount (minor units)",
         "etaMinDays": "Min days",
         "etaMaxDays": "Max days",
         "countryCodePlaceholder": "AF",
@@ -3388,8 +3399,8 @@
       "languagesBody": "Choose which languages appear in the storefront language selector. Disabled languages redirect customers to the first enabled language.",
       "currenciesTitle": "Customer currencies",
       "currenciesBody": "Choose which currencies customers can select for browsing and checkout.",
-      "warehouseTitle": "Warehouse pickup address",
-      "warehouseBody": "Used to calculate the delivery distance (in km) for platform-sold items priced with a per-kilometer standard delivery rate.",
+      "warehouseTitle": "Mandawee warehouse address",
+      "warehouseBody": "Required for Afghanistan km delivery. Distance is from this address to the customer. Also used when Standard consolidates packages at the warehouse.",
       "addressLine": "Address line",
       "addressPlaceholder": "Start typing an address…",
       "city": "City",

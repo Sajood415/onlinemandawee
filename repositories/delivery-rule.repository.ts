@@ -205,6 +205,23 @@ export class DeliveryRuleRepository {
     });
   }
 
+  findVendorMethodRule(input: {
+    vendorProfileId: string;
+    method: DeliveryMethod;
+  }) {
+    return prisma.deliveryRule.findFirst({
+      where: {
+        method: input.method,
+        scope: "VENDOR",
+        vendorProfileId: input.vendorProfileId,
+      },
+      include: {
+        vendorProfile: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
   deleteById(id: string) {
     return prisma.deliveryRule.delete({
       where: { id },

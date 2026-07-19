@@ -17,6 +17,7 @@ import {
   Landmark,
   Loader2,
   MapPin,
+  Truck,
   Upload,
 } from "lucide-react";
 
@@ -42,6 +43,7 @@ type VendorProfile = {
   storeSlug: string;
   businessType: "INDIVIDUAL" | "REGISTERED_BUSINESS" | null;
   industryType: IndustryType | null;
+  sellerType?: "PLATFORM" | "THIRD_PARTY";
   logoUrl: string;
   description: string;
   address: VendorAddress | null;
@@ -88,7 +90,13 @@ const LABEL =
   "block text-xs font-medium text-neutral-600";
 const FIELD = "flex flex-col gap-1.5";
 
-type Tab = "business" | "payout";
+type Tab = "business" | "delivery" | "payout";
+
+type ExpressFeeState = {
+  feeAmountMinor: number | null;
+  isActive: boolean;
+  hasRule: boolean;
+};
 
 function RequiredMark({ title }: { title: string }) {
   return (
@@ -855,6 +863,148 @@ function BusinessInfoTab({
   );
 }
 
+function ExpressDeliveryTab({
+  sellerType,
+  token,
+}: {
+  sellerType?: "PLATFORM" | "THIRD_PARTY";
+  token: string;
+}) {
+  const t = useTranslations("VendorPages.settings.delivery");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [feeMajor, setFeeMajor] = useState<number | "">("");
+  const [isActive, setIsActive] = useState(true);
+  const [hasRule, setHasRule] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!token || sellerType === "PLATFORM") {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/vendor/delivery/express-fee", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await parseApiResponse<ExpressFeeState>(res);
+      setFeeMajor(
+        data.feeAmountMinor == null ? "" : Number((data.feeAmountMinor / 100).toFixed(2))
+      );
+      setIsActive(data.hasRule ? data.isActive : true);
+      setHasRule(data.hasRule);
+    } catch (e) {
+      toast.error(t("loadError"), e instanceof Error ? e.message : undefined);
+    } finally {
+      setLoading(false);
+    }
+  }, [sellerType, t, token]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  if (sellerType === "PLATFORM") {
+    return (
+      <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm text-neutral-700">
+        {t("platformNote")}
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[20vh] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
+  return (
+    <form
+      className="max-w-lg space-y-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void (async () => {
+          const fee = Number(feeMajor);
+          if (!Number.isFinite(fee) || fee < 0) {
+            toast.error(t("invalidFee"));
+            return;
+          }
+          setSaving(true);
+          try {
+            const res = await fetch("/api/vendor/delivery/express-fee", {
+              method: "PATCH",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                feeAmountMinor: Math.round(fee * 100),
+                isActive,
+              }),
+            });
+            const data = await parseApiResponse<ExpressFeeState>(res);
+            setFeeMajor(Number((data.feeAmountMinor! / 100).toFixed(2)));
+            setIsActive(data.isActive);
+            setHasRule(true);
+            toast.success(t("saved"));
+          } catch (e) {
+            toast.error(t("saveError"), e instanceof Error ? e.message : undefined);
+          } finally {
+            setSaving(false);
+          }
+        })();
+      }}
+    >
+      <div>
+        <h2 className="text-base font-semibold text-neutral-900">{t("title")}</h2>
+        <p className="mt-1 text-sm text-neutral-600">{t("help")}</p>
+      </div>
+
+      <label className={FIELD}>
+        <span className={LABEL}>{t("feeLabel")}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-neutral-500">$</span>
+          <input
+            type="number"
+            min={0}
+            step={0.01}
+            className={CONTROL}
+            value={feeMajor}
+            placeholder="5.00"
+            onChange={(event) =>
+              setFeeMajor(event.target.value === "" ? "" : Number(event.target.value))
+            }
+          />
+        </div>
+        <span className="text-xs text-neutral-500">{t("feeHint")}</span>
+      </label>
+
+      <label className="flex items-center gap-2 text-sm text-neutral-700">
+        <input
+          type="checkbox"
+          checked={isActive}
+          onChange={(event) => setIsActive(event.target.checked)}
+        />
+        {t("offerExpress")}
+      </label>
+
+      {!hasRule ? (
+        <p className="text-xs text-amber-800">{t("noRuleYet")}</p>
+      ) : null}
+
+      <button
+        type="submit"
+        disabled={saving}
+        className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+      >
+        {saving ? t("saving") : t("save")}
+      </button>
+    </form>
+  );
+}
+
 function PayoutDetailsTab({
   profile,
   token,
@@ -1165,6 +1315,11 @@ export default function VendorSettingsPage() {
       icon: <Building2 className="h-4 w-4" />,
     },
     {
+      id: "delivery",
+      label: t("tabs.delivery"),
+      icon: <Truck className="h-4 w-4" />,
+    },
+    {
       id: "payout",
       label: t("tabs.payout"),
       icon: <Landmark className="h-4 w-4" />,
@@ -1250,6 +1405,8 @@ export default function VendorSettingsPage() {
                 setProfile((prev) => (prev ? { ...prev, ...updated } : prev))
               }
             />
+          ) : tab === "delivery" ? (
+            <ExpressDeliveryTab sellerType={profile.sellerType} token={token} />
           ) : (
             <PayoutDetailsTab
               profile={profile}

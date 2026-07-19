@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Loader2, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { Ellipsis, Loader2, MapPin, Plus, RefreshCw, Search } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
@@ -12,8 +12,13 @@ import type {
   DeliveryPriceModel,
   DeliveryRuleScope,
 } from "@/domain/delivery/delivery-types";
+import { Link } from "@/i18n/navigation";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
+
+/** Matches PLATFORM_DELIVERY_* env defaults (cents → dollars in UI). */
+const AF_KM_DEFAULT_BASE_MAJOR = 2;
+const AF_KM_DEFAULT_PER_KM_MAJOR = 0.5;
 
 type DeliveryRuleRecord = {
   id: string;
@@ -36,17 +41,11 @@ type DeliveryRuleRecord = {
   updatedAt: string;
 };
 
-type VendorOption = {
-  id: string;
-  status?: string;
-  storeName: string | null;
-  storeSlug: string | null;
-};
+type AdminRuleScope = Exclude<DeliveryRuleScope, "VENDOR">;
 
 type RuleFormState = {
   method: DeliveryMethod;
-  scope: DeliveryRuleScope;
-  vendorProfileId: string;
+  scope: AdminRuleScope;
   countryCode: string;
   priceModel: DeliveryPriceModel;
   deliveryFeeAmount: number | "";
@@ -59,7 +58,6 @@ type RuleFormState = {
 const defaultFormState: RuleFormState = {
   method: "STANDARD",
   scope: "GLOBAL",
-  vendorProfileId: "",
   countryCode: "",
   priceModel: "FLAT",
   deliveryFeeAmount: 0,
@@ -68,8 +66,6 @@ const defaultFormState: RuleFormState = {
   etaMaxDays: 3,
   isActive: true,
 };
-
-const ALL_VENDORS_VALUE = "__ALL_VENDORS__";
 
 function isPickupMethod(method: DeliveryMethod) {
   return method === "PICKUP";
@@ -127,9 +123,10 @@ export default function AdminDeliveryRulesPage() {
   const locale = useLocale();
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [rules, setRules] = useState<DeliveryRuleRecord[]>([]);
-  const [vendors, setVendors] = useState<VendorOption[]>([]);
+  const [warehouseReady, setWarehouseReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [quickSetupBusy, setQuickSetupBusy] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [methodFilter, setMethodFilter] = useState<"ALL" | DeliveryMethod>("ALL");
@@ -142,6 +139,11 @@ export default function AdminDeliveryRulesPage() {
   const [form, setForm] = useState<RuleFormState>(defaultFormState);
   const [submitting, setSubmitting] = useState(false);
   const [actionRuleId, setActionRuleId] = useState<string | null>(null);
+  const [actionMenu, setActionMenu] = useState<{
+    rule: DeliveryRuleRecord;
+    x: number;
+    y: number;
+  } | null>(null);
 
   const displayDate = useCallback(
     (iso: string) => {
@@ -158,25 +160,30 @@ export default function AdminDeliveryRulesPage() {
     [locale]
   );
 
-  const activeVendors = useMemo(
-    () => vendors.filter((vendor) => !vendor.status || vendor.status === "ACTIVE"),
-    [vendors]
-  );
-
   const loadRules = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [rulesResponse, vendorsResponse] = await Promise.all([
+      const [rulesResponse, settingsResponse] = await Promise.all([
         fetchWithAuth("/api/admin/delivery-rules"),
-        fetchWithAuth("/api/admin/vendors"),
+        fetchWithAuth("/api/admin/platform-settings"),
       ]);
-      const [rulesData, vendorsData] = await Promise.all([
+      const [rulesData, settingsData] = await Promise.all([
         parseApiResponse<DeliveryRuleRecord[]>(rulesResponse),
-        parseApiResponse<VendorOption[]>(vendorsResponse),
+        parseApiResponse<{
+          warehouseAddressLine1: string | null;
+          warehouseCity: string | null;
+          warehouseCountry: string | null;
+        }>(settingsResponse),
       ]);
       setRules(rulesData);
-      setVendors(vendorsData);
+      setWarehouseReady(
+        Boolean(
+          settingsData.warehouseAddressLine1?.trim() &&
+            settingsData.warehouseCity?.trim() &&
+            settingsData.warehouseCountry?.trim()
+        )
+      );
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : t("loadError"));
       setRules([]);
@@ -185,11 +192,39 @@ export default function AdminDeliveryRulesPage() {
     }
   }, [t]);
 
+  const afStandardKmRule = useMemo(
+    () =>
+      rules.find(
+        (rule) =>
+          rule.method === "STANDARD" &&
+          rule.scope === "COUNTRY" &&
+          (rule.countryCode ?? "").toUpperCase() === "AF" &&
+          rule.priceModel === "PER_KM"
+      ) ?? null,
+    [rules]
+  );
+  const afStandardKmReady = Boolean(afStandardKmRule?.isActive);
+  const showAfSetupBanner = !warehouseReady || !afStandardKmReady;
+
   useEffect(() => {
     if (!authLoading && user) {
       void loadRules();
     }
   }, [authLoading, user, loadRules]);
+
+  useEffect(() => {
+    if (!actionMenu) return;
+    const close = () => setActionMenu(null);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    window.addEventListener("click", close);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [actionMenu]);
 
   const filteredRules = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -226,11 +261,14 @@ export default function AdminDeliveryRulesPage() {
   };
 
   const openEdit = (rule: DeliveryRuleRecord) => {
+    if (rule.scope === "VENDOR") {
+      setError(t("errors.shopFeeReadOnly"));
+      return;
+    }
     setEditingRule(rule);
     setForm({
       method: rule.method,
       scope: rule.scope,
-      vendorProfileId: rule.vendorProfileId ?? "",
       countryCode: rule.countryCode ?? "",
       priceModel: allowsPerKmPricing(rule.method) ? rule.priceModel : "FLAT",
       deliveryFeeAmount: minorToMajorDisplay(rule.baseFeeAmount) || 0,
@@ -244,19 +282,75 @@ export default function AdminDeliveryRulesPage() {
     setFormOpen(true);
   };
 
+  const setupAfghanistanKm = async () => {
+    if (afStandardKmReady) return;
+    setQuickSetupBusy(true);
+    setError(null);
+    try {
+      if (afStandardKmRule && !afStandardKmRule.isActive) {
+        const response = await fetchWithAuth(
+          `/api/admin/delivery-rules/${afStandardKmRule.id}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              method: afStandardKmRule.method,
+              scope: afStandardKmRule.scope,
+              vendorProfileId: afStandardKmRule.vendorProfileId ?? undefined,
+              countryCode: afStandardKmRule.countryCode ?? undefined,
+              priceModel: afStandardKmRule.priceModel,
+              baseFeeAmount: afStandardKmRule.baseFeeAmount,
+              transactionFeeAmountMinor: undefined,
+              perKmRateAmount: afStandardKmRule.perKmRateAmount ?? undefined,
+              freeAboveAmount: afStandardKmRule.freeAboveAmount ?? undefined,
+              etaMinDays: afStandardKmRule.etaMinDays,
+              etaMaxDays: afStandardKmRule.etaMaxDays,
+              isActive: true,
+            }),
+          }
+        );
+        await parseApiResponse(response);
+        await loadRules();
+        return;
+      }
+      const response = await fetchWithAuth("/api/admin/delivery-rules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          method: "STANDARD",
+          scope: "COUNTRY",
+          countryCode: "AF",
+          priceModel: "PER_KM",
+          baseFeeAmount: majorToMinor(AF_KM_DEFAULT_BASE_MAJOR),
+          perKmRateAmount: majorToMinor(AF_KM_DEFAULT_PER_KM_MAJOR),
+          etaMinDays: 1,
+          etaMaxDays: 3,
+          isActive: true,
+        }),
+      });
+      await parseApiResponse(response);
+      await loadRules();
+    } catch (setupError) {
+      setError(
+        setupError instanceof Error ? setupError.message : t("errors.afSetupFailed")
+      );
+    } finally {
+      setQuickSetupBusy(false);
+    }
+  };
+
   const openDetail = (rule: DeliveryRuleRecord) => {
     setSelectedRule(rule);
     setDetailOpen(true);
   };
 
-  const buildRulePayload = (vendorProfileId?: string) => {
+  const buildRulePayload = () => {
     const pickupBased = isPickupMethod(form.method);
     const perKmBased = allowsPerKmPricing(form.method) && form.priceModel === "PER_KM";
 
     return {
       method: form.method,
       scope: form.scope,
-      vendorProfileId: form.scope === "VENDOR" ? vendorProfileId : undefined,
       countryCode: form.scope === "COUNTRY" ? form.countryCode.trim().toUpperCase() : undefined,
       priceModel: pickupBased ? ("FLAT" as const) : perKmBased ? ("PER_KM" as const) : ("FLAT" as const),
       baseFeeAmount: pickupBased ? 0 : majorToMinor(Number(form.deliveryFeeAmount) || 0),
@@ -273,74 +367,6 @@ export default function AdminDeliveryRulesPage() {
     setSubmitting(true);
     setError(null);
     try {
-      if (
-        !editingRule &&
-        form.scope === "VENDOR" &&
-        form.vendorProfileId === ALL_VENDORS_VALUE
-      ) {
-        const vendorsWithoutRule = activeVendors.filter(
-          (vendor) =>
-            !rules.some(
-              (rule) =>
-                rule.scope === "VENDOR" &&
-                rule.method === form.method &&
-                rule.vendorProfileId === vendor.id
-            )
-        );
-
-        if (vendorsWithoutRule.length === 0) {
-          throw new Error(
-            t("errors.everyVendorHasRule", { method: methodLabel(form.method, t) })
-          );
-        }
-
-        let createdCount = 0;
-        const failures: string[] = [];
-
-        for (const vendor of vendorsWithoutRule) {
-          try {
-            const response = await fetchWithAuth("/api/admin/delivery-rules", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(buildRulePayload(vendor.id)),
-            });
-            await parseApiResponse(response);
-            createdCount += 1;
-          } catch (createError) {
-            const label = vendor.storeName ?? vendor.storeSlug ?? vendor.id;
-            failures.push(
-              createError instanceof Error
-                ? createError.message
-                : t("errors.labelFailed", { label })
-            );
-          }
-        }
-
-        if (createdCount === 0) {
-          throw new Error(failures[0] ?? t("errors.createVendorsFailed"));
-        }
-
-        setFormOpen(false);
-        setEditingRule(null);
-        setForm(defaultFormState);
-        await loadRules();
-
-        if (failures.length > 0) {
-          setError(
-            t("errors.createdPartial", {
-              created: createdCount,
-              failed: failures.length,
-              details: failures.slice(0, 3).join("; "),
-            })
-          );
-        }
-        return;
-      }
-
-      if (form.scope === "VENDOR" && !form.vendorProfileId) {
-        throw new Error(t("errors.selectVendor"));
-      }
-
       if (form.scope === "COUNTRY" && !form.countryCode.trim()) {
         throw new Error(t("errors.countryRequired"));
       }
@@ -359,10 +385,7 @@ export default function AdminDeliveryRulesPage() {
         }
       }
 
-      const payload = buildRulePayload(
-        form.scope === "VENDOR" ? form.vendorProfileId : undefined
-      );
-
+      const payload = buildRulePayload();
       const endpoint = editingRule
         ? `/api/admin/delivery-rules/${editingRule.id}`
         : "/api/admin/delivery-rules";
@@ -379,64 +402,6 @@ export default function AdminDeliveryRulesPage() {
       await loadRules();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : t("saveError"));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const vendorOverridesForMethod = useMemo(() => {
-    return rules.filter(
-      (rule) =>
-        rule.scope === "VENDOR" &&
-        rule.method === form.method &&
-        rule.isActive &&
-        rule.id !== editingRule?.id
-    );
-  }, [rules, form.method, editingRule]);
-
-  const deactivateVendorOverrides = async () => {
-    setSubmitting(true);
-    setError(null);
-    try {
-      const failures: string[] = [];
-      for (const rule of vendorOverridesForMethod) {
-        try {
-          const response = await fetchWithAuth(`/api/admin/delivery-rules/${rule.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              method: rule.method,
-              scope: rule.scope,
-              vendorProfileId: rule.vendorProfileId ?? undefined,
-              countryCode: rule.countryCode ?? undefined,
-              priceModel: rule.priceModel,
-              baseFeeAmount: rule.baseFeeAmount,
-              transactionFeeAmountMinor: undefined,
-              perKmRateAmount: rule.perKmRateAmount ?? undefined,
-              freeAboveAmount: rule.freeAboveAmount ?? undefined,
-              etaMinDays: rule.etaMinDays,
-              etaMaxDays: rule.etaMaxDays,
-              isActive: false,
-            }),
-          });
-          await parseApiResponse(response);
-        } catch (deactivateError) {
-          const label = rule.vendorStoreName ?? rule.vendorStoreSlug ?? rule.id;
-          failures.push(
-            deactivateError instanceof Error
-              ? `${label}: ${deactivateError.message}`
-              : t("errors.labelFailed", { label })
-          );
-        }
-      }
-      await loadRules();
-      if (failures.length > 0) {
-        setError(
-          t("errors.deactivateOverridesFailed", {
-            details: failures.slice(0, 3).join("; "),
-          })
-        );
-      }
     } finally {
       setSubmitting(false);
     }
@@ -468,35 +433,6 @@ export default function AdminDeliveryRulesPage() {
       await loadRules();
     } catch (toggleError) {
       setError(toggleError instanceof Error ? toggleError.message : t("toggleError"));
-    } finally {
-      setActionRuleId(null);
-    }
-  };
-
-  const deleteAllRules = async () => {
-    if (rules.length === 0) return;
-
-    const confirmed = window.confirm(t("deleteAllConfirm", { count: rules.length }));
-    if (!confirmed) return;
-
-    const typed = window.prompt(t("deleteAllTypeConfirm"));
-    if (typed?.trim().toUpperCase() !== "DELETE") {
-      setError(t("deleteAllCancelled"));
-      return;
-    }
-
-    setActionRuleId("__ALL__");
-    setError(null);
-    try {
-      const response = await fetchWithAuth("/api/admin/delivery-rules", {
-        method: "DELETE",
-      });
-      await parseApiResponse(response);
-      await loadRules();
-    } catch (deleteAllError) {
-      setError(
-        deleteAllError instanceof Error ? deleteAllError.message : t("deleteAllError")
-      );
     } finally {
       setActionRuleId(null);
     }
@@ -567,11 +503,13 @@ export default function AdminDeliveryRulesPage() {
         id: "vendorScope",
         cell: ({ row }) => {
           const rule = row.original;
-          return rule.scope === "GLOBAL"
-            ? t("scope.global")
-            : rule.scope === "COUNTRY"
-              ? `${t("scope.country")} (${rule.countryCode ?? "—"})`
-              : rule.vendorStoreName ?? rule.vendorStoreSlug ?? t("scope.vendor");
+          if (rule.scope === "GLOBAL") return t("scope.global");
+          if (rule.scope === "COUNTRY") {
+            return `${t("scope.country")} (${rule.countryCode ?? "—"})`;
+          }
+          return t("scope.shopFee", {
+            shop: rule.vendorStoreName ?? rule.vendorStoreSlug ?? t("scope.vendor"),
+          });
         },
       },
       {
@@ -586,39 +524,28 @@ export default function AdminDeliveryRulesPage() {
           const rule = row.original;
           return (
             <div
-              className="flex flex-wrap gap-2"
+              className="flex justify-end"
               onClick={(event) => event.stopPropagation()}
               onKeyDown={(event) => event.stopPropagation()}
             >
               <button
                 type="button"
-                onClick={() => openDetail(rule)}
-                className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
-              >
-                {t("details")}
-              </button>
-              <button
-                type="button"
-                onClick={() => openEdit(rule)}
-                className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
-              >
-                {t("edit")}
-              </button>
-              <button
-                type="button"
+                aria-label={t("openActions")}
                 disabled={actionRuleId === rule.id}
-                onClick={() => void toggleActive(rule)}
-                className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  const rect = event.currentTarget.getBoundingClientRect();
+                  const menuWidth = 180;
+                  const menuHeight = 180;
+                  setActionMenu({
+                    rule,
+                    x: Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8),
+                    y: Math.min(rect.bottom + 4, window.innerHeight - menuHeight - 8),
+                  });
+                }}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
               >
-                {rule.isActive ? t("deactivate") : t("activate")}
-              </button>
-              <button
-                type="button"
-                disabled={rule.isActive || actionRuleId === rule.id}
-                onClick={() => void deleteRule(rule)}
-                className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
-              >
-                {t("delete")}
+                <Ellipsis className="h-4 w-4" />
               </button>
             </div>
           );
@@ -638,39 +565,78 @@ export default function AdminDeliveryRulesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
-          <p className="mt-1 text-sm text-neutral-600">{t("subtitle")}</p>
+          <p className="mt-1 max-w-2xl text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 flex-nowrap items-center gap-2">
           <button
             type="button"
             onClick={() => void loadRules()}
-            className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-2.5 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
           >
             <RefreshCw className="h-4 w-4" />
-            {t("refresh")}
-          </button>
-          <button
-            type="button"
-            disabled={rules.length === 0 || actionRuleId === "__ALL__"}
-            onClick={() => void deleteAllRules()}
-            className="inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
-          >
-            <Trash2 className="h-4 w-4" />
-            {t("deleteAll")}
+            <span className="hidden sm:inline">{t("refresh")}</span>
           </button>
           <button
             type="button"
             onClick={openCreate}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-3 py-2 text-sm font-semibold text-white hover:bg-[#0a2847]"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#0f3460] px-3 py-2 text-sm font-semibold whitespace-nowrap text-white hover:bg-[#0a2847]"
           >
             <Plus className="h-4 w-4" />
             {t("createRule")}
           </button>
         </div>
       </div>
+
+      {showAfSetupBanner ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <p className="font-semibold">{t("setup.title")}</p>
+          <p className="mt-1 text-amber-900">{t("setup.body")}</p>
+          {!warehouseReady ? (
+            <p className="mt-2">
+              {t("setup.warehouseMissing")}{" "}
+              <Link href="/admin/settings" className="font-semibold underline">
+                {t("setup.openSettings")}
+              </Link>
+            </p>
+          ) : null}
+          {warehouseReady && afStandardKmRule && !afStandardKmRule.isActive ? (
+            <button
+              type="button"
+              disabled={quickSetupBusy}
+              onClick={() => void setupAfghanistanKm()}
+              className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+            >
+              {quickSetupBusy ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <MapPin className="h-3.5 w-3.5" />
+              )}
+              {t("setup.activateAfRule")}
+            </button>
+          ) : null}
+          {warehouseReady && !afStandardKmRule ? (
+            <button
+              type="button"
+              disabled={quickSetupBusy}
+              onClick={() => void setupAfghanistanKm()}
+              className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+            >
+              {quickSetupBusy ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <MapPin className="h-3.5 w-3.5" />
+              )}
+              {t("setup.createAfRule", {
+                base: AF_KM_DEFAULT_BASE_MAJOR.toFixed(2),
+                km: AF_KM_DEFAULT_PER_KM_MAJOR.toFixed(2),
+              })}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-2">
         <label className="relative min-w-[220px] flex-1 sm:max-w-sm">
@@ -776,48 +742,18 @@ export default function AdminDeliveryRulesPage() {
                     onChange={(event) =>
                       setForm((current) => ({
                         ...current,
-                        scope: event.target.value as DeliveryRuleScope,
-                        vendorProfileId: "",
+                        scope: event.target.value as AdminRuleScope,
                         countryCode: "",
                       }))
                     }
                   >
                     <option value="GLOBAL">{t("scopes.GLOBAL")}</option>
                     <option value="COUNTRY">{t("scopes.COUNTRY")}</option>
-                    <option value="VENDOR">{t("scopes.VENDOR")}</option>
                   </select>
+                  <span className="mt-1 block text-xs text-neutral-500">
+                    {t("form.scopeHint")}
+                  </span>
                 </label>
-
-                {form.scope === "VENDOR" ? (
-                  <label className="text-sm text-neutral-700 sm:col-span-2">
-                    {t("form.vendor")}
-                    <select
-                      className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
-                      value={form.vendorProfileId}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          vendorProfileId: event.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">{t("form.selectVendor")}</option>
-                      {!editingRule ? (
-                        <option value={ALL_VENDORS_VALUE}>{t("form.allVendors")}</option>
-                      ) : null}
-                      {activeVendors.map((vendor) => (
-                        <option key={vendor.id} value={vendor.id}>
-                          {vendor.storeName ?? vendor.storeSlug ?? vendor.id}
-                        </option>
-                      ))}
-                    </select>
-                    {!editingRule && form.vendorProfileId === ALL_VENDORS_VALUE ? (
-                      <span className="mt-1 block text-xs text-neutral-500">
-                        {t("form.allVendorsHint", { method: methodLabel(form.method, t) })}
-                      </span>
-                    ) : null}
-                  </label>
-                ) : null}
 
                 {form.scope === "COUNTRY" ? (
                   <label className="text-sm text-neutral-700 sm:col-span-2">
@@ -840,42 +776,10 @@ export default function AdminDeliveryRulesPage() {
                   </label>
                 ) : null}
 
-                {form.scope !== "VENDOR" && vendorOverridesForMethod.length > 0 ? (
-                  <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:col-span-2">
-                    <p className="font-semibold">
-                      {t("overrides.title", {
-                        count: vendorOverridesForMethod.length,
-                        method: methodLabel(form.method, t),
-                        scope: t(`scopes.${form.scope}`),
-                      })}
-                    </p>
-                    <p className="mt-1 text-xs text-amber-800">
-                      {t("overrides.body", {
-                        scopeLabel:
-                          form.scope === "GLOBAL"
-                            ? t("overrides.global")
-                            : t("overrides.country"),
-                        vendors: vendorOverridesForMethod
-                          .map(
-                            (rule) =>
-                              rule.vendorStoreName ??
-                              rule.vendorStoreSlug ??
-                              t("overrides.aVendor")
-                          )
-                          .join(", "),
-                      })}
-                    </p>
-                    <button
-                      type="button"
-                      disabled={submitting}
-                      onClick={() => void deactivateVendorOverrides()}
-                      className="mt-2 rounded-lg border border-amber-400 bg-white px-2.5 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-60"
-                    >
-                      {t("overrides.deactivate", {
-                        count: vendorOverridesForMethod.length,
-                      })}
-                    </button>
-                  </div>
+                {form.method === "EXPRESS" ? (
+                  <p className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-600 sm:col-span-2">
+                    {t("form.expressAdminNote")}
+                  </p>
                 ) : null}
 
                 {isPickupMethod(form.method) ? (
@@ -1140,6 +1044,58 @@ export default function AdminDeliveryRulesPage() {
               </div>
             </div>
           </div>
+        </div>
+      ) : null}
+
+      {actionMenu ? (
+        <div
+          className="fixed z-70 min-w-[180px] rounded-xl border border-neutral-200 bg-white py-1 shadow-lg"
+          style={{ left: actionMenu.x, top: actionMenu.y }}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="block w-full px-3 py-2 text-left text-sm text-neutral-800 hover:bg-neutral-50"
+            onClick={() => {
+              openDetail(actionMenu.rule);
+              setActionMenu(null);
+            }}
+          >
+            {t("details")}
+          </button>
+          {actionMenu.rule.scope !== "VENDOR" ? (
+            <button
+              type="button"
+              className="block w-full px-3 py-2 text-left text-sm text-neutral-800 hover:bg-neutral-50"
+              onClick={() => {
+                openEdit(actionMenu.rule);
+                setActionMenu(null);
+              }}
+            >
+              {t("edit")}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="block w-full px-3 py-2 text-left text-sm text-neutral-800 hover:bg-neutral-50"
+            onClick={() => {
+              void toggleActive(actionMenu.rule);
+              setActionMenu(null);
+            }}
+          >
+            {actionMenu.rule.isActive ? t("deactivate") : t("activate")}
+          </button>
+          <button
+            type="button"
+            disabled={actionMenu.rule.isActive}
+            className="block w-full px-3 py-2 text-left text-sm text-rose-700 hover:bg-rose-50 disabled:opacity-40"
+            onClick={() => {
+              void deleteRule(actionMenu.rule);
+              setActionMenu(null);
+            }}
+          >
+            {t("delete")}
+          </button>
         </div>
       ) : null}
     </div>
