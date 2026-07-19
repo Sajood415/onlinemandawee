@@ -35,7 +35,6 @@ type FormState = {
   subtitle: string;
   placement: HomeBannerPlacement;
   imageUrl: string;
-  imageMobileUrl: string;
   href: string;
   ctaLabel: string;
   isActive: boolean;
@@ -53,7 +52,6 @@ function emptyForm(): FormState {
     subtitle: "",
     placement: "HERO",
     imageUrl: "",
-    imageMobileUrl: "",
     href: "/products",
     ctaLabel: "",
     isActive: true,
@@ -94,14 +92,13 @@ export default function AdminBannersPage() {
   const [banners, setBanners] = useState<HomeBanner[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploadingField, setUploadingField] = useState<"desktop" | "mobile" | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<HomeBanner | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState<FormState>(() => emptyForm());
-  const desktopFileRef = useRef<HTMLInputElement>(null);
-  const mobileFileRef = useRef<HTMLInputElement>(null);
+  const imageFileRef = useRef<HTMLInputElement>(null);
 
   const placementLabel = useCallback(
     (placement: HomeBannerPlacement) =>
@@ -142,8 +139,8 @@ export default function AdminBannersPage() {
     if (!authLoading && user) void loadBanners();
   }, [authLoading, user, loadBanners]);
 
-  const uploadImage = async (file: File, field: "desktop" | "mobile") => {
-    setUploadingField(field);
+  const uploadImage = async (file: File) => {
+    setUploading(true);
     try {
       const body = new FormData();
       body.append("file", file);
@@ -152,17 +149,12 @@ export default function AdminBannersPage() {
         body,
       });
       const data = await parseApiResponse<{ url: string }>(res);
-      setForm((current) => ({
-        ...current,
-        ...(field === "desktop"
-          ? { imageUrl: data.url }
-          : { imageMobileUrl: data.url }),
-      }));
-      toast.success(field === "desktop" ? t("desktopUploaded") : t("mobileUploaded"));
+      setForm((current) => ({ ...current, imageUrl: data.url }));
+      toast.success(t("imageUploaded"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("uploadFailed"));
     } finally {
-      setUploadingField(null);
+      setUploading(false);
     }
   };
 
@@ -179,7 +171,6 @@ export default function AdminBannersPage() {
       subtitle: banner.subtitle ?? "",
       placement: banner.placement,
       imageUrl: banner.imageUrl,
-      imageMobileUrl: banner.imageMobileUrl ?? "",
       href: banner.href,
       ctaLabel: banner.ctaLabel ?? "",
       isActive: banner.isActive,
@@ -208,7 +199,7 @@ export default function AdminBannersPage() {
       subtitle: form.subtitle.trim() || null,
       placement: form.placement,
       imageUrl: form.imageUrl,
-      imageMobileUrl: form.imageMobileUrl.trim() || null,
+      imageMobileUrl: null,
       href: form.href.trim(),
       ctaLabel: form.ctaLabel.trim() || null,
       isActive: form.isActive,
@@ -501,30 +492,30 @@ export default function AdminBannersPage() {
             </div>
             <div className="sm:col-span-2">
               <span className="text-sm font-medium text-neutral-700">
-                {t("form.desktopImage")} *
+                {t("form.image")} *
               </span>
               <div className="mt-1 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
-                  disabled={uploadingField === "desktop"}
-                  onClick={() => desktopFileRef.current?.click()}
+                  disabled={uploading}
+                  onClick={() => imageFileRef.current?.click()}
                   className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
                 >
-                  {uploadingField === "desktop" ? (
+                  {uploading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <ImagePlus className="h-4 w-4" />
                   )}
-                  {t("form.uploadDesktop")}
+                  {t("form.uploadImage")}
                 </button>
                 <input
-                  ref={desktopFileRef}
+                  ref={imageFileRef}
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) void uploadImage(file, "desktop");
+                    if (file) void uploadImage(file);
                     e.target.value = "";
                   }}
                 />
@@ -533,48 +524,7 @@ export default function AdminBannersPage() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={form.imageUrl}
-                      alt={t("form.desktopPreviewAlt")}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                ) : null}
-              </div>
-            </div>
-            <div className="sm:col-span-2">
-              <span className="text-sm font-medium text-neutral-700">
-                {t("form.mobileImage")}
-              </span>
-              <div className="mt-1 flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  disabled={uploadingField === "mobile"}
-                  onClick={() => mobileFileRef.current?.click()}
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
-                >
-                  {uploadingField === "mobile" ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <ImagePlus className="h-4 w-4" />
-                  )}
-                  {t("form.uploadMobile")}
-                </button>
-                <input
-                  ref={mobileFileRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) void uploadImage(file, "mobile");
-                    e.target.value = "";
-                  }}
-                />
-                {form.imageMobileUrl ? (
-                  <div className="h-16 w-[120px] shrink-0 overflow-hidden rounded-lg border bg-neutral-50">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={form.imageMobileUrl}
-                      alt={t("form.mobilePreviewAlt")}
+                      alt={t("form.imagePreviewAlt")}
                       className="h-full w-full object-cover"
                     />
                   </div>
