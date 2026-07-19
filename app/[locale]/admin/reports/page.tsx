@@ -1,17 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Loader2, RefreshCw } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { DataTable } from "@/components/ui/data-table";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
 
 type ReportTab = "membership" | "salesByCategory";
+
+const TAB_FROM_QUERY: Record<string, ReportTab> = {
+  membership: "membership",
+  salesByCategory: "salesByCategory",
+  sales: "salesByCategory",
+};
 
 type MembershipInvoiceItem = {
   id: string;
@@ -104,8 +112,11 @@ function buildDefaultRange() {
   };
 }
 
-export default function AdminReportsPage() {
+function AdminReportsContent() {
   const t = useTranslations("AdminPages.reports");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
   const [tab, setTab] = useState<ReportTab>("salesByCategory");
   const [membershipReport, setMembershipReport] = useState<MembershipReport | null>(null);
@@ -113,6 +124,25 @@ export default function AdminReportsPage() {
   const [loading, setLoading] = useState(true);
   const [actingInvoiceId, setActingInvoiceId] = useState<string | null>(null);
   const [reactivatingVendorId, setReactivatingVendorId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fromQuery = searchParams.get("tab");
+    if (fromQuery && TAB_FROM_QUERY[fromQuery]) {
+      setTab(TAB_FROM_QUERY[fromQuery]);
+      return;
+    }
+    setTab("salesByCategory");
+  }, [searchParams]);
+
+  const selectTab = useCallback(
+    (next: ReportTab) => {
+      setTab(next);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", next);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
 
   const loadMembershipReport = useCallback(async () => {
     setLoading(true);
@@ -492,7 +522,7 @@ export default function AdminReportsPage() {
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => setTab("salesByCategory")}
+            onClick={() => selectTab("salesByCategory")}
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
               tab === "salesByCategory"
                 ? "bg-[#0f3460] text-white"
@@ -503,7 +533,7 @@ export default function AdminReportsPage() {
           </button>
           <button
             type="button"
-            onClick={() => setTab("membership")}
+            onClick={() => selectTab("membership")}
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
               tab === "membership"
                 ? "bg-[#0f3460] text-white"
@@ -649,5 +679,19 @@ export default function AdminReportsPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function AdminReportsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[45vh] items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+        </div>
+      }
+    >
+      <AdminReportsContent />
+    </Suspense>
   );
 }

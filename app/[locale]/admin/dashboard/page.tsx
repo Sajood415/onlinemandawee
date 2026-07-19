@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import {
   AlertCircle,
   Building2,
+  CreditCard,
   DollarSign,
   Gift,
   RefreshCw,
@@ -227,28 +228,6 @@ export default function AdminDashboardPage() {
         ) : (
           <>
             <MetricTile
-              accentClass="bg-emerald-600"
-              icon={<DollarSign className="h-5 w-5" />}
-              label={t("tiles.netRevenue")}
-              value={formatMoney(overview.netRevenueAmount)}
-              sub={t("tiles.netRevenueSub")}
-            />
-            <MetricTile
-              href="/admin/orders"
-              accentClass="bg-[#0F3460]"
-              icon={<ShoppingBag className="h-5 w-5" />}
-              label={t("tiles.orders")}
-              value={ordersInPeriod.toLocaleString(locale)}
-              sub={t("tiles.ordersSub")}
-            />
-            <MetricTile
-              accentClass="bg-indigo-500"
-              icon={<DollarSign className="h-5 w-5" />}
-              label={t("tiles.sales")}
-              value={formatMoney(overview.grossMerchandiseValue)}
-              sub={t("tiles.salesSub")}
-            />
-            <MetricTile
               accentClass="bg-sky-600"
               icon={<DollarSign className="h-5 w-5" />}
               label={t("tiles.fees")}
@@ -256,12 +235,12 @@ export default function AdminDashboardPage() {
               sub={t("tiles.feesSub")}
             />
             <MetricTile
-              href="/admin/reports"
+              href="/admin/reports?tab=membership"
               accentClass="bg-amber-500"
-              icon={<DollarSign className="h-5 w-5" />}
-              label={t("tiles.subscriptions")}
+              icon={<CreditCard className="h-5 w-5" />}
+              label={t("tiles.membershipFees")}
               value={formatMoney(overview.totalSubscriptionRevenue)}
-              sub={t("tiles.subscriptionsSub")}
+              sub={t("tiles.membershipFeesSub")}
             />
             <MetricTile
               href="/admin/gift-requests"
@@ -272,6 +251,29 @@ export default function AdminDashboardPage() {
               sub={t("tiles.giftsSub", {
                 count: overview.paidGiftRequestsCount.toLocaleString(locale),
               })}
+            />
+            <MetricTile
+              accentClass="bg-emerald-600"
+              icon={<DollarSign className="h-5 w-5" />}
+              label={t("tiles.allIncome")}
+              value={formatMoney(overview.netRevenueAmount)}
+              sub={t("tiles.allIncomeSub")}
+            />
+            <MetricTile
+              href="/admin/orders"
+              accentClass="bg-[#0F3460]"
+              icon={<ShoppingBag className="h-5 w-5" />}
+              label={t("tiles.orders")}
+              value={ordersInPeriod.toLocaleString(locale)}
+              sub={t("tiles.ordersSub")}
+            />
+            <MetricTile
+              href="/admin/reports?tab=salesByCategory"
+              accentClass="bg-indigo-500"
+              icon={<DollarSign className="h-5 w-5" />}
+              label={t("tiles.sales")}
+              value={formatMoney(overview.grossMerchandiseValue)}
+              sub={t("tiles.salesSub")}
             />
             <MetricTile
               href="/admin/vendors"

@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState, type ReactNode } from "react";
+import { Suspense, useMemo, useState, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
 import { LogOut, PanelLeft, X } from "lucide-react";
 
 import { useLocale, useTranslations } from "next-intl";
@@ -28,15 +29,66 @@ type RoleDashboardLayoutProps = {
 const navScrollClass =
   "min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain flex flex-col divide-y divide-white/15 border-t border-white/10 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20";
 
-function isSidebarItemActive(pathname: string, href: string) {
-  if (pathname === href || pathname.endsWith(href)) return true;
-  if (/\/dashboard\/?$/.test(href)) return false;
-  if (href === "/account") return false;
-  const base = href.replace(/\/$/, "");
+function parseNavHref(href: string) {
+  const queryIndex = href.indexOf("?");
+  if (queryIndex === -1) {
+    return { path: href, query: null as URLSearchParams | null };
+  }
+  return {
+    path: href.slice(0, queryIndex),
+    query: new URLSearchParams(href.slice(queryIndex + 1)),
+  };
+}
+
+function pathMatchesSidebarHref(pathname: string, path: string) {
+  if (pathname === path || pathname.endsWith(path)) return true;
+  if (/\/dashboard\/?$/.test(path)) return false;
+  if (path === "/account") return false;
+  const base = path.replace(/\/$/, "");
   return pathname.startsWith(`${base}/`);
 }
 
-export function RoleDashboardLayout({
+function queryMatches(current: URLSearchParams, required: URLSearchParams) {
+  return [...required.entries()].every(([key, value]) => current.get(key) === value);
+}
+
+function isSidebarItemActive(
+  pathname: string,
+  search: string,
+  href: string,
+  allHrefs: string[]
+) {
+  const { path, query } = parseNavHref(href);
+  if (!pathMatchesSidebarHref(pathname, path)) return false;
+
+  const current = new URLSearchParams(search.replace(/^\?/, ""));
+
+  if (query && query.size > 0) {
+    if (queryMatches(current, query)) return true;
+    // Treat missing tab as the default sales report when that is the nav target.
+    if (
+      query.get("tab") === "salesByCategory" &&
+      !current.get("tab") &&
+      (path === "/admin/reports" || path.endsWith("/admin/reports"))
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  const moreSpecificMatch = allHrefs.some((otherHref) => {
+    if (otherHref === href) return false;
+    const other = parseNavHref(otherHref);
+    if (other.path !== path || !other.query || other.query.size === 0) {
+      return false;
+    }
+    return queryMatches(current, other.query);
+  });
+
+  return !moreSpecificMatch;
+}
+
+function RoleDashboardLayoutInner({
   topBarTitle,
   items,
   children,
@@ -48,9 +100,12 @@ export function RoleDashboardLayout({
   const { availableLocales } = usePlatformConfig();
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { logout } = useAuth();
   const isRtl = locale === "ps" || locale === "fa-AF";
+  const search = searchParams.toString();
+  const allHrefs = useMemo(() => items.map((item) => item.href), [items]);
 
   const languageOptions = useMemo(
     () =>
@@ -111,10 +166,10 @@ export function RoleDashboardLayout({
 
         <nav className={navScrollClass}>
           {items.map((item) => {
-            const active = isSidebarItemActive(pathname, item.href);
+            const active = isSidebarItemActive(pathname, search, item.href, allHrefs);
             return (
               <Link
-                key={item.label}
+                key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
                 aria-current={active ? "page" : undefined}
@@ -183,5 +238,13 @@ export function RoleDashboardLayout({
         </main>
       </div>
     </div>
+  );
+}
+
+export function RoleDashboardLayout(props: RoleDashboardLayoutProps) {
+  return (
+    <Suspense fallback={null}>
+      <RoleDashboardLayoutInner {...props} />
+    </Suspense>
   );
 }

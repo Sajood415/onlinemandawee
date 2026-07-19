@@ -3,6 +3,8 @@
 import { useTranslations } from "next-intl";
 import {
   Banknote,
+  BarChart3,
+  CreditCard,
   Gift,
   ImageIcon,
   LayoutDashboard,
@@ -40,6 +42,16 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
         { label: t("nav.payouts"), href: "/admin/payouts", icon: <Wallet size={16} /> },
         { label: t("nav.warehouse"), href: "/admin/warehouse", icon: <Warehouse size={16} /> },
         { label: t("nav.disputes"), href: "/admin/disputes", icon: <Scale size={16} /> },
+        {
+          label: t("nav.reports"),
+          href: "/admin/reports?tab=salesByCategory",
+          icon: <BarChart3 size={16} />,
+        },
+        {
+          label: t("nav.membershipFees"),
+          href: "/admin/reports?tab=membership",
+          icon: <CreditCard size={16} />,
+        },
         { label: t("nav.categories"), href: "/admin/categories", icon: <Tag size={16} /> },
         {
           label: t("nav.subCategories"),
