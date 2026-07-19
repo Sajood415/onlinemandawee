@@ -994,7 +994,7 @@
       "title": "Orders",
       "subtitle": "New orders appear here. Open one, then pack and send.",
       "refresh": "Refresh",
-      "searchPlaceholder": "Search order #, customer, or phone…",
+      "searchPlaceholder": "Search order #, customer, phone, or tracking…",
       "allStatuses": "All statuses",
       "loading": "Loading orders…",
       "loadError": "Could not load orders.",
@@ -2838,6 +2838,8 @@
       "title": "Standard Delivery Warehouse",
       "subtitle": "For Standard delivery orders: receive vendor packages at the warehouse, combine them into one shipment, then deliver to the customer.",
       "refresh": "Refresh",
+      "search": "Search",
+      "searchPlaceholder": "Order # or tracking number…",
       "errors": {
         "loadFailed": "Could not load warehouse lists.",
         "actionFailed": "That warehouse action failed."
@@ -3003,7 +3005,7 @@
       "detailLoadError": "Failed to load order details.",
       "refreshDetailError": "Failed to refresh order details.",
       "search": "Search",
-      "searchPlaceholder": "Order #, email, phone, customer name",
+      "searchPlaceholder": "Order #, email, phone, customer, or tracking",
       "vendor": "Vendor",
       "allVendors": "All vendors",
       "orderStatus": "Order status",

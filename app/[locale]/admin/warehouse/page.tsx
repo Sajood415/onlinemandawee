@@ -94,9 +94,16 @@ export default function AdminWarehousePage() {
   const t = useTranslations("AdminPages.warehouse");
   const { isLoading: authLoading, user } = useDashboardGuard("ADMIN");
 
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [inboundStatusFilter, setInboundStatusFilter] = useState("");
   const [batchStatusFilter, setBatchStatusFilter] = useState("");
   const [outboundStatusFilter, setOutboundStatusFilter] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const [inboundData, setInboundData] = useState<PagedResponse<InboundShipment> | null>(null);
   const [batchData, setBatchData] = useState<PagedResponse<ConsolidationBatch> | null>(null);
@@ -136,20 +143,23 @@ export default function AdminWarehousePage() {
   const inboundQuery = useMemo(() => {
     const params = new URLSearchParams({ page: "1", pageSize: "50" });
     if (inboundStatusFilter) params.set("status", inboundStatusFilter);
+    if (debouncedSearch) params.set("search", debouncedSearch);
     return params.toString();
-  }, [inboundStatusFilter]);
+  }, [inboundStatusFilter, debouncedSearch]);
 
   const batchQuery = useMemo(() => {
     const params = new URLSearchParams({ page: "1", pageSize: "50" });
     if (batchStatusFilter) params.set("status", batchStatusFilter);
+    if (debouncedSearch) params.set("search", debouncedSearch);
     return params.toString();
-  }, [batchStatusFilter]);
+  }, [batchStatusFilter, debouncedSearch]);
 
   const outboundQuery = useMemo(() => {
     const params = new URLSearchParams({ page: "1", pageSize: "50" });
     if (outboundStatusFilter) params.set("status", outboundStatusFilter);
+    if (debouncedSearch) params.set("search", debouncedSearch);
     return params.toString();
-  }, [outboundStatusFilter]);
+  }, [outboundStatusFilter, debouncedSearch]);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -208,15 +218,15 @@ export default function AdminWarehousePage() {
 
   const inboundPagination = useClientPagination(inboundData?.items ?? [], {
     initialPageSize: 10,
-    resetKey: inboundStatusFilter,
+    resetKey: `${inboundStatusFilter}|${debouncedSearch}`,
   });
   const batchPagination = useClientPagination(batchData?.items ?? [], {
     initialPageSize: 10,
-    resetKey: batchStatusFilter,
+    resetKey: `${batchStatusFilter}|${debouncedSearch}`,
   });
   const outboundPagination = useClientPagination(outboundData?.items ?? [], {
     initialPageSize: 10,
-    resetKey: outboundStatusFilter,
+    resetKey: `${outboundStatusFilter}|${debouncedSearch}`,
   });
 
   if (authLoading || !user) {
@@ -229,19 +239,33 @@ export default function AdminWarehousePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
           <p className="mt-1 text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => void loadAll()}
-          className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-        >
-          <RefreshCw className="h-4 w-4" />
-          {t("refresh")}
-        </button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-end">
+          <div className="w-full sm:w-72">
+            <label className={LABEL_CLASS} htmlFor="warehouse-search">
+              {t("search")}
+            </label>
+            <input
+              id="warehouse-search"
+              className={INPUT_CLASS}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t("searchPlaceholder")}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => void loadAll()}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+          >
+            <RefreshCw className="h-4 w-4" />
+            {t("refresh")}
+          </button>
+        </div>
       </div>
 
       <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">

@@ -165,6 +165,31 @@ function buildAdminOrderWhere(filters: AdminOrderListFilters): Prisma.OrderWhere
             },
           },
         },
+        {
+          outboundShipment: {
+            is: {
+              trackingRef: { contains: search, mode: "insensitive" },
+            },
+          },
+        },
+        {
+          vendorOrders: {
+            some: {
+              trackingRef: { contains: search, mode: "insensitive" },
+            },
+          },
+        },
+        {
+          vendorOrders: {
+            some: {
+              inboundShipment: {
+                is: {
+                  trackingRef: { contains: search, mode: "insensitive" },
+                },
+              },
+            },
+          },
+        },
       ],
     });
   }

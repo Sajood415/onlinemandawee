@@ -14,6 +14,7 @@ export const GET = withErrorHandling(
       page: query.page,
       pageSize: query.pageSize,
       status: query.status,
+      search: query.search,
     });
     return NextResponse.json({ data: result }, { status: 200 });
   })

@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client";
+
 import { prisma } from "@/lib/db/prisma";
 import {
   aggregateOrderLineItemsByProduct,
@@ -8,6 +10,7 @@ import {
 type PagingInput = {
   page: number;
   pageSize: number;
+  search?: string;
 };
 
 function buildPagination<T>(items: T[], total: number, page: number, pageSize: number) {
@@ -22,11 +25,37 @@ function buildPagination<T>(items: T[], total: number, page: number, pageSize: n
   };
 }
 
+function trackingSearchFilter(search?: string) {
+  const q = search?.trim();
+  if (!q) return null;
+  return {
+    contains: q,
+    mode: "insensitive" as const,
+  };
+}
+
 export class AdminWarehouseService {
   async listInboundShipments(input: {
     status?: "PENDING_SHIPMENT" | "INBOUND_SHIPPED" | "RECEIVED";
   } & PagingInput) {
-    const where = input.status ? { status: input.status } : {};
+    const tracking = trackingSearchFilter(input.search);
+    const and: Prisma.VendorInboundShipmentWhereInput[] = [];
+    if (input.status) and.push({ status: input.status });
+    if (tracking) {
+      and.push({
+        OR: [
+          { trackingRef: tracking },
+          { order: { is: { orderNumber: tracking } } },
+          {
+            orderVendor: {
+              is: { trackingRef: tracking },
+            },
+          },
+        ],
+      });
+    }
+    const where: Prisma.VendorInboundShipmentWhereInput =
+      and.length > 0 ? { AND: and } : {};
     const skip = (input.page - 1) * input.pageSize;
 
     const [total, rows] = await Promise.all([
@@ -127,7 +156,28 @@ export class AdminWarehouseService {
       | "DELIVERED"
       | "CANCELLED";
   } & PagingInput) {
-    const where = input.status ? { status: input.status } : {};
+    const tracking = trackingSearchFilter(input.search);
+    const and: Prisma.ConsolidationBatchWhereInput[] = [];
+    if (input.status) and.push({ status: input.status });
+    if (tracking) {
+      and.push({
+        OR: [
+          { order: { is: { orderNumber: tracking } } },
+          {
+            outboundShipment: {
+              is: { trackingRef: tracking },
+            },
+          },
+          {
+            inboundShipments: {
+              some: { trackingRef: tracking },
+            },
+          },
+        ],
+      });
+    }
+    const where: Prisma.ConsolidationBatchWhereInput =
+      and.length > 0 ? { AND: and } : {};
     const skip = (input.page - 1) * input.pageSize;
 
     const [total, rows] = await Promise.all([
@@ -203,7 +253,19 @@ export class AdminWarehouseService {
   async listOutboundShipments(input: {
     status?: "CONSOLIDATED" | "OUTBOUND_SHIPPED" | "DELIVERED";
   } & PagingInput) {
-    const where = input.status ? { status: input.status } : {};
+    const tracking = trackingSearchFilter(input.search);
+    const and: Prisma.ConsolidatedOutboundShipmentWhereInput[] = [];
+    if (input.status) and.push({ status: input.status });
+    if (tracking) {
+      and.push({
+        OR: [
+          { trackingRef: tracking },
+          { order: { is: { orderNumber: tracking } } },
+        ],
+      });
+    }
+    const where: Prisma.ConsolidatedOutboundShipmentWhereInput =
+      and.length > 0 ? { AND: and } : {};
     const skip = (input.page - 1) * input.pageSize;
 
     const [total, rows] = await Promise.all([

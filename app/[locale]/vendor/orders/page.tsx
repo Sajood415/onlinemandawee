@@ -987,6 +987,9 @@ export default function VendorOrdersPage() {
       o.order.orderNumber.toLowerCase().includes(q) ||
       o.order.shippingFullName.toLowerCase().includes(q) ||
       o.order.shippingPhone.toLowerCase().includes(q) ||
+      (o.trackingRef ?? "").toLowerCase().includes(q) ||
+      (o.warehouse.inboundShipment?.trackingRef ?? "").toLowerCase().includes(q) ||
+      (o.warehouse.outboundShipment?.trackingRef ?? "").toLowerCase().includes(q) ||
       o.items.some(
         (item) =>
           item.productName.toLowerCase().includes(q) ||
