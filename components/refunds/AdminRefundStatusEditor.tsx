@@ -46,11 +46,13 @@ export function AdminRefundStatusEditor({
         body: JSON.stringify({ status: nextStatus }),
       });
       await parseApiResponse(response);
-      toast.success("Dispute status updated");
+      toast.success(t("adminStatus.updateSuccess"));
       onSuccess();
     } catch (error) {
       setStatus(refundCase.status);
-      toast.error(error instanceof Error ? error.message : "Could not update status");
+      toast.error(
+        error instanceof Error ? error.message : t("adminStatus.updateError")
+      );
     } finally {
       setUpdating(false);
     }
@@ -64,7 +66,7 @@ export function AdminRefundStatusEditor({
         onChange={(event) =>
           void handleStatusChange(event.target.value as RefundCaseStatus)
         }
-        aria-label="Dispute status"
+        aria-label={t("adminStatus.title")}
         className={
           variant === "inline"
             ? "w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 pe-9 text-sm font-semibold outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
@@ -87,7 +89,7 @@ export function AdminRefundStatusEditor({
     return (
       <div className="flex flex-col items-end gap-1">
         <label className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
-          Workflow status
+          {t("adminStatus.workflow")}
         </label>
         {select}
       </div>
@@ -97,12 +99,10 @@ export function AdminRefundStatusEditor({
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-4">
       <label className="mb-2 block text-sm font-semibold text-neutral-900">
-        Dispute status
+        {t("adminStatus.title")}
       </label>
       {select}
-      <p className="mt-2 text-xs text-neutral-500">
-        Override the workflow status when a case is stuck or needs to be reopened.
-      </p>
+      <p className="mt-2 text-xs text-neutral-500">{t("adminStatus.hint")}</p>
     </div>
   );
 }

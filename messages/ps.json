@@ -2404,15 +2404,15 @@
       "approved": "تایید شوي: {amount}",
       "timeline": "مهالویش",
       "opened": "پرانیستل شوی: {date}",
-      "vendorDue": "د پلورونکي نیټه: {date}",
-      "escalated": "Mandawee ته لیږل شوی: {date}",
+      "vendorDue": "د پلورنځي ځواب تر: {date}",
+      "escalated": "له Mandawee سره له: {date}",
       "resolved": "حل شوی: {date}",
       "customerDescription": "د پیرودونکي یادښت",
       "vendorExplanation": "ستاسو ځواب",
       "customer": "پیرودونکی",
       "vendor": "پلورونکی",
       "storeFallback": "پلورنځی",
-      "viewVendorProfile": "د پلورونکي پروفایل وګورئ",
+      "viewVendorProfile": "پلورنځی وګورئ",
       "evidence": "عکسونه او فایلونه",
       "noEvidence": "هیڅ فایل نه دی پورته شوی.",
       "viewFile": "فایل پرانیزئ",
@@ -2420,9 +2420,13 @@
       "escalating": "لیږل کېږي…",
       "escalateSuccess": "Mandawee ته ولیږل شو",
       "escalateError": "Mandawee ته ونه لیږل شو",
-      "contactVendorOnly": "دا د بهرني پلورونکي محصول دی. لاندې پیغامونو کې له پلورونکي سره خبرې وکړئ — آنلاین منداوی دا بیرته ورکول نه اخلي.",
+      "contactVendorOnly": "دا د بهرني پلورنځي محصول دی. لاندې پیغامونه وکاروئ — Mandawee دا بیرته ورکول نه نیسي.",
       "finalDecision": "وروستی پریکړه",
-      "recorded": "ثبت شوی {date}"
+      "recorded": "ثبت شوی {date}",
+      "shopReply": "د پلورنځي ځواب",
+      "shop": "پلورنځی",
+      "adminControls": "د اډمین کنټرول",
+      "needsDecision": "دا قضیه ستاسو پریکړې ته اړتیا لري."
     },
     "response": {
       "title": "ستاسو ځواب",
@@ -2461,6 +2465,37 @@
         "VENDOR": "پلورونکی",
         "ADMIN": "Mandawee"
       }
+    },
+    "adminDecision": {
+      "title": "ستاسو پریکړه",
+      "approveFull": "بشپړ ومنئ",
+      "partial": "برخه بیرته",
+      "reject": "رد کړئ",
+      "approvedAmount": "منل شوی مقدار",
+      "note": "یادښت",
+      "noteOptional": "یادښت (اختیاري)",
+      "outcome": "پریکړه",
+      "submit": "پریکړه خوندي کړئ",
+      "submitting": "ساتل کېږي…",
+      "save": "پریکړه خوندي کړئ",
+      "success": "پریکړه خوندي شوه",
+      "error": "پریکړه خوندي نشوه",
+      "updateSuccess": "پریکړه تازه شوه",
+      "updateError": "پریکړه تازه نشوه",
+      "updateHint": "دا ثبت شوې پریکړه تازه کوي. بانک/کارت بیرته ورکول په اوتومات ډول نه بدلیږي.",
+      "confirmTitle": "دا پریکړه خوندي کړئ؟",
+      "confirmBodyApprove": "بشپړ بیرته ورکول {amount} ومنئ.",
+      "confirmBodyPartial": "برخه بیرته ورکول {amount} ومنئ.",
+      "confirmBodyReject": "دا د بیرته ورکولو غوښتنه رد کړئ.",
+      "confirmYes": "هو، خوندي کړئ",
+      "confirmCancel": "پرېږدئ"
+    },
+    "adminStatus": {
+      "title": "د قضیې حالت",
+      "workflow": "د قضیې حالت",
+      "hint": "یوازې هغه وخت حالت بدل کړئ چې قضیه بندی وي یا بیا پرانیستل کیږي.",
+      "updateSuccess": "حالت تازه شو",
+      "updateError": "حالت تازه نشو"
     }
   },
   "AdminPages": {
@@ -3136,23 +3171,25 @@
     },
     "disputes": {
       "title": "شخړې",
-      "subtitle": "لوړې شوې د بیرته ورکولو قضیې وګورئ او وروستي پرېکړې ثبت کړئ.",
-      "escalateOverdue": "ناوخته لوړ کړئ",
+      "subtitle": "د بیرته ورکولو قضیې. د Mandawee پلورنځي ناوخته قضیې په خپله دلته راځي او تاسو ته برېښنالیک لیږي.",
       "refresh": "تازه کول",
       "searchPlaceholder": "فرمایش، پیرودونکی، محصول، دلیل ولټوئ…",
-      "overdueOnly": "یوازې د پلورونکي ناوخته SLA",
-      "all": "ټول",
-      "empty": "هیڅ شخړه ستاسو فلټرونو سره سمون نه خوري.",
-      "vendorFallback": "پلورونکی",
-      "backToQueue": "د شخړو کتار ته بیرته",
+      "overdueOnly": "یوازې ناوخته ځوابونه",
+      "empty": "په دې ټب کې هیڅ نشته.",
+      "shopFallback": "پلورنځی",
+      "backToQueue": "شخړو ته بیرته",
       "loadError": "شخړې پورته نشوې",
-      "escalateError": "لوړول ناکام شو",
-      "escalated": "{count} ناوخته قضیه لوړه شوه",
-      "escalatedPlural": "{count} ناوخته قضیې لوړې شوې",
-      "statuses": {
-        "WAITING_VENDOR": "د پلورونکي انتظار",
-        "ESCALATED_ADMIN": "ادارې ته لوړه شوې",
-        "RESOLVED": "حل شوې"
+      "tabs": {
+        "needsYou": "تاسو ته اړتیا",
+        "waitingShop": "پلورنځی په انتظار",
+        "done": "بشپړ",
+        "all": "ټول"
+      },
+      "tabsHelp": {
+        "needsYou": "قضیې چې د Mandawee پریکړې ته انتظار کوي. ناوخته یې په خپله دلته راځي.",
+        "waitingShop": "لا هم له پلورنځي سره — د ځواب وخت لري.",
+        "done": "بشپړې شوې قضیې.",
+        "all": "ټولې شخړې."
       }
     },
     "banners": {

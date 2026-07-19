@@ -14,33 +14,42 @@ import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
 
-const STATUS_FILTERS: Array<"ALL" | RefundCaseStatus> = [
-  "ALL",
-  "WAITING_VENDOR",
-  "ESCALATED_ADMIN",
-  "RESOLVED",
-];
+type DisputeTab = "needsYou" | "waitingShop" | "done" | "all";
+
+const TAB_TO_STATUS: Record<DisputeTab, "ALL" | RefundCaseStatus> = {
+  needsYou: "ESCALATED_ADMIN",
+  waitingShop: "WAITING_VENDOR",
+  done: "RESOLVED",
+  all: "ALL",
+};
 
 export default function AdminDisputesPage() {
   const locale = useLocale();
   const t = useTranslations("AdminPages.disputes");
   const { isLoading: authLoading } = useDashboardGuard("ADMIN");
   const [items, setItems] = useState<RefundCaseListItem[]>([]);
-  const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>("ESCALATED_ADMIN");
+  const [tab, setTab] = useState<DisputeTab>("needsYou");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [overdueOnly, setOverdueOnly] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [escalating, setEscalating] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [pagination, setPagination] = useState<RefundListResponse["pagination"] | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const statusFilter = TAB_TO_STATUS[tab];
 
   const loadDisputes = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
       if (statusFilter !== "ALL") params.set("status", statusFilter);
-      if (searchQuery.trim()) params.set("search", searchQuery.trim());
+      if (debouncedSearch) params.set("search", debouncedSearch);
       if (overdueOnly) params.set("overdueOnly", "true");
       const response = await fetchWithAuth(`/api/admin/refunds?${params.toString()}`);
       const data = await parseApiResponse<RefundListResponse>(response);
@@ -51,134 +60,122 @@ export default function AdminDisputesPage() {
     } finally {
       setLoading(false);
     }
-  }, [overdueOnly, page, pageSize, searchQuery, statusFilter, t]);
+  }, [debouncedSearch, overdueOnly, page, pageSize, statusFilter, t]);
 
   useEffect(() => {
     if (!authLoading) void loadDisputes();
   }, [authLoading, loadDisputes]);
 
-  const handleEscalateOverdue = async () => {
-    setEscalating(true);
-    try {
-      const response = await fetchWithAuth("/api/admin/refunds/escalate-overdue", {
-        method: "POST",
-      });
-      const data = await parseApiResponse<{ count: number }>(response);
-      toast.success(
-        data.count === 1
-          ? t("escalated", { count: data.count })
-          : t("escalatedPlural", { count: data.count })
-      );
-      await loadDisputes();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("escalateError"));
-    } finally {
-      setEscalating(false);
-    }
-  };
-
   const empty = useMemo(() => !loading && items.length === 0, [items.length, loading]);
 
+  const tabs: Array<{ id: DisputeTab; label: string }> = [
+    { id: "needsYou", label: t("tabs.needsYou") },
+    { id: "waitingShop", label: t("tabs.waitingShop") },
+    { id: "done", label: t("tabs.done") },
+    { id: "all", label: t("tabs.all") },
+  ];
+
   return (
-    <div className="space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold text-neutral-900">{t("title")}</h1>
-            <p className="mt-1 text-sm text-neutral-600">
-              {t("subtitle")}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => void handleEscalateOverdue()}
-              disabled={escalating}
-              className="inline-flex items-center gap-2 rounded-lg border border-orange-300 px-3 py-2 text-sm font-semibold text-orange-700 hover:bg-orange-50 disabled:opacity-50"
-            >
-              {escalating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {t("escalateOverdue")}
-            </button>
-            <button
-              type="button"
-              onClick={() => void loadDisputes()}
-              className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
-            >
-              <RefreshCw className="h-4 w-4" />
-              {t("refresh")}
-            </button>
-          </div>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+          <p className="mt-1 max-w-2xl text-sm text-neutral-600">{t("subtitle")}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void loadDisputes()}
+          className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+        >
+          <RefreshCw className="h-4 w-4" />
+          {t("refresh")}
+        </button>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+        <div
+          role="tablist"
+          aria-label={t("title")}
+          className="flex gap-0 overflow-x-auto border-b border-neutral-200"
+        >
+          {tabs.map((item) => {
+            const active = tab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => {
+                  setPage(1);
+                  setTab(item.id);
+                }}
+                className={`relative inline-flex shrink-0 items-center gap-2 whitespace-nowrap px-5 py-3.5 text-sm font-semibold transition sm:px-6 ${
+                  active
+                    ? "text-[#0f3460]"
+                    : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800"
+                }`}
+              >
+                {item.label}
+                {active ? (
+                  <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-[#0f3460] sm:inset-x-4" />
+                ) : null}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
-            <input
-              value={searchQuery}
-              onChange={(event) => {
-                setPage(1);
-                setSearchQuery(event.target.value);
-              }}
-              placeholder={t("searchPlaceholder")}
-              className="w-full rounded-lg border border-neutral-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
+        <div className="space-y-3 border-b border-neutral-100 px-4 py-3">
+          <p className="text-sm text-neutral-600">{t(`tabsHelp.${tab}`)}</p>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+              <input
+                value={searchQuery}
+                onChange={(event) => {
+                  setPage(1);
+                  setSearchQuery(event.target.value);
+                }}
+                placeholder={t("searchPlaceholder")}
+                className="w-full rounded-lg border border-neutral-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
+              <input
+                type="checkbox"
+                checked={overdueOnly}
+                onChange={(event) => {
+                  setPage(1);
+                  setOverdueOnly(event.target.checked);
+                }}
+              />
+              {t("overdueOnly")}
+            </label>
           </div>
-          <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
-            <input
-              type="checkbox"
-              checked={overdueOnly}
-              onChange={(event) => {
-                setPage(1);
-                setOverdueOnly(event.target.checked);
-              }}
-            />
-            {t("overdueOnly")}
-          </label>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {STATUS_FILTERS.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => {
-                setPage(1);
-                setStatusFilter(option);
-              }}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-                statusFilter === option ? "bg-primary text-white" : "bg-neutral-100 text-neutral-700"
-              }`}
-            >
-              {option === "ALL"
-                ? t("all")
-                : t.has(`statuses.${option}`)
-                  ? t(`statuses.${option}`)
-                  : option.replaceAll("_", " ")}
-            </button>
-          ))}
         </div>
 
         {authLoading || loading ? (
-          <div className="flex justify-center py-12">
+          <div className="flex min-h-[220px] items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
           </div>
         ) : empty ? (
-          <div className="rounded-xl border border-dashed border-neutral-300 bg-white px-6 py-12 text-center">
+          <div className="px-6 py-12 text-center">
             <p className="text-sm text-neutral-500">{t("empty")}</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="divide-y divide-neutral-100">
             {items.map((item) => (
               <Link
                 key={item.id}
                 href={`/admin/disputes/${item.id}`}
-                className="block rounded-xl border border-neutral-200 bg-white p-4 transition hover:border-primary/30 hover:shadow-sm"
+                className="block px-4 py-4 transition hover:bg-neutral-50"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-neutral-900">{item.order.orderNumber}</p>
                     <p className="mt-1 text-sm text-neutral-700">{item.orderItem.productName}</p>
                     <p className="mt-1 text-xs text-neutral-500">
-                      {item.customer.fullName} · {item.vendor.storeName ?? t("vendorFallback")} ·{" "}
+                      {item.customer.fullName} · {item.vendor.storeName ?? t("shopFallback")} ·{" "}
                       {formatRefundDate(item.createdAt, locale)}
                     </p>
                   </div>
@@ -194,7 +191,7 @@ export default function AdminDisputesPage() {
           </div>
         )}
 
-        {pagination ? (
+        {pagination && !empty ? (
           <PaginationFooter
             pageIndex={pagination.page - 1}
             pageCount={pagination.totalPages}
@@ -206,6 +203,7 @@ export default function AdminDisputesPage() {
             }}
           />
         ) : null}
+      </div>
     </div>
   );
 }

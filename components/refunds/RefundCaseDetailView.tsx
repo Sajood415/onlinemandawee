@@ -101,7 +101,7 @@ export function RefundCaseDetailView({
 
   const isOutsideVendor = refundCase.vendor.sellerType !== "PLATFORM";
 
-  // Outside sellers: customer works with the vendor only. Mandawee shop: already with admin.
+  // Outside shops: customer works with the shop only. Mandawee shop: already with admin.
   const canEscalate =
     role === "CUSTOMER" &&
     !isOutsideVendor &&
@@ -119,6 +119,10 @@ export function RefundCaseDetailView({
   const statusLabel = refundCase.decision
     ? t(`decisions.${refundCase.decision.decisionType}`)
     : t(`statuses.${refundCase.status}`);
+
+  const shopLabel = role === "ADMIN" ? t("detail.shop") : t("detail.vendor");
+  const replyLabel =
+    role === "VENDOR" ? t("detail.vendorExplanation") : t("detail.shopReply");
 
   return (
     <div className="space-y-5 pb-16">
@@ -138,34 +142,23 @@ export function RefundCaseDetailView({
                 orderNumber: refundCase.order.orderNumber,
               })}
             </p>
-            <h1 className="mt-1 text-xl font-semibold tracking-tight text-primary">
+            <h1 className="mt-1 text-xl font-semibold tracking-tight text-[#0f3460]">
               {refundCase.orderItem.productName}
             </h1>
             <p className="mt-1 text-sm text-neutral-600">{refundCase.reason}</p>
           </div>
-          {role === "ADMIN" ? (
-            <div className="flex flex-col items-end gap-3">
-              {refundCase.decision ? (
-                <AdminRefundDecisionEditor
-                  variant="inline"
-                  refundCase={refundCase}
-                  onSuccess={() => void loadCase({ silent: true })}
-                />
-              ) : null}
-              <AdminRefundStatusEditor
-                variant="inline"
-                refundCase={refundCase}
-                onSuccess={() => void loadCase({ silent: true })}
-              />
-            </div>
-          ) : (
-            <RefundStatusBadge
-              status={refundCase.status}
-              decision={refundCase.decision}
-              label={statusLabel}
-            />
-          )}
+          <RefundStatusBadge
+            status={refundCase.status}
+            decision={refundCase.decision}
+            label={statusLabel}
+          />
         </div>
+
+        {showAdminForm ? (
+          <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            {t("detail.needsDecision")}
+          </p>
+        ) : null}
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <div className="rounded-xl bg-neutral-50 p-4 text-sm">
@@ -245,7 +238,7 @@ export function RefundCaseDetailView({
         {refundCase.vendorExplanation ? (
           <div className="mt-4 rounded-xl border border-neutral-200 p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-              {t("detail.vendorExplanation")}
+              {replyLabel}
             </p>
             <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-700">
               {refundCase.vendorExplanation}
@@ -262,7 +255,7 @@ export function RefundCaseDetailView({
             <p className="text-neutral-600">{refundCase.customer.email}</p>
           </div>
           <div className="rounded-xl border border-neutral-200 p-4 text-sm">
-            <p className="font-semibold text-neutral-900">{t("detail.vendor")}</p>
+            <p className="font-semibold text-neutral-900">{shopLabel}</p>
             <p className="mt-2">
               {refundCase.vendor.storeName ?? t("detail.storeFallback")}
             </p>
@@ -311,6 +304,30 @@ export function RefundCaseDetailView({
         ) : null}
       </div>
 
+      {role === "ADMIN" ? (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-semibold text-neutral-900">
+            {t("detail.adminControls")}
+          </h2>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <AdminRefundStatusEditor
+              refundCase={refundCase}
+              onSuccess={() => void loadCase({ silent: true })}
+            />
+            {refundCase.decision ? (
+              <AdminRefundDecisionEditor
+                refundCase={refundCase}
+                onSuccess={() => void loadCase({ silent: true })}
+              />
+            ) : (
+              <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-600">
+                {t("detail.needsDecision")}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
       {showVendorForm ? (
         <VendorRefundResponseForm
           refundCaseId={refundCase.id}
@@ -322,6 +339,7 @@ export function RefundCaseDetailView({
         <AdminRefundDecisionForm
           refundCase={refundCase}
           onSuccess={() => void loadCase()}
+          locale={locale}
         />
       ) : null}
 

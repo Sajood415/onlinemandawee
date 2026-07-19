@@ -2404,15 +2404,17 @@
       "approved": "Approved: {amount}",
       "timeline": "Timeline",
       "opened": "Opened: {date}",
-      "vendorDue": "Seller due: {date}",
-      "escalated": "Sent to Mandawee: {date}",
+      "vendorDue": "Shop answer by: {date}",
+      "escalated": "With Mandawee since: {date}",
       "resolved": "Resolved: {date}",
       "customerDescription": "Customer note",
       "vendorExplanation": "Your reply",
+      "shopReply": "Shop reply",
       "customer": "Customer",
       "vendor": "Seller",
-      "storeFallback": "Store",
-      "viewVendorProfile": "View seller profile",
+      "shop": "Shop",
+      "storeFallback": "Shop",
+      "viewVendorProfile": "View shop",
       "evidence": "Photos & files",
       "noEvidence": "No files uploaded.",
       "viewFile": "Open file",
@@ -2420,9 +2422,11 @@
       "escalating": "Sending…",
       "escalateSuccess": "Sent to Mandawee",
       "escalateError": "Could not send to Mandawee",
-      "contactVendorOnly": "This is an outside seller’s product. Use messages below to talk with the seller — Mandawee does not take over these refunds.",
+      "contactVendorOnly": "This is an outside shop’s product. Use messages below to talk with the shop — Mandawee does not take over these refunds.",
       "finalDecision": "Final decision",
-      "recorded": "Recorded {date}"
+      "recorded": "Recorded {date}",
+      "adminControls": "Admin controls",
+      "needsDecision": "This case needs your decision."
     },
     "response": {
       "title": "Your answer",
@@ -2461,6 +2465,37 @@
         "VENDOR": "Seller",
         "ADMIN": "Mandawee"
       }
+    },
+    "adminDecision": {
+      "title": "Your decision",
+      "approveFull": "Approve full",
+      "partial": "Part refund",
+      "reject": "Decline",
+      "approvedAmount": "Approved amount",
+      "note": "Note",
+      "noteOptional": "Note (optional)",
+      "outcome": "Decision",
+      "submit": "Save decision",
+      "submitting": "Saving…",
+      "save": "Save decision",
+      "success": "Decision saved",
+      "error": "Could not save decision",
+      "updateSuccess": "Decision updated",
+      "updateError": "Could not update decision",
+      "updateHint": "This updates the decision on record. Bank/card refunds are not changed automatically.",
+      "confirmTitle": "Save this decision?",
+      "confirmBodyApprove": "Approve the full refund of {amount}.",
+      "confirmBodyPartial": "Approve a part refund of {amount}.",
+      "confirmBodyReject": "Decline this refund request.",
+      "confirmYes": "Yes, save",
+      "confirmCancel": "Cancel"
+    },
+    "adminStatus": {
+      "title": "Case status",
+      "workflow": "Case status",
+      "hint": "Change status only if a case is stuck or needs to reopen.",
+      "updateSuccess": "Status updated",
+      "updateError": "Could not update status"
     }
   },
   "AdminPages": {
@@ -3136,23 +3171,25 @@
     },
     "disputes": {
       "title": "Disputes",
-      "subtitle": "Review escalated refund cases and record final decisions.",
-      "escalateOverdue": "Escalate overdue",
+      "subtitle": "Refund cases. Late Mandawee-shop cases move here on their own and email you.",
       "refresh": "Refresh",
       "searchPlaceholder": "Search order, customer, product, reason…",
-      "overdueOnly": "Overdue vendor SLA only",
-      "all": "All",
-      "empty": "No disputes match your filters.",
-      "vendorFallback": "Vendor",
-      "backToQueue": "Back to disputes queue",
-      "loadError": "Failed to load disputes",
-      "escalateError": "Failed to run escalation",
-      "escalated": "{count} overdue case escalated",
-      "escalatedPlural": "{count} overdue cases escalated",
-      "statuses": {
-        "WAITING_VENDOR": "Waiting vendor",
-        "ESCALATED_ADMIN": "Escalated admin",
-        "RESOLVED": "Resolved"
+      "overdueOnly": "Late shop answers only",
+      "empty": "Nothing in this tab.",
+      "shopFallback": "Shop",
+      "backToQueue": "Back to disputes",
+      "loadError": "Could not load disputes",
+      "tabs": {
+        "needsYou": "Needs you",
+        "waitingShop": "Waiting shop",
+        "done": "Done",
+        "all": "All"
+      },
+      "tabsHelp": {
+        "needsYou": "Cases waiting for a Mandawee decision. Late ones land here automatically.",
+        "waitingShop": "Still with the shop — they have time to answer.",
+        "done": "Finished cases.",
+        "all": "Every dispute."
       }
     },
     "banners": {

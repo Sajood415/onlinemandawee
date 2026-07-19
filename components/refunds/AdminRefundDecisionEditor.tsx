@@ -68,10 +68,12 @@ export function AdminRefundDecisionEditor({
         }),
       });
       await parseApiResponse(response);
-      toast.success("Decision updated");
+      toast.success(t("adminDecision.updateSuccess"));
       onSuccess();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not update decision");
+      toast.error(
+        error instanceof Error ? error.message : t("adminDecision.updateError")
+      );
     } finally {
       setSaving(false);
     }
@@ -84,7 +86,7 @@ export function AdminRefundDecisionEditor({
           value={decisionType}
           disabled={saving}
           onChange={(event) => setDecisionType(event.target.value as RefundDecisionType)}
-          aria-label="Decision outcome"
+          aria-label={t("adminDecision.outcome")}
           className={
             variant === "inline"
               ? "w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 pe-9 text-sm font-semibold outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
@@ -103,7 +105,7 @@ export function AdminRefundDecisionEditor({
         <div>
           {variant === "card" ? (
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
-              Approved amount
+              {t("adminDecision.approvedAmount")}
             </label>
           ) : null}
           <input
@@ -125,7 +127,7 @@ export function AdminRefundDecisionEditor({
       {variant === "card" ? (
         <div>
           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
-            Decision note
+            {t("adminDecision.note")}
           </label>
           <textarea
             value={reason}
@@ -141,7 +143,7 @@ export function AdminRefundDecisionEditor({
           value={reason}
           disabled={saving}
           onChange={(event) => setReason(event.target.value)}
-          placeholder="Decision note (optional)"
+          placeholder={t("adminDecision.noteOptional")}
           className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
         />
       )}
@@ -157,7 +159,7 @@ export function AdminRefundDecisionEditor({
         }
       >
         {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-        Save decision
+        {t("adminDecision.save")}
       </button>
     </div>
   );
@@ -166,7 +168,7 @@ export function AdminRefundDecisionEditor({
     return (
       <div className="flex flex-col items-end gap-1">
         <label className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
-          Decision outcome
+          {t("adminDecision.outcome")}
         </label>
         {fields}
       </div>
@@ -175,11 +177,9 @@ export function AdminRefundDecisionEditor({
 
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-4">
-      <h3 className="text-sm font-semibold text-neutral-900">Decision outcome</h3>
+      <h3 className="text-sm font-semibold text-neutral-900">{t("adminDecision.outcome")}</h3>
       <div className="mt-3">{fields}</div>
-      <p className="mt-2 text-xs text-neutral-500">
-        Updates the recorded decision only. Stripe payouts are not adjusted automatically.
-      </p>
+      <p className="mt-2 text-xs text-neutral-500">{t("adminDecision.updateHint")}</p>
     </div>
   );
 }

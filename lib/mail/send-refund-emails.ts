@@ -73,8 +73,22 @@ function formatMoney(amountMinor: number, currency: string) {
   }).format(amountMinor / 100);
 }
 
+function extractEmailAddress(value: string | undefined | null) {
+  if (!value) return null;
+  const match =
+    value.match(/<([^>]+@[^>]+)>/) ?? value.match(/([^\s<>]+@[^\s<>]+)/);
+  return match?.[1]?.trim() ?? null;
+}
+
+/** Admin inbox = SMTP from address (same mailbox used to send platform emails). */
 function adminNotifyEmail() {
-  return env.REFUND_NOTIFY_EMAIL ?? env.GIFT_REQUEST_NOTIFY_EMAIL ?? null;
+  return (
+    env.REFUND_NOTIFY_EMAIL ??
+    env.GIFT_REQUEST_NOTIFY_EMAIL ??
+    extractEmailAddress(env.SMTP_FROM) ??
+    extractEmailAddress(env.SMTP_USER) ??
+    null
+  );
 }
 
 function caseSummaryBox(refundCase: RefundEmailCase) {
@@ -222,16 +236,21 @@ export async function sendRefundOverdueEscalationSummaryEmail(input: {
 
   const list = input.orderNumbers.slice(0, 10).map((orderNumber) => `<li>${orderNumber}</li>`).join("");
   const body = `
-    <h2>Overdue vendor refund responses</h2>
-    <p>${input.count} refund case${input.count === 1 ? "" : "s"} ${input.count === 1 ? "was" : "were"} auto-escalated because the vendor missed the 48-hour SLA.</p>
+    <h2>Late refund cases need you</h2>
+    <p>${input.count} refund case${input.count === 1 ? "" : "s"} moved to Needs you because the shop missed the answer time.</p>
     <ul>${list}</ul>
     ${input.orderNumbers.length > 10 ? `<p>…and ${input.orderNumbers.length - 10} more.</p>` : ""}
+    <p>Open Admin → Disputes → Needs you.</p>
   `;
 
   await sendTransactionalEmail({
     to: adminEmail,
-    subject: `${input.count} overdue refund case${input.count === 1 ? "" : "s"} escalated`,
-    text: `${input.count} refund cases were auto-escalated for overdue vendor response.`,
-    html: emailLayout("Overdue refund escalations", body),
+    subject: `${input.count} late refund case${input.count === 1 ? "" : "s"} need you`,
+    text: [
+      `${input.count} late refund case${input.count === 1 ? "" : "s"} moved to Needs you.`,
+      `Orders: ${input.orderNumbers.slice(0, 10).join(", ")}`,
+      "Open Admin → Disputes → Needs you.",
+    ].join("\n"),
+    html: emailLayout("Late refund cases", body),
   });
 }

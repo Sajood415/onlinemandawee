@@ -10,6 +10,16 @@ const refundService = new RefundService();
 
 export const GET = withErrorHandling(
   withRbac(["ADMIN"], async (request, context) => {
+    // Move late Mandawee-shop cases into Needs you before listing (no admin button).
+    try {
+      await refundService.runOverdueEscalation({
+        actorUserId: context.auth.id,
+        actorRole: context.auth.role,
+      });
+    } catch {
+      // Listing should still work if the catch-up job fails.
+    }
+
     const query = parseQuery(request, adminRefundListQuerySchema);
     const result = await refundService.listAdminCases(context.auth, {
       page: query.page,

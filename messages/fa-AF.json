@@ -2404,15 +2404,15 @@
       "approved": "تأییدشده: {amount}",
       "timeline": "زمان‌بندی",
       "opened": "باز شده: {date}",
-      "vendorDue": "مهلت فروشنده: {date}",
-      "escalated": "ارسال به Mandawee: {date}",
+      "vendorDue": "مهلت پاسخ فروشگاه: {date}",
+      "escalated": "نزد Mandawee از: {date}",
       "resolved": "حل‌شده: {date}",
       "customerDescription": "یادداشت مشتری",
       "vendorExplanation": "پاسخ شما",
       "customer": "مشتری",
       "vendor": "فروشنده",
       "storeFallback": "فروشگاه",
-      "viewVendorProfile": "مشاهده پروفایل فروشنده",
+      "viewVendorProfile": "دیدن فروشگاه",
       "evidence": "عکس‌ها و فایل‌ها",
       "noEvidence": "فایلی آپلود نشده.",
       "viewFile": "باز کردن فایل",
@@ -2420,9 +2420,13 @@
       "escalating": "در حال ارسال…",
       "escalateSuccess": "به Mandawee ارسال شد",
       "escalateError": "ارسال به Mandawee ممکن نشد",
-      "contactVendorOnly": "این محصول فروشنده بیرونی است. از پیام‌های زیر با فروشنده حرف بزنید — آنلاین منداوی این بازپرداخت را بر عهده نمی‌گیرد.",
+      "contactVendorOnly": "این محصول فروشگاه بیرونی است. از پیام‌های پایین استفاده کنید — Mandawee این بازپرداخت‌ها را برنمی‌دارد.",
       "finalDecision": "تصمیم نهایی",
-      "recorded": "ثبت شده {date}"
+      "recorded": "ثبت شده {date}",
+      "shopReply": "پاسخ فروشگاه",
+      "shop": "فروشگاه",
+      "adminControls": "کنترل ادمین",
+      "needsDecision": "این پرونده به تصمیم شما نیاز دارد."
     },
     "response": {
       "title": "پاسخ شما",
@@ -2461,6 +2465,37 @@
         "VENDOR": "فروشنده",
         "ADMIN": "Mandawee"
       }
+    },
+    "adminDecision": {
+      "title": "تصمیم شما",
+      "approveFull": "تأیید کامل",
+      "partial": "بازپرداخت جزئی",
+      "reject": "رد",
+      "approvedAmount": "مبلغ تأییدشده",
+      "note": "یادداشت",
+      "noteOptional": "یادداشت (اختیاری)",
+      "outcome": "تصمیم",
+      "submit": "ذخیره تصمیم",
+      "submitting": "در حال ذخیره…",
+      "save": "ذخیره تصمیم",
+      "success": "تصمیم ذخیره شد",
+      "error": "ذخیره تصمیم ممکن نشد",
+      "updateSuccess": "تصمیم به‌روز شد",
+      "updateError": "به‌روزرسانی تصمیم ممکن نشد",
+      "updateHint": "این تصمیم ثبت‌شده را به‌روز می‌کند. بازپرداخت بانک/کارت خودکار تغییر نمی‌کند.",
+      "confirmTitle": "این تصمیم ذخیره شود؟",
+      "confirmBodyApprove": "بازپرداخت کامل {amount} تأیید شود.",
+      "confirmBodyPartial": "بازپرداخت جزئی {amount} تأیید شود.",
+      "confirmBodyReject": "این درخواست بازپرداخت رد شود.",
+      "confirmYes": "بله، ذخیره",
+      "confirmCancel": "لغو"
+    },
+    "adminStatus": {
+      "title": "وضعیت پرونده",
+      "workflow": "وضعیت پرونده",
+      "hint": "وضعیت را فقط وقتی تغییر دهید که پرونده گیر کرده یا باید دوباره باز شود.",
+      "updateSuccess": "وضعیت به‌روز شد",
+      "updateError": "به‌روزرسانی وضعیت ممکن نشد"
     }
   },
   "AdminPages": {
@@ -3135,24 +3170,26 @@
       }
     },
     "disputes": {
-      "title": "اختلافات",
-      "subtitle": "پرونده‌های بازپرداخت ارجاع‌شده را بررسی کنید و تصمیم نهایی ثبت کنید.",
-      "escalateOverdue": "ارجاع موارد دیرکرده",
+      "title": "اختلاف‌ها",
+      "subtitle": "پرونده‌های بازپرداخت. پرونده‌های دیر فروشگاه Mandawee خودبه‌خود اینجا می‌آیند و به شما ایمیل می‌زنند.",
       "refresh": "تازه‌سازی",
-      "searchPlaceholder": "جستجوی سفارش، مشتری، محصول، دلیل…",
-      "overdueOnly": "فقط SLA دیرکرده فروشنده",
-      "all": "همه",
-      "empty": "هیچ اختلافی با فیلترهای شما مطابقت ندارد.",
-      "vendorFallback": "فروشنده",
-      "backToQueue": "بازگشت به صف اختلافات",
-      "loadError": "بارگذاری اختلافات ناکام شد",
-      "escalateError": "اجرای ارجاع ناکام شد",
-      "escalated": "{count} پرونده دیرکرده ارجاع شد",
-      "escalatedPlural": "{count} پرونده دیرکرده ارجاع شدند",
-      "statuses": {
-        "WAITING_VENDOR": "در انتظار فروشنده",
-        "ESCALATED_ADMIN": "ارجاع به ادمین",
-        "RESOLVED": "حل شده"
+      "searchPlaceholder": "سفارش، مشتری، محصول، دلیل را جستجو کنید…",
+      "overdueOnly": "فقط پاسخ‌های دیر فروشگاه",
+      "empty": "در این تب چیزی نیست.",
+      "shopFallback": "فروشگاه",
+      "backToQueue": "بازگشت به اختلاف‌ها",
+      "loadError": "بارگذاری اختلاف‌ها ممکن نشد",
+      "tabs": {
+        "needsYou": "نیاز به شما",
+        "waitingShop": "منتظر فروشگاه",
+        "done": "تمام",
+        "all": "همه"
+      },
+      "tabsHelp": {
+        "needsYou": "پرونده‌هایی که منتظر تصمیم Mandawee هستند. موارد دیر خودکار اینجا می‌آیند.",
+        "waitingShop": "هنوز نزد فروشگاه — وقت پاسخ دارند.",
+        "done": "پرونده‌های تمام‌شده.",
+        "all": "همه اختلاف‌ها."
       }
     },
     "banners": {
