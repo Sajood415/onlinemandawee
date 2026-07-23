@@ -5,6 +5,11 @@ import { routing } from "@/i18n/routing";
 import { CURRENCY_COOKIE, DEFAULT_CURRENCY } from "@/lib/currency/constants";
 import { detectCurrencyFromCountry } from "@/lib/currency/detect";
 import {
+  PLATFORM_SETTINGS_CACHE_TTL_MS,
+  getCachedPlatformSettingsLite,
+  setCachedPlatformSettingsLite,
+} from "@/lib/platform/platform-settings-cache";
+import {
   DEFAULT_AVAILABLE_CURRENCIES,
   DEFAULT_AVAILABLE_LOCALES,
   normalizeAvailableCurrencies,
@@ -13,23 +18,14 @@ import {
 
 const intlMiddleware = createMiddleware(routing);
 
-type CachedPlatformSettings = {
-  availableLocales: string[];
-  availableCurrencies: string[];
-  expiresAt: number;
-};
-
-let cachedPlatformSettings: CachedPlatformSettings | null = null;
-const CACHE_TTL_MS = 30_000;
-
 async function getPlatformSettings(request: NextRequest) {
-  if (cachedPlatformSettings && Date.now() < cachedPlatformSettings.expiresAt) {
-    return cachedPlatformSettings;
-  }
+  const cached = getCachedPlatformSettingsLite();
+  if (cached) return cached;
 
   try {
     const response = await fetch(new URL("/api/platform/settings", request.url), {
       headers: { "x-platform-settings-fetch": "1" },
+      next: { revalidate: Math.floor(PLATFORM_SETTINGS_CACHE_TTL_MS / 1000) },
     });
 
     if (!response.ok) {
@@ -43,22 +39,22 @@ async function getPlatformSettings(request: NextRequest) {
       };
     };
 
-    cachedPlatformSettings = {
+    const next = {
       availableLocales: normalizeAvailableLocales(payload.data?.availableLocales),
       availableCurrencies: normalizeAvailableCurrencies(
         payload.data?.availableCurrencies
       ),
-      expiresAt: Date.now() + CACHE_TTL_MS,
     };
+    setCachedPlatformSettingsLite(next);
+    return next;
   } catch {
-    cachedPlatformSettings = {
+    const fallback = {
       availableLocales: [...DEFAULT_AVAILABLE_LOCALES],
       availableCurrencies: [...DEFAULT_AVAILABLE_CURRENCIES],
-      expiresAt: Date.now() + CACHE_TTL_MS,
     };
+    setCachedPlatformSettingsLite(fallback);
+    return fallback;
   }
-
-  return cachedPlatformSettings;
 }
 
 export default async function middleware(request: NextRequest) {

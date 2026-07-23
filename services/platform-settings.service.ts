@@ -11,6 +11,11 @@ import {
   normalizeAvailableCurrencies,
   normalizeAvailableLocales,
 } from "@/lib/platform/storefront-options";
+import {
+  getCachedPlatformSettingsFull,
+  invalidatePlatformSettingsCache,
+  setCachedPlatformSettingsFull,
+} from "@/lib/platform/platform-settings-cache";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { PlatformSettingsRepository } from "@/repositories/platform-settings.repository";
 
@@ -31,8 +36,13 @@ export class PlatformSettingsService {
   ) {}
 
   async get() {
+    const cached = getCachedPlatformSettingsFull<ReturnType<PlatformSettingsService["serialize"]>>();
+    if (cached) return cached;
+
     const settings = await this.platformSettingsRepository.getOrCreate();
-    return this.serialize(settings);
+    const serialized = this.serialize(settings);
+    setCachedPlatformSettingsFull(serialized);
+    return serialized;
   }
 
   async update(auth: AuthenticatedUser, input: UpdatePlatformSettingsInput) {
@@ -63,7 +73,10 @@ export class PlatformSettingsService {
       },
     });
 
-    return this.serialize(updated);
+    invalidatePlatformSettingsCache();
+    const serialized = this.serialize(updated);
+    setCachedPlatformSettingsFull(serialized);
+    return serialized;
   }
 
   private serialize(
