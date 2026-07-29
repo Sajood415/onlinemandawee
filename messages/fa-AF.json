@@ -3910,6 +3910,7 @@
     "steps": {
       "shipping": "ارسال",
       "delivery": "تحویل",
+      "pickup": "دریافت حضوری",
       "payment": "پرداخت",
       "review": "بازبینی"
     },
@@ -3992,7 +3993,9 @@
       "methodBasedFee": "هزینه تحویل بر اساس روش",
       "basePlusKm": "{base} پایه + {perKm}/km",
       "totalDelivery": "مجموع تحویل",
-      "continueToPayment": "ادامه به پرداخت"
+      "continueToPayment": "ادامه به پرداخت",
+      "pickupLocationsTitle": "آدرس دریافت حضوری",
+      "pickupLocationsEmpty": "آدرس دریافت حضوری برای این فروشگاه هنوز موجود نیست."
     },
     "payment": {
       "cardRequired": "برای ثبت این سفارش پرداخت با کارت الزامی است.",

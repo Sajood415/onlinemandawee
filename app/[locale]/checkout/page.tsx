@@ -132,6 +132,15 @@ type DeliveryBreakdownEntry = {
   deliveryAmount: number;
 };
 
+type PickupLocation = {
+  vendorProfileId: string;
+  storeName: string;
+  addressLine1: string;
+  city: string;
+  country: string;
+  postalCode: string;
+};
+
 type PriceSummary = {
   subtotalAmount: number;
   deliveryAmount: number;
@@ -141,6 +150,7 @@ type PriceSummary = {
   lineItems: LineItem[];
   appliedCoupons: AppliedCouponSummary[];
   deliveryBreakdown?: DeliveryBreakdownEntry[];
+  pickupLocations?: PickupLocation[];
 };
 
 type ContactForm = {
@@ -798,6 +808,8 @@ function DeliveryCostStep({
   onBack: () => void;
 }) {
   const breakdown = summary?.deliveryBreakdown ?? [];
+  const pickupLocations = summary?.pickupLocations ?? [];
+  const isPickup = deliveryMethod === "PICKUP";
   const canContinue = Boolean(summary) && !loading && !error;
 
   return (
@@ -842,6 +854,32 @@ function DeliveryCostStep({
           >
             {copy.common.tryAgain}
           </button>
+        </div>
+      ) : summary && isPickup ? (
+        <div className="space-y-3 border-t border-neutral-200 pt-5">
+          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+            {copy.delivery.pickupLocationsTitle}
+          </p>
+          {pickupLocations.length > 0 ? (
+            <div className="space-y-3">
+              {pickupLocations.map((location) => (
+                <div
+                  key={location.vendorProfileId}
+                  className="border border-neutral-200 px-4 py-3 text-left"
+                >
+                  <p className="font-semibold text-neutral-900">{location.storeName}</p>
+                  <p className="mt-1 text-sm text-neutral-600">
+                    {location.addressLine1}
+                    <br />
+                    {[location.city, location.postalCode].filter(Boolean).join(" ")}
+                    {location.country ? `, ${location.country}` : ""}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-neutral-600">{copy.delivery.pickupLocationsEmpty}</p>
+          )}
         </div>
       ) : summary ? (
         <div className="space-y-3 border-t border-neutral-200 pt-5">
@@ -1359,58 +1397,60 @@ function SuccessScreen({
       role="dialog"
       aria-modal="true"
       aria-labelledby="checkout-success-title"
-      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-white/95 p-4"
+      className="fixed inset-0 z-[10050] overflow-y-auto bg-white"
     >
-      <div className="w-full max-w-md space-y-6 border border-neutral-200 bg-white px-6 py-10 text-center sm:px-10">
-        <CheckCircle size={40} className="mx-auto text-emerald-600" strokeWidth={1.5} />
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
-            {copy.success.confirmation}
-          </p>
-          <h1 id="checkout-success-title" className="mt-2 text-2xl font-bold text-neutral-900">
-            {copy.success.title}
-          </h1>
-          <p className="mt-2 text-sm text-neutral-500">{copy.success.cardMessage}</p>
-          {guestEmail ? (
-            <p className="mt-2 text-sm text-neutral-500">{copy.success.emailSent(guestEmail)}</p>
-          ) : null}
-        </div>
-
-        <div className="border-y border-neutral-200 py-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
-            {copy.success.orderNumber}
-          </p>
-          <p className="mt-1 text-xl font-bold text-[#0F3460]">{orderNumber}</p>
-        </div>
-
-        <p className="text-xs text-neutral-400">{copy.success.keepOrderNumber}</p>
-
-        {!isAuthenticated ? (
-          <div className="space-y-3 border border-neutral-200 px-5 py-4 text-left">
-            <p className="text-sm font-semibold text-neutral-900">{copy.success.trackOrder}</p>
-            <p className="text-sm text-neutral-600">{copy.success.trackOrderHint}</p>
-            <Link
-              href={signupHref}
-              className="inline-flex w-full items-center justify-center bg-[#0F3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
-            >
-              {copy.success.createAccount}
-            </Link>
-            <Link
-              href="/auth/login"
-              className="inline-flex w-full items-center justify-center border border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:border-neutral-400"
-            >
-              {copy.success.signIn}
-            </Link>
+      <div className="flex min-h-full items-start justify-center px-4 py-10 sm:py-14">
+        <div className="w-full max-w-md space-y-6 border border-neutral-200 bg-white px-6 py-10 text-center sm:px-10">
+          <CheckCircle size={40} className="mx-auto text-emerald-600" strokeWidth={1.5} />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
+              {copy.success.confirmation}
+            </p>
+            <h1 id="checkout-success-title" className="mt-2 text-2xl font-bold text-neutral-900">
+              {copy.success.title}
+            </h1>
+            <p className="mt-2 text-sm text-neutral-500">{copy.success.cardMessage}</p>
+            {guestEmail ? (
+              <p className="mt-2 text-sm text-neutral-500">{copy.success.emailSent(guestEmail)}</p>
+            ) : null}
           </div>
-        ) : null}
 
-        <button
-          type="button"
-          onClick={() => router.push("/")}
-          className="w-full bg-[#0F3460] py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
-        >
-          {copy.success.continueShopping}
-        </button>
+          <div className="border-y border-neutral-200 py-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              {copy.success.orderNumber}
+            </p>
+            <p className="mt-1 text-xl font-bold text-[#0F3460]">{orderNumber}</p>
+          </div>
+
+          <p className="text-xs text-neutral-400">{copy.success.keepOrderNumber}</p>
+
+          {!isAuthenticated ? (
+            <div className="space-y-3 border border-neutral-200 px-5 py-4 text-left">
+              <p className="text-sm font-semibold text-neutral-900">{copy.success.trackOrder}</p>
+              <p className="text-sm text-neutral-600">{copy.success.trackOrderHint}</p>
+              <Link
+                href={signupHref}
+                className="inline-flex w-full items-center justify-center bg-[#0F3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+              >
+                {copy.success.createAccount}
+              </Link>
+              <Link
+                href="/auth/login"
+                className="inline-flex w-full items-center justify-center border border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:border-neutral-400"
+              >
+                {copy.success.signIn}
+              </Link>
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="w-full bg-[#0F3460] py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+          >
+            {copy.success.continueShopping}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1422,7 +1462,6 @@ export default function CheckoutPage() {
   const locale = useLocale();
   const copy = useCheckoutCopy();
   const validators = useMemo(() => createCheckoutValidators(copy), [copy]);
-  const stepLabels = copy.stepLabels;
   const { cart, removeItem, refreshCartPrices } = useCart();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -1434,6 +1473,11 @@ export default function CheckoutPage() {
   const [contact, setContact] = useState<ContactForm>({ guestName: "", guestEmail: "", guestPhone: "" });
   const [address, setAddress] = useState<AddressForm>({ addressLine1: "", city: "", country: "", postalCode: "" });
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("STANDARD");
+  const stepLabels = [
+    copy.stepLabels[0],
+    deliveryMethod === "PICKUP" ? copy.steps.pickup : copy.stepLabels[1],
+    copy.stepLabels[2],
+  ] as const;
   const [customerPrefillReady, setCustomerPrefillReady] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<CustomerAddress[]>([]);
 
@@ -1486,6 +1530,7 @@ export default function CheckoutPage() {
     lineItems: data.lineItems,
     appliedCoupons: data.appliedCoupons ?? [],
     deliveryBreakdown: data.deliveryBreakdown,
+    pickupLocations: data.pickupLocations,
   });
 
   useEffect(() => {

@@ -18,6 +18,12 @@ export function useCheckoutCopy() {
         t("steps.delivery"),
         t("steps.payment"),
       ] as const,
+      steps: {
+        shipping: t("steps.shipping"),
+        delivery: t("steps.delivery"),
+        pickup: t("steps.pickup"),
+        payment: t("steps.payment"),
+      },
       home: t("home"),
       cart: t("cart"),
       subtitle: t("subtitle"),
@@ -110,6 +116,8 @@ export function useCheckoutCopy() {
           t("delivery.basePlusKm", { base, perKm }),
         totalDelivery: t("delivery.totalDelivery"),
         continueToPayment: t("delivery.continueToPayment"),
+        pickupLocationsTitle: t("delivery.pickupLocationsTitle"),
+        pickupLocationsEmpty: t("delivery.pickupLocationsEmpty"),
       },
       payment: {
         cardRequired: t("payment.cardRequired"),

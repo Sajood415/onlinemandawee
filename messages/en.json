@@ -3887,6 +3887,7 @@
     "steps": {
       "shipping": "Shipping",
       "delivery": "Delivery",
+      "pickup": "Pickup",
       "payment": "Payment",
       "review": "Review"
     },
@@ -3969,7 +3970,9 @@
       "methodBasedFee": "Method-based delivery fee",
       "basePlusKm": "{base} base + {perKm}/km",
       "totalDelivery": "Total delivery",
-      "continueToPayment": "Continue to Payment"
+      "continueToPayment": "Continue to Payment",
+      "pickupLocationsTitle": "Pickup address",
+      "pickupLocationsEmpty": "Pickup address is not available yet for this shop."
     },
     "payment": {
       "cardRequired": "Card payment is required to place this order.",

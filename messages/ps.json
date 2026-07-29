@@ -3910,6 +3910,7 @@
     "steps": {
       "shipping": "لېږد",
       "delivery": "رسول",
+      "pickup": "اخیستل",
       "payment": "تادیه",
       "review": "کتنه"
     },
@@ -3992,7 +3993,9 @@
       "methodBasedFee": "د طریقې پر بنسټ رسولو فیس",
       "basePlusKm": "{base} اساس + {perKm}/km",
       "totalDelivery": "ټول رسول",
-      "continueToPayment": "تادیې ته دوام ورکړئ"
+      "continueToPayment": "تادیې ته دوام ورکړئ",
+      "pickupLocationsTitle": "د اخیستلو پته",
+      "pickupLocationsEmpty": "د دې پلورنځي لپاره د اخیستلو پته لا نشته."
     },
     "payment": {
       "cardRequired": "د دې فرمایش لپاره د کارت تادیه لازمه ده.",

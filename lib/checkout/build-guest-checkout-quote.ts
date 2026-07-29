@@ -81,6 +81,15 @@ export type GuestCheckoutVendorSummary = {
 
 export type { GuestCheckoutDeliveryBreakdown };
 
+export type GuestCheckoutPickupLocation = {
+  vendorProfileId: string;
+  storeName: string;
+  addressLine1: string;
+  city: string;
+  country: string;
+  postalCode: string;
+};
+
 export type GuestCheckoutQuote = {
   subtotalAmount: number;
   deliveryAmount: number;
@@ -91,6 +100,7 @@ export type GuestCheckoutQuote = {
   appliedCoupons: AppliedGuestCoupon[];
   vendorSummaries: GuestCheckoutVendorSummary[];
   deliveryBreakdown?: GuestCheckoutDeliveryBreakdown[];
+  pickupLocations?: GuestCheckoutPickupLocation[];
   deliveryMethod: DeliveryMethod;
   requiresDeliveryAddress: boolean;
 };
@@ -98,7 +108,11 @@ export type GuestCheckoutQuote = {
 export { GuestCheckoutQuoteError };
 
 const productInclude = {
-  vendorProfile: true,
+  vendorProfile: {
+    include: {
+      address: true,
+    },
+  },
   category: true,
   variants: {
     where: { isActive: true },
@@ -527,6 +541,43 @@ export async function buildGuestCheckoutQuote(input: {
     }
   );
 
+  const pickupLocations: GuestCheckoutPickupLocation[] = [];
+  if (selectedThirdPartyMethod === "PICKUP") {
+    const seenVendors = new Set<string>();
+    let warehouseAddress: Awaited<ReturnType<typeof getWarehouseAddress>> | null | undefined;
+
+    for (const { product } of products) {
+      if (!product || seenVendors.has(product.vendorProfileId)) continue;
+      seenVendors.add(product.vendorProfileId);
+
+      if (product.vendorProfile.sellerType === "PLATFORM") {
+        warehouseAddress ??= await getWarehouseAddress();
+        if (warehouseAddress) {
+          pickupLocations.push({
+            vendorProfileId: product.vendorProfileId,
+            storeName: product.vendorProfile.storeName,
+            addressLine1: warehouseAddress.addressLine1,
+            city: warehouseAddress.city,
+            country: warehouseAddress.country,
+            postalCode: warehouseAddress.postalCode,
+          });
+        }
+        continue;
+      }
+
+      const address = product.vendorProfile.address;
+      if (!address) continue;
+      pickupLocations.push({
+        vendorProfileId: product.vendorProfileId,
+        storeName: product.vendorProfile.storeName,
+        addressLine1: address.addressLine1,
+        city: address.city,
+        country: address.country,
+        postalCode: address.postalCode,
+      });
+    }
+  }
+
   const quote: GuestCheckoutQuote = {
     subtotalAmount,
     deliveryAmount,
@@ -537,6 +588,7 @@ export async function buildGuestCheckoutQuote(input: {
     appliedCoupons,
     vendorSummaries,
     deliveryBreakdown,
+    ...(pickupLocations.length > 0 ? { pickupLocations } : {}),
     deliveryMethod: selectedThirdPartyMethod,
     requiresDeliveryAddress,
   };
