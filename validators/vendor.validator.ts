@@ -10,6 +10,7 @@ import {
 import { vendorStatuses } from "@/domain/vendor/vendor-status";
 import { passwordFieldSchema } from "@/lib/auth/password-policy";
 import { phoneFieldSchema } from "@/lib/phone/phone-policy";
+import { isAfghanistanCountry } from "@/lib/geo/shipping-locations";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 
 const vendorOnboardingEmailField = z.preprocess(
@@ -48,13 +49,23 @@ export const vendorKycSchema = z.object({
   selfieWithIdUrl: z.url().max(2048).optional(),
 });
 
-export const vendorAddressSchema = z.object({
-  addressLine1: z.string().trim().min(3).max(255),
-  city: z.string().trim().min(2).max(120),
-  country: z.string().trim().min(2).max(120),
-  postalCode: z.string().trim().min(2).max(40),
-  proofOfAddressUrl: z.url().max(2048).optional(),
-});
+export const vendorAddressSchema = z
+  .object({
+    addressLine1: z.string().trim().min(3).max(255),
+    city: z.string().trim().min(2).max(120),
+    country: z.string().trim().min(2).max(120),
+    postalCode: z.string().trim().min(2).max(40),
+    proofOfAddressUrl: z.url().max(2048).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (!isAfghanistanCountry(value.country) && !value.proofOfAddressUrl) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["proofOfAddressUrl"],
+        message: "Proof of address is required outside Afghanistan",
+      });
+    }
+  });
 
 export const vendorPayoutSchema = z
   .object({

@@ -105,6 +105,14 @@ export function findCountryIsoByName(name: string) {
   return SHIPPING_COUNTRIES.find((country) => country.name.toLowerCase() === normalized)?.iso;
 }
 
+/** Vendor proof of address is not required for Afghanistan. */
+export function isAfghanistanCountry(country?: string | null) {
+  if (!country?.trim()) return false;
+  const trimmed = country.trim();
+  if (trimmed.toUpperCase() === "AF" || trimmed.toUpperCase() === "AFG") return true;
+  return findCountryIsoByName(trimmed) === "AF";
+}
+
 /** Normalize checkout country (full name or ISO) for delivery rule matching. */
 export function normalizeDeliveryCountryCode(country?: string | null) {
   if (!country?.trim()) return undefined;

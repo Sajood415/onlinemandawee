@@ -1565,6 +1565,7 @@
           "searchPostalCodes": "پوستي کوډونه ولټوئ...",
           "noPostalCodes": "نتیجه نشته — لاسي ولیکئ",
           "chooseCityFirst": "لومړی ښار وټاکئ",
+          "proofOfAddressRequired": "د پتې ثبوت *",
           "proofOfAddressOptional": "د پتې ثبوت (اختیاري)",
           "proofOfAddressHint": "د برېښنا بل، بانکي بیان یا ورته. PDF، JPG، PNG، WebP."
         },
@@ -1639,6 +1640,7 @@
           "attachIdDocument": "د دوام لپاره خپل پېژندپاڼه ضمیمه کړئ.",
           "addressTitle": "پته",
           "addressRequiredFields": "ټول اړین پتې ساحې ډک کړئ.",
+          "proofOfAddressRequired": "د پتې ثبوت پورته کړئ.",
           "payoutTitle": "تادیه",
           "payoutRequiredFields": "ټول بانکي ساحې ډک کړئ.",
           "agreementsTitle": "تړونونه",
@@ -1690,7 +1692,7 @@
             },
             "address": {
               "title": "د پتې معلومات",
-              "description": "د فعالیت پته او که اړتیا وي د پتې سند ورکړئ."
+              "description": "د فعالیت پته ورکړئ."
             },
             "payout": {
               "title": "د تادیې تنظیم",
@@ -1708,7 +1710,7 @@
           "items": {
             "identity": "د هویت یو معتبر سند (پاسپورټ، ملي تذکره یا منل شوی بدیل).",
             "business": "د شرکت معلومات که د شرکت په نوم راجسټرېږئ.",
-            "address": "ستاسو د فعالیت پته او اختیاري د پتې ثبوت.",
+            "address": "ستاسو د فعالیت پته.",
             "bank": "د تادیې لپاره د بانک حساب معلومات."
           }
         },

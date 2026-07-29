@@ -38,6 +38,7 @@ import {
   getCitiesForCountryName,
   getPostalCodesForCity,
   normalizeCityNameForCountry,
+  isAfghanistanCountry,
   normalizeCountryName,
   normalizePostalCodeForCity,
   SHIPPING_COUNTRIES,
@@ -661,16 +662,18 @@ function AddressSection({
         />
       </div>
 
-      <UploadZone
-        id="proof-of-address"
-        title={tWizard("address.proofOfAddressOptional")}
-        hint={tWizard("address.proofOfAddressHint")}
-        accept="image/jpeg,image/png,image/webp,application/pdf"
-        file={proofOfAddressFile}
-        onChange={setProofOfAddressFile}
-        savedUrl={proofOfAddressUrl}
-        disabled={uploadBusy}
-      />
+      {country && !isAfghanistanCountry(country) ? (
+        <UploadZone
+          id="proof-of-address"
+          title={tWizard("address.proofOfAddressRequired")}
+          hint={tWizard("address.proofOfAddressHint")}
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          file={proofOfAddressFile}
+          onChange={setProofOfAddressFile}
+          savedUrl={proofOfAddressUrl}
+          disabled={uploadBusy}
+        />
+      ) : null}
     </div>
   );
 }
@@ -1310,12 +1313,20 @@ export function VendorOnboardingWizard() {
           setProofOfAddressUrl(uploaded.url);
           setProofOfAddressFile(null);
         }
+        const outsideAfghanistan = !isAfghanistanCountry(country);
+        if (outsideAfghanistan && !nextProofOfAddressUrl) {
+          toast.error(tWizard("toasts.addressTitle"), tWizard("toasts.proofOfAddressRequired"));
+          setBusy(false);
+          return;
+        }
         await patchJson("/api/vendor/onboarding/step-4-address", {
           addressLine1: addressLine1.trim(),
           city: city.trim(),
           country: country.trim(),
           postalCode: postalCode.trim(),
-          ...(nextProofOfAddressUrl ? { proofOfAddressUrl: nextProofOfAddressUrl } : {}),
+          ...(outsideAfghanistan && nextProofOfAddressUrl
+            ? { proofOfAddressUrl: nextProofOfAddressUrl }
+            : {}),
         });
         setDirection(1);
         setStep(5);

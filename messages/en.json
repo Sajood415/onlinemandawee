@@ -1565,6 +1565,7 @@
           "searchPostalCodes": "Search postal codes...",
           "noPostalCodes": "No results - type manually",
           "chooseCityFirst": "Choose a city first",
+          "proofOfAddressRequired": "Proof of Address *",
           "proofOfAddressOptional": "Proof of Address (Optional)",
           "proofOfAddressHint": "Upload utility bill, bank statement, or similar. PDF, JPG, PNG, WebP."
         },
@@ -1639,6 +1640,7 @@
           "attachIdDocument": "Attach your ID document to continue.",
           "addressTitle": "Address",
           "addressRequiredFields": "Fill in all required address fields.",
+          "proofOfAddressRequired": "Upload proof of address.",
           "payoutTitle": "Payout",
           "payoutRequiredFields": "Fill in all bank fields.",
           "agreementsTitle": "Agreements",
@@ -1690,7 +1692,7 @@
             },
             "address": {
               "title": "Address details",
-              "description": "Provide your operating address and optional proof document."
+              "description": "Provide your operating address."
             },
             "payout": {
               "title": "Payout setup",
@@ -1708,7 +1710,7 @@
           "items": {
             "identity": "A valid identity document (passport, national ID, or approved alternative).",
             "business": "Business details for your store profile (if you register as a company).",
-            "address": "Your operating address and optional proof of address document.",
+            "address": "Your operating address.",
             "bank": "Bank account details for payouts."
           }
         },

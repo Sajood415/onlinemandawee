@@ -1565,6 +1565,7 @@
           "searchPostalCodes": "جستجوی کدهای پستی...",
           "noPostalCodes": "نتیجه‌ای نیست — دستی وارد کنید",
           "chooseCityFirst": "ابتدا شهر را انتخاب کنید",
+          "proofOfAddressRequired": "مدرک آدرس *",
           "proofOfAddressOptional": "مدرک آدرس (اختیاری)",
           "proofOfAddressHint": "قبض خدمات، صورت‌حساب بانکی یا مشابه. PDF، JPG، PNG، WebP."
         },
@@ -1639,6 +1640,7 @@
           "attachIdDocument": "برای ادامه، مدرک شناسایی را ضمیمه کنید.",
           "addressTitle": "آدرس",
           "addressRequiredFields": "همه فیلدهای لازم آدرس را پر کنید.",
+          "proofOfAddressRequired": "مدرک آدرس را آپلود کنید.",
           "payoutTitle": "پرداخت",
           "payoutRequiredFields": "همه فیلدهای بانکی را پر کنید.",
           "agreementsTitle": "توافق‌نامه‌ها",
@@ -1690,7 +1692,7 @@
             },
             "address": {
               "title": "اطلاعات آدرس",
-              "description": "آدرس فعالیت و در صورت نیاز سند آدرس را ثبت کنید."
+              "description": "آدرس فعالیت را وارد کنید."
             },
             "payout": {
               "title": "تنظیم پرداخت",
@@ -1708,7 +1710,7 @@
           "items": {
             "identity": "یک سند هویتی معتبر (پاسپورت، تذکره یا گزینه مورد تأیید).",
             "business": "جزئیات کسب‌وکار اگر به‌نام شرکت ثبت‌نام می‌کنید.",
-            "address": "آدرس فعالیت و در صورت نیاز سند اثبات آدرس.",
+            "address": "آدرس فعالیت.",
             "bank": "جزئیات حساب بانکی برای دریافت پرداخت."
           }
         },
