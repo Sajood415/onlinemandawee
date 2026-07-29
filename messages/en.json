@@ -3919,7 +3919,11 @@
       "title": "Delivery method",
       "pickup": "Pickup",
       "express": "Express",
-      "standard": "Standard"
+      "standard": "Standard",
+      "expressHint": "Seller ships straight to your address.",
+      "standardHint": "Goes to our warehouse first, then we ship to you.",
+      "customsCheckbox": "I understand any customs or import charges are paid by me and are not included in this total.",
+      "customsRequired": "Please confirm you understand customs charges before continuing."
     },
     "contact": {
       "fullName": "Full Name",

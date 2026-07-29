@@ -62,6 +62,10 @@ export function useCheckoutCopy() {
         pickup: t("deliveryMethod.pickup"),
         express: t("deliveryMethod.express"),
         standard: t("deliveryMethod.standard"),
+        expressHint: t("deliveryMethod.expressHint"),
+        standardHint: t("deliveryMethod.standardHint"),
+        customsCheckbox: t("deliveryMethod.customsCheckbox"),
+        customsRequired: t("deliveryMethod.customsRequired"),
       },
       contact: {
         fullName: t("contact.fullName"),

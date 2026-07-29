@@ -810,7 +810,29 @@ function DeliveryCostStep({
   const breakdown = summary?.deliveryBreakdown ?? [];
   const pickupLocations = summary?.pickupLocations ?? [];
   const isPickup = deliveryMethod === "PICKUP";
-  const canContinue = Boolean(summary) && !loading && !error;
+  const isExpress = deliveryMethod === "EXPRESS";
+  const [customsAccepted, setCustomsAccepted] = useState(false);
+
+  useEffect(() => {
+    if (!isExpress) setCustomsAccepted(false);
+  }, [isExpress]);
+
+  const canContinue =
+    Boolean(summary) && !loading && !error && (!isExpress || customsAccepted);
+
+  const methodOptions = [
+    { value: "PICKUP" as const, label: copy.deliveryMethod.pickup, hint: null },
+    {
+      value: "EXPRESS" as const,
+      label: copy.deliveryMethod.express,
+      hint: copy.deliveryMethod.expressHint,
+    },
+    {
+      value: "STANDARD" as const,
+      label: copy.deliveryMethod.standard,
+      hint: copy.deliveryMethod.standardHint,
+    },
+  ];
 
   return (
     <div className="space-y-7">
@@ -819,26 +841,53 @@ function DeliveryCostStep({
           {copy.deliveryMethod.title}
         </p>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          {([
-            ["PICKUP", copy.deliveryMethod.pickup],
-            ["EXPRESS", copy.deliveryMethod.express],
-            ["STANDARD", copy.deliveryMethod.standard],
-          ] as const).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => onDeliveryMethodChange(value)}
-              className={`border px-3 py-2.5 text-sm font-semibold transition ${
-                deliveryMethod === value
-                  ? "border-[#0F3460] bg-[#0F3460] text-white"
-                  : "border-neutral-300 text-neutral-700 hover:border-neutral-500"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+          {methodOptions.map(({ value, label, hint }) => {
+            const selected = deliveryMethod === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => onDeliveryMethodChange(value)}
+                className={`border px-3 py-2.5 text-left transition ${
+                  selected
+                    ? "border-[#0F3460] bg-[#0F3460] text-white"
+                    : "border-neutral-300 text-neutral-700 hover:border-neutral-500"
+                }`}
+              >
+                <span className="block text-sm font-semibold">{label}</span>
+                {hint ? (
+                  <span
+                    className={`mt-1 block text-xs font-normal leading-snug ${
+                      selected ? "text-white/80" : "text-neutral-500"
+                    }`}
+                  >
+                    {hint}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
         </div>
       </div>
+
+      {isExpress ? (
+        <div className="space-y-2">
+          <label className="flex cursor-pointer items-start gap-3 border border-neutral-200 px-4 py-3 text-left">
+            <input
+              type="checkbox"
+              checked={customsAccepted}
+              onChange={(e) => setCustomsAccepted(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[#0F3460]"
+            />
+            <span className="text-sm text-neutral-700">
+              {copy.deliveryMethod.customsCheckbox}
+            </span>
+          </label>
+          {!customsAccepted ? (
+            <p className="text-xs text-neutral-500">{copy.deliveryMethod.customsRequired}</p>
+          ) : null}
+        </div>
+      ) : null}
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
