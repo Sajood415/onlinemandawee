@@ -41,6 +41,8 @@ io.use(async (socket, next) => {
   next();
 });
 
+const ADMIN_NOTIFICATIONS_ROOM = "admin:notifications";
+
 io.on("connection", (socket) => {
   const user = socket.data.user as Awaited<ReturnType<typeof authenticateSocketToken>>;
 
@@ -66,6 +68,19 @@ io.on("connection", (socket) => {
     if (!refundCaseId) return;
     await socket.leave(disputeRoomName(refundCaseId));
   });
+
+  socket.on("admin:notifications:join", async (_payload: unknown, ack?: (result: { ok: boolean; error?: string }) => void) => {
+    if (!user || user.role !== "ADMIN") {
+      ack?.({ ok: false, error: "Access denied" });
+      return;
+    }
+    await socket.join(ADMIN_NOTIFICATIONS_ROOM);
+    ack?.({ ok: true });
+  });
+
+  socket.on("admin:notifications:leave", async () => {
+    await socket.leave(ADMIN_NOTIFICATIONS_ROOM);
+  });
 });
 
 app.get("/health", (_request, response) => {
@@ -85,7 +100,7 @@ app.post("/internal/broadcast", (request, response) => {
     return;
   }
 
-  if (!body.room.startsWith("dispute:")) {
+  if (!body.room.startsWith("dispute:") && !body.room.startsWith("admin:")) {
     response.status(400).json({ error: "Invalid room" });
     return;
   }

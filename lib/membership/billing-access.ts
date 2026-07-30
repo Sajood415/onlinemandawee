@@ -1,4 +1,5 @@
 import { env } from "@/config/env";
+import { notifyAdmins } from "@/lib/admin/notify-admins";
 import { prisma } from "@/lib/db/prisma";
 import {
   isMembershipBillingSuspension,
@@ -46,6 +47,7 @@ export async function syncVendorBillingAccess(vendorProfileId: string) {
     select: {
       id: true,
       userId: true,
+      storeName: true,
       onboardingStep: true,
       status: true,
       suspendedAt: true,
@@ -89,6 +91,14 @@ export async function syncVendorBillingAccess(vendorProfileId: string) {
           ? { subscriptionStatus: "SUSPENDED" }
           : {}),
       },
+    });
+    void notifyAdmins({
+      type: "VENDOR_BILLING_SUSPENDED",
+      title: "Vendor suspended for unpaid membership",
+      body: `"${vendor.storeName ?? "Shop"}" was suspended after membership payment failure.`,
+      href: `/admin/vendors/${vendor.id}`,
+      entityType: "VendorProfile",
+      entityId: vendor.id,
     });
     return { changed: true, action: "suspended" as const };
   }

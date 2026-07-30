@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import type Stripe from "stripe";
 
 import { env } from "@/config/env";
+import { notifyAdmins } from "@/lib/admin/notify-admins";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { syncVendorBillingAccess } from "@/lib/membership/billing-access";
@@ -255,6 +256,15 @@ export class StripeMembershipWebhookService {
     });
 
     const access = await syncVendorBillingAccess(vendor.id);
+
+    void notifyAdmins({
+      type: "MEMBERSHIP_PAYMENT_FAILED",
+      title: "Membership payment failed",
+      body: `"${vendor.storeName ?? "Shop"}" membership payment failed.`,
+      href: `/admin/vendors/${vendor.id}`,
+      entityType: "VendorProfile",
+      entityId: vendor.id,
+    });
 
     return {
       eventId: event.id,

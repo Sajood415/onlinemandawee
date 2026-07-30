@@ -1,4 +1,5 @@
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
+import { notifyAdmins } from "@/lib/admin/notify-admins";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { prisma } from "@/lib/db/prisma";
@@ -193,6 +194,15 @@ export class StandardConsolidationService {
       },
     });
 
+    void notifyAdmins({
+      type: "WAREHOUSE_INBOUND_SHIPPED",
+      title: "Inbound shipment to warehouse",
+      body: "A vendor shipped goods to the warehouse.",
+      href: "/admin/warehouse",
+      entityType: "VendorInboundShipment",
+      entityId: shipment.id,
+    });
+
     return {
       shipmentId: shipment.id,
       vendorOrderId: vendorOrder.id,
@@ -284,6 +294,15 @@ export class StandardConsolidationService {
         vendorOrderId: shipment.orderVendorId,
         trackingRef: updatedShipment.trackingRef ?? null,
       },
+    });
+
+    void notifyAdmins({
+      type: "WAREHOUSE_INBOUND_SHIPPED",
+      title: "Inbound shipment to warehouse",
+      body: "A vendor shipment to the warehouse was recorded.",
+      href: "/admin/warehouse",
+      entityType: "VendorInboundShipment",
+      entityId: updatedShipment.id,
     });
 
     return {
@@ -385,6 +404,14 @@ export class StandardConsolidationService {
         void sendStandardDeliveryCustomerNotification({
           orderId: shipment.orderId,
           stage: "ALL_AT_WAREHOUSE",
+        });
+        void notifyAdmins({
+          type: "WAREHOUSE_BATCH_READY",
+          title: "Warehouse batch ready",
+          body: "A consolidation batch is ready to consolidate.",
+          href: "/admin/warehouse",
+          entityType: "ConsolidationBatch",
+          entityId: batch.id,
         });
       } else if (
         batch.status === "PARTIALLY_RECEIVED" &&

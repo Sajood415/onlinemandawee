@@ -1,6 +1,7 @@
 import type { GiftRequestStatus } from "@prisma/client";
 
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
+import { notifyAdmins } from "@/lib/admin/notify-admins";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import {
@@ -76,6 +77,14 @@ export class GiftRequestService {
     });
 
     void sendGiftRequestEmails(giftRequest);
+    void notifyAdmins({
+      type: "GIFT_REQUEST_CREATED",
+      title: "New gift request",
+      body: `${giftRequest.requestNumber} from ${giftRequest.senderName}.`,
+      href: `/admin/gift-requests`,
+      entityType: "GiftRequest",
+      entityId: giftRequest.id,
+    });
 
     return serializeGiftRequest(giftRequest);
   }
@@ -171,6 +180,15 @@ export class GiftRequestService {
       paymentMethod: "OFFLINE",
       offlinePaymentNote: offlinePaymentNote ?? null,
       status: "IN_PROGRESS",
+    });
+
+    void notifyAdmins({
+      type: "GIFT_REQUEST_PAID",
+      title: "Gift request paid",
+      body: `${updated.requestNumber} is paid and ready for fulfillment.`,
+      href: `/admin/gift-requests`,
+      entityType: "GiftRequest",
+      entityId: updated.id,
     });
 
     return serializeGiftRequest(updated);
@@ -308,6 +326,15 @@ export class GiftRequestService {
       paymentMethod: "STRIPE",
       stripePaymentIntentId: paymentIntentId,
       status: "IN_PROGRESS",
+    });
+
+    void notifyAdmins({
+      type: "GIFT_REQUEST_PAID",
+      title: "Gift request paid",
+      body: `${updated.requestNumber} is paid and ready for fulfillment.`,
+      href: `/admin/gift-requests`,
+      entityType: "GiftRequest",
+      entityId: updated.id,
     });
 
     return serializeGiftRequest(updated);

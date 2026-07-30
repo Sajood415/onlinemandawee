@@ -23,6 +23,7 @@ type DashboardNavItem = {
 type RoleDashboardLayoutProps = {
   topBarTitle: string;
   items: DashboardNavItem[];
+  topBarEnd?: ReactNode;
   children: ReactNode;
 };
 
@@ -91,6 +92,7 @@ function isSidebarItemActive(
 function RoleDashboardLayoutInner({
   topBarTitle,
   items,
+  topBarEnd,
   children,
 }: RoleDashboardLayoutProps) {
   const t = useTranslations("Dashboard.shell");
@@ -220,6 +222,7 @@ function RoleDashboardLayoutInner({
           <h1 className="min-w-0 flex-1 truncate text-base font-semibold tracking-tight text-[#0f3460] sm:text-lg lg:text-xl">
             {topBarTitle}
           </h1>
+          {topBarEnd}
           {languageOptions.length > 1 ? (
             <div className="shrink-0">
               <LanguageSelector

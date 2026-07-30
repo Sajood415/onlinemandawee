@@ -2,6 +2,7 @@ import type { HawalaTransferStatus } from "@prisma/client";
 
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { env } from "@/config/env";
+import { notifyAdmins } from "@/lib/admin/notify-admins";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { convertHawalaAmountMinor, getHawalaExchangeRate } from "@/lib/hawala/convert";
@@ -162,6 +163,15 @@ export class HawalaTransferService {
       entityType: "HawalaTransfer",
       entityId: transfer.id,
       metadata: { transferNumber: transfer.transferNumber },
+    });
+
+    void notifyAdmins({
+      type: "HAWALA_SUBMITTED",
+      title: "New Hawala transfer",
+      body: `${transfer.transferNumber} is waiting for review.`,
+      href: "/admin/hawala",
+      entityType: "HawalaTransfer",
+      entityId: transfer.id,
     });
 
     if (transfer.senderEmail) {

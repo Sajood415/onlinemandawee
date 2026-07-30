@@ -1,3 +1,4 @@
+import { notifyAdmins } from "@/lib/admin/notify-admins";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import {
@@ -57,6 +58,15 @@ export class VendorProductService {
       actorUserId: auth.id,
       actorRole: auth.role,
       action: "vendor.product_created",
+      entityType: "Product",
+      entityId: product.id,
+    });
+
+    void notifyAdmins({
+      type: "PRODUCT_PENDING_APPROVAL",
+      title: "Product pending approval",
+      body: `"${product.name}" needs review.`,
+      href: "/admin/products",
       entityType: "Product",
       entityId: product.id,
     });
@@ -181,6 +191,15 @@ export class VendorProductService {
       actorUserId: auth.id,
       actorRole: auth.role,
       action: "vendor.product_submitted",
+      entityType: "Product",
+      entityId: updated.id,
+    });
+
+    void notifyAdmins({
+      type: "PRODUCT_PENDING_APPROVAL",
+      title: "Product resubmitted for approval",
+      body: `"${updated.name}" needs review again.`,
+      href: "/admin/products",
       entityType: "Product",
       entityId: updated.id,
     });

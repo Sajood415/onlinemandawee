@@ -1,4 +1,5 @@
 import { env } from "@/config/env";
+import { notifyAdmins } from "@/lib/admin/notify-admins";
 import { verifyOtpProofToken } from "@/lib/auth/otp-proof";
 import { hashPassword } from "@/lib/auth/password";
 import { AppError } from "@/lib/errors/app-error";
@@ -299,9 +300,18 @@ export class VendorOnboardingService {
       entityId: vendorProfile.id,
     });
 
+    const storeLabel = vendorProfile.storeName ?? "your store";
+    void notifyAdmins({
+      type: "VENDOR_SUBMITTED",
+      title: "Vendor application submitted",
+      body: `"${storeLabel}" is waiting for review.`,
+      href: `/admin/vendors/${vendorProfile.id}`,
+      entityType: "VendorProfile",
+      entityId: vendorProfile.id,
+    });
+
     try {
       const recipientName = vendorProfile.user.fullName.trim();
-      const storeLabel = vendorProfile.storeName ?? "your store";
       await sendTransactionalEmail({
         to: vendorProfile.user.email,
         subject: `${env.APP_NAME} — We received your vendor application`,

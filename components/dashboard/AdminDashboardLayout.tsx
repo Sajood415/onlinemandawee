@@ -19,6 +19,7 @@ import {
   Wallet,
 } from "lucide-react";
 
+import { AdminNotificationBell } from "@/components/admin/AdminNotificationBell";
 import { RoleDashboardLayout } from "@/components/dashboard/RoleDashboardLayout";
 
 type AdminDashboardLayoutProps = {
@@ -31,6 +32,7 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
   return (
     <RoleDashboardLayout
       topBarTitle={t("title")}
+      topBarEnd={<AdminNotificationBell />}
       items={[
         { label: t("nav.dashboard"), href: "/admin/dashboard", icon: <LayoutDashboard size={16} /> },
         { label: t("nav.vendors"), href: "/admin/vendors", icon: <PackageSearch size={16} /> },

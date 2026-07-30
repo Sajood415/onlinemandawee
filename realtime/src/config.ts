@@ -1,3 +1,5 @@
+import "./load-env.js";
+
 function required(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) {

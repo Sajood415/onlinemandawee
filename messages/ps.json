@@ -240,6 +240,12 @@
         "disputes": "شخړې",
         "users": "کاروونکي",
         "settings": "تنظیمات"
+      },
+      "notifications": {
+        "title": "خبرتیاوې",
+        "markAllRead": "ټولې لوستل شوې په نښه کړئ",
+        "empty": "تراوسه هیڅ خبرتیا نشته.",
+        "loading": "پورته کېږي…"
       }
     },
     "vendor": {

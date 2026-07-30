@@ -240,6 +240,12 @@
         "disputes": "Disputes",
         "users": "Users",
         "settings": "Settings"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "markAllRead": "Mark all as read",
+        "empty": "No notifications yet.",
+        "loading": "Loading…"
       }
     },
     "vendor": {

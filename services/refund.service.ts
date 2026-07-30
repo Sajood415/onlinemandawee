@@ -4,6 +4,7 @@ import { env } from "@/config/env.shared";
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { disputeRoomName } from "@/domain/realtime/dispute-events";
 import type { PaymentStatus } from "@/domain/order/order-status";
+import { notifyAdmins } from "@/lib/admin/notify-admins";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { prisma } from "@/lib/db/prisma";
@@ -537,6 +538,14 @@ export class RefundService {
 
     const serialized = this.serializeRefundCase(updated);
     void sendRefundEscalatedAdminEmail(this.toRefundEmailCase(serialized));
+    void notifyAdmins({
+      type: "REFUND_ESCALATED",
+      title: "Refund escalated",
+      body: `Order ${serialized.order.orderNumber} needs admin review.`,
+      href: "/admin/disputes",
+      entityType: "RefundCase",
+      entityId: serialized.id,
+    });
     return serialized;
   }
 
@@ -1012,6 +1021,14 @@ export class RefundService {
       void sendRefundOverdueEscalationSummaryEmail({
         count: escalated.length,
         orderNumbers: escalated.map((item) => item.orderNumber),
+      });
+      void notifyAdmins({
+        type: "REFUND_OVERDUE_ESCALATED",
+        title: "Overdue refunds escalated",
+        body: `${escalated.length} overdue refund case(s) need admin review.`,
+        href: "/admin/disputes",
+        entityType: "RefundCase",
+        entityId: escalated[0]?.id ?? null,
       });
     }
 
@@ -1748,6 +1765,14 @@ export class RefundService {
         sendRefundOpenedCustomerEmail(emailCase),
         sendRefundEscalatedAdminEmail(emailCase),
       ]);
+      void notifyAdmins({
+        type: "REFUND_ESCALATED",
+        title: "Platform refund opened",
+        body: `Order ${refundCase.order.orderNumber} needs admin review.`,
+        href: "/admin/disputes",
+        entityType: "RefundCase",
+        entityId: refundCase.id,
+      });
       return;
     }
 
