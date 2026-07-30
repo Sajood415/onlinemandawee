@@ -555,11 +555,11 @@ export async function buildGuestCheckoutQuote(input: {
         if (warehouseAddress) {
           pickupLocations.push({
             vendorProfileId: product.vendorProfileId,
-            storeName: product.vendorProfile.storeName,
+            storeName: product.vendorProfile.storeName ?? "Shop",
             addressLine1: warehouseAddress.addressLine1,
             city: warehouseAddress.city,
             country: warehouseAddress.country,
-            postalCode: warehouseAddress.postalCode,
+            postalCode: warehouseAddress.postalCode ?? "",
           });
         }
         continue;
@@ -569,11 +569,11 @@ export async function buildGuestCheckoutQuote(input: {
       if (!address) continue;
       pickupLocations.push({
         vendorProfileId: product.vendorProfileId,
-        storeName: product.vendorProfile.storeName,
+        storeName: product.vendorProfile.storeName ?? "Shop",
         addressLine1: address.addressLine1,
         city: address.city,
         country: address.country,
-        postalCode: address.postalCode,
+        postalCode: address.postalCode ?? "",
       });
     }
   }
