@@ -1,0 +1,277 @@
+"use client";
+
+import Image from "next/image";
+import { useCallback, useEffect, useState } from "react";
+import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { CreditCard, Loader2 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+
+import { CheckoutStripeProvider } from "@/components/checkout/CheckoutStripeProvider";
+import {
+  getStripeCheckoutLoadErrorMessage,
+  getStripeKeyMode,
+} from "@/lib/stripe/checkout-client";
+import { getStripePromise, isStripeCheckoutConfigured } from "@/lib/stripe/client";
+import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
+import { parseApiResponse } from "@/lib/http/parse-api-response";
+import { toast } from "@/lib/utils/toast";
+
+type SupplyRequestQuotePaymentProps = {
+  requestId: string;
+  requestNumber: string;
+  quoteAmountMinor: number;
+  quoteCurrency: string;
+  quoteNote: string | null;
+  quoteImageUrl: string | null;
+  intentUrl: string;
+  confirmUrl: string;
+  returnUrl?: string;
+  /** Use authenticated fetch (customer account). Guest track uses false. */
+  authenticated?: boolean;
+  onPaid: () => void;
+};
+
+async function postJson(
+  url: string,
+  body?: unknown,
+  authenticated?: boolean
+) {
+  const init: RequestInit = {
+    method: "POST",
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  };
+  return authenticated ? fetchWithAuth(url, init) : fetch(url, init);
+}
+
+type PaymentIntentData = {
+  clientSecret: string;
+  paymentIntentId: string;
+  quoteAmountMinor: number;
+  quoteCurrency: string;
+};
+
+function formatMoney(amountMinor: number, currency: string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency.toUpperCase(),
+  }).format(amountMinor / 100);
+}
+
+function SupplyStripePaymentForm({
+  clientSecret,
+  confirmUrl,
+  returnUrl,
+  authenticated,
+  onPaid,
+  onRetry,
+}: {
+  clientSecret: string;
+  confirmUrl: string;
+  returnUrl?: string;
+  authenticated?: boolean;
+  onPaid: () => void;
+  onRetry: () => void;
+}) {
+  const t = useTranslations("SupplyPages.payment");
+  const stripe = useStripe();
+  const elements = useElements();
+  const [paying, setPaying] = useState(false);
+  const [paymentElementReady, setPaymentElementReady] = useState(false);
+  const [paymentElementError, setPaymentElementError] = useState<string | null>(null);
+  const publishableKeyMode = getStripeKeyMode(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+
+  useEffect(() => {
+    setPaymentElementReady(false);
+    setPaymentElementError(null);
+  }, [clientSecret]);
+
+  const handlePay = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!stripe || !elements || !paymentElementReady) return;
+
+    setPaying(true);
+    try {
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        toast.error(submitError.message ?? t("checkCard"));
+        return;
+      }
+
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: returnUrl ?? `${window.location.origin}${window.location.pathname}${window.location.search}`,
+        },
+        redirect: "if_required",
+      });
+
+      if (error) {
+        toast.error(error.message ?? t("paymentFailed"));
+        return;
+      }
+
+      if (paymentIntent?.status === "succeeded") {
+        const response = await postJson(
+          confirmUrl,
+          { paymentIntentId: paymentIntent.id },
+          authenticated
+        );
+        await parseApiResponse(response);
+        toast.success(t("paymentSuccess"));
+        onPaid();
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("paymentIncomplete"));
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  return (
+    <form onSubmit={(event) => void handlePay(event)} className="space-y-4">
+      {paymentElementError ? (
+        <div className="space-y-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <p>{paymentElementError}</p>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="text-sm font-semibold text-[#0f3460] underline hover:no-underline"
+          >
+            {t("reloadForm")}
+          </button>
+        </div>
+      ) : null}
+      <div className="rounded-xl border border-neutral-200 p-4">
+        <PaymentElement
+          key={clientSecret}
+          options={{ layout: "tabs" }}
+          onLoadError={(event) => {
+            const message = getStripeCheckoutLoadErrorMessage(
+              event.error?.message,
+              publishableKeyMode
+            );
+            setPaymentElementError(message);
+            setPaymentElementReady(false);
+            toast.error(message);
+          }}
+          onReady={() => {
+            setPaymentElementError(null);
+            setPaymentElementReady(true);
+          }}
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={!stripe || !elements || !paymentElementReady || paying}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-60 sm:w-auto"
+      >
+        {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+        {paying ? t("processing") : t("payNow")}
+      </button>
+    </form>
+  );
+}
+
+export function SupplyRequestQuotePayment({
+  requestNumber,
+  quoteAmountMinor,
+  quoteCurrency,
+  quoteNote,
+  quoteImageUrl,
+  intentUrl,
+  confirmUrl,
+  returnUrl,
+  authenticated = false,
+  onPaid,
+}: SupplyRequestQuotePaymentProps) {
+  const locale = useLocale();
+  const t = useTranslations("SupplyPages.payment");
+  const [loading, setLoading] = useState(false);
+  const [payment, setPayment] = useState<PaymentIntentData | null>(null);
+  const [intentError, setIntentError] = useState<string | null>(null);
+
+  const loadIntent = useCallback(async () => {
+    if (!isStripeCheckoutConfigured()) return;
+
+    setLoading(true);
+    setIntentError(null);
+    try {
+      const response = await postJson(intentUrl, undefined, authenticated);
+      const data = await parseApiResponse<PaymentIntentData>(response);
+      setPayment(data);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t("startFailed");
+      setIntentError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [authenticated, intentUrl, t]);
+
+  useEffect(() => {
+    if (!isStripeCheckoutConfigured()) return;
+    void getStripePromise();
+    void loadIntent();
+  }, [loadIntent]);
+
+  return (
+    <section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+      <h3 className="text-sm font-semibold text-amber-900">{t("title")}</h3>
+      <p className="mt-1 text-sm text-amber-800">
+        {requestNumber} · {formatMoney(quoteAmountMinor, quoteCurrency)}
+      </p>
+
+      {quoteImageUrl ? (
+        <div className="relative mt-4 aspect-[4/3] max-w-sm overflow-hidden rounded-xl border border-amber-200 bg-white">
+          <Image
+            src={quoteImageUrl}
+            alt={t("previewAlt")}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 100vw, 320px"
+          />
+        </div>
+      ) : null}
+
+      {quoteNote ? (
+        <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-amber-900">
+          {quoteNote}
+        </p>
+      ) : null}
+
+      {!isStripeCheckoutConfigured() ? (
+        <p className="mt-4 text-sm text-amber-900">{t("stripeUnavailable")}</p>
+      ) : loading ? (
+        <div className="mt-4 inline-flex items-center gap-2 text-sm text-amber-900">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {t("preparing")}
+        </div>
+      ) : intentError ? (
+        <div className="mt-4 space-y-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <p>{intentError}</p>
+          <button
+            type="button"
+            onClick={() => void loadIntent()}
+            className="text-sm font-semibold text-[#0f3460] underline hover:no-underline"
+          >
+            {t("tryAgain")}
+          </button>
+        </div>
+      ) : payment?.clientSecret ? (
+        <div className="mt-4 rounded-xl border border-white/80 bg-white p-4">
+          <CheckoutStripeProvider clientSecret={payment.clientSecret} locale={locale}>
+            <SupplyStripePaymentForm
+              clientSecret={payment.clientSecret}
+              confirmUrl={confirmUrl}
+              returnUrl={returnUrl}
+              authenticated={authenticated}
+              onPaid={onPaid}
+              onRetry={() => void loadIntent()}
+            />
+          </CheckoutStripeProvider>
+        </div>
+      ) : null}
+    </section>
+  );
+}

@@ -51,6 +51,11 @@ export function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
         { label: t("nav.banners"), href: "/admin/banners", icon: <ImageIcon size={16} /> },
         { label: t("nav.reviews"), href: "/admin/reviews", icon: <Star size={16} /> },
         { label: t("nav.giftRequests"), href: "/admin/gift-requests", icon: <Gift size={16} /> },
+        {
+          label: t("nav.supplyRequests"),
+          href: "/admin/supply-requests",
+          icon: <PackageSearch size={16} />,
+        },
         { label: t("nav.hawala"), href: "/admin/hawala", icon: <Banknote size={16} /> },
         { label: t("nav.settings"), href: "/admin/settings", icon: <Settings size={16} /> },
       ]}

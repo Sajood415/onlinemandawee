@@ -6,7 +6,6 @@ import {
   Baby,
   Banknote,
   ChevronDown,
-  Flame,
   Gift,
   HelpCircle,
   LogOut,
@@ -74,8 +73,13 @@ export function MobileNavMenu({
     },
     { href: "/hawala", label: copy.hawalaShort, icon: <Banknote size={18} /> },
     { href: "/contact", label: copy.support, icon: <HelpCircle size={18} /> },
-    { href: "/deals", label: copy.hot, icon: <Flame size={18} />, highlight: true },
+    { href: "/deals", label: copy.hot, icon: <span className="text-[18px] leading-none" aria-hidden>🔥</span>, highlight: true },
     { href: "/gifts", label: copy.giftSets, icon: <Gift size={18} /> },
+    {
+      href: "/supply-request",
+      label: copy.supplyRequest,
+      icon: <PackageSearch size={18} />,
+    },
     { href: "/vendor/register", label: copy.sellOnPlatform, icon: <Store size={18} /> },
     { href: "/orders", label: copy.trackOrder, icon: <PackageSearch size={18} /> },
   ];

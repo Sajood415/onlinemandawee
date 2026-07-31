@@ -8,6 +8,7 @@ import {
   CreditCard,
   DollarSign,
   Gift,
+  PackageSearch,
   RefreshCw,
   Scale,
   ShoppingBag,
@@ -34,6 +35,8 @@ type AdminDashboardOverview = {
   totalSubscriptionRevenue: number;
   totalGiftRequestRevenue: number;
   paidGiftRequestsCount: number;
+  totalSupplyRequestRevenue: number;
+  paidSupplyRequestsCount: number;
   netRevenueAmount: number;
   pendingVendorsCount: number;
   payoutsOnHoldAmount: number;
@@ -250,6 +253,16 @@ export default function AdminDashboardPage() {
               value={formatMoney(overview.totalGiftRequestRevenue)}
               sub={t("tiles.giftsSub", {
                 count: overview.paidGiftRequestsCount.toLocaleString(locale),
+              })}
+            />
+            <MetricTile
+              href="/admin/supply-requests"
+              accentClass="bg-cyan-600"
+              icon={<PackageSearch className="h-5 w-5" />}
+              label={t("tiles.supply")}
+              value={formatMoney(overview.totalSupplyRequestRevenue ?? 0)}
+              sub={t("tiles.supplySub", {
+                count: (overview.paidSupplyRequestsCount ?? 0).toLocaleString(locale),
               })}
             />
             <MetricTile

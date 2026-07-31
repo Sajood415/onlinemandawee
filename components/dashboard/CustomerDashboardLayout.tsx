@@ -1,6 +1,6 @@
 "use client";
 
-import { Banknote, Gift, LayoutDashboard, Scale, Settings } from "lucide-react";
+import { Banknote, Gift, LayoutDashboard, PackageSearch, Scale, Settings } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { RoleDashboardLayout } from "@/components/dashboard/RoleDashboardLayout";
@@ -31,6 +31,11 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
           label: t("nav.giftRequests"),
           href: "/account/gift-requests",
           icon: <Gift size={16} />,
+        },
+        {
+          label: t("nav.supplyRequests"),
+          href: "/account/supply-requests",
+          icon: <PackageSearch size={16} />,
         },
         {
           label: t("nav.hawala"),

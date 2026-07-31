@@ -4,6 +4,7 @@ import { CategoryRepository } from "@/repositories/category.repository";
 import { CommissionLedgerRepository } from "@/repositories/commission-ledger.repository";
 import { GiftRequestRepository } from "@/repositories/gift-request.repository";
 import { MembershipInvoiceRepository } from "@/repositories/membership-invoice.repository";
+import { SupplyRequestRepository } from "@/repositories/supply-request.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { PayoutRepository } from "@/repositories/payout.repository";
 import { RefundCaseRepository } from "@/repositories/refund-case.repository";
@@ -32,6 +33,7 @@ export class AdminReportService {
     private readonly membershipInvoiceRepository = new MembershipInvoiceRepository(),
     private readonly refundCaseRepository = new RefundCaseRepository(),
     private readonly giftRequestRepository = new GiftRequestRepository(),
+    private readonly supplyRequestRepository = new SupplyRequestRepository(),
     private readonly categoryRepository = new CategoryRepository()
   ) {}
 
@@ -70,6 +72,12 @@ export class AdminReportService {
     const paidGiftRequests = (await this.giftRequestRepository.listPaidForReporting()).filter(
       (giftRequest) => giftRequest.paidAt && this.isWithinRange(giftRequest.paidAt, range)
     );
+    const paidSupplyRequests = (
+      await this.supplyRequestRepository.listPaidForReporting()
+    ).filter(
+      (supplyRequest) =>
+        supplyRequest.paidAt && this.isWithinRange(supplyRequest.paidAt, range)
+    );
     const totalCommissionAmount = commissions.reduce(
       (sum, entry) => sum + entry.commissionAmount,
       0
@@ -81,8 +89,16 @@ export class AdminReportService {
       (sum, giftRequest) => sum + (giftRequest.paidAmountMinor ?? 0),
       0
     );
+    const totalSupplyRequestRevenue = paidSupplyRequests.reduce((sum, supplyRequest) => {
+      const paid = supplyRequest.paidAmountMinor ?? 0;
+      const refunded = supplyRequest.refundAmountMinor ?? 0;
+      return sum + Math.max(0, paid - refunded);
+    }, 0);
     const netRevenueAmount =
-      totalCommissionAmount + totalSubscriptionRevenue + totalGiftRequestRevenue;
+      totalCommissionAmount +
+      totalSubscriptionRevenue +
+      totalGiftRequestRevenue +
+      totalSupplyRequestRevenue;
 
     return {
       customersCount,
@@ -102,6 +118,8 @@ export class AdminReportService {
       totalSubscriptionRevenue,
       totalGiftRequestRevenue,
       paidGiftRequestsCount: paidGiftRequests.length,
+      totalSupplyRequestRevenue,
+      paidSupplyRequestsCount: paidSupplyRequests.length,
       netRevenueAmount,
       payoutsOnHoldAmount: allPayouts
         .filter((payout) => payout.status === "ON_HOLD")

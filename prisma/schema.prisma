@@ -271,6 +271,7 @@ model User {
   refundCases       RefundCase[]
   caseMessages      CaseMessage[]
   giftRequests             GiftRequest[]
+  supplyRequests           SupplyRequest[]
   hawalaTransfers          HawalaTransfer[]
   productReviews           ProductReview[]
   adminNotificationReads   AdminNotificationRead[]
@@ -1053,6 +1054,87 @@ model GiftRequest {
   @@index([userId, createdAt])
   @@index([status, createdAt])
   @@index([senderEmail, createdAt])
+}
+
+enum SupplyRequestStatus {
+  SUBMITTED
+  REVIEWING
+  AWAITING_PAYMENT
+  IN_PROGRESS
+  SHIPPED
+  COMPLETED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum SupplyRequestPaymentMethod {
+  STRIPE
+  OFFLINE
+}
+
+enum SupplyRequestDeliveryMode {
+  SHIP
+  PICKUP
+}
+
+model SupplyRequest {
+  id                    String                      @id @default(auto()) @map("_id") @db.ObjectId
+  requestNumber         String                      @unique
+  userId                String?                     @db.ObjectId
+  guestTrackingToken    String                      @unique
+  productName           String
+  brand                 String?
+  modelSku              String?
+  quantity              Int
+  description           String
+  referenceUrls         String[]                    @default([])
+  imageUrls             String[]                    @default([])
+  categoryHint          String?
+  budgetMinMinor        Int?
+  budgetMaxMinor        Int?
+  budgetCurrency        String?
+  neededByDate          String?
+  urgencyNote           String?
+  allowAlternatives     Boolean                     @default(true)
+  deliveryMode          SupplyRequestDeliveryMode
+  customerName         String
+  customerEmail         String
+  customerPhone         String
+  whatsapp              String?
+  preferredContact      String?
+  city                  String
+  province              String?
+  address               String
+  adminNote             String?
+  rejectReason          String?
+  quoteAmountMinor      Int?
+  quoteCurrency         String?
+  quoteNote             String?
+  quoteImageUrl         String?
+  quoteSentAt           DateTime?
+  quoteExpiresAt        DateTime?
+  paidAt                DateTime?
+  paidAmountMinor       Int?
+  paymentMethod         SupplyRequestPaymentMethod?
+  offlinePaymentNote    String?
+  stripePaymentIntentId String?
+  refundedAt            DateTime?
+  refundAmountMinor     Int?
+  refundNote            String?
+  stripeRefundId        String?
+  trackingRef           String?
+  carrierNote           String?
+  shippedAt             DateTime?
+  completedAt           DateTime?
+  status                SupplyRequestStatus         @default(SUBMITTED)
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+  user                  User?                       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([customerEmail, createdAt])
 }
 
 model PlatformSettings {

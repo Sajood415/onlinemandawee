@@ -178,6 +178,11 @@
         }
       ],
       "copyright": "© ۲۰۲۶ منداوی"
+    },
+    "supplyCta": {
+      "title": "در کاتالوگ نیست؟",
+      "subtitle": "درخواست تامین محصول بفرستید — قیمت واضح قبل از پرداخت.",
+      "cta": "درخواست تامین محصول"
     }
   },
   "Common": {
@@ -239,7 +244,8 @@
         "hawala": "حواله",
         "disputes": "اختلافات",
         "users": "کاربران",
-        "settings": "تنظیمات"
+        "settings": "تنظیمات",
+        "supplyRequests": "درخواست تامین محصول"
       },
       "notifications": {
         "title": "اعلان‌ها",
@@ -270,7 +276,8 @@
         "giftRequests": "درخواست‌های هدیه",
         "hawala": "حواله",
         "disputes": "اختلافات",
-        "settings": "تنظیمات"
+        "settings": "تنظیمات",
+        "supplyRequests": "درخواست‌های تامین محصول"
       }
     }
   },
@@ -435,6 +442,51 @@
       },
       "errors": {
         "loadFailed": "بارگذاری انتقال‌های حواله ناموفق بود."
+      }
+    },
+    "supplyRequests": {
+      "badge": "درخواست‌های تامین محصول",
+      "title": "درخواست‌های تامین محصول شما",
+      "subtitle": "درخواست تامین محصول، قیمت، پرداخت و تحویل را پیگیری کنید.",
+      "loading": "در حال بارگذاری درخواست‌های تامین محصول...",
+      "count": "{count, plural, one {# درخواست} other {# درخواست}}",
+      "quantity": "تعداد",
+      "deliveryMode": "تحویل",
+      "neededBy": "مورد نیاز تا",
+      "budget": "بودجه",
+      "deliveryAddress": "آدرس",
+      "description": "توضیحات",
+      "referenceUrls": "لینک‌های مرجع",
+      "images": "عکس‌ها",
+      "adminNote": "یادداشت تیم ما",
+      "tracking": "پیگیری",
+      "rejected": "رد شد",
+      "refunded": "بازپرداخت شد",
+      "submitted": "ارسال شده {date}",
+      "lastUpdated": "آخرین به‌روزرسانی {date}",
+      "paymentReceived": "پرداخت دریافت شد: {amount}",
+      "emptyTitle": "هنوز درخواست تامین محصول ندارید",
+      "emptyDescription": "از صفحه درخواست تامین محصول ارسال کنید. درخواست‌های مرتبط با ایمیل حساب شما اینجا نمایش داده می‌شود.",
+      "createRequest": "درخواست تامین محصول",
+      "cancelRequest": "لغو درخواست",
+      "cancelConfirmTitle": "این درخواست لغو شود؟",
+      "cancelConfirmBody": "فقط قبل از پرداخت می‌توانید لغو کنید.",
+      "confirmCancel": "بله، لغو شود",
+      "keepRequest": "درخواست نگه داشته شود",
+      "cancelError": "لغو درخواست ممکن نشد",
+      "status": {
+        "SUBMITTED": "ارسال شده",
+        "REVIEWING": "در حال بررسی",
+        "AWAITING_PAYMENT": "در انتظار پرداخت",
+        "IN_PROGRESS": "در حال انجام",
+        "SHIPPED": "ارسال شده",
+        "COMPLETED": "تکمیل شده",
+        "REJECTED": "رد شده",
+        "CANCELLED": "لغو شده",
+        "EXPIRED": "قیمت منقضی شد"
+      },
+      "errors": {
+        "loadFailed": "بارگذاری درخواست‌های تامین محصول ناموفق بود."
       }
     }
   },
@@ -2542,7 +2594,9 @@
         "payoutsHold": "پرداخت‌های در انتظار",
         "payoutsHoldSub": "هنوز آزاد نشده",
         "openDisputes": "اختلاف‌های باز",
-        "openDisputesSub": "پرونده‌های بازپرداخت باز"
+        "openDisputesSub": "پرونده‌های بازپرداخت باز",
+        "supply": "درآمد درخواست تامین محصول",
+        "supplySub": "{count} درخواست تامین محصول پرداخت‌شده"
       }
     },
     "vendors": {
@@ -3863,6 +3917,139 @@
         "failure": "مشکل",
         "actions": "اقدامات"
       }
+    },
+    "supplyRequests": {
+      "title": "درخواست‌های تامین محصول",
+      "subtitle": "درخواست‌ها را بررسی کنید، قیمت بفرستید، پرداخت بگیرید، ارسال و بازپرداخت کنید.",
+      "refresh": "بازنشانی",
+      "searchPlaceholder": "جستجوی شماره، مشتری، تلفن یا محصول",
+      "empty": "هنوز درخواست تامین محصولی نیست.",
+      "view": "باز کردن",
+      "cancel": "لغو",
+      "loadError": "بارگذاری درخواست‌های تامین محصول ناموفق بود",
+      "statusUpdated": "وضعیت به‌روز شد",
+      "statusUpdateFailed": "به‌روزرسانی وضعیت ناموفق بود",
+      "noAlternatives": "بدون جایگزین",
+      "tabs": {
+        "all": "همه"
+      },
+      "detailTabs": {
+        "details": "جزئیات",
+        "actions": "قیمت و اقدامات"
+      },
+      "columns": {
+        "requestNumber": "شماره",
+        "product": "محصول",
+        "customer": "مشتری",
+        "status": "وضعیت",
+        "date": "تاریخ",
+        "actions": "اقدامات"
+      },
+      "detail": {
+        "product": "محصول",
+        "brand": "برند",
+        "modelSku": "مدل / SKU",
+        "quantity": "تعداد",
+        "category": "دسته",
+        "description": "توضیحات",
+        "budget": "بودجه",
+        "deliveryMode": "نحوه تحویل",
+        "neededBy": "مورد نیاز تا",
+        "allowAlternatives": "اجازه جایگزین",
+        "yes": "بله",
+        "no": "خیر",
+        "urgencyNote": "یادداشت فوریت",
+        "referenceUrls": "لینک‌های مرجع",
+        "images": "عکس‌ها",
+        "customer": "مشتری",
+        "preferredContact": "تماس ترجیحی",
+        "address": "آدرس",
+        "quoteExpiry": "انقضای قیمت",
+        "updateStatus": "وضعیت",
+        "submitted": "ارسال شده {date}",
+        "updated": "به‌روز شده {date}"
+      },
+      "statusConfirm": {
+        "title": "وضعیت تغییر کند؟",
+        "body": "این درخواست به \"{status}\" تنظیم شود؟",
+        "confirm": "تغییر",
+        "saving": "در حال ذخیره…"
+      },
+      "statuses": {
+        "SUBMITTED": "جدید",
+        "REVIEWING": "بررسی",
+        "AWAITING_PAYMENT": "در انتظار پرداخت",
+        "IN_PROGRESS": "در حال انجام",
+        "SHIPPED": "ارسال شده",
+        "COMPLETED": "تکمیل",
+        "REJECTED": "رد شده",
+        "CANCELLED": "لغو شده",
+        "EXPIRED": "منقضی"
+      },
+      "quote": {
+        "title": "قیمت و انجام",
+        "subtitle": "قیمت بفرستید، پرداخت بگیرید، ارسال یا بازپرداخت کنید.",
+        "budgetWarning": "قیمت بالاتر از حداکثر بودجه مشتری است ({amount}).",
+        "noAlternativesReminder": "مشتری جایگزین را رد کرده — فقط همان کالا را قیمت دهید.",
+        "paid": "پرداخت شد {amount}",
+        "rejectedWith": "رد شد: {reason}",
+        "refundedWith": "بازپرداخت شد {amount}",
+        "trackingLabel": "پیگیری",
+        "previewAlt": "پیش‌نمایش قیمت",
+        "newPreviewAlt": "پیش‌نمایش جدید قیمت",
+        "amount": "قیمت",
+        "amountPlaceholder": "۴۹.۹۹",
+        "currency": "ارز",
+        "customerPays": "مشتری پرداخت می‌کند: {amount}",
+        "note": "یادداشت برای مشتری",
+        "notePlaceholder": "شامل ارسال و هزینه‌ها…",
+        "photo": "عکس قیمت (اختیاری)",
+        "uploadPhoto": "آپلود عکس",
+        "uploading": "در حال آپلود…",
+        "remove": "حذف",
+        "photoHint": "JPG، PNG یا WebP · حداکثر {mb} MB",
+        "send": "ارسال قیمت به مشتری",
+        "resend": "ارسال دوباره قیمت",
+        "offlineTitle": "ثبت پرداخت آفلاین",
+        "offlineHelp": "اگر با بانک، نقد یا حواله پرداخت کرده، به‌عنوان پرداخت‌شده علامت بزنید.",
+        "offlineNotePlaceholder": "یادداشت پرداخت (اختیاری)",
+        "markPaid": "علامت پرداخت‌شده",
+        "shipTitle": "ارسال / پیگیری",
+        "trackingRefPlaceholder": "شماره پیگیری",
+        "carrierNotePlaceholder": "یادداشت حامل (اختیاری)",
+        "ship": "علامت ارسال‌شده",
+        "refundTitle": "بازپرداخت",
+        "refundAmountPlaceholder": "مبلغ بازپرداخت",
+        "refundNotePlaceholder": "دلیل بازپرداخت (الزامی)",
+        "refund": "پردازش بازپرداخت",
+        "requestInfoTitle": "درخواست اطلاعات بیشتر",
+        "requestInfoHelp": "به مشتری ایمیل بزنید و درخواست را در بررسی نگه دارید.",
+        "requestInfoPlaceholder": "از مشتری چه می‌خواهید؟",
+        "sendInfoRequest": "ارسال درخواست اطلاعات",
+        "rejectTitle": "رد درخواست",
+        "rejectReasonPlaceholder": "دلیل (الزامی)",
+        "reject": "رد درخواست",
+        "imageUploaded": "عکس آپلود شد",
+        "uploadFailed": "آپلود ناموفق بود",
+        "invalidAmount": "قیمت معتبر وارد کنید",
+        "sent": "قیمت ارسال شد",
+        "sendFailed": "ارسال قیمت ناموفق بود",
+        "markedPaid": "به‌عنوان پرداخت‌شده علامت خورد",
+        "markPaidFailed": "علامت پرداخت ممکن نشد",
+        "rejectReasonRequired": "دلیل رد را وارد کنید",
+        "rejected": "درخواست رد شد",
+        "rejectFailed": "رد ممکن نشد",
+        "trackingRequired": "شماره پیگیری الزامی است",
+        "shipped": "به‌عنوان ارسال‌شده علامت خورد",
+        "shipFailed": "ارسال ممکن نشد",
+        "invalidRefundAmount": "مبلغ بازپرداخت معتبر وارد کنید",
+        "refundNoteRequired": "یادداشت بازپرداخت را وارد کنید",
+        "refunded": "بازپرداخت انجام شد",
+        "refundFailed": "بازپرداخت ممکن نشد",
+        "infoMessageRequired": "پیام وارد کنید",
+        "infoRequested": "درخواست اطلاعات ارسال شد",
+        "infoRequestFailed": "ارسال درخواست اطلاعات ناموفق بود"
+      }
     }
   },
   "Cart": {
@@ -4752,6 +4939,190 @@
       "previous": "قبلی",
       "next": "بعدی",
       "pageOf": "صفحه {page} از {total}"
+    }
+  },
+  "SupplyPages": {
+    "landing": {
+      "eyebrow": "منداوی · درخواست تامین محصول",
+      "title": "درخواست تامین محصول",
+      "subtitle": "اگر محصول موجود نیست، جزئیات را بفرستید تا برایتان تهیه کنیم. فقط در صورت پذیرش قیمت پرداخت می‌کنید.",
+      "heroImageAlt": "منبع‌یابی و تحویل محصول",
+      "home": "خانه",
+      "cta": {
+        "requestSupply": "درخواست جدید",
+        "howItWorks": "چگونه کار می‌کند"
+      },
+      "howItWorks": {
+        "title": "درخواست تامین محصول چگونه کار می‌کند",
+        "subtitle": "از درخواست تا تحویل.",
+        "steps": {
+          "describe": {
+            "title": "محصول را توضیح دهید",
+            "description": "نام، تعداد، عکس‌ها و محل تحویل را با ما در میان بگذارید."
+          },
+          "quote": {
+            "title": "قیمت دریافت کنید",
+            "description": "ما کالا را پیدا می‌کنیم و قیمت نهایی را می‌فرستیم. قیمت‌ها تا ۷۲ ساعت معتبرند."
+          },
+          "deliver": {
+            "title": "پرداخت و دریافت",
+            "description": "آنلاین یا آفلاین پرداخت کنید؛ سپس ارسال یا آماده‌سازی پیکاپ انجام می‌شود."
+          }
+        }
+      },
+      "valueTitle": "در کاتالوگ نیست؟",
+      "valueSubtitle": "درخواست تامین محصول بفرستید — قیمت واضح قبل از پرداخت."
+    },
+    "form": {
+      "requestBadge": "درخواست جدید",
+      "requestTitle": "درخواست تامین محصول",
+      "required": "الزامی",
+      "sections": {
+        "product": "محصول",
+        "referenceUrls": "لینک‌های مرجع",
+        "images": "عکس‌ها",
+        "preferences": "ترجیحات",
+        "contact": "تماس و تحویل"
+      },
+      "fields": {
+        "productName": "نام محصول",
+        "brand": "برند",
+        "modelSku": "مدل / SKU",
+        "quantity": "تعداد",
+        "categoryHint": "دسته‌بندی پیشنهادی",
+        "description": "توضیحات",
+        "neededByDate": "مورد نیاز تا تاریخ",
+        "deliveryMode": "نحوه تحویل",
+        "budgetMin": "حداقل بودجه",
+        "budgetMax": "حداکثر بودجه",
+        "urgencyNote": "یادداشت فوریت",
+        "allowAlternatives": "اجازه برند/محصول جایگزین",
+        "customerName": "نام کامل شما",
+        "customerEmail": "ایمیل",
+        "customerPhone": "تلفن",
+        "whatsapp": "واتساپ",
+        "preferredContact": "روش تماس ترجیحی",
+        "city": "شهر",
+        "province": "ولایت",
+        "address": "آدرس"
+      },
+      "placeholders": {
+        "productName": "مثلاً هدفون بی‌سیم",
+        "brand": "نام برند",
+        "modelSku": "شماره مدل",
+        "categoryHint": "الکترونیک، مراقبت نوزاد…",
+        "description": "رنگ، اندازه و جزئیات ضروری",
+        "referenceUrl": "https://…",
+        "budgetMin": "۰.۰۰",
+        "budgetMax": "۰.۰۰",
+        "urgencyNote": "قبل از این تاریخ نیاز دارم…",
+        "whatsapp": "شماره واتساپ",
+        "preferredContact": "تلفن / واتساپ / ایمیل",
+        "addressShip": "آدرس کامل تحویل",
+        "addressPickup": "یادداشت پیکاپ (اختیاری)"
+      },
+      "hints": {
+        "referenceUrls": "لینک صفحه محصول اختیاری (حداکثر ۵).",
+        "images": "JPG، PNG یا WebP · حداکثر {max} عکس · هر کدام {mb} MB",
+        "allowAlternatives": "اگر علامت نزنید، فقط همان کالای دقیق را قیمت می‌دهیم."
+      },
+      "deliveryModes": {
+        "SHIP": "ارسال به آدرس",
+        "PICKUP": "پیکاپ"
+      },
+      "steps": {
+        "product": "محصول",
+        "preferences": "ترجیحات",
+        "contact": "تماس"
+      },
+      "uploadImage": "آپلود عکس",
+      "addUrl": "افزودن لینک",
+      "back": "بازگشت",
+      "next": "بعدی",
+      "submit": "ارسال درخواست",
+      "submitting": "در حال ارسال…",
+      "successTitle": "درخواست ارسال شد",
+      "successBody": "درخواست تامین محصول شما دریافت شد. هر زمان با لینک زیر پیگیری کنید.",
+      "requestNumber": "شماره درخواست",
+      "trackRequest": "پیگیری درخواست",
+      "trackInAccount": "مشاهده در حساب من",
+      "submitAnother": "ارسال درخواست دیگر",
+      "maxImagesReached": "حداکثر {max} عکس می‌توانید آپلود کنید.",
+      "uploadFailed": "آپلود ناموفق بود",
+      "invalidUrl": "یک URL معتبر وارد کنید",
+      "maxUrlsReached": "حداکثر ۵ لینک.",
+      "formErrors": "لطفاً فیلدهای مشخص‌شده را اصلاح کنید.",
+      "imagesStillUploading": "صبر کنید تا آپلود عکس‌ها تمام شود.",
+      "submitFailed": "ارسال درخواست تامین محصول ناموفق بود.",
+      "validation": {
+        "required": "{field} الزامی است.",
+        "minLength": "{field} باید حداقل {min} کاراکتر باشد.",
+        "maxLength": "{field} باید حداکثر {max} کاراکتر باشد.",
+        "invalidEmail": "ایمیل معتبر وارد کنید.",
+        "invalidDate": "تاریخ معتبر وارد کنید.",
+        "dateInPast": "تاریخ نمی‌تواند در گذشته باشد.",
+        "invalidQuantity": "تعداد معتبر وارد کنید.",
+        "invalidBudget": "حداکثر بودجه باید بیشتر یا برابر حداقل باشد.",
+        "addressRequired": "برای ارسال، آدرس تحویل الزامی است."
+      }
+    },
+    "track": {
+      "badge": "پیگیری درخواست",
+      "title": "وضعیت درخواست تامین محصول",
+      "subtitle": "قیمت، پرداخت و تحویل را دنبال کنید.",
+      "loadError": "بارگذاری این درخواست تامین محصول ناموفق بود.",
+      "notFound": "درخواست یافت نشد",
+      "notFoundHint": "لینک پیگیری را بررسی کنید و دوباره تلاش کنید.",
+      "newRequest": "درخواست جدید",
+      "adminNote": "پیام از تیم ما",
+      "quoteExpiry": "انقضای قیمت {date}",
+      "paymentReceived": "پرداخت شد {amount}",
+      "trackingRef": "کد پیگیری",
+      "shippedAt": "ارسال شد {date}",
+      "completedTitle": "تکمیل شد",
+      "completedBody": "این درخواست تکمیل شده است. سپاسگزاریم.",
+      "rejectedTitle": "رد شد",
+      "cancelledTitle": "لغو شد",
+      "expiredTitle": "قیمت منقضی شد",
+      "expiredBody": "این قیمت قبل از پرداخت منقضی شد. اگر هنوز محصول را می‌خواهید درخواست جدید بفرستید.",
+      "refundedAmount": "بازپرداخت شد {amount}",
+      "summaryTitle": "خلاصه درخواست",
+      "product": "محصول",
+      "delivery": "تحویل",
+      "neededBy": "مورد نیاز تا",
+      "submitted": "ارسال شده {date}",
+      "cancelRequest": "لغو درخواست",
+      "cancelConfirmTitle": "این درخواست لغو شود؟",
+      "cancelConfirmBody": "فقط قبل از پرداخت می‌توانید لغو کنید.",
+      "confirmCancel": "بله، لغو شود",
+      "keepRequest": "درخواست نگه داشته شود",
+      "cancelError": "لغو ممکن نشد.",
+      "status": {
+        "SUBMITTED": "ارسال شده",
+        "REVIEWING": "در حال بررسی",
+        "AWAITING_PAYMENT": "در انتظار پرداخت",
+        "IN_PROGRESS": "در حال انجام",
+        "SHIPPED": "ارسال شده",
+        "COMPLETED": "تکمیل شده",
+        "REJECTED": "رد شده",
+        "CANCELLED": "لغو شده",
+        "EXPIRED": "قیمت منقضی شد"
+      }
+    },
+    "payment": {
+      "title": "قیمت آماده است — پرداخت لازم است",
+      "previewAlt": "پیش‌نمایش قیمت",
+      "stripeUnavailable": "پرداخت آنلاین فعلاً در دسترس نیست. برای پرداخت با پشتیبانی تماس بگیرید.",
+      "preparing": "آماده‌سازی پرداخت امن...",
+      "tryAgain": "تلاش دوباره",
+      "reloadForm": "بارگذاری مجدد فرم کارت",
+      "payNow": "اکنون پرداخت کنید",
+      "processing": "در حال پردازش...",
+      "checkCard": "لطفاً جزئیات کارت را بررسی کنید.",
+      "paymentFailed": "پرداخت ناموفق بود. دوباره تلاش کنید.",
+      "paymentSuccess": "پرداخت دریافت شد. سپاسگزاریم!",
+      "paymentIncomplete": "پرداخت تکمیل نشد",
+      "startFailed": "شروع پرداخت ممکن نشد"
     }
   }
 }

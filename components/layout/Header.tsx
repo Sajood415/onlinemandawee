@@ -27,8 +27,6 @@ import {
   Store,
   Phone,
   LayoutGrid,
-  Percent,
-  Flame,
   Gift,
   Banknote,
   HelpCircle,
@@ -710,7 +708,7 @@ export default function Header() {
                   href="/deals"
                   pathname={pathname}
                   label={copy.hot}
-                  icon={<Percent size={15} />}
+                  icon={<span className="text-[15px] leading-none" aria-hidden>🔥</span>}
                 />
                 <NavDivider />
                 <SecondaryNavLink
@@ -732,7 +730,13 @@ export default function Header() {
                   pathname={pathname}
                   label={copy.gifts}
                   icon={<Gift size={15} />}
-                  badge={copy.new}
+                />
+                <NavDivider />
+                <SecondaryNavLink
+                  href="/supply-request"
+                  pathname={pathname}
+                  label={copy.supplyRequest}
+                  icon={<PackageSearch size={15} />}
                 />
                 <NavDivider />
                 <SecondaryNavLink

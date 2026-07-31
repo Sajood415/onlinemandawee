@@ -178,6 +178,11 @@
         }
       ],
       "copyright": "© 2026 منډاوي"
+    },
+    "supplyCta": {
+      "title": "په کتلاګ کې نشته؟",
+      "subtitle": "د محصول عرضې غوښتنه وسپارئ — مخکې له تادیې روښانه قیمت.",
+      "cta": "د محصول عرضې غوښتنه"
     }
   },
   "Common": {
@@ -239,7 +244,8 @@
         "hawala": "حواله",
         "disputes": "شخړې",
         "users": "کاروونکي",
-        "settings": "تنظیمات"
+        "settings": "تنظیمات",
+        "supplyRequests": "د محصول عرضې غوښتنه"
       },
       "notifications": {
         "title": "خبرتیاوې",
@@ -270,7 +276,8 @@
         "giftRequests": "د ډالۍ غوښتنې",
         "hawala": "حواله",
         "disputes": "شخړې",
-        "settings": "تنظیمات"
+        "settings": "تنظیمات",
+        "supplyRequests": "د محصول عرضې غوښتنې"
       }
     }
   },
@@ -435,6 +442,51 @@
       },
       "errors": {
         "loadFailed": "د حواله لېږدونو پورته کول ناکام شول."
+      }
+    },
+    "supplyRequests": {
+      "badge": "د محصول عرضې غوښتنې",
+      "title": "ستاسو د محصول عرضې غوښتنې",
+      "subtitle": "د محصول عرضې غوښتنې، نرخونه، تادیه او تحویل تعقیب کړئ.",
+      "loading": "د محصول عرضې غوښتنې پورته کېږي...",
+      "count": "{count, plural, one {# غوښتنه} other {# غوښتنې}}",
+      "quantity": "مقدار",
+      "deliveryMode": "تحویل",
+      "neededBy": "تر کومې نیټې",
+      "budget": "بودیجه",
+      "deliveryAddress": "پته",
+      "description": "توضیحات",
+      "referenceUrls": "مرجع لینکونه",
+      "images": "عکسونه",
+      "adminNote": "زموږ د ټیم یادښت",
+      "tracking": "تعقیب",
+      "rejected": "رد شو",
+      "refunded": "بیرته ورکړل شو",
+      "submitted": "سپارل شوی {date}",
+      "lastUpdated": "وروستی تازه کېدل {date}",
+      "paymentReceived": "تادیه ترلاسه شوه: {amount}",
+      "emptyTitle": "لا تر اوسه د محصول عرضې غوښتنه نشته",
+      "emptyDescription": "له د محصول عرضې غوښتنې پاڼې څخه غوښتنه وسپارئ. هغه غوښتنې چې ستاسو برېښنالیک سره تړلې وي دلته ښکاري.",
+      "createRequest": "د محصول عرضې غوښتنه",
+      "cancelRequest": "غوښتنه لغوه کړئ",
+      "cancelConfirmTitle": "دا غوښتنه لغوه کړئ؟",
+      "cancelConfirmBody": "تاسو یوازې مخکې له تادیې لغوه کولی شئ.",
+      "confirmCancel": "هو، لغوه یې کړئ",
+      "keepRequest": "غوښتنه وساتئ",
+      "cancelError": "غوښتنه لغوه نشوه",
+      "status": {
+        "SUBMITTED": "سپارل شوې",
+        "REVIEWING": "په کتنه کې",
+        "AWAITING_PAYMENT": "د تادیې په تمه",
+        "IN_PROGRESS": "په جریان کې",
+        "SHIPPED": "ولېږل شو",
+        "COMPLETED": "بشپړ شو",
+        "REJECTED": "رد شو",
+        "CANCELLED": "لغوه شو",
+        "EXPIRED": "نرخ پای ته ورسېد"
+      },
+      "errors": {
+        "loadFailed": "د محصول عرضې غوښتنې پورته نشوې."
       }
     }
   },
@@ -2542,7 +2594,9 @@
         "payoutsHold": "په بند کې تادیات",
         "payoutsHoldSub": "لا نه دي خوشې شوي",
         "openDisputes": "خلاص اختلافونه",
-        "openDisputesSub": "لا خلاص د بیرته ورکولو قضیې"
+        "openDisputesSub": "لا خلاص د بیرته ورکولو قضیې",
+        "supply": "د محصول عرضې غوښتنې عاید",
+        "supplySub": "{count} تادیه شوي د محصول عرضې غوښتنې"
       }
     },
     "vendors": {
@@ -3863,6 +3917,139 @@
         "failure": "ستونزه",
         "actions": "کړنې"
       }
+    },
+    "supplyRequests": {
+      "title": "د محصول عرضې غوښتنې",
+      "subtitle": "غوښتنې وګورئ، نرخ واستوئ، تادیه واخلئ، ولېږئ او بیرته ورکړئ.",
+      "refresh": "تازه کول",
+      "searchPlaceholder": "شمېره، پیرودونکی، تلیفون یا محصول ولټوئ",
+      "empty": "لا تر اوسه د محصول عرضې غوښتنه نشته.",
+      "view": "پرانیستل",
+      "cancel": "پرېښودل",
+      "loadError": "د محصول عرضې غوښتنې پورته نشوې",
+      "statusUpdated": "حالت تازه شو",
+      "statusUpdateFailed": "حالت تازه نشو",
+      "noAlternatives": "بدیل نشته",
+      "tabs": {
+        "all": "ټول"
+      },
+      "detailTabs": {
+        "details": "جزئیات",
+        "actions": "نرخ او کړنې"
+      },
+      "columns": {
+        "requestNumber": "شمېره",
+        "product": "محصول",
+        "customer": "پیرودونکی",
+        "status": "حالت",
+        "date": "نیټه",
+        "actions": "کړنې"
+      },
+      "detail": {
+        "product": "محصول",
+        "brand": "برند",
+        "modelSku": "ماډل / SKU",
+        "quantity": "مقدار",
+        "category": "کټګوري",
+        "description": "توضیحات",
+        "budget": "بودیجه",
+        "deliveryMode": "د تحویل ډول",
+        "neededBy": "تر کومې نیټې",
+        "allowAlternatives": "بدیل اجازه",
+        "yes": "هو",
+        "no": "نه",
+        "urgencyNote": "د عجلت یادښت",
+        "referenceUrls": "مرجع لینکونه",
+        "images": "عکسونه",
+        "customer": "پیرودونکی",
+        "preferredContact": "غوره اړیکه",
+        "address": "پته",
+        "quoteExpiry": "نرخ پای ته رسېږي",
+        "updateStatus": "حالت",
+        "submitted": "سپارل شوی {date}",
+        "updated": "تازه شوی {date}"
+      },
+      "statusConfirm": {
+        "title": "حالت بدل کړئ؟",
+        "body": "دا غوښتنه \"{status}\" ته وټاکئ؟",
+        "confirm": "بدلول",
+        "saving": "ساتل کېږي…"
+      },
+      "statuses": {
+        "SUBMITTED": "نوی",
+        "REVIEWING": "کتنه",
+        "AWAITING_PAYMENT": "د تادیې په تمه",
+        "IN_PROGRESS": "په جریان کې",
+        "SHIPPED": "ولېږل شو",
+        "COMPLETED": "بشپړ",
+        "REJECTED": "رد شو",
+        "CANCELLED": "لغوه",
+        "EXPIRED": "پای ته ورسېد"
+      },
+      "quote": {
+        "title": "نرخ او پوره کول",
+        "subtitle": "قیمت واستوئ، تادیه واخلئ، ولېږئ یا بیرته ورکړئ.",
+        "budgetWarning": "نرخ د پیرودونکي اعظمي بودیجې څخه لوړ دی ({amount}).",
+        "noAlternativesReminder": "پیرودونکي بدیل رد کړی — یوازې عین توکی نرخ کړئ.",
+        "paid": "تادیه شوی {amount}",
+        "rejectedWith": "رد شو: {reason}",
+        "refundedWith": "بیرته ورکړل شو {amount}",
+        "trackingLabel": "تعقیب",
+        "previewAlt": "د نرخ مخکتنه",
+        "newPreviewAlt": "د نرخ نوې مخکتنه",
+        "amount": "قیمت",
+        "amountPlaceholder": "۴۹.۹۹",
+        "currency": "اسعار",
+        "customerPays": "پیرودونکی به تادیه کړي: {amount}",
+        "note": "د پیرودونکي لپاره یادښت",
+        "notePlaceholder": "لېږد او فیسونه پکې شامل دي…",
+        "photo": "د نرخ عکس (اختیاري)",
+        "uploadPhoto": "عکس پورته کړئ",
+        "uploading": "پورته کېږي…",
+        "remove": "لرې کول",
+        "photoHint": "JPG، PNG یا WebP · تر {mb} MB",
+        "send": "نرخ پیرودونکي ته واستوئ",
+        "resend": "نرخ بیا واستوئ",
+        "offlineTitle": "آفلاین تادیه ثبت کړئ",
+        "offlineHelp": "که بانک، نغدي یا حوالې سره یې تادیه کړې وي، تادیه شوی نښه کړئ.",
+        "offlineNotePlaceholder": "د تادیې یادښت (اختیاري)",
+        "markPaid": "تادیه شوی نښه کړئ",
+        "shipTitle": "لېږد / تعقیب",
+        "trackingRefPlaceholder": "د تعقیب شمېره",
+        "carrierNotePlaceholder": "د لیږدونکي یادښت (اختیاري)",
+        "ship": "ولېږل شوی نښه کړئ",
+        "refundTitle": "بیرته ورکړه",
+        "refundAmountPlaceholder": "د بیرته ورکړې مبلغ",
+        "refundNotePlaceholder": "د بیرته ورکړې دلیل (اړین)",
+        "refund": "بیرته ورکړه پروسس کړئ",
+        "requestInfoTitle": "نور معلومات وغواړئ",
+        "requestInfoHelp": "پیرودونکي ته برېښنالیک واستوئ او غوښتنه په کتنه کې وساتئ.",
+        "requestInfoPlaceholder": "له پیرودونکي څخه څه غواړئ؟",
+        "sendInfoRequest": "د معلوماتو غوښتنه واستوئ",
+        "rejectTitle": "غوښتنه رد کړئ",
+        "rejectReasonPlaceholder": "دلیل (اړین)",
+        "reject": "غوښتنه رد کړئ",
+        "imageUploaded": "عکس پورته شو",
+        "uploadFailed": "پورته کول ناکام شول",
+        "invalidAmount": "سم قیمت دننه کړئ",
+        "sent": "نرخ واستول شو",
+        "sendFailed": "نرخ ونه استول شو",
+        "markedPaid": "تادیه شوی نښه شو",
+        "markPaidFailed": "تادیه نښه نشوه",
+        "rejectReasonRequired": "د رد دلیل ولیکئ",
+        "rejected": "غوښتنه رد شوه",
+        "rejectFailed": "رد نشو",
+        "trackingRequired": "د تعقیب شمېره اړینه ده",
+        "shipped": "ولېږل شوی نښه شو",
+        "shipFailed": "لېږد ونه شو",
+        "invalidRefundAmount": "سم د بیرته ورکړې مبلغ دننه کړئ",
+        "refundNoteRequired": "د بیرته ورکړې یادښت ولیکئ",
+        "refunded": "بیرته ورکړه وشوه",
+        "refundFailed": "بیرته ورکړه ونه شوه",
+        "infoMessageRequired": "پیغام ولیکئ",
+        "infoRequested": "د معلوماتو غوښتنه واستول شوه",
+        "infoRequestFailed": "د معلوماتو غوښتنه ونه استول شوه"
+      }
     }
   },
   "Cart": {
@@ -4752,6 +4939,190 @@
       "previous": "مخکې",
       "next": "وروسته",
       "pageOf": "پاڼه {page} له {total}"
+    }
+  },
+  "SupplyPages": {
+    "landing": {
+      "eyebrow": "منداوی · د محصول عرضې غوښتنه",
+      "title": "د محصول عرضې غوښتنه",
+      "subtitle": "که محصول شتون ونلري، جزئیات وسپارئ او موږ به یې پیدا کړو. تاسو یوازې هغه وخت پیسې ورکوئ چې نرخ ومنئ.",
+      "heroImageAlt": "د محصول موندنه او تحویل",
+      "home": "کور",
+      "cta": {
+        "requestSupply": "نوې غوښتنه",
+        "howItWorks": "څنګه کار کوي"
+      },
+      "howItWorks": {
+        "title": "د محصول عرضې غوښتنه څنګه کار کوي",
+        "subtitle": "له غوښتنې څخه تر تحویل پورې.",
+        "steps": {
+          "describe": {
+            "title": "محصول بیان کړئ",
+            "description": "نوم، مقدار، عکسونه او دا چې چیرته یې غواړئ واستوئ شریکان کړئ."
+          },
+          "quote": {
+            "title": "نرخ ترلاسه کړئ",
+            "description": "موږ توکی پیدا کوو او وروستی قیمت درته استوو. نرخونه په ۷۲ ساعتونو کې پای ته رسېږي."
+          },
+          "deliver": {
+            "title": "تادیه او ترلاسه کول",
+            "description": "آنلاین یا آفلاین تادیه وکړئ؛ بیا موږ لېږدوو یا پیکاپ چمتو کوو."
+          }
+        }
+      },
+      "valueTitle": "په کتلاګ کې نشته؟",
+      "valueSubtitle": "د محصول عرضې غوښتنه وسپارئ — مخکې له تادیې روښانه قیمت."
+    },
+    "form": {
+      "requestBadge": "نوې غوښتنه",
+      "requestTitle": "د محصول عرضې غوښتنه",
+      "required": "اړین",
+      "sections": {
+        "product": "محصول",
+        "referenceUrls": "مرجع لینکونه",
+        "images": "عکسونه",
+        "preferences": "غوره توبونه",
+        "contact": "اړیکه او تحویل"
+      },
+      "fields": {
+        "productName": "د محصول نوم",
+        "brand": "برند",
+        "modelSku": "ماډل / SKU",
+        "quantity": "مقدار",
+        "categoryHint": "د کټګورۍ نښه",
+        "description": "توضیحات",
+        "neededByDate": "تر کومې نیټې",
+        "deliveryMode": "د تحویل ډول",
+        "budgetMin": "لږترلږه بودیجه",
+        "budgetMax": "اعظمي بودیجه",
+        "urgencyNote": "د عجلت یادښت",
+        "allowAlternatives": "بدیل برندونه/محصولات اجازه ورکړئ",
+        "customerName": "ستاسو بشپړ نوم",
+        "customerEmail": "برېښنالیک",
+        "customerPhone": "تلیفون",
+        "whatsapp": "واتساپ",
+        "preferredContact": "غوره د اړیکې لاره",
+        "city": "ښار",
+        "province": "ولایت",
+        "address": "پته"
+      },
+      "placeholders": {
+        "productName": "لکه: بې‌سیمه هیډفون",
+        "brand": "د برند نوم",
+        "modelSku": "د ماډل شمېره",
+        "categoryHint": "الکترونیک، د ماشوم پاملرنه…",
+        "description": "رنګ، اندازه او اړین جزئیات",
+        "referenceUrl": "https://…",
+        "budgetMin": "۰.۰۰",
+        "budgetMax": "۰.۰۰",
+        "urgencyNote": "مخکې له دې ورته اړتیا لرم…",
+        "whatsapp": "د واتساپ شمېره",
+        "preferredContact": "تلیفون / واتساپ / برېښنالیک",
+        "addressShip": "بشپړه د تحویل پته",
+        "addressPickup": "د پیکاپ یادښتونه (اختیاري)"
+      },
+      "hints": {
+        "referenceUrls": "اختیاري د محصول پاڼې لینکونه (تر ۵ پورې).",
+        "images": "JPG، PNG یا WebP · تر {max} عکسونو · هر یو {mb} MB",
+        "allowAlternatives": "که نه وي نښه شوی، موږ به یوازې عین توکي نرخ کړو."
+      },
+      "deliveryModes": {
+        "SHIP": "پته ته ولېږئ",
+        "PICKUP": "پیکاپ"
+      },
+      "steps": {
+        "product": "محصول",
+        "preferences": "غوره توبونه",
+        "contact": "اړیکه"
+      },
+      "uploadImage": "عکس پورته کړئ",
+      "addUrl": "لینک اضافه کړئ",
+      "back": "شاته",
+      "next": "بل",
+      "submit": "غوښتنه وسپارئ",
+      "submitting": "سپارل کېږي…",
+      "successTitle": "غوښتنه وسپارل شوه",
+      "successBody": "ستاسو د محصول عرضې غوښتنه ترلاسه شوه. لاندې لینک سره یې هر وخت تعقیب کړئ.",
+      "requestNumber": "د غوښتنې شمېره",
+      "trackRequest": "غوښتنه تعقیب کړئ",
+      "trackInAccount": "په خپل حساب کې وګورئ",
+      "submitAnother": "بله غوښتنه وسپارئ",
+      "maxImagesReached": "تاسو تر {max} عکسونو پورته کولی شئ.",
+      "uploadFailed": "پورته کول ناکام شول",
+      "invalidUrl": "سم URL دننه کړئ",
+      "maxUrlsReached": "تر ۵ لینکونو پورې.",
+      "formErrors": "مهرباني وکړئ نښه شوي خانې سمې کړئ.",
+      "imagesStillUploading": "تر هغه وخته انتظار وکړئ چې عکسونه پورته شي.",
+      "submitFailed": "د محصول عرضې غوښتنه ونه سپارل شوه.",
+      "validation": {
+        "required": "{field} اړین دی.",
+        "minLength": "{field} باید لږترلږه {min} توري ولري.",
+        "maxLength": "{field} باید تر {max} توري پورې وي.",
+        "invalidEmail": "سم برېښنالیک دننه کړئ.",
+        "invalidDate": "سمه نیټه دننه کړئ.",
+        "dateInPast": "نیټه په تېر وخت کې نشي.",
+        "invalidQuantity": "سم مقدار دننه کړئ.",
+        "invalidBudget": "اعظمي بودیجه باید له لږترلږه سره برابره یا زیاته وي.",
+        "addressRequired": "د لېږد لپاره د تحویل پته اړینه ده."
+      }
+    },
+    "track": {
+      "badge": "غوښتنه تعقیب کړئ",
+      "title": "د محصول عرضې غوښتنې حالت",
+      "subtitle": "نرخ، تادیه او تحویل تعقیب کړئ.",
+      "loadError": "دا د محصول عرضې غوښتنه پورته نشوه.",
+      "notFound": "غوښتنه ونه موندل شوه",
+      "notFoundHint": "خپل تعقیبي لینک وګورئ او بیا هڅه وکړئ.",
+      "newRequest": "نوې غوښتنه",
+      "adminNote": "زموږ د ټیم پیغام",
+      "quoteExpiry": "نرخ پای ته رسېږي {date}",
+      "paymentReceived": "تادیه شوی {amount}",
+      "trackingRef": "تعقیب",
+      "shippedAt": "ولېږل شو {date}",
+      "completedTitle": "بشپړ شو",
+      "completedBody": "دا غوښتنه بشپړه شوې. مننه.",
+      "rejectedTitle": "رد شو",
+      "cancelledTitle": "لغوه شو",
+      "expiredTitle": "نرخ پای ته ورسېد",
+      "expiredBody": "دا نرخ مخکې له تادیې پای ته ورسېد. که لا هم محصول غواړئ نوې غوښتنه وسپارئ.",
+      "refundedAmount": "بیرته ورکړل شو {amount}",
+      "summaryTitle": "د غوښتنې لنډیز",
+      "product": "محصول",
+      "delivery": "تحویل",
+      "neededBy": "تر کومې نیټې",
+      "submitted": "سپارل شوی {date}",
+      "cancelRequest": "غوښتنه لغوه کړئ",
+      "cancelConfirmTitle": "دا غوښتنه لغوه کړئ؟",
+      "cancelConfirmBody": "تاسو یوازې مخکې له تادیې لغوه کولی شئ.",
+      "confirmCancel": "هو، لغوه یې کړئ",
+      "keepRequest": "غوښتنه وساتئ",
+      "cancelError": "لغوه نشوه.",
+      "status": {
+        "SUBMITTED": "سپارل شوې",
+        "REVIEWING": "په کتنه کې",
+        "AWAITING_PAYMENT": "د تادیې په تمه",
+        "IN_PROGRESS": "په جریان کې",
+        "SHIPPED": "ولېږل شو",
+        "COMPLETED": "بشپړ شو",
+        "REJECTED": "رد شو",
+        "CANCELLED": "لغوه شو",
+        "EXPIRED": "نرخ پای ته ورسېد"
+      }
+    },
+    "payment": {
+      "title": "نرخ چمتو دی — تادیه اړینه ده",
+      "previewAlt": "د نرخ مخکتنه",
+      "stripeUnavailable": "آنلاین تادیه اوس شتون نلري. د تادیې لپاره له ملاتړ سره اړیکه ونیسئ.",
+      "preparing": "خوندي تادیه چمتو کېږي...",
+      "tryAgain": "بیا هڅه وکړئ",
+      "reloadForm": "د کارت فورم بیا بار کړئ",
+      "payNow": "اوس تادیه وکړئ",
+      "processing": "پروسس کېږي...",
+      "checkCard": "مهرباني وکړئ د کارت جزئیات وګورئ.",
+      "paymentFailed": "تادیه ناکامه شوه. بیا هڅه وکړئ.",
+      "paymentSuccess": "تادیه ترلاسه شوه. مننه!",
+      "paymentIncomplete": "تادیه بشپړه نشوه",
+      "startFailed": "تادیه پیل نشوه"
     }
   }
 }

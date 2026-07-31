@@ -178,6 +178,11 @@
         }
       ],
       "copyright": "© 2026 Mandawee"
+    },
+    "supplyCta": {
+      "title": "Cannot find a product?",
+      "subtitle": "Submit a Product Supply Request — we source, quote, and deliver.",
+      "cta": "Product Supply Request"
     }
   },
   "Common": {
@@ -239,7 +244,8 @@
         "hawala": "Hawala",
         "disputes": "Disputes",
         "users": "Users",
-        "settings": "Settings"
+        "settings": "Settings",
+        "supplyRequests": "Product supply requests"
       },
       "notifications": {
         "title": "Notifications",
@@ -270,7 +276,8 @@
         "giftRequests": "Gift requests",
         "hawala": "Hawala",
         "disputes": "Disputes",
-        "settings": "Settings"
+        "settings": "Settings",
+        "supplyRequests": "Product supply requests"
       }
     }
   },
@@ -435,6 +442,51 @@
       },
       "errors": {
         "loadFailed": "Failed to load Hawala transfers."
+      }
+    },
+    "supplyRequests": {
+      "badge": "Product supply requests",
+      "title": "Your product supply requests",
+      "subtitle": "Track product supply requests, quotes, payment, and delivery.",
+      "loading": "Loading product supply requests...",
+      "count": "{count, plural, one {# request} other {# requests}}",
+      "quantity": "Quantity",
+      "deliveryMode": "Delivery",
+      "neededBy": "Needed by",
+      "budget": "Budget",
+      "deliveryAddress": "Address",
+      "description": "Description",
+      "referenceUrls": "Reference links",
+      "images": "Images",
+      "adminNote": "Note from our team",
+      "tracking": "Tracking",
+      "rejected": "Declined",
+      "refunded": "Refunded",
+      "submitted": "Submitted {date}",
+      "lastUpdated": "Last updated {date}",
+      "paymentReceived": "Payment received: {amount}",
+      "emptyTitle": "No product supply requests yet",
+      "emptyDescription": "Submit a product supply request from the Product Supply Request page. Requests linked to your account email will appear here.",
+      "createRequest": "Product Supply Request",
+      "cancelRequest": "Cancel request",
+      "cancelConfirmTitle": "Cancel this request?",
+      "cancelConfirmBody": "You can only cancel before payment.",
+      "confirmCancel": "Yes, cancel",
+      "keepRequest": "Keep request",
+      "cancelError": "Could not cancel request",
+      "status": {
+        "SUBMITTED": "Submitted",
+        "REVIEWING": "Under review",
+        "AWAITING_PAYMENT": "Awaiting payment",
+        "IN_PROGRESS": "In progress",
+        "SHIPPED": "Shipped",
+        "COMPLETED": "Completed",
+        "REJECTED": "Declined",
+        "CANCELLED": "Cancelled",
+        "EXPIRED": "Quote expired"
+      },
+      "errors": {
+        "loadFailed": "Failed to load product supply requests."
       }
     }
   },
@@ -2526,7 +2578,7 @@
         "gifts": "Gift request income",
         "giftsSub": "{count} paid gift requests",
         "allIncome": "All platform income",
-        "allIncomeSub": "Sum of commission + membership + gifts (shown separately above)",
+        "allIncomeSub": "Sum of commission + membership + gifts + product supply requests",
         "orders": "Orders",
         "ordersSub": "Orders placed in this period",
         "sales": "Total sales",
@@ -2542,7 +2594,9 @@
         "payoutsHold": "Payouts on hold",
         "payoutsHoldSub": "Not released yet",
         "openDisputes": "Open disputes",
-        "openDisputesSub": "Refund cases still open"
+        "openDisputesSub": "Refund cases still open",
+        "supply": "Product supply request income",
+        "supplySub": "{count} paid product supply requests"
       }
     },
     "vendors": {
@@ -3840,6 +3894,139 @@
         "failure": "Problem",
         "actions": "Actions"
       }
+    },
+    "supplyRequests": {
+      "title": "Product supply requests",
+      "subtitle": "Review product supply requests, send quotes, collect payment, ship, and refund.",
+      "refresh": "Refresh",
+      "searchPlaceholder": "Search number, customer, phone, or product",
+      "empty": "No product supply requests yet.",
+      "view": "Open",
+      "cancel": "Cancel",
+      "loadError": "Could not load product supply requests",
+      "statusUpdated": "Status updated",
+      "statusUpdateFailed": "Could not update status",
+      "noAlternatives": "No alternatives",
+      "tabs": {
+        "all": "All"
+      },
+      "detailTabs": {
+        "details": "Details",
+        "actions": "Quote & actions"
+      },
+      "columns": {
+        "requestNumber": "Number",
+        "product": "Product",
+        "customer": "Customer",
+        "status": "Status",
+        "date": "Date",
+        "actions": "Actions"
+      },
+      "detail": {
+        "product": "Product",
+        "brand": "Brand",
+        "modelSku": "Model / SKU",
+        "quantity": "Quantity",
+        "category": "Category",
+        "description": "Description",
+        "budget": "Budget",
+        "deliveryMode": "Delivery mode",
+        "neededBy": "Needed by",
+        "allowAlternatives": "Allow alternatives",
+        "yes": "Yes",
+        "no": "No",
+        "urgencyNote": "Urgency note",
+        "referenceUrls": "Reference links",
+        "images": "Images",
+        "customer": "Customer",
+        "preferredContact": "Preferred contact",
+        "address": "Address",
+        "quoteExpiry": "Quote expires",
+        "updateStatus": "Status",
+        "submitted": "Submitted {date}",
+        "updated": "Updated {date}"
+      },
+      "statusConfirm": {
+        "title": "Change status?",
+        "body": "Set this request to \"{status}\"?",
+        "confirm": "Change",
+        "saving": "Saving…"
+      },
+      "statuses": {
+        "SUBMITTED": "New",
+        "REVIEWING": "Reviewing",
+        "AWAITING_PAYMENT": "Awaiting payment",
+        "IN_PROGRESS": "In progress",
+        "SHIPPED": "Shipped",
+        "COMPLETED": "Completed",
+        "REJECTED": "Declined",
+        "CANCELLED": "Cancelled",
+        "EXPIRED": "Expired"
+      },
+      "quote": {
+        "title": "Quote & fulfillment",
+        "subtitle": "Send a price, collect payment, ship, or refund.",
+        "budgetWarning": "Quote is above customer max budget ({amount}).",
+        "noAlternativesReminder": "Customer disallowed alternatives — quote the exact item only.",
+        "paid": "Paid {amount}",
+        "rejectedWith": "Declined: {reason}",
+        "refundedWith": "Refunded {amount}",
+        "trackingLabel": "Tracking",
+        "previewAlt": "Quote preview",
+        "newPreviewAlt": "New quote preview",
+        "amount": "Price",
+        "amountPlaceholder": "49.99",
+        "currency": "Currency",
+        "customerPays": "Customer will pay: {amount}",
+        "note": "Note for customer",
+        "notePlaceholder": "Includes shipping and fees…",
+        "photo": "Quote photo (optional)",
+        "uploadPhoto": "Upload photo",
+        "uploading": "Uploading…",
+        "remove": "Remove",
+        "photoHint": "JPG, PNG, or WebP · max {mb} MB",
+        "send": "Send quote to customer",
+        "resend": "Send quote again",
+        "offlineTitle": "Mark paid offline",
+        "offlineHelp": "Mark paid if they paid by bank, cash, or Hawala.",
+        "offlineNotePlaceholder": "Payment note (optional)",
+        "markPaid": "Mark paid",
+        "shipTitle": "Ship / tracking",
+        "trackingRefPlaceholder": "Tracking number",
+        "carrierNotePlaceholder": "Carrier note (optional)",
+        "ship": "Mark shipped",
+        "refundTitle": "Refund",
+        "refundAmountPlaceholder": "Refund amount",
+        "refundNotePlaceholder": "Refund reason (required)",
+        "refund": "Process refund",
+        "requestInfoTitle": "Request more info",
+        "requestInfoHelp": "Email the customer and keep the request in review.",
+        "requestInfoPlaceholder": "What do you need from the customer?",
+        "sendInfoRequest": "Send info request",
+        "rejectTitle": "Decline request",
+        "rejectReasonPlaceholder": "Reason (required)",
+        "reject": "Decline request",
+        "imageUploaded": "Photo uploaded",
+        "uploadFailed": "Upload failed",
+        "invalidAmount": "Enter a valid price",
+        "sent": "Quote sent",
+        "sendFailed": "Could not send quote",
+        "markedPaid": "Marked as paid",
+        "markPaidFailed": "Could not mark as paid",
+        "rejectReasonRequired": "Enter a decline reason",
+        "rejected": "Request declined",
+        "rejectFailed": "Could not decline",
+        "trackingRequired": "Tracking number is required",
+        "shipped": "Marked as shipped",
+        "shipFailed": "Could not ship",
+        "invalidRefundAmount": "Enter a valid refund amount",
+        "refundNoteRequired": "Enter a refund note",
+        "refunded": "Refund processed",
+        "refundFailed": "Could not refund",
+        "infoMessageRequired": "Enter a message",
+        "infoRequested": "Info request sent",
+        "infoRequestFailed": "Could not send info request"
+      }
     }
   },
   "Cart": {
@@ -4729,6 +4916,190 @@
       "previous": "Previous",
       "next": "Next",
       "pageOf": "Page {page} of {total}"
+    }
+  },
+  "SupplyPages": {
+    "landing": {
+      "eyebrow": "Mandawee · Product Supply Request",
+      "title": "Product Supply Request",
+      "subtitle": "If the product is not available, submit details and we will source it for you. You pay only if you accept the quote.",
+      "heroImageAlt": "Product sourcing and delivery",
+      "home": "Home",
+      "cta": {
+        "requestSupply": "New Request",
+        "howItWorks": "How it works"
+      },
+      "howItWorks": {
+        "title": "How Product Supply Request works",
+        "subtitle": "From your request to delivery.",
+        "steps": {
+          "describe": {
+            "title": "Describe the product",
+            "description": "Share name, quantity, photos, and where you need it delivered."
+          },
+          "quote": {
+            "title": "Get a quote",
+            "description": "We source the item and send a final price. Quotes expire in 72 hours."
+          },
+          "deliver": {
+            "title": "Pay and receive",
+            "description": "Pay online or offline, then we ship or prepare pickup."
+          }
+        }
+      },
+      "valueTitle": "Missing from the catalog?",
+      "valueSubtitle": "Submit a Product Supply Request — clear price before you pay."
+    },
+    "form": {
+      "requestBadge": "New Request",
+      "requestTitle": "Product Supply Request",
+      "required": "Required",
+      "sections": {
+        "product": "Product",
+        "referenceUrls": "Reference links",
+        "images": "Photos",
+        "preferences": "Preferences",
+        "contact": "Contact & delivery"
+      },
+      "fields": {
+        "productName": "Product name",
+        "brand": "Brand",
+        "modelSku": "Model / SKU",
+        "quantity": "Quantity",
+        "categoryHint": "Category hint",
+        "description": "Description",
+        "neededByDate": "Needed by",
+        "deliveryMode": "Delivery mode",
+        "budgetMin": "Budget min",
+        "budgetMax": "Budget max",
+        "urgencyNote": "Urgency note",
+        "allowAlternatives": "Allow alternative brands/products",
+        "customerName": "Your full name",
+        "customerEmail": "Email",
+        "customerPhone": "Phone",
+        "whatsapp": "WhatsApp",
+        "preferredContact": "Preferred contact",
+        "city": "City",
+        "province": "Province",
+        "address": "Address"
+      },
+      "placeholders": {
+        "productName": "e.g. Wireless headphones",
+        "brand": "Brand name",
+        "modelSku": "Model number",
+        "categoryHint": "Electronics, baby care…",
+        "description": "Color, size, and any must-have details",
+        "referenceUrl": "https://…",
+        "budgetMin": "0.00",
+        "budgetMax": "0.00",
+        "urgencyNote": "Need it before…",
+        "whatsapp": "WhatsApp number",
+        "preferredContact": "Phone / WhatsApp / Email",
+        "addressShip": "Full delivery address",
+        "addressPickup": "Pickup notes (optional)"
+      },
+      "hints": {
+        "referenceUrls": "Optional product page links (max 5).",
+        "images": "JPG, PNG, or WebP · max {max} photos · {mb} MB each",
+        "allowAlternatives": "If unchecked, we will only quote the exact item."
+      },
+      "deliveryModes": {
+        "SHIP": "Ship to address",
+        "PICKUP": "Pickup"
+      },
+      "steps": {
+        "product": "Product",
+        "preferences": "Preferences",
+        "contact": "Contact"
+      },
+      "uploadImage": "Upload photo",
+      "addUrl": "Add link",
+      "back": "Back",
+      "next": "Next",
+      "submit": "Submit request",
+      "submitting": "Submitting…",
+      "successTitle": "Request submitted",
+      "successBody": "We received your Product Supply Request. Track it anytime with the link below.",
+      "requestNumber": "Request number",
+      "trackRequest": "Track request",
+      "trackInAccount": "View in my account",
+      "submitAnother": "Submit another",
+      "maxImagesReached": "You can upload at most {max} photos.",
+      "uploadFailed": "Upload failed",
+      "invalidUrl": "Enter a valid URL",
+      "maxUrlsReached": "Maximum 5 links.",
+      "formErrors": "Please fix the highlighted fields.",
+      "imagesStillUploading": "Wait for photos to finish uploading.",
+      "submitFailed": "Could not submit Product Supply Request.",
+      "validation": {
+        "required": "{field} is required.",
+        "minLength": "{field} must be at least {min} characters.",
+        "maxLength": "{field} must be at most {max} characters.",
+        "invalidEmail": "Enter a valid email address.",
+        "invalidDate": "Enter a valid date.",
+        "dateInPast": "Date cannot be in the past.",
+        "invalidQuantity": "Enter a valid quantity.",
+        "invalidBudget": "Max budget must be greater than or equal to min.",
+        "addressRequired": "Delivery address is required for shipping."
+      }
+    },
+    "track": {
+      "badge": "Track Request",
+      "title": "Product Supply Request status",
+      "subtitle": "Follow quote, payment, and delivery updates.",
+      "loadError": "Could not load this Product Supply Request.",
+      "notFound": "Request not found",
+      "notFoundHint": "Check your tracking link and try again.",
+      "newRequest": "New Request",
+      "adminNote": "Message from our team",
+      "quoteExpiry": "Quote expires {date}",
+      "paymentReceived": "Paid {amount}",
+      "trackingRef": "Tracking",
+      "shippedAt": "Shipped {date}",
+      "completedTitle": "Completed",
+      "completedBody": "This request is complete. Thank you.",
+      "rejectedTitle": "Declined",
+      "cancelledTitle": "Cancelled",
+      "expiredTitle": "Quote expired",
+      "expiredBody": "This quote expired before payment. Submit a new request if you still need the product.",
+      "refundedAmount": "Refunded {amount}",
+      "summaryTitle": "Request summary",
+      "product": "Product",
+      "delivery": "Delivery",
+      "neededBy": "Needed by",
+      "submitted": "Submitted {date}",
+      "cancelRequest": "Cancel request",
+      "cancelConfirmTitle": "Cancel this request?",
+      "cancelConfirmBody": "You can cancel only before payment.",
+      "confirmCancel": "Yes, cancel",
+      "keepRequest": "Keep request",
+      "cancelError": "Could not cancel.",
+      "status": {
+        "SUBMITTED": "Submitted",
+        "REVIEWING": "Under review",
+        "AWAITING_PAYMENT": "Awaiting payment",
+        "IN_PROGRESS": "In progress",
+        "SHIPPED": "Shipped",
+        "COMPLETED": "Completed",
+        "REJECTED": "Declined",
+        "CANCELLED": "Cancelled",
+        "EXPIRED": "Quote expired"
+      }
+    },
+    "payment": {
+      "title": "Quote ready — payment required",
+      "previewAlt": "Quote preview",
+      "stripeUnavailable": "Online payment is not available right now. Contact support to pay.",
+      "preparing": "Preparing secure checkout...",
+      "tryAgain": "Try again",
+      "reloadForm": "Reload card form",
+      "payNow": "Pay now",
+      "processing": "Processing...",
+      "checkCard": "Please check your card details.",
+      "paymentFailed": "Payment failed. Please try again.",
+      "paymentSuccess": "Payment received. Thank you!",
+      "paymentIncomplete": "Payment could not be completed",
+      "startFailed": "Could not start payment"
     }
   }
 }
