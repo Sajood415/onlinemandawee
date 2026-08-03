@@ -1,6 +1,10 @@
 "use client";
 
 import type { ProductTranslationFormFields } from "@/components/products/product-translation-form";
+import {
+  PRODUCT_DESCRIPTION_MAX,
+  PRODUCT_NAME_MAX,
+} from "@/lib/products/product-limits";
 
 const INPUT =
   "w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-60";
@@ -54,7 +58,7 @@ export function ProductTranslationFields({
             className={inputClassName}
             value={fields.namePs}
             onChange={(e) => onChange("namePs", e.target.value)}
-            maxLength={160}
+            maxLength={PRODUCT_NAME_MAX}
             placeholder="په پښتو کې د محصول نوم"
           />
         </div>
@@ -66,7 +70,7 @@ export function ProductTranslationFields({
             className={inputClassName}
             value={fields.nameFa}
             onChange={(e) => onChange("nameFa", e.target.value)}
-            maxLength={160}
+            maxLength={PRODUCT_NAME_MAX}
             placeholder="نام محصول به دری"
           />
         </div>
@@ -82,7 +86,7 @@ export function ProductTranslationFields({
             className={`${inputClassName} resize-y`}
             value={fields.descriptionPs}
             onChange={(e) => onChange("descriptionPs", e.target.value)}
-            maxLength={5000}
+            maxLength={PRODUCT_DESCRIPTION_MAX}
             placeholder="په پښتو کې تشریح"
           />
         </div>
@@ -95,7 +99,7 @@ export function ProductTranslationFields({
             className={`${inputClassName} resize-y`}
             value={fields.descriptionFa}
             onChange={(e) => onChange("descriptionFa", e.target.value)}
-            maxLength={5000}
+            maxLength={PRODUCT_DESCRIPTION_MAX}
             placeholder="توضیحات به دری"
           />
         </div>

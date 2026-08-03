@@ -6,10 +6,15 @@ import { env } from "@/config/env";
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import { assertProductImageBuffer } from "@/lib/products/assert-product-image";
+import {
+  BANNER_IMAGE_MAX_BYTES,
+  BANNER_IMAGE_MAX_MB,
+  PRODUCT_IMAGE_MIME_TYPES,
+} from "@/lib/products/product-limits";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
 
-const MAX_BYTES = 10 * 1024 * 1024;
-const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"] as const;
+export type VendorUploadPurpose = "product" | "banner";
 
 function ensureCloudinaryConfigured() {
   const cloudName = env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim();
@@ -35,7 +40,7 @@ export class VendorProductUploadService {
 
   async uploadProductImage(
     auth: AuthenticatedUser,
-    input: { buffer: Buffer; mimeType: string }
+    input: { buffer: Buffer; mimeType: string; purpose?: VendorUploadPurpose }
   ): Promise<{ url: string; publicId: string }> {
     ensureCloudinaryConfigured();
 
@@ -55,29 +60,44 @@ export class VendorProductUploadService {
       });
     }
 
-    if (!(ALLOWED_MIME as readonly string[]).includes(input.mimeType)) {
-      throw new AppError({
-        code: ERROR_CODE.BAD_REQUEST,
-        message: "Product image must be a JPG, PNG, or WebP file",
-        statusCode: 400,
+    const purpose = input.purpose ?? "product";
+
+    if (purpose === "product") {
+      await assertProductImageBuffer({
+        buffer: input.buffer,
+        mimeType: input.mimeType,
       });
+    } else {
+      if (!(PRODUCT_IMAGE_MIME_TYPES as readonly string[]).includes(input.mimeType)) {
+        throw new AppError({
+          code: ERROR_CODE.BAD_REQUEST,
+          message: "Image must be a JPG, PNG, or WebP file",
+          statusCode: 400,
+        });
+      }
+      if (input.buffer.length > BANNER_IMAGE_MAX_BYTES) {
+        throw new AppError({
+          code: ERROR_CODE.BAD_REQUEST,
+          message: `File is too large (max ${BANNER_IMAGE_MAX_MB} MB)`,
+          statusCode: 400,
+        });
+      }
     }
 
-    if (input.buffer.length > MAX_BYTES) {
-      throw new AppError({
-        code: ERROR_CODE.BAD_REQUEST,
-        message: "File is too large (max 10 MB)",
-        statusCode: 400,
-      });
-    }
+    const folder =
+      purpose === "banner"
+        ? `mandawee/vendors/${vendor.id}/banners`
+        : `mandawee/vendors/${vendor.id}/products`;
 
-    const folder = `mandawee/vendors/${vendor.id}/products`;
     const result = await new Promise<{ secure_url: string; public_id: string }>(
       (resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder, resource_type: "image", use_filename: true, unique_filename: true },
           (err, res) => {
-            if (err) { reject(err); return; }
+            if (err) {
+              reject(err);
+              return;
+            }
             if (!res?.secure_url || !res.public_id) {
               reject(new Error("Upload failed"));
               return;

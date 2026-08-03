@@ -5,9 +5,10 @@ import { v2 as cloudinary } from "cloudinary";
 import { env } from "@/config/env";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import { assertProductImageBuffer } from "@/lib/products/assert-product-image";
+import { PRODUCT_IMAGE_MIME_TYPES } from "@/lib/products/product-limits";
 
 const MAX_BYTES = 10 * 1024 * 1024;
-const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"] as const;
 
 function ensureCloudinaryConfigured() {
   const cloudName = env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim();
@@ -33,7 +34,9 @@ export class AdminProductUploadService {
     buffer: Buffer;
     mimeType: string;
   }): Promise<{ url: string; publicId: string }> {
-    return this.uploadImage(input, "mandawee/admin/products");
+    ensureCloudinaryConfigured();
+    await assertProductImageBuffer(input);
+    return this.uploadToCloudinary(input.buffer, "mandawee/admin/products");
   }
 
   async uploadCategoryImage(input: {
@@ -56,7 +59,7 @@ export class AdminProductUploadService {
   ): Promise<{ url: string; publicId: string }> {
     ensureCloudinaryConfigured();
 
-    if (!(ALLOWED_MIME as readonly string[]).includes(input.mimeType)) {
+    if (!(PRODUCT_IMAGE_MIME_TYPES as readonly string[]).includes(input.mimeType)) {
       throw new AppError({
         code: ERROR_CODE.BAD_REQUEST,
         message: "Image must be a JPG, PNG, or WebP file",
@@ -71,6 +74,11 @@ export class AdminProductUploadService {
         statusCode: 400,
       });
     }
+
+    return this.uploadToCloudinary(input.buffer, folder);
+  }
+
+  private async uploadToCloudinary(buffer: Buffer, folder: string) {
 
     const result = await new Promise<{ secure_url: string; public_id: string }>(
       (resolve, reject) => {
@@ -88,7 +96,7 @@ export class AdminProductUploadService {
             resolve({ secure_url: res.secure_url, public_id: res.public_id });
           }
         );
-        stream.end(input.buffer);
+        stream.end(buffer);
       }
     );
 

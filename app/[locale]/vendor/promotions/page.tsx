@@ -216,6 +216,7 @@ export default function VendorPromotionsPage() {
     try {
       const body = new FormData();
       body.append("file", file);
+      body.append("purpose", "banner");
       const res = await fetchWithAuth("/api/vendor/products/upload", {
         method: "POST",
         body,

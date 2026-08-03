@@ -17,6 +17,12 @@ import {
   type VariantFormRow,
   type VendorProduct,
 } from "@/components/vendor/products/vendor-product-types";
+import {
+  PRODUCT_DESCRIPTION_MAX,
+  PRODUCT_IMAGE_ACCEPT,
+  PRODUCT_IMAGES_MAX,
+  PRODUCT_NAME_MAX,
+} from "@/lib/products/product-limits";
 
 type FormTab = "basics" | "pricing" | "photos" | "more";
 
@@ -50,7 +56,7 @@ type VendorProductFormModalProps = {
   onAddImageSlot: () => void;
   onRemoveImageSlot: (index: number) => void;
   onUpdateUrlSlot: (index: number, url: string) => void;
-  onFilePick: (files: FileList | null) => void;
+  onFilePick: (files: FileList | null) => void | Promise<void>;
 };
 
 export function VendorProductFormModal({
@@ -174,9 +180,12 @@ export function VendorProductFormModal({
                       className={INPUT}
                       value={form.name}
                       onChange={(e) => onFieldChange("name", e.target.value)}
-                      maxLength={160}
+                      maxLength={PRODUCT_NAME_MAX}
                       placeholder={t("form.namePlaceholder")}
                     />
+                    <p className="text-xs text-neutral-400">
+                      {form.name.trim().length}/{PRODUCT_NAME_MAX}
+                    </p>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className={LABEL}>
@@ -212,11 +221,12 @@ export function VendorProductFormModal({
                     onChange={(e) =>
                       onFieldChange("description", e.target.value)
                     }
-                    maxLength={5000}
+                    maxLength={PRODUCT_DESCRIPTION_MAX}
                     placeholder={t("form.descriptionPlaceholder")}
                   />
                   <p className="text-xs text-neutral-400">
-                    {t("form.descriptionHint")}
+                    {t("form.descriptionHint")} · {form.description.trim().length}/
+                    {PRODUCT_DESCRIPTION_MAX}
                   </p>
                 </div>
 
@@ -486,19 +496,25 @@ export function VendorProductFormModal({
                         {t("form.imagesMax")}
                       </span>
                     </p>
+                    <p className="mt-0.5 text-xs text-neutral-400">
+                      {t("form.imagesHint")}
+                    </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/jpeg,image/png,image/webp"
+                      accept={PRODUCT_IMAGE_ACCEPT}
                       multiple
                       className="hidden"
-                      onChange={(e) => onFilePick(e.target.files)}
+                      onChange={(e) => {
+                        void onFilePick(e.target.files);
+                        e.target.value = "";
+                      }}
                     />
                     <button
                       type="button"
-                      disabled={form.images.length >= 10}
+                      disabled={form.images.length >= PRODUCT_IMAGES_MAX}
                       onClick={() => fileInputRef.current?.click()}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
                     >
@@ -507,7 +523,7 @@ export function VendorProductFormModal({
                     </button>
                     <button
                       type="button"
-                      disabled={form.images.length >= 10}
+                      disabled={form.images.length >= PRODUCT_IMAGES_MAX}
                       onClick={onAddImageSlot}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
                     >

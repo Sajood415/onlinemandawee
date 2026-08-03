@@ -32,8 +32,15 @@ export const POST = withErrorHandling(
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const mimeType = file.type || "application/octet-stream";
+    const purposeRaw = form.get("purpose");
+    const purpose =
+      purposeRaw === "banner" ? ("banner" as const) : ("product" as const);
 
-    const result = await uploadService.uploadProductImage(context.auth, { buffer, mimeType });
+    const result = await uploadService.uploadProductImage(context.auth, {
+      buffer,
+      mimeType,
+      purpose,
+    });
     return NextResponse.json({ data: result }, { status: 200 });
   })
 );

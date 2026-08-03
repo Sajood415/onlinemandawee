@@ -2,6 +2,13 @@ import { z } from "zod";
 
 import { industryTypes } from "@/domain/vendor/vendor-types";
 import { productApprovalStatuses } from "@/domain/catalog/product-approval-status";
+import {
+  PRODUCT_DESCRIPTION_MAX,
+  PRODUCT_DESCRIPTION_MIN,
+  PRODUCT_IMAGES_MAX,
+  PRODUCT_NAME_MAX,
+  PRODUCT_NAME_MIN,
+} from "@/lib/products/product-limits";
 
 export const categoryTranslationsSchema = z
   .object({
@@ -33,8 +40,13 @@ export const categoryIdParamsSchema = z.object({
 });
 
 const localeProductContentSchema = z.object({
-  name: z.string().trim().min(2).max(160).optional(),
-  description: z.string().trim().min(10).max(5000).optional(),
+  name: z.string().trim().min(PRODUCT_NAME_MIN).max(PRODUCT_NAME_MAX).optional(),
+  description: z
+    .string()
+    .trim()
+    .min(PRODUCT_DESCRIPTION_MIN)
+    .max(PRODUCT_DESCRIPTION_MAX)
+    .optional(),
 });
 
 export const productTranslationsSchema = z
@@ -46,10 +58,14 @@ export const productTranslationsSchema = z
 
 export const createProductSchema = z.object({
   categoryId: z.string().min(1),
-  name: z.string().trim().min(2).max(160),
-  description: z.string().trim().min(10).max(5000),
+  name: z.string().trim().min(PRODUCT_NAME_MIN).max(PRODUCT_NAME_MAX),
+  description: z
+    .string()
+    .trim()
+    .min(PRODUCT_DESCRIPTION_MIN)
+    .max(PRODUCT_DESCRIPTION_MAX),
   translations: productTranslationsSchema,
-  images: z.array(z.url().max(2048)).min(1).max(10),
+  images: z.array(z.url().max(2048)).min(1).max(PRODUCT_IMAGES_MAX),
   sku: z.string().trim().min(2).max(100).optional(),
   currency: z.string().trim().length(3).transform((value) => value.toUpperCase()),
   priceAmount: z.number().int().positive().max(100000000),

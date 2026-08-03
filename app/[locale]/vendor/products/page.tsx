@@ -38,6 +38,13 @@ import {
   parseVariantPriceMinor,
 } from "@/lib/products/derive-variant-product-fields";
 import {
+  PRODUCT_DESCRIPTION_MAX,
+  PRODUCT_DESCRIPTION_MIN,
+  PRODUCT_IMAGES_MAX,
+  PRODUCT_NAME_MAX,
+  PRODUCT_NAME_MIN,
+} from "@/lib/products/product-limits";
+import {
   getActiveStockVariants,
   usesVariantStock,
 } from "@/lib/products/product-stock";
@@ -45,6 +52,10 @@ import {
   formatProductPriceRangeMinor,
   resolveProductPriceRangeMinor,
 } from "@/lib/products/resolve-checkout-variant";
+import {
+  type ProductImageFileError,
+  validateProductImageFile,
+} from "@/lib/products/validate-product-image-file";
 import { toast } from "@/lib/utils/toast";
 
 export default function VendorProductsPage() {
@@ -226,15 +237,43 @@ export default function VendorProductsPage() {
       return { ...prev, images: next };
     });
 
-  const handleFilePick = (files: FileList | null) => {
+  const imageErrorMessage = (code: ProductImageFileError) => {
+    switch (code) {
+      case "invalidType":
+        return t("toasts.imageInvalidType");
+      case "tooLarge":
+        return t("toasts.imageTooLarge");
+      case "notExactSize":
+        return t("toasts.imageNotExactSize");
+      case "loadFailed":
+        return t("toasts.imageLoadFailed");
+    }
+  };
+
+  const handleFilePick = async (files: FileList | null) => {
     if (!files) return;
-    const slots: ImageSlot[] = Array.from(files).map((file) => ({
-      kind: "file" as const,
-      file,
-      preview: URL.createObjectURL(file),
-      uploading: false,
-    }));
-    updateField("images", [...form.images, ...slots]);
+    const room = PRODUCT_IMAGES_MAX - form.images.length;
+    if (room <= 0) {
+      toast.error(t("toasts.validationTitle"), t("toasts.imagesMax"));
+      return;
+    }
+    const accepted: ImageSlot[] = [];
+    for (const file of Array.from(files).slice(0, room)) {
+      const error = await validateProductImageFile(file);
+      if (error) {
+        toast.error(t("toasts.validationTitle"), imageErrorMessage(error));
+        continue;
+      }
+      accepted.push({
+        kind: "file" as const,
+        file,
+        preview: URL.createObjectURL(file),
+        uploading: false,
+      });
+    }
+    if (accepted.length) {
+      updateField("images", [...form.images, ...accepted]);
+    }
   };
 
   const uploadFileSlot = async (
@@ -273,12 +312,22 @@ export default function VendorProductsPage() {
       toast.error(t("toasts.validationTitle"), t("toasts.categoryRequired"));
       return;
     }
-    if (form.name.trim().length < 2) {
+    const nameTrimmed = form.name.trim();
+    if (nameTrimmed.length < PRODUCT_NAME_MIN) {
       toast.error(t("toasts.validationTitle"), t("toasts.nameShort"));
       return;
     }
-    if (form.description.trim().length < 10) {
+    if (nameTrimmed.length > PRODUCT_NAME_MAX) {
+      toast.error(t("toasts.validationTitle"), t("toasts.nameLong"));
+      return;
+    }
+    const descriptionTrimmed = form.description.trim();
+    if (descriptionTrimmed.length < PRODUCT_DESCRIPTION_MIN) {
       toast.error(t("toasts.validationTitle"), t("toasts.descriptionShort"));
+      return;
+    }
+    if (descriptionTrimmed.length > PRODUCT_DESCRIPTION_MAX) {
+      toast.error(t("toasts.validationTitle"), t("toasts.descriptionLong"));
       return;
     }
 

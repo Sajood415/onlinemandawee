@@ -15,6 +15,18 @@ import { deriveProductFieldsFromStoredVariants } from "@/lib/products/derive-var
 import type { ProductTranslations } from "@/lib/localization/product-content";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
+import {
+  PRODUCT_DESCRIPTION_MAX,
+  PRODUCT_DESCRIPTION_MIN,
+  PRODUCT_IMAGE_ACCEPT,
+  PRODUCT_IMAGES_MAX,
+  PRODUCT_NAME_MAX,
+  PRODUCT_NAME_MIN,
+} from "@/lib/products/product-limits";
+import {
+  type ProductImageFileError,
+  validateProductImageFile,
+} from "@/lib/products/validate-product-image-file";
 import { toast } from "@/lib/utils/toast";
 
 type Category = { id: string; name: string; isActive: boolean };
@@ -177,15 +189,43 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
       return { ...prev, images: next };
     });
 
-  const handleFilePick = (files: FileList | null) => {
+  const imageErrorMessage = (code: ProductImageFileError) => {
+    switch (code) {
+      case "invalidType":
+        return t("toasts.imageInvalidType");
+      case "tooLarge":
+        return t("toasts.imageTooLarge");
+      case "notExactSize":
+        return t("toasts.imageNotExactSize");
+      case "loadFailed":
+        return t("toasts.imageLoadFailed");
+    }
+  };
+
+  const handleFilePick = async (files: FileList | null) => {
     if (!files) return;
-    const slots: ImageSlot[] = Array.from(files).map((file) => ({
-      kind: "file",
-      file,
-      preview: URL.createObjectURL(file),
-      uploading: false,
-    }));
-    updateField("images", [...form.images, ...slots]);
+    const room = PRODUCT_IMAGES_MAX - form.images.length;
+    if (room <= 0) {
+      toast.error(t("toasts.imagesMax"), t("toasts.imagesMaxBody"));
+      return;
+    }
+    const accepted: ImageSlot[] = [];
+    for (const file of Array.from(files).slice(0, room)) {
+      const error = await validateProductImageFile(file);
+      if (error) {
+        toast.error(t("toasts.imageInvalid"), imageErrorMessage(error));
+        continue;
+      }
+      accepted.push({
+        kind: "file",
+        file,
+        preview: URL.createObjectURL(file),
+        uploading: false,
+      });
+    }
+    if (accepted.length) {
+      updateField("images", [...form.images, ...accepted]);
+    }
   };
 
   const uploadFileSlot = async (
@@ -223,12 +263,22 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
       toast.error(t("toasts.categoryRequired"), t("toasts.categoryRequiredBody"));
       return;
     }
-    if (form.name.trim().length < 2) {
+    const nameTrimmed = form.name.trim();
+    if (nameTrimmed.length < PRODUCT_NAME_MIN) {
       toast.error(t("toasts.nameShort"), t("toasts.nameShortBody"));
       return;
     }
-    if (form.description.trim().length < 10) {
+    if (nameTrimmed.length > PRODUCT_NAME_MAX) {
+      toast.error(t("toasts.nameLong"), t("toasts.nameLongBody"));
+      return;
+    }
+    const descriptionTrimmed = form.description.trim();
+    if (descriptionTrimmed.length < PRODUCT_DESCRIPTION_MIN) {
       toast.error(t("toasts.descShort"), t("toasts.descShortBody"));
+      return;
+    }
+    if (descriptionTrimmed.length > PRODUCT_DESCRIPTION_MAX) {
+      toast.error(t("toasts.descLong"), t("toasts.descLongBody"));
       return;
     }
 
@@ -321,8 +371,11 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
             className={INPUT}
             value={form.name}
             onChange={(e) => updateField("name", e.target.value)}
-            maxLength={160}
+            maxLength={PRODUCT_NAME_MAX}
           />
+          <p className="text-xs text-neutral-400">
+            {form.name.trim().length}/{PRODUCT_NAME_MAX}
+          </p>
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -511,31 +564,49 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
           className={INPUT}
           value={form.description}
           onChange={(e) => updateField("description", e.target.value)}
-          maxLength={5000}
+          maxLength={PRODUCT_DESCRIPTION_MAX}
         />
+        <p className="text-xs text-neutral-400">
+          {t("descriptionHint")} · {form.description.trim().length}/
+          {PRODUCT_DESCRIPTION_MAX}
+        </p>
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label className={LABEL}>{t("images")}</label>
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <label className={LABEL}>{t("images")}</label>
+            <p className="text-xs text-neutral-400">{t("imagesHint")}</p>
+          </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
+              disabled={form.images.length >= PRODUCT_IMAGES_MAX}
               onClick={addUrlSlot}
-              className="inline-flex items-center gap-1 rounded-md border border-neutral-200 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+              className="inline-flex items-center gap-1 rounded-md border border-neutral-200 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
             >
               <Plus className="h-3.5 w-3.5" />
               {t("addUrl")}
             </button>
-            <label className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-neutral-200 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+            <label
+              className={`inline-flex items-center gap-1 rounded-md border border-neutral-200 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50 ${
+                form.images.length >= PRODUCT_IMAGES_MAX
+                  ? "pointer-events-none opacity-50"
+                  : "cursor-pointer"
+              }`}
+            >
               <Upload className="h-3.5 w-3.5" />
               {t("upload")}
               <input
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept={PRODUCT_IMAGE_ACCEPT}
                 multiple
                 className="hidden"
-                onChange={(e) => handleFilePick(e.target.files)}
+                disabled={form.images.length >= PRODUCT_IMAGES_MAX}
+                onChange={(e) => {
+                  void handleFilePick(e.target.files);
+                  e.target.value = "";
+                }}
               />
             </label>
           </div>

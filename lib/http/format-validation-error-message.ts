@@ -5,7 +5,8 @@ type FlattenedFieldErrors = {
 };
 
 const FIELD_LABELS: Record<string, string> = {
-  description: "Store description",
+  description: "Description",
+  name: "Name",
   storeName: "Store name",
   businessType: "Business type",
   logoUrl: "Logo",
