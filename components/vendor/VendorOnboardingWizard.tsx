@@ -716,6 +716,8 @@ export function VendorOnboardingWizard() {
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [selfieWithIdUrl, setSelfieWithIdUrl] = useState("");
   const [selfieWithIdFile, setSelfieWithIdFile] = useState<File | null>(null);
+  const [businessLicenseUrl, setBusinessLicenseUrl] = useState("");
+  const [businessLicenseFile, setBusinessLicenseFile] = useState<File | null>(null);
 
   const [addressLine1, setAddressLine1] = useState("");
   const [city, setCity] = useState("");
@@ -825,6 +827,7 @@ export function VendorOnboardingWizard() {
         );
         setDocumentUrl(String(draft.documentUrl ?? ""));
         setSelfieWithIdUrl(String(draft.selfieWithIdUrl ?? ""));
+        setBusinessLicenseUrl(String(draft.businessLicenseUrl ?? ""));
         setAddressLine1(String(draft.addressLine1 ?? ""));
         setCity(String(draft.city ?? ""));
         setCountry(String(draft.country ?? ""));
@@ -872,6 +875,7 @@ export function VendorOnboardingWizard() {
           documentType,
           documentUrl,
           selfieWithIdUrl,
+          businessLicenseUrl,
           addressLine1,
           city,
           country,
@@ -914,6 +918,7 @@ export function VendorOnboardingWizard() {
     documentType,
     documentUrl,
     selfieWithIdUrl,
+    businessLicenseUrl,
     addressLine1,
     city,
     country,
@@ -989,6 +994,7 @@ export function VendorOnboardingWizard() {
         if (draft.industryType && industryTypes.includes(draft.industryType)) setIndustryType(draft.industryType);
         setLogoUrl(draft.logoUrl);
         setDescription(draft.description);
+        setBusinessLicenseUrl(draft.businessLicenseUrl ?? "");
 
         if (draft.kyc) {
           setDocumentType(draft.kyc.documentType);
@@ -1269,8 +1275,10 @@ export function VendorOnboardingWizard() {
         setDirection(1);
         setStep(3);
       } else if (step === 3) {
+        const isRegisteredBusiness = businessType === "REGISTERED_BUSINESS";
         let nextDocumentUrl = documentUrl.trim();
         let nextSelfieUrl = selfieWithIdUrl.trim();
+        let nextBusinessLicenseUrl = businessLicenseUrl.trim();
         if (documentFile) {
           const uploaded = await uploadSelectedFile("kyc_document", documentFile);
           nextDocumentUrl = uploaded.url;
@@ -1283,8 +1291,19 @@ export function VendorOnboardingWizard() {
           setSelfieWithIdUrl(uploaded.url);
           setSelfieWithIdFile(null);
         }
+        if (isRegisteredBusiness && businessLicenseFile) {
+          const uploaded = await uploadSelectedFile("business_license", businessLicenseFile);
+          nextBusinessLicenseUrl = uploaded.url;
+          setBusinessLicenseUrl(uploaded.url);
+          setBusinessLicenseFile(null);
+        }
         if (!nextDocumentUrl) {
           toast.error(tWizard("toasts.kycTitle"), tWizard("toasts.attachIdDocument"));
+          setBusy(false);
+          return;
+        }
+        if (isRegisteredBusiness && !nextBusinessLicenseUrl) {
+          toast.error(tWizard("toasts.kycTitle"), tWizard("toasts.attachBusinessLicense"));
           setBusy(false);
           return;
         }
@@ -1292,6 +1311,9 @@ export function VendorOnboardingWizard() {
           documentType,
           documentUrl: nextDocumentUrl,
           ...(nextSelfieUrl ? { selfieWithIdUrl: nextSelfieUrl } : {}),
+          ...(isRegisteredBusiness
+            ? { businessLicenseUrl: nextBusinessLicenseUrl }
+            : { businessLicenseUrl: null }),
         });
         setDirection(1);
         setStep(4);
@@ -1602,7 +1624,14 @@ export function VendorOnboardingWizard() {
                     <select
                       className={INPUT_BASE}
                       value={businessType}
-                      onChange={(event) => setBusinessType(event.target.value as BusinessType)}
+                      onChange={(event) => {
+                        const next = event.target.value as BusinessType;
+                        setBusinessType(next);
+                        if (next === "INDIVIDUAL") {
+                          setBusinessLicenseUrl("");
+                          setBusinessLicenseFile(null);
+                        }
+                      }}
                     >
                       {businessTypes.map((type) => (
                         <option key={type} value={type}>
@@ -1709,6 +1738,19 @@ export function VendorOnboardingWizard() {
                   required
                   disabled={Boolean(uploadKey)}
                 />
+                {businessType === "REGISTERED_BUSINESS" ? (
+                  <UploadZone
+                    id="business-license"
+                    title={tWizard("identity.businessLicense")}
+                    hint={tWizard("identity.businessLicenseHint")}
+                    accept="image/jpeg,image/png,image/webp"
+                    file={businessLicenseFile}
+                    onChange={setBusinessLicenseFile}
+                    savedUrl={businessLicenseUrl}
+                    required
+                    disabled={Boolean(uploadKey)}
+                  />
+                ) : null}
                 <UploadZone
                   id="kyc-selfie"
                   title={tWizard("identity.verificationSelfieOptional")}

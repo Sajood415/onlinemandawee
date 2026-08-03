@@ -12,6 +12,7 @@ const FIELD_LABELS: Record<string, string> = {
   documentType: "ID type",
   documentUrl: "ID document",
   selfieWithIdUrl: "Selfie with ID",
+  businessLicenseUrl: "Business license",
   addressLine1: "Address line 1",
   city: "City",
   country: "Country",

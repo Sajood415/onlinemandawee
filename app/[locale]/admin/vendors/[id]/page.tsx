@@ -25,6 +25,7 @@ type VendorDetail = {
   businessType: string | null;
   industryType: string | null;
   logoUrl: string | null;
+  businessLicenseUrl: string | null;
   description: string | null;
   submittedAt: string | null;
   approvedAt: string | null;
@@ -674,6 +675,23 @@ export default function AdminVendorDetailPage() {
       </Section>
 
       <Section title={td("sections.kyc")}>
+        {vendor.businessType === "REGISTERED_BUSINESS" ? (
+          <div className="mb-4">
+            <p className="mb-1 text-xs font-medium text-neutral-500">
+              {td("fields.businessLicense")}
+            </p>
+            {vendor.businessLicenseUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={vendor.businessLicenseUrl}
+                alt={td("fields.businessLicense")}
+                className="h-40 w-full max-w-md rounded-lg border border-neutral-200 object-cover"
+              />
+            ) : (
+              <p className="text-sm text-neutral-500">{td("fields.noBusinessLicense")}</p>
+            )}
+          </div>
+        ) : null}
         {vendor.kycDocuments.length ? (
           <div className="grid gap-4 md:grid-cols-2">
             {vendor.kycDocuments.map((doc) => (

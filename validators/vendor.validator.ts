@@ -47,6 +47,7 @@ export const vendorKycSchema = z.object({
   documentType: z.enum(kycDocumentTypes),
   documentUrl: z.url().max(2048),
   selfieWithIdUrl: z.url().max(2048).optional(),
+  businessLicenseUrl: z.url().max(2048).optional().nullable(),
 });
 
 export const vendorAddressSchema = z

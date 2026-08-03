@@ -6,7 +6,6 @@ import { HomeCategoryCarousel } from "./HomeCategoryCarousel";
 import { HomeDuoBanners } from "./HomeDuoBanners";
 import { HomeSeasonalBanners } from "./HomeSeasonalBanners";
 import { HomeCouponDealsRail } from "./HomeCouponDealsRail";
-import { HomeSupplyRequestCta } from "./HomeSupplyRequestCta";
 import { HomeCategoryShowcaseGrid } from "./HomeCategoryShowcaseGrid";
 import { HomeStackedSections } from "./HomeStackedSections";
 
@@ -19,7 +18,6 @@ export function HomePage() {
       <HomeHeroCarousel />
       <div className="home-content-padding mx-auto w-full min-w-0 max-w-[1600px] bg-white py-4 sm:py-6 lg:py-8">
         <HomeCouponDealsRail />
-        <HomeSupplyRequestCta />
         <HomeSeasonalBanners />
         <HomeCategoryCarousel />
         <HomeDuoBanners />

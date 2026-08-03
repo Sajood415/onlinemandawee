@@ -18,6 +18,7 @@ export type OnboardingStatusPayload = {
     industryType: IndustryType | null | undefined;
     logoUrl: string;
     description: string;
+    businessLicenseUrl: string;
     kyc: null | {
       documentType: KycDocumentType;
       documentUrl: string;

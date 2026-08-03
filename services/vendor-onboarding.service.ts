@@ -115,6 +115,7 @@ export class VendorOnboardingService {
       status: vendorProfile.status === "REJECTED" ? "ONBOARDING" : vendorProfile.status,
       rejectionReason: null,
       rejectedAt: null,
+      ...(input.businessType === "INDIVIDUAL" ? { businessLicenseUrl: null } : {}),
     });
 
     return {
@@ -129,12 +130,28 @@ export class VendorOnboardingService {
     const vendorProfile = await this.getVendorProfileByUserId(auth.id);
     this.assertEditable(vendorProfile.status);
 
+    const isRegisteredBusiness = vendorProfile.businessType === "REGISTERED_BUSINESS";
+    const businessLicenseUrl = input.businessLicenseUrl?.trim() || null;
+
+    if (isRegisteredBusiness && !businessLicenseUrl) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Business license image is required for registered businesses",
+        statusCode: 400,
+      });
+    }
+
     await this.vendorKycDocumentRepository.upsert({
       vendorProfileId: vendorProfile.id,
       documentType: input.documentType,
       documentUrl: input.documentUrl,
       selfieWithIdUrl: input.selfieWithIdUrl,
     });
+
+    await this.vendorProfileRepository.updateBusinessLicenseUrl(
+      vendorProfile.id,
+      isRegisteredBusiness ? businessLicenseUrl : null
+    );
 
     const updated = await this.vendorProfileRepository.updateStep({
       vendorProfileId: vendorProfile.id,
@@ -251,6 +268,17 @@ export class VendorOnboardingService {
       throw new AppError({
         code: ERROR_CODE.BAD_REQUEST,
         message: "KYC documents are required",
+        statusCode: 400,
+      });
+    }
+
+    if (
+      vendorProfile.businessType === "REGISTERED_BUSINESS" &&
+      !vendorProfile.businessLicenseUrl
+    ) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Business license image is required for registered businesses",
         statusCode: 400,
       });
     }
@@ -382,6 +410,7 @@ export class VendorOnboardingService {
         industryType: vendorProfile.industryType,
         logoUrl: vendorProfile.logoUrl ?? "",
         description: vendorProfile.description ?? "",
+        businessLicenseUrl: vendorProfile.businessLicenseUrl ?? "",
         kyc: kycDoc
           ? {
               documentType: kycDoc.documentType,

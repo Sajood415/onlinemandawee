@@ -15,6 +15,7 @@ const MIME_BY_KIND: Record<VendorUploadKind, readonly string[]> = {
   logo: ["image/jpeg", "image/png", "image/webp"],
   kyc_document: ["image/jpeg", "image/png", "image/webp", "application/pdf"],
   kyc_selfie: ["image/jpeg", "image/png", "image/webp"],
+  business_license: ["image/jpeg", "image/png", "image/webp"],
   address_proof: ["image/jpeg", "image/png", "image/webp", "application/pdf"],
 };
 
@@ -22,6 +23,7 @@ const folderSegment: Record<VendorUploadKind, string> = {
   logo: "logo",
   kyc_document: "kyc/id-document",
   kyc_selfie: "kyc/selfie",
+  business_license: "kyc/business-license",
   address_proof: "address/proof",
 };
 

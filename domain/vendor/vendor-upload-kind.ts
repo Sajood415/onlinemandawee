@@ -2,6 +2,7 @@ export const vendorUploadKinds = [
   "logo",
   "kyc_document",
   "kyc_selfie",
+  "business_license",
   "address_proof",
 ] as const;
 

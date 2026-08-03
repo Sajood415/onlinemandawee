@@ -371,6 +371,7 @@ model VendorProfile {
   industryType                   IndustryType?
   sellerType                     SellerType                 @default(THIRD_PARTY)
   logoUrl                        String?
+  businessLicenseUrl             String?
   description                    String?
   onboardingStep                 VendorOnboardingStep       @default(ACCOUNT_SETUP)
   status                         VendorStatus               @default(ONBOARDING)

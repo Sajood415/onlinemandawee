@@ -108,6 +108,7 @@ export class AdminVendorService {
       businessType: vendor.businessType,
       industryType: vendor.industryType ?? null,
       logoUrl: vendor.logoUrl,
+      businessLicenseUrl: vendor.businessLicenseUrl ?? null,
       description: vendor.description,
       submittedAt: vendor.submittedAt?.toISOString() ?? null,
       approvedAt: vendor.approvedAt?.toISOString() ?? null,

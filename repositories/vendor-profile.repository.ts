@@ -64,6 +64,8 @@ export class VendorProfileRepository {
     status?: VendorStatus;
     rejectionReason?: null;
     rejectedAt?: null;
+    /** Clear license when switching to individual. */
+    businessLicenseUrl?: string | null;
   }) {
     return prisma.vendorProfile.update({
       where: { id: input.vendorProfileId },
@@ -78,7 +80,17 @@ export class VendorProfileRepository {
         status: input.status,
         rejectionReason: input.rejectionReason,
         rejectedAt: input.rejectedAt,
+        ...(input.businessLicenseUrl !== undefined
+          ? { businessLicenseUrl: input.businessLicenseUrl }
+          : {}),
       },
+    });
+  }
+
+  updateBusinessLicenseUrl(vendorProfileId: string, businessLicenseUrl: string | null) {
+    return prisma.vendorProfile.update({
+      where: { id: vendorProfileId },
+      data: { businessLicenseUrl },
     });
   }
 
