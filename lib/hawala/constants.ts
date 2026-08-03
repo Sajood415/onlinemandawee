@@ -29,7 +29,7 @@ export const HAWALA_CURRENCY_LABELS: Record<HawalaCurrency, string> = {
   PKR: "PKR – Pakistani Rupee",
 };
 
-/** Seed value of 1 unit of each currency expressed in AFN, used the first time rates are read. */
+/** Seed value of 1 unit of each currency expressed in AFN, used if the free API is unreachable. */
 export const HAWALA_DEFAULT_RATES_TO_AFN: Record<HawalaCurrency, number> = {
   AFN: 1,
   USD: 70,
@@ -40,6 +40,12 @@ export const HAWALA_DEFAULT_RATES_TO_AFN: Record<HawalaCurrency, number> = {
   SAR: 18.6,
   PKR: 0.25,
 };
+
+/** Customer rate is this percent below the API market rate (e.g. 2 = 2% less). */
+export const HAWALA_API_RATE_MINUS_PERCENT = 2;
+
+/** Re-fetch free API rates at most this often for non-overridden currencies. */
+export const HAWALA_API_SYNC_TTL_MS = 12 * 60 * 60 * 1000;
 
 export function isHawalaCurrency(value: string): value is HawalaCurrency {
   return (HAWALA_CURRENCIES as readonly string[]).includes(value);

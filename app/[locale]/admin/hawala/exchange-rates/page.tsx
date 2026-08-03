@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, Banknote, Loader2, Save } from "lucide-react";
+import { ArrowLeft, Banknote, Loader2, RefreshCw, Save } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import {
+  HAWALA_API_RATE_MINUS_PERCENT,
   HAWALA_CURRENCIES,
   HAWALA_CURRENCY_LABELS,
   type HawalaCurrency,
@@ -19,7 +20,10 @@ type HawalaExchangeRate = {
   id: string;
   currency: HawalaCurrency;
   rateToAfn: number;
+  apiRateToAfn: number | null;
+  isManualOverride: boolean;
   isActive: boolean;
+  apiSyncedAt: string | null;
   updatedAt: string;
 };
 
@@ -36,27 +40,57 @@ export default function AdminHawalaExchangeRatesPage() {
       string
     >
   );
+  const [meta, setMeta] = useState<
+    Record<HawalaCurrency, Pick<HawalaExchangeRate, "isManualOverride" | "apiRateToAfn" | "apiSyncedAt">>
+  >(
+    Object.fromEntries(
+      HAWALA_CURRENCIES.map((currency) => [
+        currency,
+        { isManualOverride: false, apiRateToAfn: null, apiSyncedAt: null },
+      ])
+    ) as Record<
+      HawalaCurrency,
+      Pick<HawalaExchangeRate, "isManualOverride" | "apiRateToAfn" | "apiSyncedAt">
+    >
+  );
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
+  const applyRows = (data: HawalaExchangeRate[]) => {
+    setRates((current) => {
+      const next = { ...current };
+      for (const rate of data) {
+        next[rate.currency] = String(rate.rateToAfn);
+      }
+      return next;
+    });
+    setMeta((current) => {
+      const next = { ...current };
+      for (const rate of data) {
+        next[rate.currency] = {
+          isManualOverride: rate.isManualOverride,
+          apiRateToAfn: rate.apiRateToAfn,
+          apiSyncedAt: rate.apiSyncedAt,
+        };
+      }
+      return next;
+    });
+    const mostRecent = data
+      .map((rate) => rate.apiSyncedAt ?? rate.updatedAt)
+      .filter(Boolean)
+      .sort()
+      .at(-1);
+    setLastUpdated(mostRecent ?? null);
+  };
 
   const loadRates = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetchWithAuth("/api/admin/hawala/exchange-rates");
       const data = await parseApiResponse<HawalaExchangeRate[]>(res);
-      setRates((current) => {
-        const next = { ...current };
-        for (const rate of data) {
-          next[rate.currency] = String(rate.rateToAfn);
-        }
-        return next;
-      });
-      const mostRecent = data
-        .map((rate) => rate.updatedAt)
-        .sort()
-        .at(-1);
-      setLastUpdated(mostRecent ?? null);
+      applyRows(data);
     } catch (error) {
       toast.error(
         t("loadError"),
@@ -94,18 +128,33 @@ export default function AdminHawalaExchangeRatesPage() {
         body: JSON.stringify(payload),
       });
       const data = await parseApiResponse<HawalaExchangeRate[]>(res);
-      setRates((current) => {
-        const next = { ...current };
-        for (const rate of data) {
-          next[rate.currency] = String(rate.rateToAfn);
-        }
-        return next;
-      });
+      applyRows(data);
       toast.success(t("savedTitle"), t("savedBody"));
     } catch (error) {
       toast.error(t("saveFailed"), error instanceof Error ? error.message : t("unknownError"));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const onSync = async (overwriteManual: boolean) => {
+    setSyncing(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/hawala/exchange-rates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ overwriteManual }),
+      });
+      const data = await parseApiResponse<HawalaExchangeRate[]>(res);
+      applyRows(data);
+      toast.success(
+        t("syncedTitle"),
+        overwriteManual ? t("syncedOverwriteBody") : t("syncedBody")
+      );
+    } catch (error) {
+      toast.error(t("syncFailed"), error instanceof Error ? error.message : t("unknownError"));
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -128,8 +177,9 @@ export default function AdminHawalaExchangeRatesPage() {
           {t("back")}
         </Link>
         <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
-        <p className="mt-1 text-sm text-neutral-600">
-          {t("subtitle")}
+        <p className="mt-1 text-sm text-neutral-600">{t("subtitle")}</p>
+        <p className="mt-2 text-sm text-neutral-500">
+          {t("apiNote", { percent: HAWALA_API_RATE_MINUS_PERCENT })}
         </p>
       </div>
 
@@ -140,9 +190,7 @@ export default function AdminHawalaExchangeRatesPage() {
           </div>
           <div className="flex-1">
             <h2 className="text-base font-semibold text-neutral-900">{t("ratesTitle")}</h2>
-            <p className="mt-1 text-sm text-neutral-600">
-              {t("ratesBody")}
-            </p>
+            <p className="mt-1 text-sm text-neutral-600">{t("ratesBody")}</p>
 
             {loading ? (
               <div className="mt-4 flex items-center gap-2 text-sm text-neutral-500">
@@ -157,56 +205,93 @@ export default function AdminHawalaExchangeRatesPage() {
                   </span>
                   <input value="1" disabled className={`${INPUT} bg-neutral-100 text-neutral-500`} />
                 </div>
-                {HAWALA_CURRENCIES.filter((currency) => currency !== "AFN").map((currency) => (
-                  <div
-                    key={currency}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 px-4 py-3 transition hover:border-neutral-300"
-                  >
-                    <span className="font-medium text-neutral-800">
-                      {HAWALA_CURRENCY_LABELS[currency]}
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.0001"
-                      value={rates[currency]}
-                      onChange={(event) =>
-                        setRates((current) => ({ ...current, [currency]: event.target.value }))
-                      }
-                      className={INPUT}
-                    />
-                  </div>
-                ))}
+                {HAWALA_CURRENCIES.filter((currency) => currency !== "AFN").map((currency) => {
+                  const row = meta[currency];
+                  return (
+                    <div
+                      key={currency}
+                      className="rounded-xl border border-neutral-200 px-4 py-3 transition hover:border-neutral-300"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <span className="font-medium text-neutral-800">
+                            {HAWALA_CURRENCY_LABELS[currency]}
+                          </span>
+                          <p className="mt-0.5 text-xs text-neutral-500">
+                            {row.isManualOverride ? t("sourceManual") : t("sourceApi")}
+                            {row.apiRateToAfn != null
+                              ? ` · ${t("apiRaw", { rate: row.apiRateToAfn })}`
+                              : ""}
+                          </p>
+                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.0001"
+                          value={rates[currency]}
+                          onChange={(event) =>
+                            setRates((current) => ({
+                              ...current,
+                              [currency]: event.target.value,
+                            }))
+                          }
+                          className={INPUT}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
         </div>
       </section>
 
-      <div className="max-w-2xl">
+      <div className="flex max-w-2xl flex-wrap items-center gap-3">
         <button
           type="button"
-          disabled={saving || loading}
+          disabled={saving || loading || syncing}
           onClick={() => void onSave()}
           className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {t("save")}
         </button>
-        {lastUpdated ? (
-          <p className="mt-2 text-xs text-neutral-500">
-            {t("lastUpdated", {
-              date: new Date(lastUpdated).toLocaleString(locale, {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-            })}
-          </p>
-        ) : null}
+        <button
+          type="button"
+          disabled={saving || loading || syncing}
+          onClick={() => void onSync(false)}
+          className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 disabled:opacity-60"
+        >
+          {syncing ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4" />
+          )}
+          {t("syncApi")}
+        </button>
+        <button
+          type="button"
+          disabled={saving || loading || syncing}
+          onClick={() => void onSync(true)}
+          className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-60"
+        >
+          {t("syncOverwrite")}
+        </button>
       </div>
+      {lastUpdated ? (
+        <p className="max-w-2xl text-xs text-neutral-500">
+          {t("lastUpdated", {
+            date: new Date(lastUpdated).toLocaleString(locale, {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          })}
+        </p>
+      ) : null}
     </div>
   );
 }

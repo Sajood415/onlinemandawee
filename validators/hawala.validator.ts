@@ -92,6 +92,10 @@ export const upsertHawalaExchangeRatesSchema = z.object({
     .min(1),
 });
 
+export const syncHawalaExchangeRatesSchema = z.object({
+  overwriteManual: z.boolean().optional().default(false),
+});
+
 export type UpsertHawalaExchangeRatesInput = z.infer<
   typeof upsertHawalaExchangeRatesSchema
 >;

@@ -1165,15 +1165,20 @@ enum HawalaTransferStatus {
 }
 
 model HawalaExchangeRate {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
   /// ISO currency code, e.g. "USD", "AFN".
-  currency        String   @unique
+  currency         String    @unique
   /// Value of 1 unit of `currency` expressed in AFN (Afghan Afghani).
-  rateToAfn       Float
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  updatedByUserId String?  @db.ObjectId
+  rateToAfn        Float
+  /// Raw API rate before the fixed markup subtraction (null for AFN / manual-only).
+  apiRateToAfn     Float?
+  /// When true, API sync will not overwrite this currency's rateToAfn.
+  isManualOverride Boolean   @default(false)
+  isActive         Boolean   @default(true)
+  apiSyncedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  updatedByUserId  String?   @db.ObjectId
 }
 
 model HawalaTransfer {
