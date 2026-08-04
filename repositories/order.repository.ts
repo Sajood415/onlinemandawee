@@ -420,6 +420,27 @@ export class OrderRepository {
     });
   }
 
+  findByPaypalOrderId(paypalOrderId: string) {
+    return prisma.order.findFirst({
+      where: { paypalOrderId },
+      orderBy: { createdAt: "asc" },
+      include: {
+        vendorOrders: {
+          include: {
+            vendorProfile: {
+              include: {
+                user: true,
+              },
+            },
+            inboundShipment: true,
+            items: true,
+          },
+        },
+        user: true,
+      },
+    });
+  }
+
   findByGuestTrackingToken(token: string) {
     return prisma.order.findFirst({
       where: { guestTrackingToken: token },

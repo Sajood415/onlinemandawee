@@ -6,12 +6,14 @@ import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js"
 import { CreditCard, Loader2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
+import { CheckoutPayPalCardForm } from "@/components/checkout/CheckoutPayPalCardForm";
 import { CheckoutStripeProvider } from "@/components/checkout/CheckoutStripeProvider";
 import {
   getStripeCheckoutLoadErrorMessage,
   getStripeKeyMode,
 } from "@/lib/stripe/checkout-client";
 import { getStripePromise, isStripeCheckoutConfigured } from "@/lib/stripe/client";
+import { isPayPalCheckoutConfigured } from "@/lib/paypal/client";
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { toast } from "@/lib/utils/toast";
@@ -25,6 +27,8 @@ type SupplyRequestQuotePaymentProps = {
   quoteImageUrl: string | null;
   intentUrl: string;
   confirmUrl: string;
+  paypalCreateOrderUrl: string;
+  paypalCaptureUrl: string;
   returnUrl?: string;
   /** Use authenticated fetch (customer account). Guest track uses false. */
   authenticated?: boolean;
@@ -101,7 +105,9 @@ function SupplyStripePaymentForm({
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: returnUrl ?? `${window.location.origin}${window.location.pathname}${window.location.search}`,
+          return_url:
+            returnUrl ??
+            `${window.location.origin}${window.location.pathname}${window.location.search}`,
         },
         redirect: "if_required",
       });
@@ -181,18 +187,25 @@ export function SupplyRequestQuotePayment({
   quoteImageUrl,
   intentUrl,
   confirmUrl,
+  paypalCreateOrderUrl,
+  paypalCaptureUrl,
   returnUrl,
   authenticated = false,
   onPaid,
 }: SupplyRequestQuotePaymentProps) {
   const locale = useLocale();
   const t = useTranslations("SupplyPages.payment");
+  const stripeAvailable = isStripeCheckoutConfigured();
+  const paypalAvailable = isPayPalCheckoutConfigured();
+  const [paymentTab, setPaymentTab] = useState<"stripe" | "paypal">(
+    stripeAvailable ? "stripe" : "paypal"
+  );
   const [loading, setLoading] = useState(false);
   const [payment, setPayment] = useState<PaymentIntentData | null>(null);
   const [intentError, setIntentError] = useState<string | null>(null);
 
   const loadIntent = useCallback(async () => {
-    if (!isStripeCheckoutConfigured()) return;
+    if (!stripeAvailable) return;
 
     setLoading(true);
     setIntentError(null);
@@ -207,13 +220,15 @@ export function SupplyRequestQuotePayment({
     } finally {
       setLoading(false);
     }
-  }, [authenticated, intentUrl, t]);
+  }, [authenticated, intentUrl, stripeAvailable, t]);
 
   useEffect(() => {
-    if (!isStripeCheckoutConfigured()) return;
+    if (!stripeAvailable || paymentTab !== "stripe") return;
     void getStripePromise();
     void loadIntent();
-  }, [loadIntent]);
+  }, [loadIntent, paymentTab, stripeAvailable]);
+
+  const anyAvailable = stripeAvailable || paypalAvailable;
 
   return (
     <section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -240,38 +255,101 @@ export function SupplyRequestQuotePayment({
         </p>
       ) : null}
 
-      {!isStripeCheckoutConfigured() ? (
+      {!anyAvailable ? (
         <p className="mt-4 text-sm text-amber-900">{t("stripeUnavailable")}</p>
-      ) : loading ? (
-        <div className="mt-4 inline-flex items-center gap-2 text-sm text-amber-900">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          {t("preparing")}
+      ) : (
+        <div className="mt-4 space-y-4">
+          <div className="grid grid-cols-2 gap-2 rounded-xl border border-amber-200 bg-white p-1">
+            <button
+              type="button"
+              disabled={!stripeAvailable}
+              onClick={() => setPaymentTab("stripe")}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                paymentTab === "stripe"
+                  ? "bg-[#0F3460] text-white"
+                  : "text-neutral-600 hover:bg-neutral-50 disabled:opacity-40"
+              }`}
+            >
+              Stripe
+            </button>
+            <button
+              type="button"
+              disabled={!paypalAvailable}
+              onClick={() => setPaymentTab("paypal")}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                paymentTab === "paypal"
+                  ? "bg-[#0F3460] text-white"
+                  : "text-neutral-600 hover:bg-neutral-50 disabled:opacity-40"
+              }`}
+            >
+              PayPal
+            </button>
+          </div>
+
+          {paymentTab === "stripe" && stripeAvailable ? (
+            loading ? (
+              <div className="inline-flex items-center gap-2 text-sm text-amber-900">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t("preparing")}
+              </div>
+            ) : intentError ? (
+              <div className="space-y-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                <p>{intentError}</p>
+                <button
+                  type="button"
+                  onClick={() => void loadIntent()}
+                  className="text-sm font-semibold text-[#0f3460] underline hover:no-underline"
+                >
+                  {t("tryAgain")}
+                </button>
+              </div>
+            ) : payment?.clientSecret ? (
+              <div className="rounded-xl border border-white/80 bg-white p-4">
+                <CheckoutStripeProvider clientSecret={payment.clientSecret} locale={locale}>
+                  <SupplyStripePaymentForm
+                    clientSecret={payment.clientSecret}
+                    confirmUrl={confirmUrl}
+                    returnUrl={returnUrl}
+                    authenticated={authenticated}
+                    onPaid={onPaid}
+                    onRetry={() => void loadIntent()}
+                  />
+                </CheckoutStripeProvider>
+              </div>
+            ) : null
+          ) : null}
+
+          {paymentTab === "paypal" && paypalAvailable ? (
+            <div className="rounded-xl border border-white/80 bg-white p-4">
+              <CheckoutPayPalCardForm
+                currency={quoteCurrency}
+                payLabel={t("payNow")}
+                createOrder={async () => {
+                  const response = await postJson(
+                    paypalCreateOrderUrl,
+                    undefined,
+                    authenticated
+                  );
+                  const data = await parseApiResponse<{ paypalOrderId: string }>(
+                    response
+                  );
+                  return data.paypalOrderId;
+                }}
+                onApprove={async (paypalOrderId) => {
+                  const response = await postJson(
+                    paypalCaptureUrl,
+                    { paypalOrderId },
+                    authenticated
+                  );
+                  await parseApiResponse(response);
+                  toast.success(t("paymentSuccess"));
+                  onPaid();
+                }}
+              />
+            </div>
+          ) : null}
         </div>
-      ) : intentError ? (
-        <div className="mt-4 space-y-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          <p>{intentError}</p>
-          <button
-            type="button"
-            onClick={() => void loadIntent()}
-            className="text-sm font-semibold text-[#0f3460] underline hover:no-underline"
-          >
-            {t("tryAgain")}
-          </button>
-        </div>
-      ) : payment?.clientSecret ? (
-        <div className="mt-4 rounded-xl border border-white/80 bg-white p-4">
-          <CheckoutStripeProvider clientSecret={payment.clientSecret} locale={locale}>
-            <SupplyStripePaymentForm
-              clientSecret={payment.clientSecret}
-              confirmUrl={confirmUrl}
-              returnUrl={returnUrl}
-              authenticated={authenticated}
-              onPaid={onPaid}
-              onRetry={() => void loadIntent()}
-            />
-          </CheckoutStripeProvider>
-        </div>
-      ) : null}
+      )}
     </section>
   );
 }

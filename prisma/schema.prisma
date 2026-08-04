@@ -170,6 +170,7 @@ enum OutboundShipmentStatus {
 
 enum PaymentProvider {
   STRIPE
+  PAYPAL
 }
 
 enum PaymentTransactionStatus {
@@ -670,6 +671,10 @@ model Order {
   /// Unique when set — enforced via sparse MongoDB index (see scripts/fix-order-stripe-payment-intent-index.ts).
   /// Prisma @unique is not used because many orders omit this field and MongoDB non-sparse unique indexes only allow one missing value.
   stripePaymentIntentId String?
+  /// STRIPE | PAYPAL — how the customer paid for this product order.
+  paymentProvider       PaymentProvider?
+  paypalOrderId         String?
+  paypalCaptureId       String?
   cancelledAt           DateTime?
   cancellationReason    String?
   cancelledByRole       OrderCancelledByRole?
@@ -1005,6 +1010,7 @@ enum GiftRequestStatus {
 
 enum GiftRequestPaymentMethod {
   STRIPE
+  PAYPAL
   OFFLINE
 }
 
@@ -1047,6 +1053,8 @@ model GiftRequest {
   paymentMethod         GiftRequestPaymentMethod?
   offlinePaymentNote    String?
   stripePaymentIntentId String?
+  paypalOrderId         String?
+  paypalCaptureId       String?
   status                GiftRequestStatus @default(SUBMITTED)
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
@@ -1071,6 +1079,7 @@ enum SupplyRequestStatus {
 
 enum SupplyRequestPaymentMethod {
   STRIPE
+  PAYPAL
   OFFLINE
 }
 
@@ -1120,10 +1129,13 @@ model SupplyRequest {
   paymentMethod         SupplyRequestPaymentMethod?
   offlinePaymentNote    String?
   stripePaymentIntentId String?
+  paypalOrderId         String?
+  paypalCaptureId       String?
   refundedAt            DateTime?
   refundAmountMinor     Int?
   refundNote            String?
   stripeRefundId        String?
+  paypalRefundId        String?
   trackingRef           String?
   carrierNote           String?
   shippedAt             DateTime?

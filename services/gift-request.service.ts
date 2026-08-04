@@ -9,6 +9,10 @@ import {
   createGiftRequestPaymentIntent,
 } from "@/lib/gifts/gift-request-payment";
 import {
+  assertGiftRequestPayPalPaid,
+  createGiftRequestPayPalOrder,
+} from "@/lib/gifts/gift-request-paypal-payment";
+import {
   sendGiftRequestEmails,
   sendGiftRequestQuoteEmail,
 } from "@/lib/mail/send-gift-request-emails";
@@ -325,6 +329,94 @@ export class GiftRequestService {
       paidAmountMinor: quoteAmountMinor,
       paymentMethod: "STRIPE",
       stripePaymentIntentId: paymentIntentId,
+      status: "IN_PROGRESS",
+    });
+
+    void notifyAdmins({
+      type: "GIFT_REQUEST_PAID",
+      title: "Gift request paid",
+      body: `${updated.requestNumber} is paid and ready for fulfillment.`,
+      href: `/admin/gift-requests`,
+      entityType: "GiftRequest",
+      entityId: updated.id,
+    });
+
+    return serializeGiftRequest(updated);
+  }
+
+  async createPayPalOrderForCustomer(auth: AuthenticatedUser, id: string) {
+    const giftRequest = await this.requirePayableGiftRequest(auth, id);
+    const quoteAmountMinor = giftRequest.quoteAmountMinor!;
+    const quoteCurrency = giftRequest.quoteCurrency!;
+
+    try {
+      const paypalOrder = await createGiftRequestPayPalOrder({
+        giftRequestId: giftRequest.id,
+        requestNumber: giftRequest.requestNumber,
+        quoteAmountMinor,
+        quoteCurrency,
+      });
+
+      await this.giftRequestRepository.updatePaypalOrderId(
+        giftRequest.id,
+        paypalOrder.id
+      );
+
+      return {
+        paypalOrderId: paypalOrder.id,
+        quoteAmountMinor,
+        quoteCurrency,
+        quoteNote: giftRequest.quoteNote,
+        quoteImageUrl: giftRequest.quoteImageUrl,
+        requestNumber: giftRequest.requestNumber,
+      };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: error instanceof Error ? error.message : "PayPal order failed",
+        statusCode: 400,
+      });
+    }
+  }
+
+  async confirmPayPalPaymentForCustomer(
+    auth: AuthenticatedUser,
+    id: string,
+    paypalOrderId: string
+  ) {
+    const giftRequest = await this.requirePayableGiftRequest(auth, id);
+    const quoteAmountMinor = giftRequest.quoteAmountMinor!;
+    const quoteCurrency = giftRequest.quoteCurrency!;
+
+    const existingPaid =
+      await this.giftRequestRepository.findByPaypalOrderId(paypalOrderId);
+    if (existingPaid?.paidAt) {
+      return serializeGiftRequest(existingPaid);
+    }
+
+    let paid;
+    try {
+      paid = await assertGiftRequestPayPalPaid({
+        paypalOrderId,
+        giftRequestId: giftRequest.id,
+        quoteAmountMinor,
+        quoteCurrency,
+      });
+    } catch (error) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: error instanceof Error ? error.message : "PayPal payment failed",
+        statusCode: 400,
+      });
+    }
+
+    const updated = await this.giftRequestRepository.markPaid(id, {
+      paidAt: new Date(),
+      paidAmountMinor: quoteAmountMinor,
+      paymentMethod: "PAYPAL",
+      paypalOrderId,
+      paypalCaptureId: paid.captureId,
       status: "IN_PROGRESS",
     });
 

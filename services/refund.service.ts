@@ -368,7 +368,7 @@ export class RefundService {
 
       let stripeRefund: StripeRefundMetadata;
       try {
-        stripeRefund = await this.executeStripeRefund({
+        stripeRefund = await this.executePaymentRefund({
           refundCase,
           approvedAmount: refundCase.requestedAmount,
         });
@@ -824,7 +824,7 @@ export class RefundService {
     if (requiresStripeRefund) {
       let stripeRefund: StripeRefundMetadata;
       try {
-        stripeRefund = await this.executeStripeRefund({
+        stripeRefund = await this.executePaymentRefund({
           refundCase,
           approvedAmount: input.approvedAmount,
         });
@@ -1331,6 +1331,139 @@ export class RefundService {
     return updated;
   }
 
+  private async executePaymentRefund(input: {
+    refundCase: NonNullable<Awaited<ReturnType<RefundCaseRepository["findById"]>>>;
+    approvedAmount: number;
+  }): Promise<StripeRefundMetadata> {
+    const order = input.refundCase.order;
+    const isPayPal =
+      order.paymentProvider === "PAYPAL" || Boolean(order.paypalCaptureId);
+
+    if (isPayPal) {
+      return this.executePayPalRefund(input);
+    }
+    return this.executeStripeRefund(input);
+  }
+
+  private async executePayPalRefund(input: {
+    refundCase: NonNullable<Awaited<ReturnType<RefundCaseRepository["findById"]>>>;
+    approvedAmount: number;
+  }): Promise<StripeRefundMetadata> {
+    const captureId = input.refundCase.order.paypalCaptureId;
+    if (!captureId) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Order has no PayPal capture to refund",
+        statusCode: 400,
+      });
+    }
+
+    const idempotencyKey = `paypal_refund:${input.refundCase.id}:${input.approvedAmount}`;
+    const requestHash = sha256(
+      JSON.stringify({
+        refundCaseId: input.refundCase.id,
+        approvedAmount: input.approvedAmount,
+        captureId,
+      })
+    );
+
+    const existingKey = await this.idempotencyKeyRepository.findByKey(idempotencyKey);
+    if (existingKey?.status === "SUCCEEDED" && existingKey.responseBody) {
+      const response = existingKey.responseBody as Record<string, unknown>;
+      return {
+        id: String(response.id ?? ""),
+        status: String(response.status ?? ""),
+        failureCode: response.failureCode ? String(response.failureCode) : null,
+        failureReason: response.failureReason ? String(response.failureReason) : null,
+        attemptedAt: response.attemptedAt
+          ? new Date(String(response.attemptedAt))
+          : new Date(),
+      };
+    }
+
+    if (!existingKey) {
+      await this.idempotencyKeyRepository.createInProgress({
+        key: idempotencyKey,
+        scope: "paypal_refund",
+        requestHash,
+        expiresAt: durationFromNow("7d"),
+      });
+    }
+
+    const { refundPayPalCapture } = await import("@/lib/paypal/checkout-payment");
+
+    try {
+      const refund = await refundPayPalCapture({
+        captureId,
+        amountMinor: input.approvedAmount,
+        currency: input.refundCase.order.currency,
+        idempotencyKey,
+        note: `Refund case ${input.refundCase.id}`,
+      });
+
+      const status = (refund.status ?? "COMPLETED").toLowerCase();
+      const ok = status === "completed" || status === "pending";
+      const metadata: StripeRefundMetadata = {
+        id: refund.id,
+        status,
+        failureCode: null,
+        failureReason: ok ? null : `PayPal refund status ${status}`,
+        attemptedAt: new Date(),
+      };
+
+      if (!ok) {
+        await this.idempotencyKeyRepository.markFailed({
+          key: idempotencyKey,
+          responseCode: 502,
+          responseBody: {
+            id: metadata.id,
+            status: metadata.status,
+            failureReason: metadata.failureReason,
+            attemptedAt: metadata.attemptedAt.toISOString(),
+          },
+        });
+        throw new AppError({
+          code: ERROR_CODE.INTERNAL_SERVER_ERROR,
+          message: `PayPal refund failed with status ${metadata.status}`,
+          statusCode: 502,
+        });
+      }
+
+      await this.idempotencyKeyRepository.markSucceeded({
+        key: idempotencyKey,
+        responseCode: 200,
+        responseBody: {
+          id: metadata.id,
+          status: metadata.status,
+          failureCode: metadata.failureCode,
+          failureReason: metadata.failureReason,
+          attemptedAt: metadata.attemptedAt.toISOString(),
+        },
+        resourceType: "RefundCase",
+        resourceId: input.refundCase.id,
+      });
+
+      return metadata;
+    } catch (error) {
+      if (!(error instanceof AppError)) {
+        await this.idempotencyKeyRepository.markFailed({
+          key: idempotencyKey,
+          responseCode: 502,
+          responseBody: {
+            error: "paypal_refund_failed",
+            message: error instanceof Error ? error.message : "PayPal refund failed",
+          },
+        });
+        throw new AppError({
+          code: ERROR_CODE.INTERNAL_SERVER_ERROR,
+          message: "PayPal refund failed",
+          statusCode: 502,
+        });
+      }
+      throw error;
+    }
+  }
+
   private async executeStripeRefund(input: {
     refundCase: NonNullable<Awaited<ReturnType<RefundCaseRepository["findById"]>>>;
     approvedAmount: number;
@@ -1588,11 +1721,14 @@ export class RefundService {
       fallbackStatus = "PARTIALLY_REFUNDED";
     }
 
-    // Stripe is source of truth so cancel refunds are not overwritten by dispute sync.
-    const paymentStatus = await resolvePaymentStatusFromStripe({
-      stripePaymentIntentId: order.stripePaymentIntentId,
-      fallbackStatus,
-    });
+    // Stripe is source of truth for card payments; PayPal uses dispute totals.
+    const paymentStatus =
+      order.paymentProvider === "PAYPAL" || order.paypalCaptureId
+        ? fallbackStatus
+        : await resolvePaymentStatusFromStripe({
+            stripePaymentIntentId: order.stripePaymentIntentId,
+            fallbackStatus,
+          });
 
     await this.orderRepository.updateOrderPaymentStatus(orderId, paymentStatus);
   }

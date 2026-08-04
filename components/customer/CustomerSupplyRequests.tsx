@@ -347,6 +347,8 @@ function SupplyRequestCard({
               quoteImageUrl={request.quoteImageUrl}
               intentUrl={`/api/customer/supply-requests/${request.id}/payment/intent`}
               confirmUrl={`/api/customer/supply-requests/${request.id}/payment/confirm`}
+              paypalCreateOrderUrl={`/api/customer/supply-requests/${request.id}/payment/paypal/create-order`}
+              paypalCaptureUrl={`/api/customer/supply-requests/${request.id}/payment/paypal/capture`}
               authenticated
               onPaid={onRefresh}
             />

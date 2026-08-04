@@ -377,6 +377,15 @@ export class AdminOrderService {
       discountAmount: order.discountAmount,
       grandTotalAmount: order.grandTotalAmount,
       stripePaymentIntentId: order.stripePaymentIntentId,
+      paymentProvider:
+        order.paymentProvider ??
+        (order.paypalCaptureId || order.paypalOrderId
+          ? "PAYPAL"
+          : order.stripePaymentIntentId
+            ? "STRIPE"
+            : null),
+      paypalOrderId: order.paypalOrderId ?? null,
+      paypalCaptureId: order.paypalCaptureId ?? null,
       cancelledAt: order.cancelledAt?.toISOString() ?? null,
       cancellationReason: order.cancellationReason ?? null,
       cancelledByRole: order.cancelledByRole ?? null,

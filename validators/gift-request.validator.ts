@@ -185,3 +185,7 @@ export const markGiftRequestOfflinePaidSchema = z.object({
 export const confirmGiftRequestPaymentSchema = z.object({
   paymentIntentId: z.string().min(1),
 });
+
+export const confirmGiftRequestPayPalPaymentSchema = z.object({
+  paypalOrderId: z.string().min(1),
+});

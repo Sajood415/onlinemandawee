@@ -14,6 +14,7 @@ import { sha256 } from "@/lib/utils/crypto";
 import { IdempotencyKeyRepository } from "@/repositories/idempotency-key.repository";
 import { OrderRepository } from "@/repositories/order.repository";
 import { PayoutRepository } from "@/repositories/payout.repository";
+import { RefundCaseRepository } from "@/repositories/refund-case.repository";
 
 type CancelRefundResult = {
   refundedAmount: number;
@@ -27,7 +28,8 @@ export class OrderCancelRefundService {
   constructor(
     private readonly orderRepository = new OrderRepository(),
     private readonly payoutRepository = new PayoutRepository(),
-    private readonly idempotencyKeyRepository = new IdempotencyKeyRepository()
+    private readonly idempotencyKeyRepository = new IdempotencyKeyRepository(),
+    private readonly refundCaseRepository = new RefundCaseRepository()
   ) {}
 
   /**
@@ -64,25 +66,58 @@ export class OrderCancelRefundService {
       };
     }
 
-    if (!order.stripePaymentIntentId) {
+    const isPayPal =
+      order.paymentProvider === "PAYPAL" || Boolean(order.paypalCaptureId);
+
+    if (!isPayPal && !order.stripePaymentIntentId) {
       throw new AppError({
         code: ERROR_CODE.CONFLICT,
         message:
-          "This paid order has no Stripe payment to refund. Contact support before cancelling.",
+          "This paid order has no payment to refund. Contact support before cancelling.",
         statusCode: 409,
       });
     }
 
-    const stripe = getStripeServerClient();
-    const { remaining } = await getStripeRefundableBalance(
-      order.stripePaymentIntentId
-    );
+    if (isPayPal && !order.paypalCaptureId) {
+      throw new AppError({
+        code: ERROR_CODE.CONFLICT,
+        message:
+          "This paid order has no PayPal capture to refund. Contact support before cancelling.",
+        statusCode: 409,
+      });
+    }
+
+    let remaining: number;
+    if (isPayPal) {
+      const {
+        getPayPalCaptureRefundableBalance,
+      } = await import("@/lib/paypal/checkout-payment");
+      const balance = await getPayPalCaptureRefundableBalance(
+        order.paypalCaptureId!
+      );
+      const cases = await this.refundCaseRepository.listByOrderId(order.id);
+      const alreadyRefundedLocal = cases.reduce((sum, refundCase) => {
+        if (refundCase.status !== "RESOLVED") return sum;
+        return sum + (refundCase.decision?.approvedAmount ?? 0);
+      }, 0);
+      remaining = Math.max(
+        0,
+        Math.min(balance.remaining, balance.charged - alreadyRefundedLocal)
+      );
+    } else {
+      const { remaining: stripeRemaining } = await getStripeRefundableBalance(
+        order.stripePaymentIntentId!
+      );
+      remaining = stripeRemaining;
+    }
 
     if (remaining <= 0) {
-      const paymentStatus = await resolvePaymentStatusFromStripe({
-        stripePaymentIntentId: order.stripePaymentIntentId,
-        fallbackStatus: "REFUNDED",
-      });
+      const paymentStatus = isPayPal
+        ? ("REFUNDED" as PaymentStatus)
+        : await resolvePaymentStatusFromStripe({
+            stripePaymentIntentId: order.stripePaymentIntentId,
+            fallbackStatus: "REFUNDED",
+          });
       await this.orderRepository.updateOrderPaymentStatus(order.id, paymentStatus);
       return {
         refundedAmount: 0,
@@ -168,10 +203,12 @@ export class OrderCancelRefundService {
       await this.idempotencyKeyRepository.findByKey(idempotencyKey);
     if (existingKey?.status === "SUCCEEDED") {
       const body = existingKey.responseBody as Record<string, unknown>;
-      const paymentStatus = await resolvePaymentStatusFromStripe({
-        stripePaymentIntentId: order.stripePaymentIntentId,
-        fallbackStatus: (body.paymentStatus as PaymentStatus) ?? "REFUNDED",
-      });
+      const paymentStatus = isPayPal
+        ? ((body.paymentStatus as PaymentStatus) ?? "REFUNDED")
+        : await resolvePaymentStatusFromStripe({
+            stripePaymentIntentId: order.stripePaymentIntentId,
+            fallbackStatus: (body.paymentStatus as PaymentStatus) ?? "REFUNDED",
+          });
       await this.orderRepository.updateOrderPaymentStatus(order.id, paymentStatus);
       return {
         refundedAmount: Number(body.refundedAmount ?? requestedAmount),
@@ -193,38 +230,77 @@ export class OrderCancelRefundService {
     }
 
     try {
-      const refund = await stripe.refunds.create(
-        {
-          payment_intent: order.stripePaymentIntentId,
-          amount: requestedAmount,
-          reason: "requested_by_customer",
-          metadata: {
-            orderId: order.id,
-            orderNumber: order.orderNumber,
-            source: "order_cancel",
-            mode: input.mode,
-            actor: input.actor,
-            vendorOrderId: input.vendorOrderId ?? "",
-          },
-        },
-        { idempotencyKey }
-      );
+      let refundId: string;
 
-      if (refund.status && refund.status !== "succeeded" && refund.status !== "pending") {
-        await this.idempotencyKeyRepository.markFailed({
-          key: idempotencyKey,
-          responseCode: 502,
-          responseBody: {
-            error: "stripe_refund_failed",
-            status: refund.status,
-            refundId: refund.id,
+      if (isPayPal) {
+        const { refundPayPalCapture } = await import(
+          "@/lib/paypal/checkout-payment"
+        );
+        const refund = await refundPayPalCapture({
+          captureId: order.paypalCaptureId!,
+          amountMinor: requestedAmount,
+          currency: order.currency,
+          idempotencyKey,
+          note: `Order cancel ${order.orderNumber}`,
+        });
+        const status = (refund.status ?? "").toUpperCase();
+        if (status && status !== "COMPLETED" && status !== "PENDING") {
+          await this.idempotencyKeyRepository.markFailed({
+            key: idempotencyKey,
+            responseCode: 502,
+            responseBody: {
+              error: "paypal_refund_failed",
+              status: refund.status,
+              refundId: refund.id,
+            },
+          });
+          throw new AppError({
+            code: ERROR_CODE.INTERNAL_SERVER_ERROR,
+            message: "Could not refund the payment. Order was not cancelled.",
+            statusCode: 502,
+          });
+        }
+        refundId = refund.id;
+      } else {
+        const stripe = getStripeServerClient();
+        const refund = await stripe.refunds.create(
+          {
+            payment_intent: order.stripePaymentIntentId!,
+            amount: requestedAmount,
+            reason: "requested_by_customer",
+            metadata: {
+              orderId: order.id,
+              orderNumber: order.orderNumber,
+              source: "order_cancel",
+              mode: input.mode,
+              actor: input.actor,
+              vendorOrderId: input.vendorOrderId ?? "",
+            },
           },
-        });
-        throw new AppError({
-          code: ERROR_CODE.INTERNAL_SERVER_ERROR,
-          message: "Could not refund the payment. Order was not cancelled.",
-          statusCode: 502,
-        });
+          { idempotencyKey }
+        );
+
+        if (
+          refund.status &&
+          refund.status !== "succeeded" &&
+          refund.status !== "pending"
+        ) {
+          await this.idempotencyKeyRepository.markFailed({
+            key: idempotencyKey,
+            responseCode: 502,
+            responseBody: {
+              error: "stripe_refund_failed",
+              status: refund.status,
+              refundId: refund.id,
+            },
+          });
+          throw new AppError({
+            code: ERROR_CODE.INTERNAL_SERVER_ERROR,
+            message: "Could not refund the payment. Order was not cancelled.",
+            statusCode: 502,
+          });
+        }
+        refundId = refund.id;
       }
 
       for (const vendorOrder of vendorOrdersToDebit) {
@@ -240,11 +316,15 @@ export class OrderCancelRefundService {
         });
       }
 
-      const paymentStatus = await resolvePaymentStatusFromStripe({
-        stripePaymentIntentId: order.stripePaymentIntentId,
-        fallbackStatus:
-          requestedAmount >= remaining ? "REFUNDED" : "PARTIALLY_REFUNDED",
-      });
+      const paymentStatus = isPayPal
+        ? requestedAmount >= remaining
+          ? ("REFUNDED" as PaymentStatus)
+          : ("PARTIALLY_REFUNDED" as PaymentStatus)
+        : await resolvePaymentStatusFromStripe({
+            stripePaymentIntentId: order.stripePaymentIntentId,
+            fallbackStatus:
+              requestedAmount >= remaining ? "REFUNDED" : "PARTIALLY_REFUNDED",
+          });
       await this.orderRepository.updateOrderPaymentStatus(order.id, paymentStatus);
 
       await this.idempotencyKeyRepository.markSucceeded({
@@ -253,7 +333,7 @@ export class OrderCancelRefundService {
         responseBody: {
           refundedAmount: requestedAmount,
           paymentStatus,
-          stripeRefundId: refund.id,
+          stripeRefundId: refundId,
         },
         resourceType: "Order",
         resourceId: order.id,
@@ -262,7 +342,7 @@ export class OrderCancelRefundService {
       return {
         refundedAmount: requestedAmount,
         paymentStatus,
-        stripeRefundId: refund.id,
+        stripeRefundId: refundId,
         skipped: false,
       };
     } catch (error) {
@@ -271,8 +351,8 @@ export class OrderCancelRefundService {
           key: idempotencyKey,
           responseCode: 502,
           responseBody: {
-            error: "stripe_refund_failed",
-            message: "Stripe refund request failed",
+            error: isPayPal ? "paypal_refund_failed" : "stripe_refund_failed",
+            message: "Refund request failed",
           },
         });
         throw new AppError({

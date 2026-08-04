@@ -40,6 +40,8 @@ const giftRequestSelect = {
   paymentMethod: true,
   offlinePaymentNote: true,
   stripePaymentIntentId: true,
+  paypalOrderId: true,
+  paypalCaptureId: true,
   status: true,
   createdAt: true,
   updatedAt: true,
@@ -209,6 +211,8 @@ export class GiftRequestRepository {
       paymentMethod: GiftRequestPaymentMethod;
       offlinePaymentNote?: string | null;
       stripePaymentIntentId?: string | null;
+      paypalOrderId?: string | null;
+      paypalCaptureId?: string | null;
       status: GiftRequestStatus;
     }
   ) {
@@ -220,6 +224,8 @@ export class GiftRequestRepository {
         paymentMethod: input.paymentMethod,
         offlinePaymentNote: input.offlinePaymentNote ?? null,
         stripePaymentIntentId: input.stripePaymentIntentId ?? null,
+        paypalOrderId: input.paypalOrderId ?? null,
+        paypalCaptureId: input.paypalCaptureId ?? null,
         status: input.status,
       },
       select: giftRequestSelect,
@@ -229,6 +235,21 @@ export class GiftRequestRepository {
   findByStripePaymentIntentId(stripePaymentIntentId: string) {
     return prisma.giftRequest.findFirst({
       where: { stripePaymentIntentId },
+      select: giftRequestSelect,
+    });
+  }
+
+  findByPaypalOrderId(paypalOrderId: string) {
+    return prisma.giftRequest.findFirst({
+      where: { paypalOrderId },
+      select: giftRequestSelect,
+    });
+  }
+
+  updatePaypalOrderId(id: string, paypalOrderId: string) {
+    return prisma.giftRequest.update({
+      where: { id },
+      data: { paypalOrderId },
       select: giftRequestSelect,
     });
   }

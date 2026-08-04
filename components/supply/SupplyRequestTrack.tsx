@@ -225,6 +225,8 @@ export function SupplyRequestTrack({ token }: SupplyRequestTrackProps) {
                 quoteImageUrl={request.quoteImageUrl}
                 intentUrl={`/api/supply-requests/track/${encodeURIComponent(token)}/payment/intent`}
                 confirmUrl={`/api/supply-requests/track/${encodeURIComponent(token)}/payment/confirm`}
+                paypalCreateOrderUrl={`/api/supply-requests/track/${encodeURIComponent(token)}/payment/paypal/create-order`}
+                paypalCaptureUrl={`/api/supply-requests/track/${encodeURIComponent(token)}/payment/paypal/capture`}
                 onPaid={() => void loadRequest()}
               />
               {request.quoteExpiresAt ? (

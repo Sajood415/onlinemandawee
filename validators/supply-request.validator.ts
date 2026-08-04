@@ -201,3 +201,7 @@ export const requestSupplyInfoSchema = z.object({
 export const confirmSupplyRequestPaymentSchema = z.object({
   paymentIntentId: z.string().min(1),
 });
+
+export const confirmSupplyRequestPayPalPaymentSchema = z.object({
+  paypalOrderId: z.string().min(1),
+});

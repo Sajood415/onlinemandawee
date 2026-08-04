@@ -1,4 +1,4 @@
-export const paymentProviders = ["STRIPE"] as const;
+export const paymentProviders = ["STRIPE", "PAYPAL"] as const;
 export const paymentTransactionStatuses = ["SUCCEEDED", "FAILED"] as const;
 export const ledgerBuckets = ["HOLD", "AVAILABLE"] as const;
 export const vendorLedgerEntryTypes = [

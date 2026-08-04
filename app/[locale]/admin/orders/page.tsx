@@ -98,6 +98,9 @@ type AdminOrderDetail = {
   discountAmount: number;
   grandTotalAmount: number;
   stripePaymentIntentId: string | null;
+  paymentProvider: "STRIPE" | "PAYPAL" | null;
+  paypalOrderId: string | null;
+  paypalCaptureId: string | null;
   cancelledAt: string | null;
   cancellationReason: string | null;
   cancelledByRole: string | null;
@@ -812,6 +815,14 @@ export default function AdminOrdersPage() {
                       className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${paymentStatusClass(detail.paymentStatus)}`}
                     >
                       {detail.paymentStatus.replaceAll("_", " ")}
+                    </span>
+                    <span className="inline-flex rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-700">
+                      {detail.paymentProvider === "PAYPAL"
+                        ? "Paid via PayPal"
+                        : detail.paymentProvider === "STRIPE" ||
+                            detail.stripePaymentIntentId
+                          ? "Paid via Stripe"
+                          : "Payment method unknown"}
                     </span>
                     <span className="inline-flex rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-700">
                       {deliveryMethodLabel(

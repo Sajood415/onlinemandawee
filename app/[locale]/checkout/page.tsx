@@ -7,7 +7,6 @@ import {
   getStripeCheckoutLocale,
   getStripePromise,
   isStripeCheckoutConfigured,
-  STRIPE_CHECKOUT_CURRENCY_LABEL,
 } from "@/lib/stripe/client";
 import {
   Elements,
@@ -29,8 +28,10 @@ import {
 } from "lucide-react";
 
 import { AddressAutocompleteInput } from "@/components/address/AddressAutocompleteInput";
+import { CheckoutPayPalCardForm } from "@/components/checkout/CheckoutPayPalCardForm";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { isPayPalCheckoutConfigured } from "@/lib/paypal/client";
 import {
   getCitiesForCountryName,
   getPostalCodesForCity,
@@ -776,7 +777,9 @@ function ShippingAddressStep({
         className="flex w-full items-center justify-center gap-2 bg-[#0F3460] py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
       >
         <ArrowRight size={17} className="shrink-0" strokeWidth={2} />
-        {copy.shipping.continueToDelivery}
+        {deliveryMethod === "PICKUP"
+          ? copy.delivery.continueToPayment
+          : copy.shipping.continueToDelivery}
       </button>
     </form>
   );
@@ -981,6 +984,7 @@ function PaymentMethodStep({
   copy,
   locale,
   stripeAvailable,
+  paypalAvailable,
   quoteLoading,
   quoteError,
   canPlaceOrder,
@@ -1013,6 +1017,7 @@ function PaymentMethodStep({
   copy: CheckoutCopy;
   locale: string;
   stripeAvailable: boolean;
+  paypalAvailable: boolean;
   quoteLoading: boolean;
   quoteError: string | null;
   canPlaceOrder: boolean;
@@ -1031,7 +1036,7 @@ function PaymentMethodStep({
   address: AddressForm;
   deliveryMethod: DeliveryMethod;
   addressRequired: boolean;
-  cartItems: Array<{ productId: string; quantity: number }>;
+  cartItems: Array<{ productId: string; quantity: number; variantId?: string }>;
   vendorCoupons: VendorCouponEntry[];
   checkoutApiBase: string;
   useAuthCheckout: boolean;
@@ -1049,16 +1054,19 @@ function PaymentMethodStep({
   onSuccess: (orderNumber: string) => void;
   onPaymentElementReady?: () => void;
 }) {
+  const [paymentTab, setPaymentTab] = useState<"stripe" | "paypal">(
+    stripeAvailable ? "stripe" : "paypal"
+  );
+  const paypalCheckoutTokenRef = useRef<string | null>(null);
+  const currency = priceSummary?.currency ?? quote?.currency ?? "USD";
   return (
     <div className="space-y-6">
       <div className="space-y-1">
         <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-          {copy.payment.card}
+          Payment method
         </p>
         <p className="text-sm text-neutral-600">
-          {stripeAvailable
-            ? copy.payment.cardSub(STRIPE_CHECKOUT_CURRENCY_LABEL)
-            : copy.payment.cardUnavailable}
+          Choose Stripe or PayPal to pay.
         </p>
       </div>
 
@@ -1113,25 +1121,114 @@ function PaymentMethodStep({
         <p className="text-sm text-neutral-600">{copy.payment.applyCouponFirst}</p>
       ) : null}
 
-      {canPlaceOrder && quote && stripeOptions && stripePromise ? (
-        <Elements stripe={stripePromise} options={stripeOptions}>
-          <StripePayForm
-            copy={copy}
-            quote={quote}
-            contact={contact}
-            address={address}
-            deliveryMethod={deliveryMethod}
-            addressRequired={addressRequired}
-            cartItems={cartItems}
-            vendorCoupons={vendorCoupons}
-            checkoutApiBase={checkoutApiBase}
-            useAuthCheckout={useAuthCheckout}
-            locale={locale}
-            onBack={onBack}
-            onSuccess={onSuccess}
-            onPaymentElementReady={onPaymentElementReady}
-          />
-        </Elements>
+      {canPlaceOrder && (stripeAvailable || paypalAvailable) ? (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-2 rounded-xl border border-neutral-200 p-1">
+            <button
+              type="button"
+              disabled={!stripeAvailable}
+              onClick={() => setPaymentTab("stripe")}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                paymentTab === "stripe"
+                  ? "bg-[#0F3460] text-white"
+                  : "text-neutral-600 hover:bg-neutral-50 disabled:opacity-40"
+              }`}
+            >
+              Stripe
+            </button>
+            <button
+              type="button"
+              disabled={!paypalAvailable}
+              onClick={() => setPaymentTab("paypal")}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                paymentTab === "paypal"
+                  ? "bg-[#0F3460] text-white"
+                  : "text-neutral-600 hover:bg-neutral-50 disabled:opacity-40"
+              }`}
+            >
+              PayPal
+            </button>
+          </div>
+
+          {paymentTab === "stripe" && quote && stripeOptions && stripePromise ? (
+            <Elements stripe={stripePromise} options={stripeOptions}>
+              <StripePayForm
+                copy={copy}
+                quote={quote}
+                contact={contact}
+                address={address}
+                deliveryMethod={deliveryMethod}
+                addressRequired={addressRequired}
+                cartItems={cartItems}
+                vendorCoupons={vendorCoupons}
+                checkoutApiBase={checkoutApiBase}
+                useAuthCheckout={useAuthCheckout}
+                locale={locale}
+                onBack={onBack}
+                onSuccess={onSuccess}
+                onPaymentElementReady={onPaymentElementReady}
+              />
+            </Elements>
+          ) : null}
+
+          {paymentTab === "paypal" && paypalAvailable && priceSummary ? (
+            <CheckoutPayPalCardForm
+              currency={currency}
+              payLabel={copy.payment.pay(
+                formatAmount(priceSummary.grandTotalAmount, currency, locale)
+              )}
+              disabled={hasUnappliedCouponInput || quoteLoading}
+              createOrder={async () => {
+                const res = await postCheckout(
+                  `${checkoutApiBase}/paypal/create-order`,
+                  buildGuestCheckoutRequestBody(
+                    cartItems,
+                    currency,
+                    vendorCoupons,
+                    contact,
+                    contact.guestEmail,
+                    address,
+                    deliveryMethod,
+                    addressRequired
+                  ),
+                  useAuthCheckout
+                );
+                const data = await parseApiResponse<{
+                  paypalOrderId: string;
+                  checkoutContextToken: string;
+                }>(res);
+                paypalCheckoutTokenRef.current = data.checkoutContextToken;
+                return data.paypalOrderId;
+              }}
+              onApprove={async (paypalOrderId) => {
+                const token = paypalCheckoutTokenRef.current;
+                if (!token) {
+                  throw new Error("Missing PayPal checkout session");
+                }
+                const res = await postCheckout(
+                  `${checkoutApiBase}/paypal/capture`,
+                  {
+                    paypalOrderId,
+                    checkoutContextToken: token,
+                    guestEmail: contact.guestEmail,
+                  },
+                  useAuthCheckout
+                );
+                const data = await parseApiResponse<{ orderNumber: string }>(res);
+                onSuccess(data.orderNumber);
+              }}
+            />
+          ) : null}
+
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex w-full items-center justify-center gap-2 border border-neutral-300 py-3 text-sm font-medium text-neutral-700"
+          >
+            <ArrowLeft size={17} />
+            {copy.common.back}
+          </button>
+        </div>
       ) : null}
     </div>
   );
@@ -1519,14 +1616,16 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(0);
   const stepPanelRef = useRef<HTMLDivElement>(null);
   const stripeAvailable = isStripeCheckoutConfigured();
+  const paypalAvailable = isPayPalCheckoutConfigured();
   const [contact, setContact] = useState<ContactForm>({ guestName: "", guestEmail: "", guestPhone: "" });
   const [address, setAddress] = useState<AddressForm>({ addressLine1: "", city: "", country: "", postalCode: "" });
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("STANDARD");
-  const stepLabels = [
-    copy.stepLabels[0],
-    deliveryMethod === "PICKUP" ? copy.steps.pickup : copy.stepLabels[1],
-    copy.stepLabels[2],
-  ] as const;
+  const isPickupFlow = deliveryMethod === "PICKUP";
+  /** Pickup skips delivery-cost step: Shipping → Payment (2 steps). */
+  const paymentStepIndex = isPickupFlow ? 1 : 2;
+  const stepLabels = isPickupFlow
+    ? ([copy.stepLabels[0], copy.stepLabels[2]] as const)
+    : ([copy.stepLabels[0], copy.stepLabels[1], copy.stepLabels[2]] as const);
   const [customerPrefillReady, setCustomerPrefillReady] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<CustomerAddress[]>([]);
 
@@ -1558,6 +1657,8 @@ export default function CheckoutPage() {
     setDeliveryMethod(method);
     if (method === "PICKUP") {
       setAddress({ addressLine1: "", city: "", country: "", postalCode: "" });
+      // Pickup has no middle step — if user was on delivery/payment, land on payment.
+      setStep((current) => (current >= 1 ? 1 : current));
     }
   }, []);
   const cartItemsPayload = useMemo(
@@ -1601,12 +1702,18 @@ export default function CheckoutPage() {
   }, [step, scrollToCheckoutStep]);
 
   useEffect(() => {
-    if (step !== 2 || quoteLoading || !quote) return;
+    if (step !== paymentStepIndex || quoteLoading || !quote) return;
 
     scrollToCheckoutStep();
     const timeoutId = window.setTimeout(scrollToCheckoutStep, 150);
     return () => window.clearTimeout(timeoutId);
-  }, [step, quoteLoading, quote?.paymentIntentId, scrollToCheckoutStep]);
+  }, [
+    step,
+    paymentStepIndex,
+    quoteLoading,
+    quote?.paymentIntentId,
+    scrollToCheckoutStep,
+  ]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -1729,9 +1836,13 @@ export default function CheckoutPage() {
     async (coupons: VendorCouponEntry[]) => {
       if (stripeAvailable) {
         await fetchStripeQuote(coupons);
+        return;
+      }
+      if (paypalAvailable) {
+        await fetchPricing(coupons);
       }
     },
-    [stripeAvailable, fetchStripeQuote]
+    [stripeAvailable, paypalAvailable, fetchStripeQuote, fetchPricing]
   );
 
   const handleApplyCoupon = async (vendorProfileId: string) => {
@@ -1753,8 +1864,9 @@ export default function CheckoutPage() {
     setCouponFieldErrors((current) => ({ ...current, [vendorProfileId]: "" }));
 
     try {
+      const endpoint = stripeAvailable ? "intent" : "pricing";
       const res = await postCheckout(
-        `${checkoutApiBase}/intent`,
+        `${checkoutApiBase}/${endpoint}`,
         buildGuestCheckoutRequestBody(
           cartItemsPayload,
           currency,
@@ -1786,7 +1898,9 @@ export default function CheckoutPage() {
       setVendorCoupons(nextCoupons);
       setCouponInputs((current) => ({ ...current, [vendorProfileId]: "" }));
       setPriceSummary(summary);
-      setQuote(data as QuoteSummary);
+      if (stripeAvailable && "clientSecret" in data) {
+        setQuote(data as QuoteSummary);
+      }
       toast.success(copy.coupon.applied(code));
     } catch (error) {
       const message = error instanceof Error ? error.message : copy.coupon.applyFailed;
@@ -1929,20 +2043,21 @@ export default function CheckoutPage() {
   }, [cartItems, displaySummary]);
 
   useEffect(() => {
-    if (step !== 1) return;
+    // Delivery-cost step only (3-step flow). Pickup jumps straight to payment.
+    if (isPickupFlow || step !== 1) return;
     if (addressRequired && !isDeliveryAddressComplete(address)) return;
     void fetchPricing(vendorCoupons);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, currency, deliveryMethod, addressRequired, address.addressLine1, address.city, address.country, address.postalCode]);
 
   useEffect(() => {
-    if (step !== 2) return;
+    if (step !== paymentStepIndex) return;
     void refreshPricing(vendorCoupons);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, stripeAvailable, currency]);
+  }, [step, paymentStepIndex, stripeAvailable, currency]);
 
   useEffect(() => {
-    if (step !== 2 || couponEligibleVendors.length === 0) return;
+    if (step !== paymentStepIndex || couponEligibleVendors.length === 0) return;
 
     void fetch("/api/checkout/guest/offers", {
       method: "POST",
@@ -1954,7 +2069,7 @@ export default function CheckoutPage() {
       .then(async (res) => parseApiResponse<CheckoutVendorOffer[]>(res))
       .then(setCheckoutOffers)
       .catch(() => setCheckoutOffers([]));
-  }, [step, couponEligibleVendors]);
+  }, [step, paymentStepIndex, couponEligibleVendors]);
 
   const hasUnappliedCouponInput = useMemo(() => {
     return couponEligibleVendors.some((vendor) => {
@@ -1983,11 +2098,16 @@ export default function CheckoutPage() {
     return <PageLoader message={copy.loading} fullScreen />;
   }
 
-  const stepIcons = [
-    <MapPin key="s" size={16} />,
-    <Truck key="d" size={16} />,
-    <CreditCard key="p" size={16} />,
-  ];
+  const stepIcons = isPickupFlow
+    ? [
+        <MapPin key="s" size={16} />,
+        <CreditCard key="p" size={16} />,
+      ]
+    : [
+        <MapPin key="s" size={16} />,
+        <Truck key="d" size={16} />,
+        <CreditCard key="p" size={16} />,
+      ];
   const isRtl = locale !== "en";
 
   return (
@@ -2095,7 +2215,7 @@ export default function CheckoutPage() {
                 />
               )}
 
-              {step === 1 && (
+              {!isPickupFlow && step === 1 && (
                 <DeliveryCostStep
                   copy={copy}
                   locale={locale}
@@ -2115,11 +2235,12 @@ export default function CheckoutPage() {
                 />
               )}
 
-              {step === 2 && (
+              {step === paymentStepIndex && (
                 <PaymentMethodStep
                   copy={copy}
                   locale={locale}
                   stripeAvailable={stripeAvailable}
+                  paypalAvailable={paypalAvailable}
                   quoteLoading={quoteLoading}
                   quoteError={quoteError}
                   canPlaceOrder={canPlaceOrder}
@@ -2156,7 +2277,7 @@ export default function CheckoutPage() {
                     void handleRemoveCoupon(code, vendorProfileId)
                   }
                   onRetryQuote={() => void refreshPricing(vendorCoupons)}
-                  onBack={() => setStep(1)}
+                  onBack={() => setStep(isPickupFlow ? 0 : 1)}
                   onSuccess={handleSuccess}
                   onPaymentElementReady={scrollToCheckoutStep}
                 />
@@ -2170,9 +2291,9 @@ export default function CheckoutPage() {
                 copy={copy}
                 locale={locale}
                 summary={displaySummary}
-                loading={(step === 1 || step === 2) && quoteLoading}
+                loading={step >= 1 && quoteLoading}
                 deliveryError={step >= 1 ? quoteError : null}
-                isPaymentStep={step >= 1}
+                isPaymentStep={step === paymentStepIndex}
                 hasPricedDelivery={Boolean(priceSummary)}
               />
             </div>

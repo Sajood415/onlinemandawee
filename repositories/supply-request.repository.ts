@@ -47,10 +47,13 @@ const supplyRequestSelect = {
   paymentMethod: true,
   offlinePaymentNote: true,
   stripePaymentIntentId: true,
+  paypalOrderId: true,
+  paypalCaptureId: true,
   refundedAt: true,
   refundAmountMinor: true,
   refundNote: true,
   stripeRefundId: true,
+  paypalRefundId: true,
   trackingRef: true,
   carrierNote: true,
   shippedAt: true,
@@ -253,6 +256,8 @@ export class SupplyRequestRepository {
       paymentMethod: SupplyRequestPaymentMethod;
       offlinePaymentNote?: string | null;
       stripePaymentIntentId?: string | null;
+      paypalOrderId?: string | null;
+      paypalCaptureId?: string | null;
       status: SupplyRequestStatus;
     }
   ) {
@@ -264,6 +269,8 @@ export class SupplyRequestRepository {
         paymentMethod: input.paymentMethod,
         offlinePaymentNote: input.offlinePaymentNote ?? null,
         stripePaymentIntentId: input.stripePaymentIntentId ?? null,
+        paypalOrderId: input.paypalOrderId ?? null,
+        paypalCaptureId: input.paypalCaptureId ?? null,
         status: input.status,
       },
       select: supplyRequestSelect,
@@ -273,6 +280,13 @@ export class SupplyRequestRepository {
   findByStripePaymentIntentId(stripePaymentIntentId: string) {
     return prisma.supplyRequest.findFirst({
       where: { stripePaymentIntentId },
+      select: supplyRequestSelect,
+    });
+  }
+
+  findByPaypalOrderId(paypalOrderId: string) {
+    return prisma.supplyRequest.findFirst({
+      where: { paypalOrderId },
       select: supplyRequestSelect,
     });
   }

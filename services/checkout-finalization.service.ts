@@ -6,6 +6,7 @@ import type { GuestCheckoutQuote } from "@/lib/checkout/build-guest-checkout-quo
 import { sendCheckoutOrderNotificationsOnce } from "@/lib/checkout/send-checkout-order-notifications-once";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import { refundPayPalCapture } from "@/lib/paypal/checkout-payment";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { durationFromNow } from "@/lib/utils/duration";
 import { safeEqual, sha256 } from "@/lib/utils/crypto";
@@ -95,6 +96,11 @@ export class CheckoutFinalizationService {
       await this.orderRepository.findByStripePaymentIntentId(paymentIntentId);
     if (byPaymentIntent) {
       return byPaymentIntent;
+    }
+
+    const byPaypal = await this.orderRepository.findByPaypalOrderId(paymentIntentId);
+    if (byPaypal) {
+      return byPaypal;
     }
 
     const snapshot =
@@ -382,6 +388,7 @@ export class CheckoutFinalizationService {
         paymentStatus: "PAID",
         deliveryMethod: snapshot.deliveryMethod,
         stripePaymentIntentId: input.paymentIntent.id,
+        paymentProvider: "STRIPE",
         userId: snapshotRecord.userId ?? undefined,
         sendNotifications: false,
       });
@@ -478,6 +485,240 @@ export class CheckoutFinalizationService {
           idempotencyKey: `checkout-order-create-failed:${paymentIntentId}`,
         }
       );
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async finalizeFromPaypalCapture(input: {
+    paypalOrderId: string;
+    paypalCaptureId: string;
+    amountMinor: number;
+    currency: string;
+    source: CheckoutSource;
+    checkoutContextToken?: string;
+    checkoutGuestEmail?: string;
+    authenticatedUserId?: string;
+    metadata: Record<string, string>;
+  }) {
+    const paymentRef = input.paypalOrderId;
+
+    const existingOrder = await this.orderRepository.findByPaypalOrderId(paymentRef);
+    if (existingOrder) {
+      return this.finalizeExistingOrder(paymentRef, existingOrder);
+    }
+
+    const lockAcquired = await this.tryAcquireFinalizeLock(paymentRef);
+    if (!lockAcquired) {
+      return this.waitForExistingFinalizedOrder(paymentRef);
+    }
+
+    const existingAfterLock = await this.orderRepository.findByPaypalOrderId(paymentRef);
+    if (existingAfterLock) {
+      await this.markFinalizeSucceeded(paymentRef, existingAfterLock.id);
+      return this.finalizeExistingOrder(paymentRef, existingAfterLock);
+    }
+
+    let snapshotRecord = await this.checkoutSnapshotRepository.findByPaymentIntentId(paymentRef);
+    if (!snapshotRecord) {
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        await wait(250);
+        snapshotRecord = await this.checkoutSnapshotRepository.findByPaymentIntentId(paymentRef);
+        if (snapshotRecord) break;
+      }
+    }
+    if (!snapshotRecord) {
+      await this.markFinalizeFailed(paymentRef, "Checkout snapshot not found for PayPal order");
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Checkout snapshot not found for PayPal order",
+        statusCode: 404,
+      });
+    }
+
+    if (snapshotRecord.source !== input.source) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "PayPal order source mismatch",
+        statusCode: 400,
+      });
+    }
+
+    const metadata = input.metadata ?? {};
+    if (metadata.source !== input.source) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "PayPal metadata source mismatch",
+        statusCode: 400,
+      });
+    }
+
+    if (input.authenticatedUserId) {
+      if (snapshotRecord.userId !== input.authenticatedUserId) {
+        throw new AppError({
+          code: ERROR_CODE.FORBIDDEN,
+          message: "Checkout snapshot does not belong to this user",
+          statusCode: 403,
+        });
+      }
+      if (metadata.checkoutCustomerUserId !== input.authenticatedUserId) {
+        throw new AppError({
+          code: ERROR_CODE.FORBIDDEN,
+          message: "PayPal order does not belong to this customer",
+          statusCode: 403,
+        });
+      }
+    }
+
+    if (input.checkoutContextToken) {
+      const contextHash = sha256(input.checkoutContextToken);
+      if (
+        !safeEqual(snapshotRecord.checkoutContextHash, contextHash) ||
+        !metadata.checkoutContextHash ||
+        !safeEqual(metadata.checkoutContextHash, contextHash)
+      ) {
+        throw new AppError({
+          code: ERROR_CODE.BAD_REQUEST,
+          message: "Checkout context validation failed",
+          statusCode: 400,
+        });
+      }
+    }
+
+    if (input.checkoutGuestEmail && snapshotRecord.checkoutGuestEmailHash) {
+      const normalizedEmailHash = sha256(
+        normalizeEmailForAuth(input.checkoutGuestEmail)
+      );
+      if (
+        !safeEqual(snapshotRecord.checkoutGuestEmailHash, normalizedEmailHash) ||
+        (metadata.checkoutGuestEmailHash &&
+          !safeEqual(metadata.checkoutGuestEmailHash, normalizedEmailHash))
+      ) {
+        throw new AppError({
+          code: ERROR_CODE.BAD_REQUEST,
+          message: "Guest email does not match checkout session",
+          statusCode: 400,
+        });
+      }
+    }
+
+    const snapshot = parseSnapshotPayload(snapshotRecord.snapshot);
+    const quote = snapshot.quote;
+
+    if (
+      input.currency.toUpperCase() !== quote.currency.toUpperCase() ||
+      input.amountMinor !== quote.grandTotalAmount
+    ) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: "Paid amount/currency does not match frozen checkout snapshot",
+        statusCode: 400,
+      });
+    }
+
+    let order: Awaited<ReturnType<OrderRepository["findByPaypalOrderId"]>> | null = null;
+
+    try {
+      const created = await createGuestOrderFromQuote({
+        quote,
+        guestName: snapshot.guestName,
+        guestEmail: snapshot.guestEmail,
+        guestPhone: snapshot.guestPhone,
+        addressLine1: snapshot.addressLine1 ?? undefined,
+        city: snapshot.city ?? undefined,
+        country: snapshot.country ?? undefined,
+        postalCode: snapshot.postalCode ?? undefined,
+        paymentStatus: "PAID",
+        deliveryMethod: snapshot.deliveryMethod,
+        paymentProvider: "PAYPAL",
+        paypalOrderId: input.paypalOrderId,
+        paypalCaptureId: input.paypalCaptureId,
+        userId: snapshotRecord.userId ?? undefined,
+        sendNotifications: false,
+      });
+      order = await this.orderRepository.findById(created.id);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        order = await this.orderRepository.findByPaypalOrderId(paymentRef);
+      } else if (this.isOutOfStockOrderCreationError(error)) {
+        await this.markFinalizeFailed(
+          paymentRef,
+          error instanceof AppError ? error.message : OUT_OF_STOCK_ERROR_MESSAGE
+        );
+        const refunded = await this.tryRefundPaypalOnOrderCreationFailure({
+          captureId: input.paypalCaptureId,
+          amountMinor: input.amountMinor,
+          currency: input.currency,
+          paypalOrderId: input.paypalOrderId,
+        });
+        throw new AppError({
+          code: ERROR_CODE.CONFLICT,
+          message: refunded
+            ? "Order could not be created because stock changed after payment. Your payment has been refunded."
+            : "Order could not be created because stock changed after payment. Automatic refund failed and requires manual support.",
+          statusCode: 409,
+        });
+      } else {
+        await this.markFinalizeFailed(
+          paymentRef,
+          error instanceof Error ? error.message : "Order creation failed"
+        );
+        throw error;
+      }
+    }
+
+    if (!order) {
+      await this.markFinalizeFailed(paymentRef, "Order could not be created from PayPal payment");
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Order could not be created from PayPal payment",
+        statusCode: 404,
+      });
+    }
+
+    const claimedSnapshot = await this.checkoutSnapshotRepository.assignOrderIdIfAbsent({
+      paymentIntentId: paymentRef,
+      orderId: order.id,
+    });
+
+    if (!claimedSnapshot) {
+      const winner = await this.orderRepository.findByPaypalOrderId(paymentRef);
+      if (winner) order = winner;
+    }
+
+    await this.ensureOrderNotifications({
+      paymentIntentId: paymentRef,
+      order: {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        guestTrackingToken: order.guestTrackingToken,
+      },
+    });
+
+    await this.orderSettlementService.settleOrderById({ orderId: order.id });
+    await this.markFinalizeSucceeded(paymentRef, order.id);
+
+    return order;
+  }
+
+  private async tryRefundPaypalOnOrderCreationFailure(input: {
+    captureId: string;
+    amountMinor: number;
+    currency: string;
+    paypalOrderId: string;
+  }) {
+    try {
+      await refundPayPalCapture({
+        captureId: input.captureId,
+        amountMinor: input.amountMinor,
+        currency: input.currency,
+        idempotencyKey: `checkout-order-create-failed:${input.paypalOrderId}`,
+        note: "Order creation failed (out of stock)",
+      });
       return true;
     } catch {
       return false;

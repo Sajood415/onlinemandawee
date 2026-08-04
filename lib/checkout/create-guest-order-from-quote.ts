@@ -143,6 +143,9 @@ export async function createGuestOrderFromQuote(input: {
   paymentStatus: "PAID";
   deliveryMethod?: "PICKUP" | "EXPRESS" | "STANDARD";
   stripePaymentIntentId?: string;
+  paymentProvider?: "STRIPE" | "PAYPAL";
+  paypalOrderId?: string;
+  paypalCaptureId?: string;
   userId?: string;
   sendNotifications?: boolean;
 }) {
@@ -168,6 +171,11 @@ export async function createGuestOrderFromQuote(input: {
       guestEmail,
       guestTrackingToken,
       stripePaymentIntentId: input.stripePaymentIntentId ?? undefined,
+      paymentProvider:
+        input.paymentProvider ??
+        (input.paypalOrderId ? "PAYPAL" : input.stripePaymentIntentId ? "STRIPE" : undefined),
+      paypalOrderId: input.paypalOrderId ?? undefined,
+      paypalCaptureId: input.paypalCaptureId ?? undefined,
       orderNumber,
       status: "CREATED",
       paymentStatus: input.paymentStatus,

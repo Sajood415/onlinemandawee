@@ -10,6 +10,10 @@ import {
   createSupplyRequestPaymentIntent,
 } from "@/lib/supply/supply-request-payment";
 import {
+  assertSupplyRequestPayPalPaid,
+  createSupplyRequestPayPalOrder,
+} from "@/lib/supply/supply-request-paypal-payment";
+import {
   sendSupplyRequestCancelledEmail,
   sendSupplyRequestCompletedEmail,
   sendSupplyRequestCreatedEmails,
@@ -651,6 +655,97 @@ export class SupplyRequestService {
     }
   }
 
+  private async createPayPalOrderForRequest(request: SupplyRequestRecord) {
+    const payable = await this.requirePayable(request);
+    const quoteAmountMinor = payable.quoteAmountMinor!;
+    const quoteCurrency = payable.quoteCurrency!;
+
+    try {
+      const paypalOrder = await createSupplyRequestPayPalOrder({
+        supplyRequestId: payable.id,
+        requestNumber: payable.requestNumber,
+        quoteAmountMinor,
+        quoteCurrency,
+      });
+
+      await this.supplyRequestRepository.update(payable.id, {
+        paypalOrderId: paypalOrder.id,
+      });
+
+      return {
+        paypalOrderId: paypalOrder.id,
+        quoteAmountMinor,
+        quoteCurrency,
+        quoteNote: payable.quoteNote,
+        quoteImageUrl: payable.quoteImageUrl,
+        requestNumber: payable.requestNumber,
+      };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: error instanceof Error ? error.message : "PayPal order failed",
+        statusCode: 400,
+      });
+    }
+  }
+
+  private async confirmPayPalPaymentForRequest(
+    request: SupplyRequestRecord,
+    paypalOrderId: string
+  ): Promise<SerializedSupplyRequest> {
+    const payable = await this.requirePayable(request);
+    const quoteAmountMinor = payable.quoteAmountMinor!;
+    const quoteCurrency = payable.quoteCurrency!;
+
+    const existingPaid =
+      await this.supplyRequestRepository.findByPaypalOrderId(paypalOrderId);
+    if (existingPaid?.paidAt) {
+      return serializeSupplyRequest(existingPaid);
+    }
+
+    if (payable.paidAt && payable.status === "IN_PROGRESS") {
+      return serializeSupplyRequest(payable);
+    }
+
+    let paid;
+    try {
+      paid = await assertSupplyRequestPayPalPaid({
+        paypalOrderId,
+        supplyRequestId: payable.id,
+        quoteAmountMinor,
+        quoteCurrency,
+      });
+    } catch (error) {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message: error instanceof Error ? error.message : "PayPal payment failed",
+        statusCode: 400,
+      });
+    }
+
+    const updated = await this.supplyRequestRepository.markPaid(payable.id, {
+      paidAt: new Date(),
+      paidAmountMinor: quoteAmountMinor,
+      paymentMethod: "PAYPAL",
+      paypalOrderId,
+      paypalCaptureId: paid.captureId,
+      status: "IN_PROGRESS",
+    });
+
+    void sendSupplyRequestPaidEmail(updated);
+    void notifyAdmins({
+      type: "SUPPLY_REQUEST_PAID",
+      title: "Product Supply Request paid",
+      body: `${updated.requestNumber} is paid and ready for fulfillment.`,
+      href: `/admin/supply-requests`,
+      entityType: "SupplyRequest",
+      entityId: updated.id,
+    });
+
+    return serializeSupplyRequest(updated);
+  }
+
   private async confirmPaymentForRequest(
     request: SupplyRequestRecord,
     paymentIntentId: string
@@ -787,5 +882,67 @@ export class SupplyRequestService {
       });
     }
     return this.confirmPaymentForRequest(request, paymentIntentId);
+  }
+
+  async createPayPalOrderForCustomer(auth: AuthenticatedUser, id: string) {
+    const request = await this.supplyRequestRepository.findByIdForCustomer(
+      id,
+      this.customerScope(auth)
+    );
+    if (!request) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Supply request not found",
+        statusCode: 404,
+      });
+    }
+    return this.createPayPalOrderForRequest(request);
+  }
+
+  async confirmPayPalPaymentForCustomer(
+    auth: AuthenticatedUser,
+    id: string,
+    paypalOrderId: string
+  ) {
+    const request = await this.supplyRequestRepository.findByIdForCustomer(
+      id,
+      this.customerScope(auth)
+    );
+    if (!request) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Supply request not found",
+        statusCode: 404,
+      });
+    }
+    return this.confirmPayPalPaymentForRequest(request, paypalOrderId);
+  }
+
+  async createPayPalOrderByTrackToken(token: string) {
+    const request = await this.supplyRequestRepository.findByGuestTrackingToken(
+      token.trim()
+    );
+    if (!request) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Supply request not found",
+        statusCode: 404,
+      });
+    }
+    return this.createPayPalOrderForRequest(request);
+  }
+
+  async confirmPayPalPaymentByTrackToken(token: string, paypalOrderId: string) {
+    const request = await this.supplyRequestRepository.findByGuestTrackingToken(
+      token.trim()
+    );
+    if (!request) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Supply request not found",
+        statusCode: 404,
+      });
+    }
+    return this.confirmPayPalPaymentForRequest(request, paypalOrderId);
   }
 }
