@@ -1165,6 +1165,19 @@ model PlatformSettings {
   updatedByUserId           String?  @db.ObjectId
 }
 
+/// Blocked words for vendor product auto-approval. Match is case-insensitive substring.
+model ProductBlockedKeyword {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  /// Display / original form as entered by admin (any language/script).
+  word           String
+  /// Lowercased trimmed form used for uniqueness + matching.
+  normalizedWord String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([createdAt])
+}
+
 enum HawalaTransferStatus {
   PENDING
   APPROVED

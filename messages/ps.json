@@ -3601,12 +3601,13 @@
     },
     "settings": {
       "title": "تنظیمات",
-      "subtitle": "ژبې، پیسې، او د ګودام پته.",
+      "subtitle": "ژبې، پیسې، ګودام، او د محصول کلیدي کلمې.",
       "refresh": "تازه کول",
       "tabs": {
         "languages": "ژبې",
         "currencies": "اسعار",
-        "warehouse": "ګودام"
+        "warehouse": "ګودام",
+        "keywords": "کلیدي کلمې"
       },
       "languagesTitle": "ژبې",
       "languagesBody": "پیرودونکي کومې ژبې کارولی شي.",
@@ -3614,6 +3615,14 @@
       "currenciesBody": "پیرودونکي په کومو پیسو تادیه کولی شي.",
       "warehouseTitle": "ګودام",
       "warehouseBody": "د لېږد واټن لپاره کارول کیږي.",
+      "keywordsTitle": "د محصول کلیدي کلمې",
+      "keywordsBody": "که د پلورونکي محصول نوم یا توضیحات دا کلمې ولري، د اډمین بیاکتنې ته پاتې کیږي. که نه وي، په اتومات ډول تصویب کیږي. په هره ژبه کلمې اضافه کړئ.",
+      "keywordsPlaceholder": "کلیدي کلمه اضافه کړئ…",
+      "keywordsAdd": "اضافه",
+      "keywordsAdding": "اضافه کېږي…",
+      "keywordsEmpty": "تر اوسه کلیدي کلمه نشته.",
+      "keywordsDelete": "لرې کول",
+      "keywordsDeleting": "لرې کېږي…",
       "addressLine": "پته",
       "addressPlaceholder": "پته لیکل پیل کړئ…",
       "city": "ښار",
@@ -3633,7 +3642,11 @@
         "savedTitle": "خوندي شو",
         "savedBody": "تنظیمات تازه شول.",
         "saveFailedTitle": "خوندي نشو",
-        "unknownError": "یوه تیروتنه وشوه"
+        "unknownError": "یوه تیروتنه وشوه",
+        "keywordAdded": "کلیدي کلمه اضافه شوه",
+        "keywordAddFailed": "کلیدي کلمه اضافه نشوه",
+        "keywordDeleted": "کلیدي کلمه لرې شوه",
+        "keywordDeleteFailed": "کلیدي کلمه لرې نشوه"
       }
     },
     "giftRequests": {

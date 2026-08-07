@@ -3578,12 +3578,13 @@
     },
     "settings": {
       "title": "Settings",
-      "subtitle": "Languages, money, and warehouse address.",
+      "subtitle": "Languages, money, warehouse, and product keyword filters.",
       "refresh": "Refresh",
       "tabs": {
         "languages": "Languages",
         "currencies": "Currencies",
-        "warehouse": "Warehouse"
+        "warehouse": "Warehouse",
+        "keywords": "Keywords"
       },
       "languagesTitle": "Languages",
       "languagesBody": "Which languages customers can use.",
@@ -3591,6 +3592,14 @@
       "currenciesBody": "Which money customers can pay with.",
       "warehouseTitle": "Warehouse",
       "warehouseBody": "Used to work out delivery distance.",
+      "keywordsTitle": "Product keywords",
+      "keywordsBody": "If a vendor product title or description contains any of these words, it stays pending for admin review. Otherwise it is approved automatically. Add words in any language.",
+      "keywordsPlaceholder": "Add a keyword…",
+      "keywordsAdd": "Add",
+      "keywordsAdding": "Adding…",
+      "keywordsEmpty": "No keywords yet.",
+      "keywordsDelete": "Remove",
+      "keywordsDeleting": "Removing…",
       "addressLine": "Address",
       "addressPlaceholder": "Start typing an address…",
       "city": "City",
@@ -3610,7 +3619,11 @@
         "savedTitle": "Saved",
         "savedBody": "Settings updated.",
         "saveFailedTitle": "Could not save",
-        "unknownError": "Something went wrong"
+        "unknownError": "Something went wrong",
+        "keywordAdded": "Keyword added",
+        "keywordAddFailed": "Could not add keyword",
+        "keywordDeleted": "Keyword removed",
+        "keywordDeleteFailed": "Could not remove keyword"
       }
     },
     "giftRequests": {

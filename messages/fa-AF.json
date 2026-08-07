@@ -3601,12 +3601,13 @@
     },
     "settings": {
       "title": "تنظیمات",
-      "subtitle": "زبان‌ها، پول، و آدرس انبار.",
+      "subtitle": "زبان‌ها، پول، انبار، و فیلتر کلمات محصول.",
       "refresh": "تازه‌سازی",
       "tabs": {
         "languages": "زبان‌ها",
         "currencies": "ارزها",
-        "warehouse": "انبار"
+        "warehouse": "انبار",
+        "keywords": "کلمات کلیدی"
       },
       "languagesTitle": "زبان‌ها",
       "languagesBody": "مشتریان کدام زبان‌ها را می‌توانند استفاده کنند.",
@@ -3614,6 +3615,14 @@
       "currenciesBody": "مشتریان با کدام پول می‌توانند بپردازند.",
       "warehouseTitle": "انبار",
       "warehouseBody": "برای محاسبه مسافت تحویل استفاده می‌شود.",
+      "keywordsTitle": "کلمات کلیدی محصول",
+      "keywordsBody": "اگر عنوان یا توضیحات محصول فروشنده این کلمات را داشته باشد، برای بررسی ادمین در انتظار می‌ماند. در غیر این صورت به‌صورت خودکار تأیید می‌شود. کلمات را به هر زبانی اضافه کنید.",
+      "keywordsPlaceholder": "افزودن کلمه کلیدی…",
+      "keywordsAdd": "افزودن",
+      "keywordsAdding": "در حال افزودن…",
+      "keywordsEmpty": "هنوز کلمه‌ای نیست.",
+      "keywordsDelete": "حذف",
+      "keywordsDeleting": "در حال حذف…",
       "addressLine": "آدرس",
       "addressPlaceholder": "شروع به تایپ آدرس کنید…",
       "city": "شهر",
@@ -3633,7 +3642,11 @@
         "savedTitle": "ذخیره شد",
         "savedBody": "تنظیمات به‌روز شد.",
         "saveFailedTitle": "ذخیره ممکن نشد",
-        "unknownError": "مشکلی پیش آمد"
+        "unknownError": "مشکلی پیش آمد",
+        "keywordAdded": "کلمه اضافه شد",
+        "keywordAddFailed": "افزودن کلمه ممکن نشد",
+        "keywordDeleted": "کلمه حذف شد",
+        "keywordDeleteFailed": "حذف کلمه ممکن نشد"
       }
     },
     "giftRequests": {

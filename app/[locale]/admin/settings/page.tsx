@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, RefreshCw, Save } from "lucide-react";
+import { Loader2, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { AddressAutocompleteInput } from "@/components/address/AddressAutocompleteInput";
@@ -28,7 +28,14 @@ type PlatformSettings = {
   updatedAt: string;
 };
 
-type SettingsTab = "languages" | "currencies" | "warehouse";
+type BlockedKeyword = {
+  id: string;
+  word: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type SettingsTab = "languages" | "currencies" | "warehouse" | "keywords";
 
 const INPUT =
   "w-full max-w-xs rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
@@ -65,9 +72,30 @@ export default function AdminSettingsPage() {
   const [warehouseCity, setWarehouseCity] = useState("");
   const [warehouseCountry, setWarehouseCountry] = useState("");
   const [warehousePostalCode, setWarehousePostalCode] = useState("");
+  const [keywords, setKeywords] = useState<BlockedKeyword[]>([]);
+  const [keywordInput, setKeywordInput] = useState("");
+  const [keywordsLoading, setKeywordsLoading] = useState(false);
+  const [addingKeyword, setAddingKeyword] = useState(false);
+  const [deletingKeywordId, setDeletingKeywordId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const loadKeywords = useCallback(async () => {
+    setKeywordsLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/product-keywords");
+      const data = await parseApiResponse<BlockedKeyword[]>(res);
+      setKeywords(data);
+    } catch (e) {
+      toast.error(
+        t("toasts.keywordAddFailed"),
+        e instanceof Error ? e.message : t("toasts.unknownError")
+      );
+    } finally {
+      setKeywordsLoading(false);
+    }
+  }, [t]);
 
   const loadSettings = useCallback(async () => {
     setLoading(true);
@@ -82,12 +110,13 @@ export default function AdminSettingsPage() {
       setWarehouseCity(data.warehouseCity ?? "");
       setWarehouseCountry(data.warehouseCountry ?? "");
       setWarehousePostalCode(data.warehousePostalCode ?? "");
+      await loadKeywords();
     } catch (e) {
       setError(e instanceof Error ? e.message : t("loadError"));
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [loadKeywords, t]);
 
   useEffect(() => {
     if (!authLoading && user) void loadSettings();
@@ -153,6 +182,53 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const onAddKeyword = async () => {
+    const word = keywordInput.trim();
+    if (!word) return;
+    setAddingKeyword(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/product-keywords", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ word }),
+      });
+      const created = await parseApiResponse<BlockedKeyword>(res);
+      setKeywords((current) =>
+        [...current, created].sort((a, b) =>
+          a.word.localeCompare(b.word, undefined, { sensitivity: "base" })
+        )
+      );
+      setKeywordInput("");
+      toast.success(t("toasts.keywordAdded"));
+    } catch (e) {
+      toast.error(
+        t("toasts.keywordAddFailed"),
+        e instanceof Error ? e.message : t("toasts.unknownError")
+      );
+    } finally {
+      setAddingKeyword(false);
+    }
+  };
+
+  const onDeleteKeyword = async (id: string) => {
+    setDeletingKeywordId(id);
+    try {
+      const res = await fetchWithAuth(`/api/admin/product-keywords/${id}`, {
+        method: "DELETE",
+      });
+      await parseApiResponse(res);
+      setKeywords((current) => current.filter((item) => item.id !== id));
+      toast.success(t("toasts.keywordDeleted"));
+    } catch (e) {
+      toast.error(
+        t("toasts.keywordDeleteFailed"),
+        e instanceof Error ? e.message : t("toasts.unknownError")
+      );
+    } finally {
+      setDeletingKeywordId(null);
+    }
+  };
+
   if (authLoading || !user) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -165,6 +241,7 @@ export default function AdminSettingsPage() {
     { id: "languages", label: t("tabs.languages") },
     { id: "currencies", label: t("tabs.currencies") },
     { id: "warehouse", label: t("tabs.warehouse") },
+    { id: "keywords", label: t("tabs.keywords") },
   ];
 
   return (
@@ -309,25 +386,97 @@ export default function AdminSettingsPage() {
               </div>
             </>
           ) : null}
+
+          {tab === "keywords" ? (
+            <>
+              <h2 className="text-base font-semibold text-neutral-900">{t("keywordsTitle")}</h2>
+              <p className="mt-1 text-sm text-neutral-600">{t("keywordsBody")}</p>
+
+              <form
+                className="mt-4 flex flex-col gap-2 sm:flex-row"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void onAddKeyword();
+                }}
+              >
+                <input
+                  type="text"
+                  className={`${INPUT} max-w-none flex-1`}
+                  value={keywordInput}
+                  onChange={(event) => setKeywordInput(event.target.value)}
+                  placeholder={t("keywordsPlaceholder")}
+                  maxLength={80}
+                />
+                <button
+                  type="submit"
+                  disabled={addingKeyword || !keywordInput.trim()}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+                >
+                  {addingKeyword ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  {addingKeyword ? t("keywordsAdding") : t("keywordsAdd")}
+                </button>
+              </form>
+
+              <div className="mt-4 space-y-2">
+                {keywordsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
+                  </div>
+                ) : keywords.length === 0 ? (
+                  <p className="text-sm text-neutral-500">{t("keywordsEmpty")}</p>
+                ) : (
+                  keywords.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 px-3 py-2"
+                    >
+                      <span className="text-sm font-medium text-neutral-900">{item.word}</span>
+                      <button
+                        type="button"
+                        disabled={deletingKeywordId === item.id}
+                        onClick={() => void onDeleteKeyword(item.id)}
+                        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+                      >
+                        {deletingKeywordId === item.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
+                        {deletingKeywordId === item.id
+                          ? t("keywordsDeleting")
+                          : t("keywordsDelete")}
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          ) : null}
         </section>
       )}
 
-      <div className="max-w-2xl">
-        <button
-          type="button"
-          disabled={saving || loading}
-          onClick={() => void onSave()}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {saving ? t("saving") : t("save")}
-        </button>
-        {settings ? (
-          <p className="mt-2 text-xs text-neutral-500">
-            {t("lastUpdated", { date: formatDateLabel(settings.updatedAt, locale) })}
-          </p>
-        ) : null}
-      </div>
+      {tab !== "keywords" ? (
+        <div className="max-w-2xl">
+          <button
+            type="button"
+            disabled={saving || loading}
+            onClick={() => void onSave()}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {saving ? t("saving") : t("save")}
+          </button>
+          {settings ? (
+            <p className="mt-2 text-xs text-neutral-500">
+              {t("lastUpdated", { date: formatDateLabel(settings.updatedAt, locale) })}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { notifyAdmins } from "@/lib/admin/notify-admins";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import {
+  parseProductTranslations,
   sanitizeProductTranslations,
   type ProductTranslations,
 } from "@/lib/localization/product-content";
@@ -10,6 +11,7 @@ import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { CategoryRepository } from "@/repositories/category.repository";
 import { ProductRepository } from "@/repositories/product.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
+import { ProductBlockedKeywordService } from "@/services/product-blocked-keyword.service";
 
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 
@@ -18,7 +20,8 @@ export class VendorProductService {
     private readonly productRepository = new ProductRepository(),
     private readonly categoryRepository = new CategoryRepository(),
     private readonly vendorProfileRepository = new VendorProfileRepository(),
-    private readonly auditLogRepository = new AuditLogRepository()
+    private readonly auditLogRepository = new AuditLogRepository(),
+    private readonly blockedKeywordService = new ProductBlockedKeywordService()
   ) {}
 
   async create(
@@ -38,6 +41,14 @@ export class VendorProductService {
     const vendor = await this.requireActiveVendor(auth.id);
     const category = await this.requireActiveCategory(input.categoryId);
     const slug = await this.ensureUniqueProductSlug(vendor.id, input.name);
+    const translations = sanitizeProductTranslations(input.translations);
+    const matchedKeywords = await this.blockedKeywordService.findMatches({
+      name: input.name,
+      description: input.description,
+      translations,
+    });
+    const approvalStatus =
+      matchedKeywords.length > 0 ? "PENDING_APPROVAL" : "APPROVED";
 
     const product = await this.productRepository.create({
       vendorProfileId: vendor.id,
@@ -45,13 +56,13 @@ export class VendorProductService {
       name: input.name,
       slug,
       description: input.description,
-      translations: sanitizeProductTranslations(input.translations),
+      translations,
       images: input.images,
       sku: input.sku,
       currency: input.currency,
       priceAmount: input.priceAmount,
       stockQty: input.stockQty,
-      approvalStatus: "PENDING_APPROVAL",
+      approvalStatus,
     });
 
     await this.auditLogRepository.create({
@@ -62,14 +73,16 @@ export class VendorProductService {
       entityId: product.id,
     });
 
-    void notifyAdmins({
-      type: "PRODUCT_PENDING_APPROVAL",
-      title: "Product pending approval",
-      body: `"${product.name}" needs review.`,
-      href: "/admin/products",
-      entityType: "Product",
-      entityId: product.id,
-    });
+    if (approvalStatus === "PENDING_APPROVAL") {
+      void notifyAdmins({
+        type: "PRODUCT_PENDING_APPROVAL",
+        title: "Product pending approval",
+        body: `"${product.name}" needs review (keywords: ${matchedKeywords.join(", ")}).`,
+        href: "/admin/products",
+        entityType: "Product",
+        entityId: product.id,
+      });
+    }
 
     return product;
   }
@@ -171,6 +184,16 @@ export class VendorProductService {
       });
     }
 
+    const matchedKeywords = await this.blockedKeywordService.findMatches({
+      name: product.name,
+      description: product.description,
+      translations: sanitizeProductTranslations(
+        parseProductTranslations(product.translations)
+      ),
+    });
+    const approvalStatus =
+      matchedKeywords.length > 0 ? "PENDING_APPROVAL" : "APPROVED";
+
     const updated = await this.productRepository.update({
       id: product.id,
       categoryId: product.categoryId,
@@ -182,7 +205,7 @@ export class VendorProductService {
       currency: product.currency,
       priceAmount: product.priceAmount,
       stockQty: product.stockQty,
-      approvalStatus: "PENDING_APPROVAL",
+      approvalStatus,
       rejectionReason: null,
       isActive: product.isActive,
     });
@@ -195,14 +218,16 @@ export class VendorProductService {
       entityId: updated.id,
     });
 
-    void notifyAdmins({
-      type: "PRODUCT_PENDING_APPROVAL",
-      title: "Product resubmitted for approval",
-      body: `"${updated.name}" needs review again.`,
-      href: "/admin/products",
-      entityType: "Product",
-      entityId: updated.id,
-    });
+    if (approvalStatus === "PENDING_APPROVAL") {
+      void notifyAdmins({
+        type: "PRODUCT_PENDING_APPROVAL",
+        title: "Product resubmitted for approval",
+        body: `"${updated.name}" needs review again (keywords: ${matchedKeywords.join(", ")}).`,
+        href: "/admin/products",
+        entityType: "Product",
+        entityId: updated.id,
+      });
+    }
 
     return updated;
   }
