@@ -72,7 +72,7 @@ export function CurrencySelector({
         className={`${getTriggerClass(open, variant)} cursor-pointer`}
       >
         <span className="font-semibold">{symbol}</span>
-        <span>{currency}</span>
+        <span className="ms-0.5">{currency}</span>
         <ChevronDown
           size={12}
           strokeWidth={2.5}
@@ -105,7 +105,7 @@ export function CurrencySelector({
                     : "text-gray-600 hover:bg-gray-50"
                 }`}
               >
-                <span className="w-5 text-center font-semibold text-gray-500">
+                <span className="inline-block min-w-[1.25rem] shrink-0 text-center font-semibold text-gray-500">
                   {CURRENCY_SYMBOLS[code as SupportedCurrency]}
                 </span>
                 <span>{code}</span>

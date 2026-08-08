@@ -18,7 +18,8 @@ export const CURRENCY_SYMBOLS: Record<SupportedCurrency, string> = {
   USD: "$",
   EUR: "€",
   GBP: "£",
-  CAD: "CA$",
+  /** Same $ glyph as USD; the code (CAD) distinguishes them in the selector. */
+  CAD: "$",
 };
 
 /** USD value of one major unit of each currency (for conversion). */
