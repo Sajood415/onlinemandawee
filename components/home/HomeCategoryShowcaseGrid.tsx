@@ -102,28 +102,39 @@ export function HomeCategoryShowcaseGrid() {
   if (cards.length === 0) return null;
 
   return (
-    <section className="w-full min-w-0 py-1 sm:py-3">
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
+    <section className="w-full min-w-0">
+      <div className="mb-4 flex items-end justify-between gap-3">
+        <h2 className="text-lg font-bold tracking-tight text-[#0F3460] sm:text-xl">
+          {t("selectedCategories")}
+        </h2>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
         {cards.map((card) => (
           <article
             key={card.categoryId}
-            className="rounded-xl border border-neutral-200 bg-white p-2.5 sm:rounded-2xl sm:p-4"
+            className="rounded-2xl border border-gray-100 bg-[#FAFBFC] p-3 shadow-[0_4px_16px_rgba(15,23,42,0.04)] sm:rounded-3xl sm:p-4"
           >
-            <h3 className="line-clamp-2 text-center text-[13px] font-semibold text-neutral-800 sm:text-base">
-              {card.categoryLabel}
-            </h3>
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h3 className="line-clamp-1 text-sm font-bold text-[#0F3460] sm:text-base">
+                {card.categoryLabel}
+              </h3>
+              <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-[#ec1b23]/10 px-2 text-xs font-bold text-[#ec1b23]">
+                {card.products.length}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
               {card.products.map((product) => (
                 <Link
                   key={product.id}
                   href={`/products/${product.id}`}
-                  className="group relative block overflow-hidden rounded-lg border border-neutral-100 bg-white"
+                  className="group relative block overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-100"
                 >
                   <div className="relative aspect-square">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={product.image}
                       alt={localizedProductName(product, safeLocale)}
-                      className="block h-full w-full object-contain p-1 transition-transform duration-200 group-hover:scale-105"
+                      className="block h-full w-full object-contain p-2 transition-transform duration-200 group-hover:scale-105"
                       loading="lazy"
                       decoding="async"
                     />
@@ -134,7 +145,7 @@ export function HomeCategoryShowcaseGrid() {
             <div className="mt-3">
               <Link
                 href={`/category/${card.categorySlug}`}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[#0f77b8] hover:underline"
+                className="inline-flex items-center gap-1 rounded-full bg-[#0F3460] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#0a2540]"
               >
                 {viewIcon}
                 <span>{t("viewAll")}</span>

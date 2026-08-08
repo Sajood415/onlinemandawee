@@ -41,6 +41,10 @@ export type HeaderCopy = {
   contact: string;
   becomeVendor: string;
   sellOnPlatform: string;
+  aboutUs: string;
+  profile: string;
+  favorites: string;
+  hotDiscounts: string;
   categories: string;
   megaAllIn: string;
   megaSubcategories: string;
@@ -99,6 +103,10 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     contact: "Contact",
     becomeVendor: "Become a Vendor",
     sellOnPlatform: "Sell on Mandawee!",
+    aboutUs: "About us",
+    profile: "Profile",
+    favorites: "Favorites",
+    hotDiscounts: "Discounts",
     categories: "Categories",
     megaAllIn: "All in",
     megaSubcategories: "Subcategories",
@@ -155,6 +163,10 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     contact: "اړیکه",
     becomeVendor: "پلورونکی شئ",
     sellOnPlatform: "په منداوی کې وپلورئ!",
+    aboutUs: "زموږ په اړه",
+    profile: "پروفایل",
+    favorites: "خوښې",
+    hotDiscounts: "تخفیفونه",
     categories: "کټګورۍ",
     megaAllIn: "ټول په",
     megaSubcategories: "فرعي کټګورۍ",
@@ -211,6 +223,10 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     contact: "تماس",
     becomeVendor: "فروشنده شوید",
     sellOnPlatform: "در منداوی بفروشید!",
+    aboutUs: "درباره ما",
+    profile: "پروفایل",
+    favorites: "علاقه‌مندی‌ها",
+    hotDiscounts: "تخفیف‌ها",
     categories: "دسته‌بندی‌ها",
     megaAllIn: "همه در",
     megaSubcategories: "زیردسته‌ها",

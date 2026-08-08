@@ -9,15 +9,47 @@
       "promo": "د $100 پورته فرمایشونو لپاره وړیا تحویل",
       "tagline": "هر ورځ اړین توکي د کورنۍ لپاره اسانه پلورنځی.",
       "shopByCategory": "د کټګورۍ له مخې پلورنځی",
+      "shopByCategorySubtitle": "مشهورې کټګورۍ وپلټئ او ژر هغه څه ومومئ چې ورته اړتیا لرئ.",
       "amazingOffer": "حیرانونکی وړاندیز",
+      "specialDiscounts": "ځانګړي تخفیفونه",
+      "specialDiscountsSubtitle": "د فعالو پلورونکو تخفیف شوي محصولات.",
+      "latestProducts": "وروستي محصولات",
+      "latestProductsSubtitle": "په منداوی کې د فعالو پلورونکو تازه لیستونه.",
+      "selectedCategories": "غوره کټګورۍ",
       "viewAllCategories": "ټول وګورئ",
       "viewAll": "ټول وګورئ",
       "featuredTitle": "ستاسو د خوراکي غوره انتخابونه",
       "addToCart": "کارټ ته اضافه کړئ",
+      "add": "اضافه",
       "addedToCart": "کارټ ته اضافه شو",
       "addError": "اضافه نشو — بیا هڅه وکړئ",
+      "available": "شته",
+      "unavailable": "نشته",
+      "addToWishlist": "خوښو ته اضافه کړئ",
+      "removeFromWishlist": "له خوښو لرې کړئ",
       "unitPrice": "واحد بیه",
       "per": "/ له",
+      "featured": {
+        "badge": "منداوی غوره",
+        "badgeShort": "رسمي",
+        "title": "منداوی غوره",
+        "subtitle": "د منداوی رسمي محصولات زموږ د پلیټفارم پلورنځي څخه واخلئ — باوري تحویل، کیفیت کنټرول او باور وړ شرایط.",
+        "cta": "ټول محصولات وګورئ",
+        "benefits": {
+          "delivery": {
+            "title": "ځانګړی تحویل",
+            "desc": "په غوره وړاندیزونو کې چټک لیږد"
+          },
+          "quality": {
+            "title": "کیفیت چک شوی",
+            "desc": "زموږ د مارکیټ ټیم لخوا کتل شوی"
+          },
+          "guarantee": {
+            "title": "مستقیم ضمانت",
+            "desc": "روښانه شرایط چې باور پرې کولی شئ"
+          }
+        }
+      },
       "hero": {
         "shopNowFallback": "اوس واخلئ",
         "slideFallbackLabel": "د کورپاڼې اصلي بنر",
@@ -37,7 +69,8 @@
       "categories": {
         "previous": "مخکینۍ کټګورۍ",
         "next": "بلې کټګورۍ",
-        "noImage": "انځور نشته"
+        "noImage": "انځور نشته",
+        "productCount": "{count} محصولات"
       },
       "stackedSections": {
         "qualityGrocery": "د ښه ژوند لپاره باکیفیته خوراکي توکي",

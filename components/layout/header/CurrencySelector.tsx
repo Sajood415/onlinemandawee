@@ -23,13 +23,19 @@ const dropdownVariants: Variants = {
 
 type CurrencySelectorProps = {
   isRtl: boolean;
-  variant?: "default" | "dark";
+  variant?: "default" | "dark" | "pill";
 };
 
-function getTriggerClass(open: boolean, variant: "default" | "dark") {
+function getTriggerClass(open: boolean, variant: "default" | "dark" | "pill") {
   if (variant === "dark") {
     return `inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-white transition-colors hover:bg-white/10 ${
       open ? "bg-white/10" : ""
+    }`;
+  }
+
+  if (variant === "pill") {
+    return `inline-flex h-9 items-center gap-1 rounded-full border border-white/35 bg-white/10 px-2.5 text-xs font-semibold text-white transition-colors hover:bg-white/20 ${
+      open ? "bg-white/20" : ""
     }`;
   }
 

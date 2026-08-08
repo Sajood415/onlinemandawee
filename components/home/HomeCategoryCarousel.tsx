@@ -4,18 +4,19 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { resolveCategoryLabel } from "@/lib/categories/category-labels";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { useHorizontalScroll } from "./useHorizontalScroll";
+import { HomeSectionHeader } from "./HomeSectionHeader";
 
 type ApiCategory = {
   id: string;
   name: string;
   slug: string;
   image?: string;
+  productCount?: number;
   translations?: unknown;
 };
 
@@ -24,6 +25,7 @@ type DisplayCategoryTile = {
   href: string;
   label: string;
   image?: string;
+  productCount?: number;
 };
 
 function formatCategoryLabel(label: string) {
@@ -32,32 +34,52 @@ function formatCategoryLabel(label: string) {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
 
-function CategoryCircle({ tile, noImageLabel }: { tile: DisplayCategoryTile; noImageLabel: string }) {
+function CategoryCircle({
+  tile,
+  noImageLabel,
+  productsLabel,
+}: {
+  tile: DisplayCategoryTile;
+  noImageLabel: string;
+  productsLabel: (count: number) => string;
+}) {
   return (
     <Link
       href={tile.href}
       aria-label={tile.label}
-      className="group flex w-[92px] shrink-0 flex-col items-center gap-2 outline-none min-[390px]:w-[104px] sm:w-[116px] sm:gap-2.5"
+      className="group flex w-[100px] shrink-0 flex-col items-center gap-2.5 outline-none min-[390px]:w-[112px] sm:w-[124px]"
     >
-      <div className="relative flex h-[84px] w-[84px] items-center justify-center min-[390px]:h-[96px] min-[390px]:w-[96px] sm:h-[106px] sm:w-[106px]">
-        <div className="absolute inset-0 rounded-full bg-[#f0f0f1]" aria-hidden />
-        <div className="relative z-1 flex h-[70px] w-[70px] items-center justify-center overflow-hidden rounded-full bg-white min-[390px]:h-[80px] min-[390px]:w-[80px] sm:h-[88px] sm:w-[88px]">
+      <div className="relative flex h-[92px] w-[92px] items-center justify-center min-[390px]:h-[104px] min-[390px]:w-[104px] sm:h-[118px] sm:w-[118px]">
+        <div
+          className="absolute inset-0 rounded-full bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)] ring-1 ring-gray-100 transition group-hover:shadow-[0_12px_28px_rgba(236,27,35,0.12)] group-hover:ring-[#ec1b23]/25"
+          aria-hidden
+        />
+        <div className="relative z-1 flex h-[78px] w-[78px] items-center justify-center overflow-hidden rounded-full bg-[#F7F4EF] min-[390px]:h-[88px] min-[390px]:w-[88px] sm:h-[100px] sm:w-[100px]">
           {tile.image ? (
             <Image
               src={tile.image}
               alt=""
               fill
-              className="object-contain object-center transition-transform duration-300 group-hover:scale-105"
+              className="object-contain object-center p-2 transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 640px) 104px, 116px"
             />
           ) : (
-            <span className="text-[10px] font-medium uppercase text-neutral-400">{noImageLabel}</span>
+            <span className="text-[10px] font-medium uppercase text-neutral-400">
+              {noImageLabel}
+            </span>
           )}
         </div>
       </div>
-      <p className="line-clamp-2 w-full text-center text-[11px] font-normal leading-snug text-neutral-800 sm:text-xs">
-        {tile.label}
-      </p>
+      <div className="w-full text-center">
+        <p className="line-clamp-2 text-sm font-bold leading-snug text-[#0F3460]">
+          {tile.label}
+        </p>
+        {typeof tile.productCount === "number" ? (
+          <p className="mt-0.5 text-xs text-gray-400">
+            {productsLabel(tile.productCount)}
+          </p>
+        ) : null}
+      </div>
     </Link>
   );
 }
@@ -78,6 +100,7 @@ function buildDisplayTiles(
       ),
     ),
     image: category.image,
+    productCount: category.productCount,
   }));
 }
 
@@ -86,6 +109,7 @@ export function HomeCategoryCarousel() {
   const locale = useLocale() as SupportedLocale;
   const safeLocale: SupportedLocale =
     locale === "ps" || locale === "fa-AF" ? locale : "en";
+  const isRtl = safeLocale !== "en";
   const [apiCategories, setApiCategories] = useState<ApiCategory[]>([]);
   const { ref, scroll } = useHorizontalScroll();
 
@@ -117,35 +141,31 @@ export function HomeCategoryCarousel() {
   if (tiles.length === 0) return null;
 
   return (
-    <section className="w-full min-w-0 py-4 sm:py-6 lg:py-8">
-      <h2 className="mb-4 text-center text-sm font-bold text-neutral-900 sm:mb-6 sm:text-base lg:mb-8 lg:text-lg">
-        {t("shopByCategory")}
-      </h2>
+    <section className="w-full min-w-0">
+      <HomeSectionHeader
+        title={t("shopByCategory")}
+        subtitle={t("shopByCategorySubtitle")}
+        isRtl={isRtl}
+        onPrev={() => scroll(-1)}
+        onNext={() => scroll(1)}
+        prevLabel={t("categories.previous")}
+        nextLabel={t("categories.next")}
+        viewAllHref="/products"
+        viewAllLabel={t("viewAllCategories")}
+      />
 
       <div className="relative">
-        <button
-          type="button"
-          onClick={() => scroll(-1)}
-          className="absolute -left-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200/80 bg-white/90 text-neutral-500 shadow-sm transition hover:bg-white hover:text-neutral-700 sm:flex"
-          aria-label={t("categories.previous")}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => scroll(1)}
-          className="absolute -right-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200/80 bg-white/90 text-neutral-500 shadow-sm transition hover:bg-white hover:text-neutral-700 sm:flex"
-          aria-label={t("categories.next")}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-
         <div
           ref={ref}
           className="flex gap-3 overflow-x-auto px-0.5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] min-[390px]:gap-4 sm:gap-6 sm:px-1 [&::-webkit-scrollbar]:hidden"
         >
           {tiles.map((tile) => (
-            <CategoryCircle key={tile.slug} tile={tile} noImageLabel={t("categories.noImage")} />
+            <CategoryCircle
+              key={tile.slug}
+              tile={tile}
+              noImageLabel={t("categories.noImage")}
+              productsLabel={(count) => t("categories.productCount", { count })}
+            />
           ))}
         </div>
       </div>

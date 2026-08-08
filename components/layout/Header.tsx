@@ -23,15 +23,17 @@ import {
   Baby,
   UserCircle,
   User,
-  LogIn,
   Store,
-  Phone,
-  LayoutGrid,
   Gift,
   Banknote,
   HelpCircle,
   PackageSearch,
   ChevronRight,
+  Heart,
+  Home,
+  Tag,
+  Info,
+  Menu,
 } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
@@ -136,10 +138,6 @@ function isNavLinkActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function NavDivider() {
-  return <span className="mx-0.5 hidden h-4 w-px shrink-0 bg-gray-300 md:block" aria-hidden />;
-}
-
 function SecondaryNavLink({
   href,
   pathname,
@@ -147,6 +145,7 @@ function SecondaryNavLink({
   icon,
   badge,
   className = "",
+  highlight = false,
 }: {
   href: string;
   pathname: string;
@@ -154,14 +153,33 @@ function SecondaryNavLink({
   icon?: ReactNode;
   badge?: string;
   className?: string;
+  highlight?: boolean;
 }) {
   const active = isNavLinkActive(pathname, href);
+
+  if (highlight) {
+    return (
+      <LocaleLink
+        href={href}
+        aria-current={active ? "page" : undefined}
+        className={`inline-flex items-center gap-1 rounded-full bg-[#ec1b23]/10 px-2 py-1 text-[11px] font-semibold whitespace-nowrap text-[#ec1b23] ring-1 ring-[#ec1b23]/20 transition-colors hover:bg-[#ec1b23]/15 lg:px-2.5 lg:text-[12px] ${className}`}
+      >
+        {badge ? (
+          <span className="rounded-full bg-[#ec1b23] px-1 py-px text-[8px] font-bold uppercase leading-none text-white">
+            {badge}
+          </span>
+        ) : null}
+        {label}
+        {icon ? <span className="shrink-0 opacity-90">{icon}</span> : null}
+      </LocaleLink>
+    );
+  }
 
   return (
     <LocaleLink
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-2 text-[13px] font-medium whitespace-nowrap transition-colors sm:px-3 ${
+      className={`inline-flex items-center gap-1 px-1.5 py-1.5 text-[11px] font-medium whitespace-nowrap transition-colors lg:gap-1.5 lg:px-2 lg:text-[12px] ${
         active
           ? "font-semibold text-[#ec1b23]"
           : "text-gray-600 hover:text-[#ec1b23]"
@@ -170,11 +188,56 @@ function SecondaryNavLink({
       {icon ? <span className="shrink-0 opacity-80">{icon}</span> : null}
       {label}
       {badge ? (
-        <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[9px] font-bold uppercase text-gray-900">
+        <span className="rounded-full bg-amber-400 px-1 py-px text-[8px] font-bold uppercase text-gray-900">
           {badge}
         </span>
       ) : null}
     </LocaleLink>
+  );
+}
+
+function HeaderUtilButton({
+  label,
+  icon,
+  onClick,
+  href,
+  badge,
+}: {
+  label: string;
+  icon: ReactNode;
+  onClick?: () => void;
+  href?: string;
+  badge?: number;
+}) {
+  const content = (
+    <>
+      <span className="relative flex h-9 w-9 items-center justify-center text-white">
+        {icon}
+        {badge && badge > 0 ? (
+          <span className="absolute -end-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-bold text-[#ec1b23]">
+            {badge > 99 ? "99+" : badge}
+          </span>
+        ) : null}
+      </span>
+      <span className="hidden text-[11px] font-medium text-white/85 xl:block">{label}</span>
+    </>
+  );
+
+  const className =
+    "group flex cursor-pointer flex-col items-center gap-0.5 rounded-lg px-1.5 py-1 transition-colors hover:bg-white/10";
+
+  if (href) {
+    return (
+      <LocaleLink href={href} className={className} aria-label={label}>
+        {content}
+      </LocaleLink>
+    );
+  }
+
+  return (
+    <button type="button" onClick={onClick} className={className} aria-label={label}>
+      {content}
+    </button>
   );
 }
 
@@ -291,7 +354,6 @@ export default function Header() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-  const categoriesRef = useRef<HTMLDivElement>(null);
   const headerWrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -410,15 +472,17 @@ export default function Header() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+      // Mega menu lives under header chrome; Categories trigger is in the white bar.
       if (
-        categoriesRef.current &&
-        !categoriesRef.current.contains(event.target as Node)
+        headerWrapRef.current &&
+        !headerWrapRef.current.contains(target)
       ) {
         setShowCategoriesDropdown(false);
       }
       if (
         accountMenuRef.current &&
-        !accountMenuRef.current.contains(event.target as Node)
+        !accountMenuRef.current.contains(target)
       ) {
         setShowAccountMenu(false);
       }
@@ -427,55 +491,33 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const accountHref =
+    user?.role === "ADMIN"
+      ? "/admin/dashboard"
+      : user?.role === "VENDOR"
+        ? "/vendor/dashboard"
+        : "/account";
+
+  const handleProfileClick = () => {
+    if (!isAuthenticated) {
+      handleLogin();
+      return;
+    }
+    setShowAccountMenu((v) => !v);
+  };
+
   return (
     <>
       <div ref={headerWrapRef} className="sticky top-0 z-[9998] shrink-0">
-        {/* Utility bar */}
-        {!hideUtilityBar ? (
-          <div
-            dir={isRtl ? "rtl" : "ltr"}
-            className="hidden border-b border-gray-200 bg-[#f7f8fa] sm:block"
-          >
-            <div className="flex h-9 w-full items-center justify-between px-2 text-[11px] text-gray-600 sm:px-3 lg:px-4">
-              <div className="flex items-center gap-2 font-medium">
-                <span className="text-gray-800">{copy.welcome}</span>
-                <span className="hidden text-gray-300 lg:inline">|</span>
-                <a
-                  href="tel:+93799899856"
-                  className="hidden items-center gap-1.5 text-gray-600 transition-colors hover:text-primary lg:inline-flex"
-                >
-                  <Phone size={12} />
-                  <span>(+93) 799 899856</span>
-                </a>
-              </div>
-              <div className="flex items-center gap-1">
-                {languageOptions.length > 1 || availableCurrencies.length > 1 ? (
-                  <div className="flex items-center gap-1">
-                    {languageOptions.length > 1 ? (
-                      <LanguageSelector
-                        locale={locale}
-                        label={tAuth("languages.select")}
-                        isRtl={isRtl}
-                        variant="default"
-                        languages={languageOptions}
-                      />
-                    ) : null}
-                    <CurrencySelector isRtl={isRtl} variant="default" />
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {/* Main header */}
+        {/* Red nav: logo on start (left in EN, right in PS/Dari), utils on end */}
         <header
           dir={isRtl ? "rtl" : "ltr"}
           className={`relative z-[9999] overflow-x-clip overflow-y-visible border-b border-black/10 shadow-[0_2px_12px_rgba(0,0,0,0.15)] ${HEADER_BAR_CLASS}`}
         >
           <div className="w-full min-w-0 px-2 py-2.5 sm:px-3 sm:py-3 lg:px-4">
             <div className="flex min-w-0 flex-nowrap items-center gap-2 sm:gap-3 lg:gap-4">
-              <LocaleLink href="/" className="order-1 shrink-0">
+              {/* Logo — start side: left in LTR, right in RTL */}
+              <LocaleLink href="/" className="shrink-0">
                 <Image
                   src={HEADER_LOGO_SRC}
                   alt="Mandawee"
@@ -486,10 +528,18 @@ export default function Header() {
                 />
               </LocaleLink>
 
+              {/* Pill search */}
               <form
                 onSubmit={handleSearch}
-                className={`group order-2 hidden h-11 min-w-0 max-w-2xl flex-1 items-center rounded-lg border border-gray-200 bg-[#f0f0f1] transition-all duration-200 focus-within:border-primary/40 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/10 md:flex ${isRtl ? "pr-4 pl-1.5" : "pl-4 pr-1.5"}`}
+                className={`group hidden h-11 min-w-0 max-w-3xl flex-1 items-center rounded-full border border-white/25 bg-white shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-white/40 md:flex ${isRtl ? "flex-row-reverse pr-1.5 pl-4" : "pl-1.5 pr-4"}`}
               >
+                <button
+                  type="submit"
+                  className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#ec1b23] text-white transition-colors hover:bg-[#c4161d]"
+                  aria-label={copy.searchButton}
+                >
+                  <Search size={18} />
+                </button>
                 <input
                   value={searchQuery}
                   onChange={(e) => handleSearchInputChange(e.target.value)}
@@ -500,49 +550,51 @@ export default function Header() {
                       ? t("searchPlaceholder")
                       : placeholderText
                   }
-                  className="min-w-0 flex-1 bg-transparent text-[14px] font-medium outline-none placeholder:text-gray-400"
+                  className="min-w-0 flex-1 bg-transparent px-3 text-[14px] font-medium text-gray-900 outline-none placeholder:text-gray-400"
                 />
-                <button
-                  type="submit"
-                  className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-white hover:text-primary"
-                  aria-label={copy.searchButton}
-                >
-                  <Search size={18} />
-                </button>
+                <span className="hidden shrink-0 items-center gap-1 border-s border-gray-200 ps-3 text-xs font-semibold text-gray-500 sm:inline-flex">
+                  {copy.products}
+                </span>
               </form>
 
-              <div className="order-3 ms-auto flex shrink-0 items-center gap-0.5 sm:gap-2 lg:gap-3">
-                <div className="md:hidden">
-                  <MobileNavMenu
-                    closeAll={closeAll}
-                    isRtl={isRtl}
-                    surface="dark"
-                    languages={languageOptions}
-                  />
-                </div>
+              {/* End side: Categories + lang/currency + utils (right in EN, left in PS/Dari) */}
+              <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2 lg:gap-3">
+                {!hideSecondaryNavStrip ? (
+                  <button
+                    type="button"
+                    onMouseEnter={() => setShowCategoriesDropdown(true)}
+                    onClick={() => setShowCategoriesDropdown(true)}
+                    className="hidden h-10 cursor-pointer items-center gap-2 rounded-2xl border border-white/90 bg-white px-3.5 text-sm font-bold text-[#ec1b23] shadow-sm transition-colors hover:bg-white/95 md:inline-flex"
+                  >
+                    <Menu size={18} />
+                    <span>{copy.categories}</span>
+                  </button>
+                ) : null}
 
-                {isAuthenticated ? (
+                {!hideUtilityBar &&
+                (languageOptions.length > 1 || availableCurrencies.length > 1) ? (
+                  <div className="hidden shrink-0 items-center gap-1.5 lg:flex">
+                    {languageOptions.length > 1 ? (
+                      <LanguageSelector
+                        locale={locale}
+                        label={tAuth("languages.select")}
+                        isRtl={isRtl}
+                        variant="pill"
+                        languages={languageOptions}
+                      />
+                    ) : null}
+                    <CurrencySelector isRtl={isRtl} variant="pill" />
+                  </div>
+                ) : null}
+
+                <div className="hidden shrink-0 items-center gap-0.5 md:flex">
                   <div className="relative" ref={accountMenuRef}>
-                    <button
-                      type="button"
-                      onClick={() => setShowAccountMenu((v) => !v)}
-                      className={`group flex min-w-0 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-white/10 sm:px-2 ${showAccountMenu ? "bg-white/10" : ""}`}
-                      aria-label={tAuth("accountMenu.label")}
-                      aria-expanded={showAccountMenu}
-                    >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition-colors group-hover:bg-white/20">
-                        <User size={18} />
-                      </div>
-                      <div className="hidden min-w-0 text-start lg:block">
-                        <p className="truncate text-xs font-bold text-white">
-                          {user?.fullName?.split(" ")[0] ?? copy.account}
-                        </p>
-                        <p className="truncate text-[11px] text-white/75">
-                          {copy.account}
-                        </p>
-                      </div>
-                    </button>
-                    {showAccountMenu ? (
+                    <HeaderUtilButton
+                      label={copy.profile}
+                      icon={<User size={20} strokeWidth={1.75} />}
+                      onClick={handleProfileClick}
+                    />
+                    {isAuthenticated && showAccountMenu ? (
                       <div className="absolute end-0 top-full z-[10001] mt-2 w-52 rounded-xl border border-neutral-200 bg-white py-1 shadow-xl">
                         {user?.role === "ADMIN" ? (
                           <LocaleLink
@@ -587,67 +639,64 @@ export default function Header() {
                       </div>
                     ) : null}
                   </div>
-                ) : (
+                  <HeaderUtilButton
+                    label={copy.favorites}
+                    icon={<Heart size={20} strokeWidth={1.75} />}
+                    href={isAuthenticated ? accountHref : undefined}
+                    onClick={isAuthenticated ? undefined : handleLogin}
+                  />
+                  <HeaderUtilButton
+                    label={copy.cart}
+                    icon={<ShoppingBasket size={20} strokeWidth={1.75} />}
+                    onClick={() => setIsCartOpen(true)}
+                    badge={itemCount}
+                  />
+                </div>
+
+                <div className="flex items-center gap-1 md:hidden">
+                  <MobileNavMenu
+                    closeAll={closeAll}
+                    isRtl={isRtl}
+                    surface="dark"
+                    languages={languageOptions}
+                  />
                   <button
                     type="button"
-                    onClick={handleLogin}
-                    className="group hidden min-w-0 cursor-pointer items-center gap-2 rounded-lg border border-white/90 bg-white px-3 py-2 shadow-sm transition-all hover:bg-white/95 sm:inline-flex"
-                    aria-label={copy.loginRegister}
+                    onClick={() => setIsCartOpen(true)}
+                    className="relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-white transition-colors hover:bg-white/10"
+                    aria-label={t("cartLabel")}
                   >
-                    <LogIn size={15} className="shrink-0 text-[#ec1b23]" />
-                    <span className="truncate text-xs font-bold text-[#ec1b23]">
-                      {copy.loginRegister}
-                    </span>
-                  </button>
-                )}
-
-                {!isAuthenticated ? (
-                  <button
-                    type="button"
-                    onClick={handleLogin}
-                    className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg text-white transition-colors hover:bg-white/10 sm:hidden"
-                    aria-label={copy.loginRegister}
-                  >
-                    <User size={18} />
-                  </button>
-                ) : null}
-
-                <div className="hidden h-8 w-px bg-white/25 sm:block" />
-
-                <button
-                  type="button"
-                  onClick={() => setIsCartOpen(true)}
-                  className="group relative flex min-w-0 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-white/10 sm:px-2"
-                  aria-label={t("cartLabel")}
-                >
-                  <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition-colors group-hover:bg-white/20">
-                    <ShoppingCart size={18} />
+                    <ShoppingBasket size={22} strokeWidth={1.75} />
                     {itemCount > 0 ? (
-                      <span className="absolute -end-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-bold text-[#ec1b23]">
+                      <span className="absolute -end-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-bold text-[#ec1b23]">
                         {itemCount}
                       </span>
                     ) : null}
-                  </div>
-                  <div className="hidden min-w-0 text-start lg:block">
-                    <p className="truncate text-xs font-bold text-white">
-                      {copy.cart}
-                    </p>
-                    <p className="truncate text-[11px] text-white/75">
-                      {itemCount > 0
-                        ? `${itemCount} ${copy.itemsReady}`
-                        : copy.startShopping}
-                    </p>
-                  </div>
-                </button>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleProfileClick}
+                    className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-colors hover:bg-white/10"
+                    aria-label={copy.profile}
+                  >
+                    <User size={20} />
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Always-visible mobile search — Digikala/Naheed pattern */}
+            {/* Mobile search */}
             <form
               onSubmit={handleSearch}
-              className={`relative mt-2 flex h-10 items-center rounded-lg border border-white/20 bg-white px-3 md:hidden ${isRtl ? "flex-row-reverse" : ""}`}
+              className={`relative mt-2 flex h-10 items-center rounded-full border border-white/20 bg-white px-1.5 md:hidden ${isRtl ? "flex-row-reverse" : ""}`}
             >
-              <Search className="shrink-0 text-gray-400" size={17} />
+              <button
+                type="submit"
+                className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#ec1b23] text-white"
+                aria-label={copy.searchButton}
+              >
+                <Search size={16} />
+              </button>
               <input
                 value={searchQuery}
                 onChange={(e) => handleSearchInputChange(e.target.value)}
@@ -658,128 +707,101 @@ export default function Header() {
                     ? copy.mobileSearchPlaceholder
                     : placeholderText
                 }
-                className="min-w-0 flex-1 bg-transparent px-2 text-[14px] font-medium text-gray-900 outline-none placeholder:text-gray-400"
+                className="min-w-0 flex-1 bg-transparent px-2.5 text-[14px] font-medium text-gray-900 outline-none placeholder:text-gray-400"
               />
-              <button
-                type="submit"
-                className="inline-flex h-7 shrink-0 cursor-pointer items-center justify-center rounded-md px-2 text-xs font-bold text-[#ec1b23]"
-              >
-                {copy.searchButton}
-              </button>
             </form>
           </div>
         </header>
 
         {hideSecondaryNavStrip ? null : (
           <nav
-            ref={categoriesRef}
             dir={isRtl ? "rtl" : "ltr"}
-            className="relative z-[9997] hidden border-b border-gray-200 bg-white md:block"
-            onMouseLeave={() => setShowCategoriesDropdown(false)}
+            className="relative z-[9997] hidden border-b border-gray-100 bg-white md:block"
           >
-            <div className="flex h-11 w-full items-center gap-2 px-2 sm:px-3 lg:px-4">
-              <LocaleLink
-                href="/orders"
-                className="hidden shrink-0 items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-600 transition-colors hover:bg-orange-100 lg:inline-flex"
-              >
-                <PackageSearch size={14} />
-                <span>{copy.trackOrder}</span>
-              </LocaleLink>
-
-              {/* Desktop / tablet secondary nav — mobile uses bottom bar */}
-              <div className="hidden min-w-0 flex-1 items-center md:flex">
-                <button
-                  type="button"
-                  onMouseEnter={() => setShowCategoriesDropdown(true)}
-                  onClick={() => setShowCategoriesDropdown(true)}
-                  className={`inline-flex shrink-0 cursor-pointer items-center gap-2 px-2 py-2 text-sm font-bold transition-colors sm:px-3 ${
-                    showCategoriesDropdown
-                      ? "text-[#ec1b23]"
-                      : "text-gray-800 hover:text-[#ec1b23]"
-                  }`}
-                >
-                  <LayoutGrid size={17} />
-                  <span>{copy.categories}</span>
-                </button>
-
-                <NavDivider />
-
+            <div className="flex h-10 w-full items-center px-2 sm:px-3 lg:px-4">
+              <div className="hidden min-w-0 flex-1 items-center justify-start gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] md:flex lg:gap-1.5 [&::-webkit-scrollbar]:hidden">
                 <SecondaryNavLink
-                  href="/deals"
+                  href="/"
                   pathname={pathname}
-                  label={copy.hot}
-                  icon={<span className="text-[15px] leading-none" aria-hidden>🔥</span>}
+                  label={copy.home}
+                  icon={<Home size={13} />}
                 />
-                <NavDivider />
                 <SecondaryNavLink
                   href="/products"
                   pathname={pathname}
                   label={copy.products}
-                  icon={<ShoppingBag size={15} />}
+                  icon={<ShoppingBag size={13} />}
                 />
-                <NavDivider />
                 <SecondaryNavLink
-                  href="/vendors"
+                  href="/deals"
                   pathname={pathname}
-                  label={copy.vendors}
-                  icon={<Store size={15} />}
+                  label={copy.hotDiscounts}
+                  icon={<Tag size={12} />}
+                  badge={copy.hot}
+                  highlight
                 />
-                <NavDivider />
                 <SecondaryNavLink
-                  href="/gifts"
+                  href="/about"
                   pathname={pathname}
-                  label={copy.gifts}
-                  icon={<Gift size={15} />}
+                  label={copy.aboutUs}
+                  icon={<Info size={13} />}
                 />
-                <NavDivider />
+                <SecondaryNavLink
+                  href="/orders"
+                  pathname={pathname}
+                  label={copy.trackOrder}
+                  icon={<PackageSearch size={13} />}
+                />
+                <SecondaryNavLink
+                  href="/vendor/register"
+                  pathname={pathname}
+                  label={copy.becomeVendor}
+                  icon={<Store size={13} />}
+                />
                 <SecondaryNavLink
                   href="/supply-request"
                   pathname={pathname}
                   label={copy.supplyRequest}
-                  icon={<PackageSearch size={15} />}
-                />
-                <NavDivider />
-                <SecondaryNavLink
-                  href="/category/baby-care"
-                  pathname={pathname}
-                  label={copy.babyCare}
-                  icon={<Baby size={15} />}
+                  icon={<PackageSearch size={13} />}
                   className="hidden lg:inline-flex"
                 />
-                <NavDivider />
+                <SecondaryNavLink
+                  href="/gifts"
+                  pathname={pathname}
+                  label={copy.gifts}
+                  icon={<Gift size={13} />}
+                  className="hidden xl:inline-flex"
+                />
                 <SecondaryNavLink
                   href="/hawala"
                   pathname={pathname}
                   label={copy.hawalaShort}
-                  icon={<Banknote size={15} />}
-                  className="hidden xl:inline-flex"
-                />
-                <NavDivider />
-                <SecondaryNavLink
-                  href="/contact"
-                  pathname={pathname}
-                  label={copy.support}
-                  icon={<HelpCircle size={15} />}
+                  icon={<Banknote size={13} />}
                   className="hidden xl:inline-flex"
                 />
 
-                <div className="ms-auto hidden items-center xl:flex">
-                  <NavDivider />
+                <div className="ml-auto flex shrink-0 items-center">
                   <LocaleLink
                     href="/vendor/register"
-                    className="inline-flex items-center px-3 py-2 text-[13px] font-semibold text-[#ec1b23] transition-colors hover:text-[#c4161d]"
+                    className="hidden items-center px-2 py-1.5 text-[11px] font-semibold whitespace-nowrap text-[#ec1b23] transition-colors hover:text-[#c4161d] lg:text-[12px] xl:inline-flex"
                   >
                     {copy.sellOnPlatform}
                   </LocaleLink>
-                </div>
-
-                <div className="ms-auto xl:hidden">
-                  <MobileNavMenu
-                    closeAll={closeAll}
-                    isRtl={isRtl}
-                    surface="light"
-                    languages={languageOptions}
+                  <SecondaryNavLink
+                    href="/contact"
+                    pathname={pathname}
+                    label={copy.support}
+                    icon={<HelpCircle size={13} />}
+                    className="hidden xl:inline-flex"
                   />
+                  <div className="xl:hidden">
+                    <MobileNavMenu
+                      closeAll={closeAll}
+                      isRtl={isRtl}
+                      surface="light"
+                      languages={languageOptions}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

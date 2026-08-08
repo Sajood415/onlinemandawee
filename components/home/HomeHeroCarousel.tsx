@@ -163,12 +163,15 @@ export function HomeHeroCarousel() {
   const goNext = () => setActiveIndex((current) => (current + 1) % slides.length);
 
   return (
-    <section className="w-full min-w-0 bg-white pt-2 sm:pt-0" aria-labelledby="hero-heading">
+    <section
+      className="w-full min-w-0 bg-white pt-2 sm:px-3 sm:pt-3 lg:px-4 lg:pt-4"
+      aria-labelledby="hero-heading"
+    >
       <h1 id="hero-heading" className="sr-only">
         {label}
       </h1>
 
-      {/* ── Mobile: Digikala card (inset, rounded, ~2:1, side peeks) ── */}
+      {/* ── Mobile: inset rounded card ── */}
       <div className="sm:hidden">
         <div className="flex items-stretch gap-1.5 px-2">
           {slides.length > 1 ? (
@@ -228,11 +231,11 @@ export function HomeHeroCarousel() {
         </div>
       </div>
 
-      {/* ── Desktop / tablet: full-bleed frame ── */}
-      <div className="relative hidden sm:block">
+      {/* ── Desktop / tablet: rounded full-width frame ── */}
+      <div className="relative mx-auto hidden max-w-[1600px] sm:block">
         <Link
           href={slide.href}
-          className="relative block h-[clamp(200px,26vw,360px)] w-full min-w-0 overflow-hidden bg-neutral-100 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#ec1b23]/40 lg:h-[clamp(240px,24vw,400px)]"
+          className="relative block h-[clamp(220px,28vw,380px)] w-full min-w-0 overflow-hidden rounded-2xl bg-neutral-100 outline-none shadow-[0_10px_36px_rgba(15,23,42,0.1)] ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#ec1b23]/40 sm:rounded-3xl lg:h-[clamp(260px,26vw,420px)]"
         >
           <HeroSlideMedia slide={slide} label={label} />
           <HomeBannerContentOverlay

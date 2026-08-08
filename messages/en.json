@@ -9,15 +9,47 @@
       "promo": "Free Delivery on Orders Above $100",
       "tagline": "Delivering everyday essentials with convenience your family deserves.",
       "shopByCategory": "Shopping by category",
+      "shopByCategorySubtitle": "Browse popular categories and find what you need faster.",
       "amazingOffer": "Amazing Offer",
+      "specialDiscounts": "Special discounts",
+      "specialDiscountsSubtitle": "Discounted products from active sellers across the marketplace.",
+      "latestProducts": "Latest products",
+      "latestProductsSubtitle": "Fresh listings from active sellers on Mandawee.",
+      "selectedCategories": "Selected categories",
       "viewAllCategories": "View all",
       "viewAll": "View All",
       "featuredTitle": "Popular picks for your pantry",
       "addToCart": "Add to cart",
+      "add": "Add",
       "addedToCart": "Added to your cart",
       "addError": "Could not add — try again",
+      "available": "Available",
+      "unavailable": "Unavailable",
+      "addToWishlist": "Add to favorites",
+      "removeFromWishlist": "Remove from favorites",
       "unitPrice": "Unit price",
       "per": "/ per",
+      "featured": {
+        "badge": "Mandawee Featured",
+        "badgeShort": "Official",
+        "title": "Mandawee Featured",
+        "subtitle": "Shop official Mandawee products from our platform store — reliable delivery, quality checks, and trusted terms.",
+        "cta": "View all products",
+        "benefits": {
+          "delivery": {
+            "title": "Special delivery",
+            "desc": "Faster shipping on featured offers"
+          },
+          "quality": {
+            "title": "Quality checked",
+            "desc": "Reviewed by our marketplace team"
+          },
+          "guarantee": {
+            "title": "Direct guarantee",
+            "desc": "Clear terms you can rely on"
+          }
+        }
+      },
       "hero": {
         "shopNowFallback": "Shop now",
         "slideFallbackLabel": "Homepage hero banner",
@@ -37,7 +69,8 @@
       "categories": {
         "previous": "Previous categories",
         "next": "Next categories",
-        "noImage": "No image"
+        "noImage": "No image",
+        "productCount": "{count} products"
       },
       "stackedSections": {
         "qualityGrocery": "Quality grocery products for a better living",

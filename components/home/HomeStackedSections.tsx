@@ -76,16 +76,19 @@ export function HomeStackedSections() {
   }, []);
 
   return (
-    <div className="w-full min-w-0 bg-[#F5F5F5]">
+    <div className="w-full min-w-0 bg-[#F3F5F8] pb-6">
       {HOME_STACKED_SECTIONS.map((section) => (
         <div key={section.id} className="w-full min-w-0">
-          <div className="home-content-padding mx-auto w-full min-w-0 max-w-[1600px] py-4 sm:py-6 lg:py-8">
-            <HomeProductRail
-              title={t(section.titleKey)}
-              viewAllHref={section.href}
-              productIds={section.productIds}
-              sharedVendorProducts={sharedVendorProducts}
-            />
+          <div className="home-content-padding mx-auto w-full min-w-0 max-w-[1600px] py-3 sm:py-4 lg:py-5">
+            <div className="rounded-2xl bg-white px-3 py-4 shadow-sm sm:rounded-3xl sm:px-5 sm:py-6 lg:px-6">
+              <HomeProductRail
+                title={t(section.titleKey)}
+                viewAllHref={section.href}
+                productIds={section.productIds}
+                sharedVendorProducts={sharedVendorProducts}
+                shell
+              />
+            </div>
           </div>
         </div>
       ))}

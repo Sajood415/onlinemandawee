@@ -283,7 +283,28 @@ export function HomeCouponDealsRail() {
   );
 
   return (
-    <section className="w-full min-w-0 pb-4">
+    <section className="w-full min-w-0 rounded-2xl bg-white px-3 py-4 shadow-sm sm:rounded-3xl sm:px-5 sm:py-6 lg:px-6">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-lg font-bold tracking-tight text-[#0F3460] sm:text-xl lg:text-2xl">
+              {t("specialDiscounts")}
+            </h2>
+            <span className="inline-flex items-center rounded-full bg-[#ec1b23]/10 px-2 py-0.5 text-xs font-bold text-[#ec1b23]">
+              {dealProducts.length}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-gray-500 sm:text-sm">{t("specialDiscountsSubtitle")}</p>
+        </div>
+        <Link
+          href="/deals"
+          className="inline-flex items-center gap-1.5 rounded-full bg-[#0F3460] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#0a2540] sm:text-sm"
+        >
+          {t("viewAll")}
+          {isRtl ? <ChevronLeft className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+        </Link>
+      </div>
+
       <div className="overflow-hidden rounded-xl bg-[#0F3460] p-1.5 sm:rounded-2xl sm:p-2.5">
         <div className="flex flex-col overflow-hidden rounded-lg sm:flex-row sm:rounded-xl">
           <div className={`order-1 shrink-0 ${isRtl ? "sm:order-1" : "sm:order-2"}`}>{promoAside}</div>

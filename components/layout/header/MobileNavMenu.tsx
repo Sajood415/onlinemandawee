@@ -9,6 +9,7 @@ import {
   Gift,
   HelpCircle,
   LogOut,
+  Menu,
   PackageSearch,
   Store,
   UserCircle,
@@ -106,17 +107,20 @@ export function MobileNavMenu({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`relative inline-flex cursor-pointer items-center gap-1.5 px-2.5 py-2 text-[12px] font-medium whitespace-nowrap transition-colors after:absolute after:inset-x-2 after:bottom-0.5 after:h-[2px] after:rounded-full after:bg-[#ec1b23] after:transition-transform after:duration-200 ${
+        aria-expanded={isOpen}
+        aria-label={copy.more}
+        className={`relative inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-2.5 py-2 text-[12px] font-medium whitespace-nowrap transition-colors ${
           surface === "light"
             ? isOpen
-              ? "font-semibold text-[#ec1b23] after:scale-x-100"
-              : "text-gray-600 after:scale-x-0 hover:text-gray-900 hover:after:scale-x-100"
+              ? "bg-gray-100 font-semibold text-[#ec1b23]"
+              : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
             : isOpen
-              ? "text-white after:scale-x-100"
-              : "text-white/90 after:scale-x-0 hover:text-white hover:after:scale-x-100"
+              ? "bg-white/10 text-white"
+              : "text-white/90 hover:bg-white/10 hover:text-white"
         }`}
       >
-        <span>{copy.more}</span>
+        <Menu size={18} strokeWidth={2} />
+        <span className="hidden sm:inline">{copy.more}</span>
         <ChevronDown
           size={12}
           className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}

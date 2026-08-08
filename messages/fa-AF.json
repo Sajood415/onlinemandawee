@@ -9,15 +9,47 @@
       "promo": "تحویل رایگان برای سفارش‌های بالای $100",
       "tagline": "ارسال نیازهای روزانه خانواده با راحتی بیشتر.",
       "shopByCategory": "خرید بر اساس دسته",
+      "shopByCategorySubtitle": "دسته‌های محبوب را ببینید و سریع‌تر آنچه لازم دارید پیدا کنید.",
       "amazingOffer": "پیشنهاد شگفت‌انگیز",
+      "specialDiscounts": "تخفیف‌های ویژه",
+      "specialDiscountsSubtitle": "محصولات تخفیف‌دار از فروشندگان فعال بازار.",
+      "latestProducts": "جدیدترین محصولات",
+      "latestProductsSubtitle": "تازه‌ترین فهرست‌ها از فروشندگان فعال منداوی.",
+      "selectedCategories": "دسته‌های منتخب",
       "viewAllCategories": "مشاهده همه",
       "viewAll": "مشاهده همه",
       "featuredTitle": "منتخب محبوب برای آشپزخانه شما",
       "addToCart": "افزودن به سبد",
+      "add": "افزودن",
       "addedToCart": "به سبد اضافه شد",
       "addError": "افزودن نشد — دوباره تلاش کنید",
+      "available": "موجود",
+      "unavailable": "ناموجود",
+      "addToWishlist": "افزودن به علاقه‌مندی‌ها",
+      "removeFromWishlist": "حذف از علاقه‌مندی‌ها",
       "unitPrice": "قیمت واحد",
       "per": "/ برای هر",
+      "featured": {
+        "badge": "منداوی ویژه",
+        "badgeShort": "رسمی",
+        "title": "منداوی ویژه",
+        "subtitle": "محصولات رسمی منداوی را از فروشگاه پلتفرم ما بخرید — تحویل مطمئن، کنترل کیفیت و شرایط قابل اعتماد.",
+        "cta": "مشاهده همه محصولات",
+        "benefits": {
+          "delivery": {
+            "title": "ارسال ویژه",
+            "desc": "ارسال سریع‌تر روی پیشنهادهای ویژه"
+          },
+          "quality": {
+            "title": "کنترل کیفیت",
+            "desc": "بررسی‌شده توسط تیم بازار"
+          },
+          "guarantee": {
+            "title": "ضمانت مستقیم",
+            "desc": "شرایط روشن و قابل اطمینان"
+          }
+        }
+      },
       "hero": {
         "shopNowFallback": "همین حالا خرید کنید",
         "slideFallbackLabel": "بنر اصلی صفحه خانه",
@@ -37,7 +69,8 @@
       "categories": {
         "previous": "دسته‌های قبلی",
         "next": "دسته‌های بعدی",
-        "noImage": "بدون تصویر"
+        "noImage": "بدون تصویر",
+        "productCount": "{count} محصول"
       },
       "stackedSections": {
         "qualityGrocery": "محصولات خوراکی باکیفیت برای زندگی بهتر",
