@@ -47,6 +47,7 @@ export type HeaderCopy = {
   hotDiscounts: string;
   categories: string;
   megaAllIn: string;
+  megaCategoriesOf: string;
   megaSubcategories: string;
   megaRelatedCategories: string;
   megaNoSubcategories: string;
@@ -109,6 +110,7 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     hotDiscounts: "Discounts",
     categories: "Categories",
     megaAllIn: "All in",
+    megaCategoriesOf: "Categories of {name}",
     megaSubcategories: "Subcategories",
     megaRelatedCategories: "Related categories",
     megaNoSubcategories: "No subcategories yet",
@@ -169,6 +171,7 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     hotDiscounts: "تخفیفونه",
     categories: "کټګورۍ",
     megaAllIn: "ټول په",
+    megaCategoriesOf: "د {name} کټګورۍ",
     megaSubcategories: "فرعي کټګورۍ",
     megaRelatedCategories: "اړوند کټګورۍ",
     megaNoSubcategories: "لا تر اوسه فرعي کټګورۍ نشته",
@@ -229,6 +232,7 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     hotDiscounts: "تخفیف‌ها",
     categories: "دسته‌بندی‌ها",
     megaAllIn: "همه در",
+    megaCategoriesOf: "دسته‌های {name}",
     megaSubcategories: "زیردسته‌ها",
     megaRelatedCategories: "دسته‌های مرتبط",
     megaNoSubcategories: "هنوز زیردسته‌ای موجود نیست",

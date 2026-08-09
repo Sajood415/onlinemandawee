@@ -45,6 +45,7 @@ import {
 import { CurrencySelector } from "@/components/layout/header/CurrencySelector";
 import { LanguageSelector } from "@/components/layout/header/LanguageSelector";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
+import { CategoriesMegaMenu } from "@/components/layout/header/CategoriesMegaMenu";
 import { MobileNavMenu } from "@/components/layout/header/MobileNavMenu";
 import { resolveCategoryLabel } from "@/lib/categories/category-labels";
 import { isVendorShopPathname } from "@/lib/routing/vendor-storefront-routes";
@@ -103,7 +104,14 @@ function getFallbackCategories(locale: SupportedLocale) {
     slug,
     href: `/category/${slug}`,
     label: localeLabels[locale],
-    children: [],
+    image: undefined as string | undefined,
+    children: [] as {
+      id: string;
+      slug: string;
+      href: string;
+      label: string;
+      image?: string;
+    }[],
   }));
 }
 
@@ -281,11 +289,13 @@ export default function Header() {
       id: string;
       name: string;
       slug: string;
+      image?: string;
       translations?: unknown;
       children?: {
         id: string;
         name: string;
         slug: string;
+        image?: string;
         translations?: unknown;
       }[];
     }[]
@@ -306,11 +316,13 @@ export default function Header() {
           safeLocale,
           category.translations,
         ),
+        image: category.image,
         children: (category.children ?? []).map((child) => ({
           id: child.id,
           slug: child.slug,
           href: `/category/${child.slug}`,
           label: resolveCategoryLabel(child.slug, child.name, safeLocale, child.translations),
+          image: child.image,
         })),
       }));
     }
@@ -322,19 +334,6 @@ export default function Header() {
     if (!activeMegaCategorySlug) return categoryItems[0];
     return categoryItems.find((item) => item.slug === activeMegaCategorySlug) ?? categoryItems[0];
   }, [activeMegaCategorySlug, categoryItems]);
-
-  const megaRelatedCategories = useMemo(() => {
-    if (!activeMegaCategory) return [];
-    return categoryItems.filter((item) => item.slug !== activeMegaCategory.slug);
-  }, [activeMegaCategory, categoryItems]);
-
-  const megaRelatedColumns = useMemo(() => {
-    const perColumn = Math.max(4, Math.ceil(megaRelatedCategories.length / 2));
-    return [
-      megaRelatedCategories.slice(0, perColumn),
-      megaRelatedCategories.slice(perColumn, perColumn * 2),
-    ].filter((column) => column.length > 0);
-  }, [megaRelatedCategories]);
 
   const cartSheetVariants = useMemo(() => getCartSheetVariants(isRtl), [isRtl]);
 
@@ -385,7 +384,20 @@ export default function Header() {
         const res = await fetch("/api/catalog/categories");
         if (!res.ok) return;
         const data = await parseApiResponse<
-          { id: string; name: string; slug: string; translations?: unknown }[]
+          {
+            id: string;
+            name: string;
+            slug: string;
+            image?: string;
+            translations?: unknown;
+            children?: {
+              id: string;
+              name: string;
+              slug: string;
+              image?: string;
+              translations?: unknown;
+            }[];
+          }[]
         >(res);
         if (mounted) setCatalogCategories(data);
       } catch {
@@ -808,140 +820,16 @@ export default function Header() {
 
             <AnimatePresence>
               {showCategoriesDropdown ? (
-                <motion.div
+                <CategoriesMegaMenu
+                  categories={categoryItems}
+                  activeCategory={activeMegaCategory}
+                  onSelectCategory={setActiveMegaCategorySlug}
+                  onClose={closeAll}
+                  isRtl={isRtl}
+                  copy={copy}
+                  getCategoryIcon={getCategoryIcon}
                   variants={dropdownVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  className="absolute inset-x-0 top-full z-[9999] border-t border-gray-200 bg-white shadow-2xl"
-                >
-                  <div
-                    className="flex w-full min-h-0 flex-col px-2 py-3 sm:px-3 lg:px-4"
-                    style={{ height: "min(520px, calc(100dvh - var(--header-height) - 8px))" }}
-                  >
-                      <div className="mb-3 flex shrink-0 items-center justify-between gap-4">
-                        <div>
-                          <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
-                            {copy.storeDepartments}
-                          </p>
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {copy.exploreCategories}
-                          </h3>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={closeAll}
-                          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200"
-                          aria-label={copy.close}
-                        >
-                          <X size={18} />
-                        </button>
-                      </div>
-
-                      <div
-                        className={`min-h-0 flex-1 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm ${
-                          isRtl ? "flex flex-row-reverse" : "flex"
-                        }`}
-                      >
-                        <aside
-                          className={`h-full w-56 shrink-0 overflow-y-auto bg-[#fafafa] py-2 ${
-                            isRtl ? "border-l border-gray-200" : "border-r border-gray-200"
-                          }`}
-                        >
-                          {categoryItems.map((category) => {
-                            const isActive = activeMegaCategory?.slug === category.slug;
-                            return (
-                              <button
-                                key={category.id}
-                                type="button"
-                                onMouseEnter={() => setActiveMegaCategorySlug(category.slug)}
-                                onFocus={() => setActiveMegaCategorySlug(category.slug)}
-                                onClick={() => setActiveMegaCategorySlug(category.slug)}
-                                className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
-                                  isRtl ? "text-right" : "text-left"
-                                } ${
-                                  isActive
-                                    ? "bg-white font-semibold text-[#ec1b23]"
-                                    : "text-gray-700 hover:bg-white hover:text-gray-900"
-                                }`}
-                              >
-                                <span className="shrink-0 text-gray-500">
-                                  {getCategoryIcon(category.slug, 16)}
-                                </span>
-                                <span className="line-clamp-1">{category.label}</span>
-                              </button>
-                            );
-                          })}
-                        </aside>
-
-                        <div className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-5">
-                          {activeMegaCategory ? (
-                            <>
-                              <div className="mb-4 border-b border-gray-100 pb-3">
-                                <LocaleLink
-                                  href={activeMegaCategory.href}
-                                  onClick={closeAll}
-                                  className="inline-flex items-center gap-2 text-sm font-semibold text-[#0f3460] hover:text-[#ec1b23]"
-                                >
-                                  <span>{copy.megaAllIn}</span>
-                                  <span>{activeMegaCategory.label}</span>
-                                  <ChevronRight size={14} />
-                                </LocaleLink>
-                              </div>
-
-                              <div
-                                className={`grid grid-cols-1 gap-6 ${
-                                  activeMegaCategory.children.length > 0
-                                    ? "md:grid-cols-3"
-                                    : "md:grid-cols-2"
-                                }`}
-                              >
-                                {activeMegaCategory.children.length > 0 ? (
-                                  <div>
-                                    <h4 className="mb-3 text-sm font-bold text-gray-900">
-                                      {copy.megaSubcategories}
-                                    </h4>
-                                    <div className="space-y-2">
-                                      {activeMegaCategory.children.map((child) => (
-                                        <LocaleLink
-                                          key={child.id}
-                                          href={child.href}
-                                          onClick={closeAll}
-                                          className="block text-sm text-gray-600 transition-colors hover:text-[#ec1b23]"
-                                        >
-                                          {child.label}
-                                        </LocaleLink>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ) : null}
-
-                                {megaRelatedColumns.map((column, index) => (
-                                  <div key={`mega-related-col-${index}`}>
-                                    <h4 className="mb-3 text-sm font-bold text-gray-900">
-                                      {copy.megaRelatedCategories}
-                                    </h4>
-                                    <div className="space-y-2">
-                                      {column.map((item) => (
-                                        <LocaleLink
-                                          key={item.id}
-                                          href={item.href}
-                                          onClick={closeAll}
-                                          className="block text-sm text-gray-600 transition-colors hover:text-[#ec1b23]"
-                                        >
-                                          {item.label}
-                                        </LocaleLink>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </>
-                          ) : null}
-                        </div>
-                      </div>
-                  </div>
-                </motion.div>
+                />
               ) : null}
             </AnimatePresence>
           </nav>
@@ -1167,34 +1055,4 @@ export default function Header() {
     </>
   );
 }
-
-/* ================= COMPONENT HELPERS ================= */
-
-function CategoryTile({
-  href,
-  slug,
-  label,
-  onClick,
-}: {
-  href: string;
-  slug: string;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <LocaleLink
-      href={href}
-      onClick={onClick}
-      className="group flex flex-col items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50 p-4 text-center transition-all hover:border-[#ec1b23]/20 hover:bg-white hover:shadow-md"
-    >
-      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#ec1b23] shadow-sm ring-1 ring-gray-100 transition-transform group-hover:scale-105">
-        {getCategoryIcon(slug, 20)}
-      </span>
-      <span className="line-clamp-2 text-xs font-medium leading-snug text-gray-700 group-hover:text-gray-900">
-        {label}
-      </span>
-    </LocaleLink>
-  );
-}
-
 
