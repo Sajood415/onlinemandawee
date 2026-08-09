@@ -14,20 +14,11 @@ type VendorCardProps = {
 
 export function VendorCard({ vendor }: VendorCardProps) {
   const t = useTranslations("VendorsPages.listing");
-  const tIndustry = useTranslations("VendorPages.register.wizard.store.industryTypes");
   const locale = useLocale() as SupportedLocale;
   const isRtl = locale !== "en";
   const productLabel = vendor.productCount === 1 ? t("product") : t("products");
 
-  const industryLabel = vendor.industryType
-    ? (() => {
-        try {
-          return tIndustry(vendor.industryType);
-        } catch {
-          return vendor.industryType;
-        }
-      })()
-    : null;
+  const industryLabel = vendor.industryLabel ?? vendor.industryType ?? null;
 
   return (
     <article className="group flex h-full flex-col overflow-hidden border border-neutral-200/80 bg-white transition hover:border-[#0F3460]/25">

@@ -16,6 +16,7 @@ import { VendorKycDocumentRepository } from "@/repositories/vendor-kyc-document.
 import { VendorPayoutMethodRepository } from "@/repositories/vendor-payout-method.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
 import { AuthService, type RequestMetadata } from "@/services/auth.service";
+import { ShopTypeService } from "@/services/shop-type.service";
 import {
   startVendorOnboardingSchema,
   vendorAddressSchema,
@@ -44,7 +45,8 @@ export class VendorOnboardingService {
     private readonly vendorAddressRepository = new VendorAddressRepository(),
     private readonly vendorPayoutMethodRepository = new VendorPayoutMethodRepository(),
     private readonly vendorAgreementAcceptanceRepository = new VendorAgreementAcceptanceRepository(),
-    private readonly auditLogRepository = new AuditLogRepository()
+    private readonly auditLogRepository = new AuditLogRepository(),
+    private readonly shopTypeService = new ShopTypeService()
   ) {}
 
   async start(input: StartVendorOnboardingInput, metadata: RequestMetadata) {
@@ -101,6 +103,9 @@ export class VendorOnboardingService {
   async saveStoreInformation(auth: AuthenticatedUser, input: StoreInformationInput) {
     const vendorProfile = await this.getVendorProfileByUserId(auth.id);
     this.assertEditable(vendorProfile.status);
+    await this.shopTypeService.assertAssignableSlug(input.industryType, {
+      allowSlug: vendorProfile.industryType,
+    });
     const storeSlug = await this.buildUniqueStoreSlug(input.storeName, vendorProfile.id);
 
     const updated = await this.vendorProfileRepository.updateStoreInformation({

@@ -24,6 +24,7 @@ type VendorDetail = {
   sellerType: SellerType;
   businessType: string | null;
   industryType: string | null;
+  industryLabel?: string | null;
   logoUrl: string | null;
   businessLicenseUrl: string | null;
   description: string | null;
@@ -585,9 +586,10 @@ export default function AdminVendorDetailPage() {
                   : (vendor.businessType ?? "—")}
               </Field>
               <Field label={td("fields.industry")}>
-                {vendor.industryType
-                  ? vendor.industryType.replaceAll("_", " ")
-                  : "—"}
+                {vendor.industryLabel ??
+                  (vendor.industryType
+                    ? vendor.industryType.replaceAll("_", " ")
+                    : "—")}
               </Field>
               <Field label={td("fields.onboardingStep")}>
                 {vendor.onboardingStep.replaceAll("_", " ")}

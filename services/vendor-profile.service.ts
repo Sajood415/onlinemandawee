@@ -1,5 +1,5 @@
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
-import type { BusinessType, IndustryType } from "@/domain/vendor/vendor-types";
+import type { BusinessType } from "@/domain/vendor/vendor-types";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { slugify } from "@/lib/utils/slug";
@@ -7,11 +7,12 @@ import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { VendorAddressRepository } from "@/repositories/vendor-address.repository";
 import { VendorPayoutMethodRepository } from "@/repositories/vendor-payout-method.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
+import { ShopTypeService } from "@/services/shop-type.service";
 
 type UpdateBusinessInfoInput = {
   storeName: string;
   businessType: BusinessType;
-  industryType?: IndustryType;
+  industryType?: string;
   logoUrl?: string;
   description?: string;
 };
@@ -47,7 +48,8 @@ export class VendorProfileService {
     private readonly vendorProfileRepository = new VendorProfileRepository(),
     private readonly vendorAddressRepository = new VendorAddressRepository(),
     private readonly vendorPayoutMethodRepository = new VendorPayoutMethodRepository(),
-    private readonly auditLogRepository = new AuditLogRepository()
+    private readonly auditLogRepository = new AuditLogRepository(),
+    private readonly shopTypeService = new ShopTypeService()
   ) {}
 
   async getProfile(auth: AuthenticatedUser) {
@@ -90,6 +92,9 @@ export class VendorProfileService {
 
   async updateBusinessInfo(auth: AuthenticatedUser, input: UpdateBusinessInfoInput) {
     const vendor = await this.requireActiveVendor(auth.id);
+    await this.shopTypeService.assertAssignableSlug(input.industryType, {
+      allowSlug: vendor.industryType,
+    });
     const storeSlug = await this.buildUniqueStoreSlug(input.storeName, vendor.id);
 
     const updated = await this.vendorProfileRepository.updateStoreInformation({

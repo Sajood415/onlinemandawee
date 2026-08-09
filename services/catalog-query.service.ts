@@ -9,10 +9,10 @@ import { isMongoObjectId } from "@/lib/db/object-id";
 import { prisma } from "@/lib/db/prisma";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
-import type { IndustryType } from "@/domain/vendor/vendor-types";
 import { CategoryRepository } from "@/repositories/category.repository";
 import { ProductRepository } from "@/repositories/product.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
+import { ShopTypeService } from "@/services/shop-type.service";
 import type { PublicProductsQuery } from "@/validators/catalog.validator";
 
 type PublicListFilters = {
@@ -77,7 +77,8 @@ export class CatalogQueryService {
   constructor(
     private readonly categoryRepository = new CategoryRepository(),
     private readonly productRepository = new ProductRepository(),
-    private readonly vendorProfileRepository = new VendorProfileRepository()
+    private readonly vendorProfileRepository = new VendorProfileRepository(),
+    private readonly shopTypeService = new ShopTypeService()
   ) {}
 
   async listCategories() {
@@ -390,10 +391,11 @@ export class CatalogQueryService {
     return { ...product, availableCoupons };
   }
 
-  async listVendors(filters?: { industry?: IndustryType }) {
+  async listVendors(filters?: { industry?: string; locale?: string }) {
     const vendors = await this.vendorProfileRepository.listPublic(
       filters?.industry ? { industryType: filters.industry } : undefined
     );
+    const labelMap = await this.shopTypeService.resolveLabelMap(filters?.locale ?? "en");
 
     return vendors.map((vendor) => ({
       id: vendor.id,
@@ -402,6 +404,9 @@ export class CatalogQueryService {
       logoUrl: vendor.logoUrl,
       description: vendor.description,
       industryType: vendor.industryType,
+      industryLabel: vendor.industryType
+        ? labelMap.get(vendor.industryType) ?? vendor.industryType
+        : null,
       productCount: vendor._count.products,
       approvedAt: vendor.approvedAt?.toISOString() ?? null,
     }));

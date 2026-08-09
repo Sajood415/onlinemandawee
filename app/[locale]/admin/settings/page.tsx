@@ -35,7 +35,24 @@ type BlockedKeyword = {
   updatedAt: string;
 };
 
-type SettingsTab = "languages" | "currencies" | "warehouse" | "keywords";
+type ShopTypeRow = {
+  id: string;
+  slug: string;
+  name: string;
+  namePs: string;
+  nameFa: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type SettingsTab =
+  | "languages"
+  | "currencies"
+  | "warehouse"
+  | "keywords"
+  | "shopTypes";
 
 const INPUT =
   "w-full max-w-xs rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
@@ -77,6 +94,15 @@ export default function AdminSettingsPage() {
   const [keywordsLoading, setKeywordsLoading] = useState(false);
   const [addingKeyword, setAddingKeyword] = useState(false);
   const [deletingKeywordId, setDeletingKeywordId] = useState<string | null>(null);
+  const [shopTypes, setShopTypes] = useState<ShopTypeRow[]>([]);
+  const [shopTypesLoading, setShopTypesLoading] = useState(false);
+  const [shopTypeName, setShopTypeName] = useState("");
+  const [shopTypeNamePs, setShopTypeNamePs] = useState("");
+  const [shopTypeNameFa, setShopTypeNameFa] = useState("");
+  const [shopTypeSort, setShopTypeSort] = useState("0");
+  const [addingShopType, setAddingShopType] = useState(false);
+  const [savingShopTypeId, setSavingShopTypeId] = useState<string | null>(null);
+  const [deletingShopTypeId, setDeletingShopTypeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +123,22 @@ export default function AdminSettingsPage() {
     }
   }, [t]);
 
+  const loadShopTypes = useCallback(async () => {
+    setShopTypesLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/shop-types");
+      const data = await parseApiResponse<ShopTypeRow[]>(res);
+      setShopTypes(data);
+    } catch (e) {
+      toast.error(
+        t("toasts.shopTypeLoadFailed"),
+        e instanceof Error ? e.message : t("toasts.unknownError")
+      );
+    } finally {
+      setShopTypesLoading(false);
+    }
+  }, [t]);
+
   const loadSettings = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -110,13 +152,13 @@ export default function AdminSettingsPage() {
       setWarehouseCity(data.warehouseCity ?? "");
       setWarehouseCountry(data.warehouseCountry ?? "");
       setWarehousePostalCode(data.warehousePostalCode ?? "");
-      await loadKeywords();
+      await Promise.all([loadKeywords(), loadShopTypes()]);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("loadError"));
     } finally {
       setLoading(false);
     }
-  }, [loadKeywords, t]);
+  }, [loadKeywords, loadShopTypes, t]);
 
   useEffect(() => {
     if (!authLoading && user) void loadSettings();
@@ -229,6 +271,115 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const onAddShopType = async () => {
+    const name = shopTypeName.trim();
+    if (!name) return;
+    setAddingShopType(true);
+    try {
+      const sortOrder = Number.parseInt(shopTypeSort, 10);
+      const res = await fetchWithAuth("/api/admin/shop-types", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
+          translations: {
+            ps: shopTypeNamePs.trim() ? { name: shopTypeNamePs.trim() } : undefined,
+            "fa-AF": shopTypeNameFa.trim()
+              ? { name: shopTypeNameFa.trim() }
+              : undefined,
+          },
+        }),
+      });
+      const created = await parseApiResponse<ShopTypeRow>(res);
+      setShopTypes((current) =>
+        [...current, created].sort(
+          (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)
+        )
+      );
+      setShopTypeName("");
+      setShopTypeNamePs("");
+      setShopTypeNameFa("");
+      setShopTypeSort("0");
+      toast.success(t("toasts.shopTypeAdded"));
+    } catch (e) {
+      toast.error(
+        t("toasts.shopTypeAddFailed"),
+        e instanceof Error ? e.message : t("toasts.unknownError")
+      );
+    } finally {
+      setAddingShopType(false);
+    }
+  };
+
+  const onPatchShopType = async (
+    id: string,
+    patch: Partial<{
+      name: string;
+      namePs: string;
+      nameFa: string;
+      isActive: boolean;
+      sortOrder: number;
+    }>
+  ) => {
+    setSavingShopTypeId(id);
+    try {
+      const current = shopTypes.find((item) => item.id === id);
+      if (!current) return;
+      const res = await fetchWithAuth(`/api/admin/shop-types/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: patch.name ?? current.name,
+          isActive: patch.isActive ?? current.isActive,
+          sortOrder: patch.sortOrder ?? current.sortOrder,
+          translations: {
+            ps: {
+              name: (patch.namePs ?? current.namePs).trim() || undefined,
+            },
+            "fa-AF": {
+              name: (patch.nameFa ?? current.nameFa).trim() || undefined,
+            },
+          },
+        }),
+      });
+      const updated = await parseApiResponse<ShopTypeRow>(res);
+      setShopTypes((rows) =>
+        rows
+          .map((row) => (row.id === id ? updated : row))
+          .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+      );
+      toast.success(t("toasts.shopTypeSaved"));
+    } catch (e) {
+      toast.error(
+        t("toasts.shopTypeSaveFailed"),
+        e instanceof Error ? e.message : t("toasts.unknownError")
+      );
+    } finally {
+      setSavingShopTypeId(null);
+    }
+  };
+
+  const onDeleteShopType = async (id: string) => {
+    if (!window.confirm(t("shopTypesDeleteConfirm"))) return;
+    setDeletingShopTypeId(id);
+    try {
+      const res = await fetchWithAuth(`/api/admin/shop-types/${id}`, {
+        method: "DELETE",
+      });
+      await parseApiResponse(res);
+      setShopTypes((current) => current.filter((item) => item.id !== id));
+      toast.success(t("toasts.shopTypeDeleted"));
+    } catch (e) {
+      toast.error(
+        t("toasts.shopTypeDeleteFailed"),
+        e instanceof Error ? e.message : t("toasts.unknownError")
+      );
+    } finally {
+      setDeletingShopTypeId(null);
+    }
+  };
+
   if (authLoading || !user) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -241,6 +392,7 @@ export default function AdminSettingsPage() {
     { id: "languages", label: t("tabs.languages") },
     { id: "currencies", label: t("tabs.currencies") },
     { id: "warehouse", label: t("tabs.warehouse") },
+    { id: "shopTypes", label: t("tabs.shopTypes") },
     { id: "keywords", label: t("tabs.keywords") },
   ];
 
@@ -290,7 +442,11 @@ export default function AdminSettingsPage() {
           <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
         </div>
       ) : (
-        <section className="max-w-2xl rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+        <section
+          className={`rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6 ${
+            tab === "shopTypes" ? "max-w-4xl" : "max-w-2xl"
+          }`}
+        >
           {tab === "languages" ? (
             <>
               <h2 className="text-base font-semibold text-neutral-900">{t("languagesTitle")}</h2>
@@ -456,10 +612,176 @@ export default function AdminSettingsPage() {
               </div>
             </>
           ) : null}
+
+          {tab === "shopTypes" ? (
+            <>
+              <h2 className="text-lg font-semibold text-neutral-900">{t("shopTypesTitle")}</h2>
+              <p className="mt-1 text-sm text-neutral-600">{t("shopTypesBody")}</p>
+
+              <form
+                className="mt-4 grid gap-3 sm:grid-cols-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void onAddShopType();
+                }}
+              >
+                <input
+                  type="text"
+                  className={`${INPUT} max-w-none`}
+                  value={shopTypeName}
+                  onChange={(event) => setShopTypeName(event.target.value)}
+                  placeholder={t("shopTypesNameEn")}
+                  maxLength={120}
+                />
+                <input
+                  type="text"
+                  className={`${INPUT} max-w-none`}
+                  value={shopTypeNamePs}
+                  onChange={(event) => setShopTypeNamePs(event.target.value)}
+                  placeholder={t("shopTypesNamePs")}
+                  maxLength={120}
+                />
+                <input
+                  type="text"
+                  className={`${INPUT} max-w-none`}
+                  value={shopTypeNameFa}
+                  onChange={(event) => setShopTypeNameFa(event.target.value)}
+                  placeholder={t("shopTypesNameFa")}
+                  maxLength={120}
+                />
+                <input
+                  type="number"
+                  min={0}
+                  className={`${INPUT} max-w-none`}
+                  value={shopTypeSort}
+                  onChange={(event) => setShopTypeSort(event.target.value)}
+                  placeholder={t("shopTypesSort")}
+                />
+                <button
+                  type="submit"
+                  disabled={addingShopType || !shopTypeName.trim()}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60 sm:col-span-2 sm:w-fit"
+                >
+                  {addingShopType ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  {addingShopType ? t("shopTypesAdding") : t("shopTypesAdd")}
+                </button>
+              </form>
+
+              <div className="mt-4 space-y-3">
+                {shopTypesLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
+                  </div>
+                ) : shopTypes.length === 0 ? (
+                  <p className="text-sm text-neutral-500">{t("shopTypesEmpty")}</p>
+                ) : (
+                  shopTypes.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-lg border border-neutral-200 p-3"
+                    >
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                          {item.slug}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <label className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-700">
+                            <input
+                              type="checkbox"
+                              checked={item.isActive}
+                              disabled={savingShopTypeId === item.id}
+                              onChange={(event) =>
+                                void onPatchShopType(item.id, {
+                                  isActive: event.target.checked,
+                                })
+                              }
+                            />
+                            {item.isActive ? t("shopTypesActive") : t("shopTypesInactive")}
+                          </label>
+                          <button
+                            type="button"
+                            disabled={deletingShopTypeId === item.id}
+                            onClick={() => void onDeleteShopType(item.id)}
+                            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+                          >
+                            {deletingShopTypeId === item.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                            {t("shopTypesDelete")}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                        <input
+                          type="text"
+                          className={`${INPUT} max-w-none`}
+                          defaultValue={item.name}
+                          key={`${item.id}-en-${item.updatedAt}`}
+                          onBlur={(event) => {
+                            const next = event.target.value.trim();
+                            if (next && next !== item.name) {
+                              void onPatchShopType(item.id, { name: next });
+                            }
+                          }}
+                          placeholder={t("shopTypesNameEn")}
+                        />
+                        <input
+                          type="text"
+                          className={`${INPUT} max-w-none`}
+                          defaultValue={item.namePs}
+                          key={`${item.id}-ps-${item.updatedAt}`}
+                          onBlur={(event) => {
+                            const next = event.target.value.trim();
+                            if (next !== item.namePs) {
+                              void onPatchShopType(item.id, { namePs: next });
+                            }
+                          }}
+                          placeholder={t("shopTypesNamePs")}
+                        />
+                        <input
+                          type="text"
+                          className={`${INPUT} max-w-none`}
+                          defaultValue={item.nameFa}
+                          key={`${item.id}-fa-${item.updatedAt}`}
+                          onBlur={(event) => {
+                            const next = event.target.value.trim();
+                            if (next !== item.nameFa) {
+                              void onPatchShopType(item.id, { nameFa: next });
+                            }
+                          }}
+                          placeholder={t("shopTypesNameFa")}
+                        />
+                        <input
+                          type="number"
+                          min={0}
+                          className={`${INPUT} max-w-none`}
+                          defaultValue={item.sortOrder}
+                          key={`${item.id}-sort-${item.updatedAt}`}
+                          onBlur={(event) => {
+                            const next = Number.parseInt(event.target.value, 10);
+                            if (Number.isFinite(next) && next !== item.sortOrder) {
+                              void onPatchShopType(item.id, { sortOrder: next });
+                            }
+                          }}
+                          placeholder={t("shopTypesSort")}
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          ) : null}
         </section>
       )}
 
-      {tab !== "keywords" ? (
+      {tab !== "keywords" && tab !== "shopTypes" ? (
         <div className="max-w-2xl">
           <button
             type="button"

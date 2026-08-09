@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { industryTypes } from "@/domain/vendor/vendor-types";
 import { productApprovalStatuses } from "@/domain/catalog/product-approval-status";
 import {
   PRODUCT_DESCRIPTION_MAX,
@@ -150,5 +149,11 @@ export const storeSlugParamsSchema = z.object({
 });
 
 export const publicVendorsQuerySchema = z.object({
-  industry: z.enum(industryTypes).optional(),
+  industry: z
+    .string()
+    .trim()
+    .min(2)
+    .max(64)
+    .regex(/^[A-Z0-9_]+$/)
+    .optional(),
 });

@@ -61,26 +61,6 @@ enum BusinessType {
   REGISTERED_BUSINESS
 }
 
-enum IndustryType {
-  BAKERY
-  CLOTHING
-  ELECTRONICS
-  FLORISTS
-  DRIED_FRUITS
-  CARPETS
-  FOOD_BEVERAGES
-  JEWELRY
-  HEALTH_BEAUTY
-  HOME_FURNITURE
-  SPORTS_OUTDOORS
-  BOOKS_STATIONERY
-  TOYS_GAMES
-  AUTOMOTIVE
-  HANDICRAFTS
-  AGRICULTURE
-  OTHER
-}
-
 enum SellerType {
   PLATFORM
   THIRD_PARTY
@@ -369,7 +349,8 @@ model VendorProfile {
   storeName                      String?
   storeSlug                      String?
   businessType                   BusinessType?
-  industryType                   IndustryType?
+  /// Shop type slug from ShopType (e.g. FOOD_BEVERAGES). Legacy enum values kept as strings.
+  industryType                   String?
   sellerType                     SellerType                 @default(THIRD_PARTY)
   logoUrl                        String?
   businessLicenseUrl             String?
@@ -411,10 +392,28 @@ model VendorProfile {
 
   @@index([status, onboardingStep])
   @@index([sellerType, status])
+  @@index([industryType, status])
   @@index([subscriptionStatus, subscriptionGracePeriodEndsAt])
   @@index([stripeCustomerId])
   @@index([stripeSubscriptionId])
   @@index([storeSlug])
+}
+
+/// Admin-managed shop / industry types for vendor profiles and browse filters.
+model ShopType {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  /// Stable key stored on VendorProfile.industryType (e.g. FOOD_BEVERAGES).
+  slug         String   @unique
+  /// Default (English) display name.
+  name         String
+  /// Optional Pashto / Dari: { "ps": { "name" }, "fa-AF": { "name" } }
+  translations Json?
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
 }
 
 model VendorCoupon {

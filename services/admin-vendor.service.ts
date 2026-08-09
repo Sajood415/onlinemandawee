@@ -15,6 +15,7 @@ import {
 } from "@/lib/membership/billing-access";
 import { isMembershipBillingSuspension } from "@/lib/membership/subscription-policy";
 import { MembershipBillingService } from "@/services/membership-billing.service";
+import { ShopTypeService } from "@/services/shop-type.service";
 import { VendorSubscriptionService } from "@/services/vendor-subscription.service";
 import { env } from "@/config/env";
 
@@ -32,7 +33,8 @@ export class AdminVendorService {
     private readonly membershipInvoiceRepository = new MembershipInvoiceRepository(),
     private readonly commissionLedgerRepository = new CommissionLedgerRepository(),
     private readonly vendorSubscriptionService = new VendorSubscriptionService(),
-    private readonly membershipBillingService = new MembershipBillingService()
+    private readonly membershipBillingService = new MembershipBillingService(),
+    private readonly shopTypeService = new ShopTypeService()
   ) {}
 
   async list(status?: VendorStatus) {
@@ -73,12 +75,13 @@ export class AdminVendorService {
       action: "admin.vendor_seller_type_updated",
     });
 
-    const [products, vendorOrders, membershipInvoices, commissionEntries] =
+    const [products, vendorOrders, membershipInvoices, commissionEntries, shopTypeLabels] =
       await Promise.all([
         this.productRepository.listByVendor(vendorProfileId),
         this.orderRepository.listByVendorProfileId(vendorProfileId),
         this.membershipInvoiceRepository.listByVendorProfileId(vendorProfileId),
         this.commissionLedgerRepository.listByVendorProfileId(vendorProfileId),
+        this.shopTypeService.resolveLabelMap("en"),
       ]);
 
     const pendingInvoices = membershipInvoices.filter(
@@ -107,6 +110,9 @@ export class AdminVendorService {
       sellerType: vendor.sellerType,
       businessType: vendor.businessType,
       industryType: vendor.industryType ?? null,
+      industryLabel: vendor.industryType
+        ? shopTypeLabels.get(vendor.industryType) ?? vendor.industryType
+        : null,
       logoUrl: vendor.logoUrl,
       businessLicenseUrl: vendor.businessLicenseUrl ?? null,
       description: vendor.description,

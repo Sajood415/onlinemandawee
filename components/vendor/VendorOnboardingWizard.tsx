@@ -21,10 +21,10 @@ import {
 
 import {
   businessTypes,
-  industryTypes,
   kycDocumentTypes,
 } from "@/domain/vendor/vendor-types";
-import type { BusinessType, IndustryType, KycDocumentType } from "@/domain/vendor/vendor-types";
+import type { BusinessType, KycDocumentType } from "@/domain/vendor/vendor-types";
+import { useShopTypes } from "@/hooks/use-shop-types";
 import type { VendorUploadKind } from "@/domain/vendor/vendor-upload-kind";
 import type { OnboardingStatusPayload } from "@/components/vendor/onboarding/types";
 import { PasswordRequirements } from "@/components/vendor/onboarding/PasswordRequirements";
@@ -682,6 +682,7 @@ export function VendorOnboardingWizard() {
   const locale = useLocale();
   const tAgreements = useTranslations("VendorPages.register.agreements");
   const tWizard = useTranslations("VendorPages.register.wizard");
+  const { shopTypes, loading: shopTypesLoading } = useShopTypes();
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [ready, setReady] = useState(false);
   const [step, setStep] = useState(1);
@@ -705,7 +706,7 @@ export function VendorOnboardingWizard() {
 
   const [storeName, setStoreName] = useState("");
   const [businessType, setBusinessType] = useState<BusinessType>("INDIVIDUAL");
-  const [industryType, setIndustryType] = useState<IndustryType | "">("");
+  const [industryType, setIndustryType] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -816,7 +817,7 @@ export function VendorOnboardingWizard() {
         setOtpUiPhase(draft.otpUiPhase === "code" ? "code" : "email");
         setStoreName(String(draft.storeName ?? ""));
         setBusinessType(draft.businessType === "REGISTERED_BUSINESS" ? "REGISTERED_BUSINESS" : "INDIVIDUAL");
-        setIndustryType(typeof draft.industryType === "string" ? (draft.industryType as IndustryType) : "");
+        setIndustryType(typeof draft.industryType === "string" ? draft.industryType : "");
         setLogoUrl(String(draft.logoUrl ?? ""));
         setDescription(String(draft.description ?? ""));
         setDocumentType(
@@ -991,7 +992,9 @@ export function VendorOnboardingWizard() {
 
         setStoreName(draft.storeName);
         if (draft.businessType && businessTypes.includes(draft.businessType)) setBusinessType(draft.businessType);
-        if (draft.industryType && industryTypes.includes(draft.industryType)) setIndustryType(draft.industryType);
+        if (typeof draft.industryType === "string" && draft.industryType) {
+          setIndustryType(draft.industryType);
+        }
         setLogoUrl(draft.logoUrl);
         setDescription(draft.description);
         setBusinessLicenseUrl(draft.businessLicenseUrl ?? "");
@@ -1645,14 +1648,19 @@ export function VendorOnboardingWizard() {
                     <select
                       className={INPUT_BASE}
                       value={industryType}
-                      onChange={(event) => setIndustryType(event.target.value as IndustryType | "")}
+                      disabled={shopTypesLoading}
+                      onChange={(event) => setIndustryType(event.target.value)}
                     >
                       <option value="">{tWizard("store.selectIndustry")}</option>
-                      {industryTypes.map((type) => (
-                        <option key={type} value={type}>
-                          {tWizard(`store.industryTypes.${type}`)}
+                      {shopTypes.map((type) => (
+                        <option key={type.slug} value={type.slug}>
+                          {type.label}
                         </option>
                       ))}
+                      {industryType &&
+                      !shopTypes.some((type) => type.slug === industryType) ? (
+                        <option value={industryType}>{industryType}</option>
+                      ) : null}
                     </select>
                   </div>
                 </div>

@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import {
   businessTypes,
-  industryTypes,
   kycDocumentTypes,
   payoutMethodTypes,
   sellerTypes,
@@ -11,6 +10,7 @@ import { vendorStatuses } from "@/domain/vendor/vendor-status";
 import { passwordFieldSchema } from "@/lib/auth/password-policy";
 import { phoneFieldSchema } from "@/lib/phone/phone-policy";
 import { isAfghanistanCountry } from "@/lib/geo/shipping-locations";
+import { preprocessIndustryTypeSlug } from "@/lib/shop-types/labels";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
 
 const vendorOnboardingEmailField = z.preprocess(
@@ -38,7 +38,15 @@ export const startVendorOnboardingSchema = z.object({
 export const vendorStoreInformationSchema = z.object({
   storeName: z.string().trim().min(2).max(120),
   businessType: z.enum(businessTypes),
-  industryType: z.enum(industryTypes).optional(),
+  industryType: z.preprocess(
+    preprocessIndustryTypeSlug,
+    z
+      .string()
+      .min(2)
+      .max(64)
+      .regex(/^[A-Z0-9_]+$/)
+      .optional()
+  ),
   logoUrl: z.url().max(2048).optional(),
   description: z.string().trim().max(500).optional(),
 });

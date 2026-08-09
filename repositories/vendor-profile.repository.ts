@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 
-import type { BusinessType, IndustryType } from "@/domain/vendor/vendor-types";
+import type { BusinessType } from "@/domain/vendor/vendor-types";
 import type {
   VendorOnboardingStep,
 } from "@/domain/vendor/vendor-onboarding-step";
@@ -57,7 +57,7 @@ export class VendorProfileRepository {
     storeName: string;
     storeSlug: string;
     businessType: BusinessType;
-    industryType?: IndustryType;
+    industryType?: string;
     logoUrl?: string;
     description?: string;
     onboardingStep: VendorOnboardingStep;
@@ -204,7 +204,7 @@ export class VendorProfileRepository {
     });
   }
 
-  listPublic(filters?: { industryType?: IndustryType }) {
+  listPublic(filters?: { industryType?: string }) {
     return prisma.vendorProfile.findMany({
       where: {
         status: "ACTIVE",

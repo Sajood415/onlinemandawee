@@ -2,7 +2,6 @@ import type { VendorOnboardingStep } from "@/domain/vendor/vendor-onboarding-ste
 import type { VendorStatus } from "@/domain/vendor/vendor-status";
 import type {
   BusinessType,
-  IndustryType,
   KycDocumentType,
   PayoutMethodType,
 } from "@/domain/vendor/vendor-types";
@@ -15,7 +14,7 @@ export type OnboardingStatusPayload = {
   draft: {
     storeName: string;
     businessType: BusinessType | null;
-    industryType: IndustryType | null | undefined;
+    industryType: string | null | undefined;
     logoUrl: string;
     description: string;
     businessLicenseUrl: string;

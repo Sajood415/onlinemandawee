@@ -6,23 +6,15 @@ import { useLocale, useTranslations } from "next-intl";
 import { ChevronRight, Loader2, Store } from "lucide-react";
 
 import { VendorCard } from "@/components/vendors/VendorCard";
-import type { IndustryType } from "@/domain/vendor/vendor-types";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
+import { FEATURED_SHOP_TYPE_COUNT } from "@/lib/vendors/industry-display";
 import {
-  featuredIndustryTypes,
-  getAllIndustryTypes,
-  getSecondaryIndustryTypes,
-} from "@/lib/vendors/industry-display";
-import {
+  fetchPublicShopTypes,
   fetchPublicVendorListings,
+  type PublicShopTypeOption,
   type PublicVendorListing,
 } from "@/lib/vendors/public-vendor-listing";
-
-function isIndustryType(value: string | null): value is IndustryType {
-  if (!value) return false;
-  return getAllIndustryTypes().includes(value as IndustryType);
-}
 
 function IndustryChip({
   active,
@@ -50,7 +42,6 @@ function IndustryChip({
 
 export function VendorsShowcase() {
   const t = useTranslations("VendorsPages.listing");
-  const tIndustry = useTranslations("VendorPages.register.wizard.store.industryTypes");
   const locale = useLocale() as SupportedLocale;
   const isRtl = locale !== "en";
   const searchParams = useSearchParams();
@@ -58,20 +49,29 @@ export function VendorsShowcase() {
   const pathname = usePathname();
   const internalIndustryUpdate = useRef(false);
 
-  const initialIndustry = searchParams.get("industry");
-  const [selectedIndustry, setSelectedIndustry] = useState<IndustryType | null>(
-    isIndustryType(initialIndustry) ? initialIndustry : null
+  const [shopTypes, setShopTypes] = useState<PublicShopTypeOption[]>([]);
+  const [selectedIndustry, setSelectedIndustry] = useState<string | null>(
+    searchParams.get("industry")
   );
   const [vendors, setVendors] = useState<PublicVendorListing[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    void fetchPublicShopTypes(locale).then((types) => {
+      if (mounted) setShopTypes(types);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [locale]);
 
   useEffect(() => {
     if (internalIndustryUpdate.current) {
       internalIndustryUpdate.current = false;
       return;
     }
-    const industry = searchParams.get("industry");
-    setSelectedIndustry(isIndustryType(industry) ? industry : null);
+    setSelectedIndustry(searchParams.get("industry"));
   }, [searchParams]);
 
   useEffect(() => {
@@ -97,9 +97,10 @@ export function VendorsShowcase() {
     const load = async () => {
       setLoading(true);
       try {
-        const listings = await fetchPublicVendorListings(
-          selectedIndustry ? { industry: selectedIndustry } : undefined
-        );
+        const listings = await fetchPublicVendorListings({
+          industry: selectedIndustry ?? undefined,
+          locale,
+        });
         if (mounted) setVendors(listings);
       } catch {
         if (mounted) setVendors([]);
@@ -112,24 +113,27 @@ export function VendorsShowcase() {
     return () => {
       mounted = false;
     };
-  }, [selectedIndustry]);
+  }, [locale, selectedIndustry]);
 
-  const selectIndustry = useCallback((industry: IndustryType | null) => {
+  const selectIndustry = useCallback((industry: string | null) => {
     setSelectedIndustry(industry);
   }, []);
 
-  const secondaryIndustries = useMemo(() => getSecondaryIndustryTypes(), []);
+  const featured = useMemo(
+    () => shopTypes.slice(0, FEATURED_SHOP_TYPE_COUNT),
+    [shopTypes]
+  );
+  const secondary = useMemo(
+    () => shopTypes.slice(FEATURED_SHOP_TYPE_COUNT),
+    [shopTypes]
+  );
 
-  const industryLabel = (industry: IndustryType) => {
-    try {
-      return tIndustry(industry);
-    } catch {
-      return industry;
-    }
-  };
+  const selectedLabel =
+    shopTypes.find((item) => item.slug === selectedIndustry)?.label ??
+    selectedIndustry;
 
   const headerSubtitle = selectedIndustry
-    ? industryLabel(selectedIndustry)
+    ? selectedLabel ?? t("subtitle")
     : t("subtitle");
 
   return (
@@ -137,7 +141,7 @@ export function VendorsShowcase() {
       <section className="relative overflow-hidden bg-linear-to-br from-[#163f73] via-[#0F3460] to-[#0a2748] text-white">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(255,255,255,0.16),transparent_42%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(255,255,255,0.16),transparent 42%)]"
         />
         <div className="relative mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
           <nav className="mb-5 flex flex-wrap items-center gap-2 text-sm text-white/70">
@@ -173,37 +177,41 @@ export function VendorsShowcase() {
             />
           </div>
 
-          <div>
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-              {t("featuredIndustries")}
-            </p>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              {featuredIndustryTypes.map((industry) => (
-                <IndustryChip
-                  key={industry}
-                  active={selectedIndustry === industry}
-                  label={industryLabel(industry)}
-                  onClick={() => selectIndustry(industry)}
-                />
-              ))}
+          {featured.length > 0 ? (
+            <div>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
+                {t("featuredIndustries")}
+              </p>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                {featured.map((industry) => (
+                  <IndustryChip
+                    key={industry.slug}
+                    active={selectedIndustry === industry.slug}
+                    label={industry.label}
+                    onClick={() => selectIndustry(industry.slug)}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
 
-          <div>
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-              {t("moreIndustries")}
-            </p>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              {secondaryIndustries.map((industry) => (
-                <IndustryChip
-                  key={industry}
-                  active={selectedIndustry === industry}
-                  label={industryLabel(industry)}
-                  onClick={() => selectIndustry(industry)}
-                />
-              ))}
+          {secondary.length > 0 ? (
+            <div>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
+                {t("moreIndustries")}
+              </p>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                {secondary.map((industry) => (
+                  <IndustryChip
+                    key={industry.slug}
+                    active={selectedIndustry === industry.slug}
+                    label={industry.label}
+                    onClick={() => selectIndustry(industry.slug)}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
 
         {loading ? (

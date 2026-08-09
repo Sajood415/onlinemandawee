@@ -24,8 +24,7 @@ import {
 import { AddressAutocompleteInput } from "@/components/address/AddressAutocompleteInput";
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { VendorPortalOverlay } from "@/components/vendor/VendorPortalOverlay";
-import { industryTypes } from "@/domain/vendor/vendor-types";
-import type { IndustryType } from "@/domain/vendor/vendor-types";
+import { useShopTypes } from "@/hooks/use-shop-types";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import { getStripePromise } from "@/lib/stripe/client";
 import { toast } from "@/lib/utils/toast";
@@ -42,7 +41,7 @@ type VendorProfile = {
   storeName: string;
   storeSlug: string;
   businessType: "INDIVIDUAL" | "REGISTERED_BUSINESS" | null;
-  industryType: IndustryType | null;
+  industryType: string | null;
   sellerType?: "PLATFORM" | "THIRD_PARTY";
   logoUrl: string;
   description: string;
@@ -449,16 +448,12 @@ function BusinessInfoTab({
   onSaved: (updated: Partial<VendorProfile>) => void;
 }) {
   const t = useTranslations("VendorPages.settings");
-  const tIndustry = useTranslations(
-    "VendorPages.register.wizard.store.industryTypes"
-  );
+  const { shopTypes, loading: shopTypesLoading } = useShopTypes();
   const [storeName, setStoreName] = useState(profile.storeName);
   const [businessType, setBusinessType] = useState<
     "INDIVIDUAL" | "REGISTERED_BUSINESS"
   >(profile.businessType ?? "INDIVIDUAL");
-  const [industryType, setIndustryType] = useState<IndustryType | "">(
-    profile.industryType ?? ""
-  );
+  const [industryType, setIndustryType] = useState(profile.industryType ?? "");
   const [description, setDescription] = useState(profile.description);
   const [logoUrl, setLogoUrl] = useState(profile.logoUrl);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -711,16 +706,19 @@ function BusinessInfoTab({
                 id="industry-type"
                 className={CONTROL}
                 value={industryType}
-                onChange={(e) =>
-                  setIndustryType(e.target.value as IndustryType | "")
-                }
+                disabled={shopTypesLoading}
+                onChange={(e) => setIndustryType(e.target.value)}
               >
                 <option value="">{t("store.selectIndustry")}</option>
-                {industryTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {tIndustry(type)}
+                {shopTypes.map((type) => (
+                  <option key={type.slug} value={type.slug}>
+                    {type.label}
                   </option>
                 ))}
+                {industryType &&
+                !shopTypes.some((type) => type.slug === industryType) ? (
+                  <option value={industryType}>{industryType}</option>
+                ) : null}
               </select>
             </div>
           </div>

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { businessTypes, industryTypes } from "@/domain/vendor/vendor-types";
+import { businessTypes } from "@/domain/vendor/vendor-types";
+import { preprocessIndustryTypeSlug } from "@/lib/shop-types/labels";
 import { withErrorHandling } from "@/middlewares/with-error-handling";
 import { withRbac } from "@/middlewares/with-rbac";
 import { VendorProfileService } from "@/services/vendor-profile.service";
@@ -10,7 +11,15 @@ import { parseBody } from "@/validators/request";
 const updateBusinessInfoSchema = z.object({
   storeName: z.string().trim().min(2).max(120),
   businessType: z.enum(businessTypes),
-  industryType: z.enum(industryTypes).optional(),
+  industryType: z.preprocess(
+    preprocessIndustryTypeSlug,
+    z
+      .string()
+      .min(2)
+      .max(64)
+      .regex(/^[A-Z0-9_]+$/)
+      .optional()
+  ),
   logoUrl: z.url().max(2048).optional(),
   description: z.string().trim().max(500).optional(),
 });
