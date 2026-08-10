@@ -108,7 +108,7 @@ function DealProductCard({
           src={product.image}
           alt={product.name[locale]}
           fill
-          className="object-contain object-center transition-transform duration-300 group-hover:scale-[1.03]"
+          className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
           sizes="140px"
         />
       </div>

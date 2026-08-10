@@ -108,7 +108,7 @@ function HomeRailProductCard({ product, locale }: { product: Row; locale: Locale
             src={product.image}
             alt={product.name[locale]}
             fill
-            className="object-contain object-center p-3 transition-transform duration-300 group-hover:scale-[1.04]"
+            className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.04]"
             sizes="(max-width: 640px) 42vw, 220px"
           />
         </Link>

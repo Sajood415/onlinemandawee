@@ -78,7 +78,7 @@ function FeaturedProductCard({
           src={product.image}
           alt={product.name[locale]}
           fill
-          className="object-contain object-center p-3"
+          className="object-cover object-center"
           sizes="176px"
         />
         <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-[#E0B252]/20 px-1.5 py-0.5 text-[9px] font-bold text-[#0F3460] ring-1 ring-[#E0B252]/40">

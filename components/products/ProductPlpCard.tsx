@@ -74,7 +74,7 @@ export function ProductPlpCard({ product, priority = false }: ProductPlpCardProp
             alt={product.name[locale]}
             fill
             priority={priority}
-            className="object-contain object-center p-3 transition-transform duration-300 group-hover:scale-[1.03]"
+            className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
             sizes="(max-width: 640px) 50vw, (max-width: 1280px) 25vw, 280px"
           />
         </Link>
