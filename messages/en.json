@@ -298,7 +298,8 @@
         "orders": "Orders",
         "reports": "Reports",
         "disputes": "Disputes",
-        "settings": "Settings"
+        "settings": "Settings",
+        "viewStore": "View my store"
       }
     },
     "customer": {
@@ -4913,7 +4914,20 @@
       "loading": "Opening store...",
       "useCode": "Use code",
       "joined": "Joined {year}",
-      "defaultDescription": "Browse products from this store."
+      "defaultDescription": "Browse products from this store.",
+      "owner": {
+        "previewBadge": "Store preview",
+        "previewMessage": "You’re viewing your store as customers see it.",
+        "editLogo": "Edit logo",
+        "editBanners": "Edit banners",
+        "backToDashboard": "Back to dashboard",
+        "logoUpdated": "Logo updated",
+        "logoUpdateFailed": "Could not update logo",
+        "noBannersTitle": "No promo banners yet",
+        "noBannersHint": "Add banners so customers see your offers on this page.",
+        "manageProducts": "Manage products",
+        "profileIncomplete": "Finish store settings before updating your logo."
+      }
     }
   },
   "ProductsPages": {

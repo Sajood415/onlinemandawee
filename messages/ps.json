@@ -298,7 +298,8 @@
         "orders": "فرمایشونه",
         "reports": "راپورونه",
         "disputes": "شخړې",
-        "settings": "تنظیمات"
+        "settings": "تنظیمات",
+        "viewStore": "زما پلورنځی وګورئ"
       }
     },
     "customer": {
@@ -4936,7 +4937,20 @@
       "loading": "پلورنځی پرانیستل کېږي...",
       "useCode": "کوډ وکاروئ",
       "joined": "په {year} کې یوځای شوی",
-      "defaultDescription": "د دې پلورنځي محصولات وګورئ."
+      "defaultDescription": "د دې پلورنځي محصولات وګورئ.",
+      "owner": {
+        "previewBadge": "د پلورنځي مخکتنه",
+        "previewMessage": "تاسو خپل پلورنځی هغسې وینئ لکه څنګه چې پیرودونکي یې ویني.",
+        "editLogo": "لوګو سم کړئ",
+        "editBanners": "بینرونه سم کړئ",
+        "backToDashboard": "ډشبورډ ته بیرته",
+        "logoUpdated": "لوګو تازه شو",
+        "logoUpdateFailed": "لوګو تازه نشو",
+        "noBannersTitle": "تر اوسه پرومو بینر نشته",
+        "noBannersHint": "بینرونه اضافه کړئ ترڅو پیرودونکي ستاسو وړاندیزونه په دې پاڼه وویني.",
+        "manageProducts": "محصولات مدیریت کړئ",
+        "profileIncomplete": "د لوګو د تازه کولو مخکې د پلورنځي تنظیمات بشپړ کړئ."
+      }
     }
   },
   "ProductsPages": {

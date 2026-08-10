@@ -298,7 +298,8 @@
         "orders": "سفارش‌ها",
         "reports": "گزارش‌ها",
         "disputes": "اختلافات",
-        "settings": "تنظیمات"
+        "settings": "تنظیمات",
+        "viewStore": "مشاهده فروشگاه من"
       }
     },
     "customer": {
@@ -4936,7 +4937,20 @@
       "loading": "در حال باز کردن فروشگاه...",
       "useCode": "کد را استفاده کنید",
       "joined": "پیوسته در {year}",
-      "defaultDescription": "محصولات این فروشگاه را ببینید."
+      "defaultDescription": "محصولات این فروشگاه را ببینید.",
+      "owner": {
+        "previewBadge": "پیش‌نمایش فروشگاه",
+        "previewMessage": "فروشگاه خود را همان‌طور می‌بینید که مشتریان می‌بینند.",
+        "editLogo": "ویرایش لوگو",
+        "editBanners": "ویرایش بنرها",
+        "backToDashboard": "بازگشت به داشبورد",
+        "logoUpdated": "لوگو به‌روزرسانی شد",
+        "logoUpdateFailed": "به‌روزرسانی لوگو ممکن نشد",
+        "noBannersTitle": "هنوز بنر پروموشن ندارید",
+        "noBannersHint": "بنر اضافه کنید تا مشتریان پیشنهادهای شما را در این صفحه ببینند.",
+        "manageProducts": "مدیریت محصولات",
+        "profileIncomplete": "قبل از به‌روزرسانی لوگو، تنظیمات فروشگاه را کامل کنید."
+      }
     }
   },
   "ProductsPages": {

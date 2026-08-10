@@ -7,7 +7,7 @@ import { formatVendorStoreName } from "@/lib/utils/slug";
 import {
   clearVendorStoreNameCacheForUser,
   invalidateVendorStoreNameCache,
-  loadVendorStoreNameForUser,
+  loadVendorStoreProfileForUser,
   registerVendorStoreNameFetcher,
 } from "@/lib/vendor/store-name-cache";
 import { useAuth } from "@/store/auth-context";
@@ -19,19 +19,22 @@ type VendorProfileSummary = {
 
 registerVendorStoreNameFetcher(async () => {
   const token = localStorage.getItem("accessToken");
-  if (!token) return null;
+  if (!token) return { storeName: null, storeSlug: null };
 
   try {
     const res = await fetch("/api/vendor/profile", {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
-    if (!res.ok) return null;
+    if (!res.ok) return { storeName: null, storeSlug: null };
 
     const data = await parseApiResponse<VendorProfileSummary>(res);
-    return formatVendorStoreName(data.storeName, data.storeSlug);
+    return {
+      storeName: formatVendorStoreName(data.storeName, data.storeSlug),
+      storeSlug: data.storeSlug?.trim() || null,
+    };
   } catch {
-    return null;
+    return { storeName: null, storeSlug: null };
   }
 });
 
@@ -42,19 +45,22 @@ export function useVendorStoreName() {
   const userId = user?.role === "VENDOR" ? user.id : null;
 
   const [storeName, setStoreName] = useState<string | null>(null);
+  const [storeSlug, setStoreSlug] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(userId));
 
   const refresh = useCallback(async () => {
     if (!userId) {
       setStoreName(null);
+      setStoreSlug(null);
       setIsLoading(false);
       return;
     }
 
     clearVendorStoreNameCacheForUser(userId);
     setIsLoading(true);
-    const name = await loadVendorStoreNameForUser(userId);
-    setStoreName(name);
+    const profile = await loadVendorStoreProfileForUser(userId);
+    setStoreName(profile.storeName);
+    setStoreSlug(profile.storeSlug);
     setIsLoading(false);
   }, [userId]);
 
@@ -72,6 +78,7 @@ export function useVendorStoreName() {
   useEffect(() => {
     if (!userId) {
       setStoreName(null);
+      setStoreSlug(null);
       setIsLoading(false);
       return;
     }
@@ -80,9 +87,10 @@ export function useVendorStoreName() {
     setIsLoading(true);
 
     void (async () => {
-      const name = await loadVendorStoreNameForUser(userId);
+      const profile = await loadVendorStoreProfileForUser(userId);
       if (mounted) {
-        setStoreName(name);
+        setStoreName(profile.storeName);
+        setStoreSlug(profile.storeSlug);
         setIsLoading(false);
       }
     })();
@@ -92,5 +100,5 @@ export function useVendorStoreName() {
     };
   }, [userId]);
 
-  return { storeName, isLoading, refresh };
+  return { storeName, storeSlug, isLoading, refresh };
 }

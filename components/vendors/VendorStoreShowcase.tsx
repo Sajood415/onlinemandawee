@@ -1,21 +1,34 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
-import { CalendarDays, ChevronRight, Store } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  Camera,
+  ChevronRight,
+  LayoutDashboard,
+  Loader2,
+  Megaphone,
+  Store,
+} from "lucide-react";
 
 import { CatalogImage } from "@/components/catalog/CatalogImage";
 import { ProductCard } from "@/components/products/ProductCard";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { Link } from "@/i18n/navigation";
+import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import {
   mapApiProductToCatalog,
   type ApiCatalogProduct,
 } from "@/lib/products/public-catalog";
+import { toast } from "@/lib/utils/toast";
+import { invalidateVendorStoreNameCache } from "@/lib/vendor/store-name-cache";
+import { useAuth } from "@/store/auth-context";
 
 type PublicPromoBanner = {
   id: string;
@@ -44,14 +57,27 @@ type ApiVendorStore = {
   publicCoupons?: PublicStoreCoupon[];
 };
 
+type VendorProfileOwnership = {
+  storeSlug: string;
+  storeName: string;
+  businessType: "INDIVIDUAL" | "REGISTERED_BUSINESS";
+  industryType?: string | null;
+  description?: string;
+};
+
 export function VendorStoreShowcase() {
   const params = useParams();
   const t = useTranslations("VendorsPages.store");
   const locale = useLocale() as SupportedLocale;
   const isRtl = locale !== "en";
   const slug = params.slug as string;
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [apiStore, setApiStore] = useState<ApiVendorStore | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
+  const [ownerProfile, setOwnerProfile] = useState<VendorProfileOwnership | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -82,6 +108,50 @@ export function VendorStoreShowcase() {
     };
   }, [slug]);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const checkOwner = async () => {
+      if (authLoading) return;
+      if (!isAuthenticated || user?.role !== "VENDOR") {
+        if (mounted) {
+          setIsOwner(false);
+          setOwnerProfile(null);
+        }
+        return;
+      }
+
+      try {
+        const res = await fetchWithAuth("/api/vendor/profile", { cache: "no-store" });
+        if (!res.ok) {
+          if (mounted) {
+            setIsOwner(false);
+            setOwnerProfile(null);
+          }
+          return;
+        }
+        const profile = await parseApiResponse<VendorProfileOwnership>(res);
+        const ownsStore =
+          Boolean(profile.storeSlug) &&
+          profile.storeSlug.trim().toLowerCase() === slug.trim().toLowerCase();
+        if (mounted) {
+          setIsOwner(ownsStore);
+          setOwnerProfile(ownsStore ? profile : null);
+        }
+      } catch {
+        if (mounted) {
+          setIsOwner(false);
+          setOwnerProfile(null);
+        }
+      }
+    };
+
+    void checkOwner();
+    return () => {
+      mounted = false;
+    };
+  }, [authLoading, isAuthenticated, slug, user?.role]);
+
   const vendorProducts = useMemo(() => {
     return apiStore?.products.map(mapApiProductToCatalog) ?? [];
   }, [apiStore]);
@@ -98,6 +168,56 @@ export function VendorStoreShowcase() {
   const joinedYear = apiStore?.vendor.approvedAt
     ? new Date(apiStore.vendor.approvedAt).getFullYear()
     : new Date().getFullYear();
+
+  const handleLogoSelected = async (file: File | null) => {
+    if (!file || !isOwner || !ownerProfile?.storeName || !ownerProfile.businessType) {
+      if (isOwner && (!ownerProfile?.storeName || !ownerProfile.businessType)) {
+        toast.error(t("owner.logoUpdateFailed"), t("owner.profileIncomplete"));
+      }
+      return;
+    }
+    setUploadingLogo(true);
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      const uploadRes = await fetchWithAuth("/api/vendor/profile/upload", {
+        method: "POST",
+        body: fd,
+      });
+      const uploadData = await parseApiResponse<{ url: string }>(uploadRes);
+
+      await fetchWithAuth("/api/vendor/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeName: ownerProfile.storeName,
+          businessType: ownerProfile.businessType,
+          ...(ownerProfile.industryType ? { industryType: ownerProfile.industryType } : {}),
+          ...(ownerProfile.description ? { description: ownerProfile.description } : {}),
+          logoUrl: uploadData.url,
+        }),
+      });
+
+      setApiStore((current) =>
+        current
+          ? {
+              ...current,
+              vendor: { ...current.vendor, logoUrl: uploadData.url },
+            }
+          : current
+      );
+      invalidateVendorStoreNameCache();
+      toast.success(t("owner.logoUpdated"));
+    } catch (error) {
+      toast.error(
+        t("owner.logoUpdateFailed"),
+        error instanceof Error ? error.message : undefined
+      );
+    } finally {
+      setUploadingLogo(false);
+      if (logoInputRef.current) logoInputRef.current.value = "";
+    }
+  };
 
   if (loading) {
     return <PageLoader message={t("loading")} className="bg-[#eef1f6]" fullScreen />;
@@ -125,6 +245,58 @@ export function VendorStoreShowcase() {
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="w-full min-w-0 bg-[#eef1f6]">
+      {isOwner ? (
+        <div className="sticky top-0 z-40 border-b border-[#0F3460]/15 bg-[#0F3460] text-white shadow-sm">
+          <div className="mx-auto flex w-full max-w-[1540px] flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/70">
+                {t("owner.previewBadge")}
+              </p>
+              <p className="mt-0.5 text-sm font-medium text-white/95">{t("owner.previewMessage")}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={uploadingLogo}
+                className="inline-flex items-center gap-1.5 border border-white/30 bg-white/10 px-3 py-2 text-xs font-semibold transition hover:bg-white/20 disabled:opacity-60"
+              >
+                {uploadingLogo ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Camera className="h-3.5 w-3.5" />
+                )}
+                {t("owner.editLogo")}
+              </button>
+              <Link
+                href="/vendor/promotions"
+                className="inline-flex items-center gap-1.5 border border-white/30 bg-white/10 px-3 py-2 text-xs font-semibold transition hover:bg-white/20"
+              >
+                <Megaphone className="h-3.5 w-3.5" />
+                {t("owner.editBanners")}
+              </Link>
+              <Link
+                href="/vendor/dashboard"
+                className="inline-flex items-center gap-1.5 bg-white px-3 py-2 text-xs font-semibold text-[#0F3460] transition hover:bg-neutral-100"
+              >
+                <LayoutDashboard className="h-3.5 w-3.5" />
+                {t("owner.backToDashboard")}
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <input
+        ref={logoInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(event) => {
+          void handleLogoSelected(event.target.files?.[0] ?? null);
+        }}
+      />
+
       <section className="relative overflow-hidden">
         <div className="relative h-[280px] sm:h-[340px] lg:h-[400px]">
           <Image
@@ -161,6 +333,21 @@ export function VendorStoreShowcase() {
                     <Store className="h-8 w-8" />
                   </div>
                 )}
+                {isOwner ? (
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={uploadingLogo}
+                    aria-label={t("owner.editLogo")}
+                    className="absolute bottom-1 end-1 flex h-8 w-8 items-center justify-center bg-[#0F3460] text-white shadow-sm transition hover:bg-[#0a2540] disabled:opacity-70"
+                  >
+                    {uploadingLogo ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Camera className="h-4 w-4" />
+                    )}
+                  </button>
+                ) : null}
               </div>
               <div className="min-w-0 flex-1 pb-0.5 text-white">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">
@@ -185,9 +372,25 @@ export function VendorStoreShowcase() {
         </div>
       </section>
 
-      {(promoBanners.length > 0 || publicCoupons.length > 0) && (
+      {(promoBanners.length > 0 || publicCoupons.length > 0 || isOwner) && (
         <section className="border-b border-black/5 bg-white/70">
           <div className="mx-auto w-full max-w-[1540px] space-y-4 px-4 py-5 sm:px-6">
+            {isOwner && promoBanners.length === 0 ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 border border-dashed border-[#0F3460]/25 bg-[#0F3460]/5 px-4 py-4">
+                <div>
+                  <p className="text-sm font-semibold text-[#0F3460]">{t("owner.noBannersTitle")}</p>
+                  <p className="mt-0.5 text-xs text-neutral-600">{t("owner.noBannersHint")}</p>
+                </div>
+                <Link
+                  href="/vendor/promotions"
+                  className="inline-flex items-center gap-1.5 bg-[#0F3460] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#0a2540]"
+                >
+                  <Megaphone className="h-3.5 w-3.5" />
+                  {t("owner.editBanners")}
+                </Link>
+              </div>
+            ) : null}
+
             {promoBanners.length > 0 ? (
               <div className="grid gap-3 md:grid-cols-2">
                 {promoBanners.map((banner) => (
@@ -211,6 +414,15 @@ export function VendorStoreShowcase() {
                         </p>
                       ) : null}
                     </div>
+                    {isOwner ? (
+                      <Link
+                        href="/vendor/promotions"
+                        className="absolute end-3 top-3 inline-flex items-center gap-1 bg-white/95 px-2.5 py-1.5 text-[11px] font-semibold text-[#0F3460] shadow-sm transition hover:bg-white"
+                      >
+                        <Megaphone className="h-3 w-3" />
+                        {t("owner.editBanners")}
+                      </Link>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -246,12 +458,22 @@ export function VendorStoreShowcase() {
               <Store className="mx-auto mb-4 h-10 w-10 text-neutral-300" />
               <h3 className="text-lg font-bold text-neutral-900">{t("noProducts")}</h3>
               <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">{t("noProductsHint")}</p>
-              <Link
-                href="/vendors"
-                className="mt-6 inline-flex bg-[#0F3460] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
-              >
-                {t("backToVendors")}
-              </Link>
+              {isOwner ? (
+                <Link
+                  href="/vendor/products"
+                  className="mt-6 inline-flex items-center gap-1.5 bg-[#0F3460] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+                >
+                  <ArrowLeft className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
+                  {t("owner.manageProducts")}
+                </Link>
+              ) : (
+                <Link
+                  href="/vendors"
+                  className="mt-6 inline-flex bg-[#0F3460] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+                >
+                  {t("backToVendors")}
+                </Link>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-3 xl:gap-4 2xl:grid-cols-4">
