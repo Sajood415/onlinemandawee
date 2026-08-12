@@ -16,6 +16,7 @@ export type PublicVendorListing = {
 export type PublicShopTypeOption = {
   slug: string;
   label: string;
+  image?: string | null;
   sortOrder: number;
 };
 

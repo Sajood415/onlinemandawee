@@ -171,10 +171,10 @@ function SecondaryNavLink({
       <LocaleLink
         href={href}
         aria-current={active ? "page" : undefined}
-        className={`inline-flex items-center gap-1 rounded-full bg-[#ec1b23]/10 px-2 py-1 text-[11px] font-semibold whitespace-nowrap text-[#ec1b23] ring-1 ring-[#ec1b23]/20 transition-colors hover:bg-[#ec1b23]/15 lg:px-2.5 lg:text-[12px] ${className}`}
+        className={`inline-flex items-center gap-1.5 rounded-full bg-[#ec1b23]/10 px-2.5 py-1.5 text-[12px] font-semibold whitespace-nowrap text-[#ec1b23] ring-1 ring-[#ec1b23]/20 transition-colors hover:bg-[#ec1b23]/15 lg:px-3 lg:text-[13px] ${className}`}
       >
         {badge ? (
-          <span className="rounded-full bg-[#ec1b23] px-1 py-px text-[8px] font-bold uppercase leading-none text-white">
+          <span className="rounded-full bg-[#ec1b23] px-1.5 py-px text-[9px] font-bold uppercase leading-none text-white">
             {badge}
           </span>
         ) : null}
@@ -188,7 +188,7 @@ function SecondaryNavLink({
     <LocaleLink
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`inline-flex items-center gap-1 px-1.5 py-1.5 text-[11px] font-medium whitespace-nowrap transition-colors lg:gap-1.5 lg:px-2 lg:text-[12px] ${
+      className={`inline-flex items-center gap-1.5 px-2 py-2 text-[12px] font-medium whitespace-nowrap transition-colors lg:gap-2 lg:px-2.5 lg:text-[13px] ${
         active
           ? "font-semibold text-[#ec1b23]"
           : "text-gray-600 hover:text-[#ec1b23]"
@@ -731,72 +731,66 @@ export default function Header() {
             dir={isRtl ? "rtl" : "ltr"}
             className="relative z-[9997] hidden border-b border-gray-100 bg-white md:block"
           >
-            <div className="flex h-10 w-full items-center px-2 sm:px-3 lg:px-4">
-              <div className="hidden min-w-0 flex-1 items-center justify-start gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] md:flex lg:gap-1.5 [&::-webkit-scrollbar]:hidden">
+            <div className="flex h-12 w-full items-center px-2 sm:px-3 lg:px-4">
+              <div className="hidden min-w-0 flex-1 items-center justify-start gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] md:flex lg:gap-3 [&::-webkit-scrollbar]:hidden">
                 <SecondaryNavLink
                   href="/"
                   pathname={pathname}
                   label={copy.home}
-                  icon={<Home size={13} />}
+                  icon={<Home size={14} />}
                 />
                 <SecondaryNavLink
                   href="/products"
                   pathname={pathname}
                   label={copy.products}
-                  icon={<ShoppingBag size={13} />}
+                  icon={<ShoppingBag size={14} />}
                 />
                 <SecondaryNavLink
                   href="/deals"
                   pathname={pathname}
                   label={copy.hotDiscounts}
-                  icon={<Tag size={12} />}
+                  icon={<Tag size={13} />}
                   badge={copy.hot}
                   highlight
-                />
-                <SecondaryNavLink
-                  href="/about"
-                  pathname={pathname}
-                  label={copy.aboutUs}
-                  icon={<Info size={13} />}
                 />
                 <SecondaryNavLink
                   href="/orders"
                   pathname={pathname}
                   label={copy.trackOrder}
-                  icon={<PackageSearch size={13} />}
-                />
-                <SecondaryNavLink
-                  href="/vendor/register"
-                  pathname={pathname}
-                  label={copy.becomeVendor}
-                  icon={<Store size={13} />}
+                  icon={<PackageSearch size={14} />}
                 />
                 <SecondaryNavLink
                   href="/supply-request"
                   pathname={pathname}
                   label={copy.supplyRequest}
-                  icon={<PackageSearch size={13} />}
+                  icon={<PackageSearch size={14} />}
                   className="hidden lg:inline-flex"
                 />
                 <SecondaryNavLink
                   href="/gifts"
                   pathname={pathname}
                   label={copy.gifts}
-                  icon={<Gift size={13} />}
+                  icon={<Gift size={14} />}
                   className="hidden xl:inline-flex"
                 />
                 <SecondaryNavLink
                   href="/hawala"
                   pathname={pathname}
                   label={copy.hawalaShort}
-                  icon={<Banknote size={13} />}
+                  icon={<Banknote size={14} />}
                   className="hidden xl:inline-flex"
                 />
+                <SecondaryNavLink
+                  href="/about"
+                  pathname={pathname}
+                  label={copy.aboutUs}
+                  icon={<Info size={14} />}
+                />
 
-                <div className="ml-auto flex shrink-0 items-center">
+                <div className="ml-auto flex shrink-0 items-center gap-1 lg:gap-2">
                   <LocaleLink
                     href="/vendor/register"
-                    className="hidden items-center px-2 py-1.5 text-[11px] font-semibold whitespace-nowrap text-[#ec1b23] transition-colors hover:text-[#c4161d] lg:text-[12px] xl:inline-flex"
+                    className="inline-flex items-center px-2.5 py-2 text-[12px] font-semibold whitespace-nowrap text-[#ec1b23] transition-colors hover:text-[#c4161d] lg:text-[13px]"
                   >
                     {copy.sellOnPlatform}
                   </LocaleLink>
@@ -804,7 +798,7 @@ export default function Header() {
                     href="/contact"
                     pathname={pathname}
                     label={copy.support}
-                    icon={<HelpCircle size={13} />}
+                    icon={<HelpCircle size={14} />}
                     className="hidden xl:inline-flex"
                   />
                   <div className="xl:hidden">

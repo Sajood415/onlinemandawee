@@ -408,6 +408,8 @@ model ShopType {
   name         String
   /// Optional Pashto / Dari: { "ps": { "name" }, "fa-AF": { "name" } }
   translations Json?
+  /// Circular tile image (Cloudinary or remote URL).
+  image        String?
   isActive     Boolean  @default(true)
   sortOrder    Int      @default(0)
   createdAt    DateTime @default(now())

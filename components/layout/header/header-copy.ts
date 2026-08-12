@@ -39,7 +39,6 @@ export type HeaderCopy = {
   welcome: string;
   trackOrder: string;
   contact: string;
-  becomeVendor: string;
   sellOnPlatform: string;
   aboutUs: string;
   profile: string;
@@ -102,7 +101,6 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     welcome: "Welcome to Mandawee!",
     trackOrder: "Track Order",
     contact: "Contact",
-    becomeVendor: "Become a Vendor",
     sellOnPlatform: "Sell on Mandawee!",
     aboutUs: "About us",
     profile: "Profile",
@@ -163,7 +161,6 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     welcome: "منداوی ته ښه راغلاست!",
     trackOrder: "امر تعقیب",
     contact: "اړیکه",
-    becomeVendor: "پلورونکی شئ",
     sellOnPlatform: "په منداوی کې وپلورئ!",
     aboutUs: "زموږ په اړه",
     profile: "پروفایل",
@@ -224,7 +221,6 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     welcome: "به منداوی خوش آمدید!",
     trackOrder: "پیگیری سفارش",
     contact: "تماس",
-    becomeVendor: "فروشنده شوید",
     sellOnPlatform: "در منداوی بفروشید!",
     aboutUs: "درباره ما",
     profile: "پروفایل",

@@ -14,6 +14,14 @@ export const shopTypeTranslationsSchema = z
   .optional()
   .nullable();
 
+const shopTypeImageSchema = z
+  .string()
+  .trim()
+  .url()
+  .max(2048)
+  .optional()
+  .nullable();
+
 export const createShopTypeSchema = z.object({
   name: z.string().trim().min(2).max(120),
   slug: z
@@ -24,6 +32,7 @@ export const createShopTypeSchema = z.object({
     .regex(/^[A-Za-z0-9_]+$/, "Slug may only contain letters, numbers, and underscores")
     .optional(),
   translations: shopTypeTranslationsSchema,
+  image: shopTypeImageSchema,
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().min(0).max(9999).optional(),
 });
@@ -31,6 +40,7 @@ export const createShopTypeSchema = z.object({
 export const updateShopTypeSchema = z.object({
   name: z.string().trim().min(2).max(120).optional(),
   translations: shopTypeTranslationsSchema,
+  image: shopTypeImageSchema,
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().min(0).max(9999).optional(),
 });

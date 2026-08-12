@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
+import { Loader2, Plus, RefreshCw, Save, Trash2, Upload } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { AddressAutocompleteInput } from "@/components/address/AddressAutocompleteInput";
@@ -41,6 +42,7 @@ type ShopTypeRow = {
   name: string;
   namePs: string;
   nameFa: string;
+  image: string | null;
   isActive: boolean;
   sortOrder: number;
   createdAt: string;
@@ -103,6 +105,7 @@ export default function AdminSettingsPage() {
   const [addingShopType, setAddingShopType] = useState(false);
   const [savingShopTypeId, setSavingShopTypeId] = useState<string | null>(null);
   const [deletingShopTypeId, setDeletingShopTypeId] = useState<string | null>(null);
+  const [uploadingShopTypeId, setUploadingShopTypeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -318,9 +321,11 @@ export default function AdminSettingsPage() {
       name: string;
       namePs: string;
       nameFa: string;
+      image: string | null;
       isActive: boolean;
       sortOrder: number;
-    }>
+    }>,
+    options?: { silent?: boolean }
   ) => {
     setSavingShopTypeId(id);
     try {
@@ -333,6 +338,7 @@ export default function AdminSettingsPage() {
           name: patch.name ?? current.name,
           isActive: patch.isActive ?? current.isActive,
           sortOrder: patch.sortOrder ?? current.sortOrder,
+          image: patch.image !== undefined ? patch.image : current.image,
           translations: {
             ps: {
               name: (patch.namePs ?? current.namePs).trim() || undefined,
@@ -349,14 +355,42 @@ export default function AdminSettingsPage() {
           .map((row) => (row.id === id ? updated : row))
           .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
       );
-      toast.success(t("toasts.shopTypeSaved"));
+      if (!options?.silent) {
+        toast.success(t("toasts.shopTypeSaved"));
+      }
+      return true;
     } catch (e) {
       toast.error(
         t("toasts.shopTypeSaveFailed"),
         e instanceof Error ? e.message : t("toasts.unknownError")
       );
+      return false;
     } finally {
       setSavingShopTypeId(null);
+    }
+  };
+
+  const onUploadShopTypeImage = async (id: string, file: File) => {
+    setUploadingShopTypeId(id);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetchWithAuth("/api/admin/shop-types/upload", {
+        method: "POST",
+        body: form,
+      });
+      const data = await parseApiResponse<{ url: string }>(res);
+      const saved = await onPatchShopType(id, { image: data.url }, { silent: true });
+      if (saved) {
+        toast.success(t("toasts.shopTypeImageUploaded"));
+      }
+    } catch (e) {
+      toast.error(
+        t("toasts.shopTypeImageUploadFailed"),
+        e instanceof Error ? e.message : t("toasts.unknownError")
+      );
+    } finally {
+      setUploadingShopTypeId(null);
     }
   };
 
@@ -715,6 +749,54 @@ export default function AdminSettingsPage() {
                             )}
                             {t("shopTypesDelete")}
                           </button>
+                        </div>
+                      </div>
+                      <div className="mb-3 flex flex-wrap items-center gap-3">
+                        <div className="relative h-16 w-16 overflow-hidden rounded-full bg-neutral-100 ring-1 ring-neutral-200">
+                          {item.image ? (
+                            <Image
+                              src={item.image}
+                              alt=""
+                              fill
+                              className="object-cover"
+                              sizes="64px"
+                            />
+                          ) : null}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50">
+                            {uploadingShopTypeId === item.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Upload className="h-3.5 w-3.5" />
+                            )}
+                            {uploadingShopTypeId === item.id
+                              ? t("shopTypesUploadingImage")
+                              : t("shopTypesUploadImage")}
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp"
+                              className="hidden"
+                              disabled={uploadingShopTypeId === item.id}
+                              onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                if (file) void onUploadShopTypeImage(item.id, file);
+                                event.currentTarget.value = "";
+                              }}
+                            />
+                          </label>
+                          {item.image ? (
+                            <button
+                              type="button"
+                              disabled={savingShopTypeId === item.id}
+                              onClick={() =>
+                                void onPatchShopType(item.id, { image: null })
+                              }
+                              className="rounded-md px-2 py-1.5 text-xs font-semibold text-neutral-600 hover:bg-neutral-100 disabled:opacity-60"
+                            >
+                              {t("shopTypesRemoveImage")}
+                            </button>
+                          ) : null}
                         </div>
                       </div>
                       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">

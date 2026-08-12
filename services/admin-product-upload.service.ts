@@ -46,6 +46,13 @@ export class AdminProductUploadService {
     return this.uploadImage(input, "mandawee/admin/categories");
   }
 
+  async uploadShopTypeImage(input: {
+    buffer: Buffer;
+    mimeType: string;
+  }): Promise<{ url: string; publicId: string }> {
+    return this.uploadImage(input, "mandawee/admin/shop-types");
+  }
+
   async uploadHomeBannerImage(input: {
     buffer: Buffer;
     mimeType: string;

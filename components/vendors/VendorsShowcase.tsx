@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { ChevronRight, Loader2, Store } from "lucide-react";
@@ -8,7 +9,6 @@ import { ChevronRight, Loader2, Store } from "lucide-react";
 import { VendorCard } from "@/components/vendors/VendorCard";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
-import { FEATURED_SHOP_TYPE_COUNT } from "@/lib/vendors/industry-display";
 import {
   fetchPublicShopTypes,
   fetchPublicVendorListings,
@@ -19,23 +19,48 @@ import {
 function IndustryChip({
   active,
   label,
+  image,
   onClick,
 }: {
   active: boolean;
   label: string;
+  image?: string | null;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`border-b-2 px-1 pb-1.5 text-sm font-semibold transition ${
-        active
-          ? "border-[#0F3460] text-[#0F3460]"
-          : "border-transparent text-neutral-600 hover:text-[#0F3460]"
+      className={`group flex w-[88px] shrink-0 flex-col items-center gap-2 sm:w-[96px] ${
+        active ? "opacity-100" : "opacity-90 hover:opacity-100"
       }`}
     >
-      {label}
+      <span
+        className={`relative flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-full bg-[#EEF0F3] ring-2 transition sm:h-[80px] sm:w-[80px] ${
+          active
+            ? "ring-[#0F3460]"
+            : "ring-transparent group-hover:ring-[#0F3460]/30"
+        }`}
+      >
+        {image ? (
+          <Image
+            src={image}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="80px"
+          />
+        ) : (
+          <Store className="h-6 w-6 text-neutral-400" />
+        )}
+      </span>
+      <span
+        className={`line-clamp-2 text-center text-xs font-semibold leading-snug ${
+          active ? "text-[#0F3460]" : "text-neutral-700"
+        }`}
+      >
+        {label}
+      </span>
     </button>
   );
 }
@@ -125,15 +150,6 @@ export function VendorsShowcase() {
     setSelectedIndustry(industry);
   }, []);
 
-  const featured = useMemo(
-    () => shopTypes.slice(0, FEATURED_SHOP_TYPE_COUNT),
-    [shopTypes]
-  );
-  const secondary = useMemo(
-    () => shopTypes.slice(FEATURED_SHOP_TYPE_COUNT),
-    [shopTypes]
-  );
-
   const selectedLabel =
     shopTypes.find((item) => item.slug === selectedIndustry)?.label ??
     selectedIndustry;
@@ -177,49 +193,22 @@ export function VendorsShowcase() {
 
       <div className="mx-auto w-full max-w-[1540px] px-4 py-8 sm:px-6 sm:py-10">
         <div className="mb-8 space-y-5 border-b border-neutral-200/80 pb-6">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <div className="flex flex-wrap items-start gap-3 sm:gap-4">
             <IndustryChip
               active={selectedIndustry === null}
               label={t("allIndustries")}
               onClick={() => selectIndustry(null)}
             />
+            {shopTypes.map((industry) => (
+              <IndustryChip
+                key={industry.slug}
+                active={selectedIndustry === industry.slug}
+                label={industry.label}
+                image={industry.image}
+                onClick={() => selectIndustry(industry.slug)}
+              />
+            ))}
           </div>
-
-          {featured.length > 0 ? (
-            <div>
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                {t("featuredIndustries")}
-              </p>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                {featured.map((industry) => (
-                  <IndustryChip
-                    key={industry.slug}
-                    active={selectedIndustry === industry.slug}
-                    label={industry.label}
-                    onClick={() => selectIndustry(industry.slug)}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {secondary.length > 0 ? (
-            <div>
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                {t("moreIndustries")}
-              </p>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                {secondary.map((industry) => (
-                  <IndustryChip
-                    key={industry.slug}
-                    active={selectedIndustry === industry.slug}
-                    label={industry.label}
-                    onClick={() => selectIndustry(industry.slug)}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : null}
         </div>
 
         {loading ? (

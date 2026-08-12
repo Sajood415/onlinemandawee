@@ -6,7 +6,10 @@ import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
-import { DEFAULT_SHOP_TYPES } from "@/lib/shop-types/defaults";
+import {
+  DEFAULT_SHOP_TYPES,
+  DEFAULT_SHOP_TYPE_IMAGE_BY_SLUG,
+} from "@/lib/shop-types/defaults";
 import {
   normalizeShopTypeSlug,
   resolveShopTypeLabel,
@@ -37,6 +40,7 @@ export class ShopTypeService {
     return rows.map((row) => ({
       slug: row.slug,
       label: resolveShopTypeLabel(row.name, row.translations, locale),
+      image: row.image ?? DEFAULT_SHOP_TYPE_IMAGE_BY_SLUG[row.slug] ?? null,
       sortOrder: row.sortOrder,
     }));
   }
@@ -99,6 +103,7 @@ export class ShopTypeService {
         ps?: { name?: string };
         "fa-AF"?: { name?: string };
       } | null;
+      image?: string | null;
       isActive?: boolean;
       sortOrder?: number;
     }
@@ -127,6 +132,7 @@ export class ShopTypeService {
       slug,
       name,
       translations: input.translations ?? null,
+      image: input.image?.trim() || DEFAULT_SHOP_TYPE_IMAGE_BY_SLUG[slug] || null,
       isActive: input.isActive ?? true,
       sortOrder: input.sortOrder ?? 0,
     });
@@ -151,6 +157,7 @@ export class ShopTypeService {
         ps?: { name?: string };
         "fa-AF"?: { name?: string };
       } | null;
+      image?: string | null;
       isActive?: boolean;
       sortOrder?: number;
     }
@@ -168,6 +175,7 @@ export class ShopTypeService {
     const updated = await this.repository.update(id, {
       name: input.name?.trim(),
       translations: input.translations,
+      image: input.image === undefined ? undefined : input.image?.trim() || null,
       isActive: input.isActive,
       sortOrder: input.sortOrder,
     });
@@ -226,6 +234,7 @@ export class ShopTypeService {
       name: row.name,
       namePs: translations.ps?.name ?? "",
       nameFa: translations["fa-AF"]?.name ?? "",
+      image: row.image ?? null,
       isActive: row.isActive,
       sortOrder: row.sortOrder,
       createdAt: row.createdAt.toISOString(),
@@ -254,6 +263,7 @@ export class ShopTypeService {
           slug: item.slug,
           name: item.name,
           translations: item.translations,
+          image: item.image,
           isActive: true,
           sortOrder: item.sortOrder,
         });
@@ -269,4 +279,5 @@ export class ShopTypeService {
       }
     }
   }
+
 }

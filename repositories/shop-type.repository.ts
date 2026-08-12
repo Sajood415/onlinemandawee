@@ -40,6 +40,7 @@ export class ShopTypeRepository {
     slug: string;
     name: string;
     translations?: ShopTypeTranslationBundle | null;
+    image?: string | null;
     isActive?: boolean;
     sortOrder?: number;
   }) {
@@ -48,6 +49,7 @@ export class ShopTypeRepository {
         slug: input.slug,
         name: input.name,
         translations: asJson(input.translations),
+        image: input.image ?? null,
         isActive: input.isActive ?? true,
         sortOrder: input.sortOrder ?? 0,
       },
@@ -59,6 +61,7 @@ export class ShopTypeRepository {
     input: {
       name?: string;
       translations?: ShopTypeTranslationBundle | null;
+      image?: string | null;
       isActive?: boolean;
       sortOrder?: number;
     }
@@ -71,6 +74,7 @@ export class ShopTypeRepository {
         input.translations === null ? null : asJson(input.translations)
       ) as Prisma.InputJsonValue;
     }
+    if (input.image !== undefined) data.image = input.image;
     if (input.isActive !== undefined) data.isActive = input.isActive;
     if (input.sortOrder !== undefined) data.sortOrder = input.sortOrder;
 
