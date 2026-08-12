@@ -156,4 +156,15 @@ export const publicVendorsQuerySchema = z.object({
     .max(64)
     .regex(/^[A-Z0-9_]+$/)
     .optional(),
+  search: z.string().trim().min(1).max(120).optional(),
+  country: z.string().trim().min(1).max(120).optional(),
+  city: z.string().trim().min(1).max(120).optional(),
+});
+
+export const publicMarketplaceSearchSchema = z.object({
+  q: z.string().trim().min(1).max(120),
+  suggest: z
+    .union([z.literal("1"), z.literal("true"), z.literal("yes")])
+    .optional()
+    .transform((value) => value != null),
 });

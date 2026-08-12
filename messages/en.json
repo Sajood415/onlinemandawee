@@ -2,7 +2,7 @@
   "Homepage": {
     "direction": "ltr",
     "navbar": {
-      "searchPlaceholder": "Search the store",
+      "searchPlaceholder": "Search products, vendors, industry, city, country…",
       "cartLabel": "Cart"
     },
     "store": {
@@ -4880,6 +4880,38 @@
           ]
         }
       ]
+    }
+  },
+  "SearchPages": {
+    "suggest": {
+      "loading": "Searching…",
+      "noMatches": "No matches yet — keep typing or press Enter.",
+      "clear": "Clear search",
+      "products": "Products",
+      "vendors": "Vendors",
+      "industries": "Industries",
+      "places": "Places",
+      "city": "City",
+      "country": "Country",
+      "viewAllResults": "View all results for “{query}”"
+    },
+    "results": {
+      "eyebrow": "Marketplace search",
+      "titleWithQuery": "Results for “{query}”",
+      "titleEmpty": "Search Mandawee",
+      "subtitle": "Find products, vendors, industries, cities, and countries.",
+      "emptyHint": "Type a product, store name, industry, city, or country in the search bar.",
+      "noResults": "No matches found",
+      "noResultsHint": "Try another word — store name, industry, city, or country.",
+      "browseProducts": "Browse products",
+      "industriesTitle": "Industries",
+      "placesTitle": "Regions & countries",
+      "city": "City",
+      "country": "Country",
+      "vendorsTitle": "Vendors",
+      "seeAllVendors": "See all matching vendors",
+      "productsTitle": "Products",
+      "seeAllProducts": "See all {count} products"
     }
   },
   "VendorsPages": {

@@ -8,6 +8,8 @@ export type PublicVendorListing = {
   description: string | null;
   industryType: string | null;
   industryLabel?: string | null;
+  city?: string | null;
+  country?: string | null;
   productCount: number;
 };
 
@@ -19,10 +21,16 @@ export type PublicShopTypeOption = {
 
 export async function fetchPublicVendorListings(filters?: {
   industry?: string;
+  search?: string;
+  country?: string;
+  city?: string;
   locale?: string;
 }): Promise<PublicVendorListing[]> {
   const params = new URLSearchParams();
   if (filters?.industry) params.set("industry", filters.industry);
+  if (filters?.search) params.set("search", filters.search);
+  if (filters?.country) params.set("country", filters.country);
+  if (filters?.city) params.set("city", filters.city);
   if (filters?.locale) params.set("locale", filters.locale);
 
   const qs = params.toString();

@@ -58,11 +58,11 @@ export type HeaderCopy = {
 export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
   en: {
     searchSuggestions: [
-      "Search for fresh fruits...",
-      "Find organic vegetables...",
-      "Discover artisan bread...",
-      "Shop local dairy products...",
-      "Browse premium coffee...",
+      "Search products or vendors...",
+      "Try an industry like bakery...",
+      "Search by city or country...",
+      "Find stores near you...",
+      "Browse groceries and more...",
     ],
     searchButton: "Search",
     mobileSearchPlaceholder: "Search...",

@@ -61,6 +61,12 @@ export function VendorCard({ vendor }: VendorCardProps) {
           <div className="flex-1" />
         )}
 
+        {vendor.city || vendor.country ? (
+          <p className="mt-3 text-xs text-neutral-500">
+            {[vendor.city, vendor.country].filter(Boolean).join(", ")}
+          </p>
+        ) : null}
+
         <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-neutral-500">
           <Package className="h-3.5 w-3.5" />
           {vendor.productCount} {productLabel}

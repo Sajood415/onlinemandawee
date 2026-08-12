@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client";
+
 import { prisma } from "@/lib/db/prisma";
 
 import type { BusinessType } from "@/domain/vendor/vendor-types";
@@ -204,19 +206,75 @@ export class VendorProfileRepository {
     });
   }
 
-  listPublic(filters?: { industryType?: string }) {
-    return prisma.vendorProfile.findMany({
-      where: {
-        status: "ACTIVE",
-        storeName: { not: null },
-        storeSlug: { not: null },
+  listPublic(filters?: {
+    industryType?: string;
+    industryTypes?: string[];
+    search?: string;
+    country?: string;
+    city?: string;
+  }) {
+    const and: Prisma.VendorProfileWhereInput[] = [
+      { status: "ACTIVE" },
+      { storeName: { not: null } },
+      { storeSlug: { not: null } },
+      {
         NOT: {
           storeSlug: {
             startsWith: "_draft_",
           },
         },
-        ...(filters?.industryType ? { industryType: filters.industryType } : {}),
       },
+    ];
+
+    if (filters?.industryType) {
+      and.push({ industryType: filters.industryType });
+    } else if (filters?.industryTypes?.length) {
+      and.push({ industryType: { in: filters.industryTypes } });
+    }
+
+    if (filters?.country?.trim()) {
+      and.push({
+        address: {
+          is: {
+            country: { contains: filters.country.trim(), mode: "insensitive" },
+          },
+        },
+      });
+    }
+
+    if (filters?.city?.trim()) {
+      and.push({
+        address: {
+          is: {
+            city: { contains: filters.city.trim(), mode: "insensitive" },
+          },
+        },
+      });
+    }
+
+    if (filters?.search?.trim()) {
+      const search = filters.search.trim();
+      and.push({
+        OR: [
+          { storeName: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+          { industryType: { contains: search, mode: "insensitive" } },
+          {
+            address: {
+              is: { city: { contains: search, mode: "insensitive" } },
+            },
+          },
+          {
+            address: {
+              is: { country: { contains: search, mode: "insensitive" } },
+            },
+          },
+        ],
+      });
+    }
+
+    return prisma.vendorProfile.findMany({
+      where: { AND: and },
       select: {
         id: true,
         storeName: true,
@@ -225,6 +283,12 @@ export class VendorProfileRepository {
         description: true,
         industryType: true,
         approvedAt: true,
+        address: {
+          select: {
+            city: true,
+            country: true,
+          },
+        },
         _count: {
           select: {
             products: {

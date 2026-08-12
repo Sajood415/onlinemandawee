@@ -53,6 +53,9 @@ export function VendorsShowcase() {
   const [selectedIndustry, setSelectedIndustry] = useState<string | null>(
     searchParams.get("industry")
   );
+  const placeCity = searchParams.get("city");
+  const placeCountry = searchParams.get("country");
+  const placeSearch = searchParams.get("search");
   const [vendors, setVendors] = useState<PublicVendorListing[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -99,6 +102,9 @@ export function VendorsShowcase() {
       try {
         const listings = await fetchPublicVendorListings({
           industry: selectedIndustry ?? undefined,
+          city: placeCity ?? undefined,
+          country: placeCountry ?? undefined,
+          search: placeSearch ?? undefined,
           locale,
         });
         if (mounted) setVendors(listings);
@@ -113,7 +119,7 @@ export function VendorsShowcase() {
     return () => {
       mounted = false;
     };
-  }, [locale, selectedIndustry]);
+  }, [locale, placeCity, placeCountry, placeSearch, selectedIndustry]);
 
   const selectIndustry = useCallback((industry: string | null) => {
     setSelectedIndustry(industry);
@@ -134,7 +140,9 @@ export function VendorsShowcase() {
 
   const headerSubtitle = selectedIndustry
     ? selectedLabel ?? t("subtitle")
-    : t("subtitle");
+    : placeCity || placeCountry || placeSearch
+      ? [placeSearch, placeCity, placeCountry].filter(Boolean).join(" · ")
+      : t("subtitle");
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="w-full min-w-0 bg-[#eef1f6]">

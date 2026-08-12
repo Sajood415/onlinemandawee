@@ -300,6 +300,38 @@ export class ProductRepository {
             },
           },
           {
+            vendorProfile: {
+              industryType: {
+                contains: filters.search,
+                mode: "insensitive",
+              },
+            },
+          },
+          {
+            vendorProfile: {
+              address: {
+                is: {
+                  city: {
+                    contains: filters.search,
+                    mode: "insensitive",
+                  },
+                },
+              },
+            },
+          },
+          {
+            vendorProfile: {
+              address: {
+                is: {
+                  country: {
+                    contains: filters.search,
+                    mode: "insensitive",
+                  },
+                },
+              },
+            },
+          },
+          {
             category: {
               name: {
                 contains: filters.search,

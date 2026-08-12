@@ -391,13 +391,205 @@ export class CatalogQueryService {
     return { ...product, availableCoupons };
   }
 
-  async listVendors(filters?: { industry?: string; locale?: string }) {
-    const vendors = await this.vendorProfileRepository.listPublic(
-      filters?.industry ? { industryType: filters.industry } : undefined
+  async listVendors(filters?: {
+    industry?: string;
+    search?: string;
+    country?: string;
+    city?: string;
+    locale?: string;
+  }) {
+    const vendors = await this.vendorProfileRepository.listPublic({
+      industryType: filters?.industry,
+      search: filters?.search,
+      country: filters?.country,
+      city: filters?.city,
+    });
+    const labelMap = await this.shopTypeService.resolveLabelMap(
+      filters?.locale ?? "en"
     );
-    const labelMap = await this.shopTypeService.resolveLabelMap(filters?.locale ?? "en");
 
-    return vendors.map((vendor) => ({
+    return vendors.map((vendor) => this.toPublicVendor(vendor, labelMap));
+  }
+
+  /** Compact payload for header autocomplete dropdown. */
+  async suggestMarketplace(query: string, locale = "en") {
+    const full = await this.searchMarketplace(query, locale, {
+      productLimit: 6,
+      vendorLimit: 6,
+      industryLimit: 5,
+      placeLimit: 4,
+    });
+
+    return {
+      query: full.query,
+      products: full.products.map((product) => ({
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        image: product.images[0] ?? null,
+        priceAmount: product.priceAmount,
+        currency: product.currency,
+        href: `/products/${product.id}`,
+      })),
+      productTotal: full.productTotal,
+      vendors: full.vendors.map((vendor) => ({
+        id: vendor.id,
+        storeName: vendor.storeName,
+        storeSlug: vendor.storeSlug,
+        logoUrl: vendor.logoUrl,
+        industryLabel: vendor.industryLabel,
+        city: vendor.city,
+        country: vendor.country,
+        href: `/vendors/${vendor.storeSlug}`,
+      })),
+      industries: full.industries,
+      places: full.places,
+    };
+  }
+
+  /**
+   * Unified marketplace search: products, vendors/stores, industries, places.
+   */
+  async searchMarketplace(
+    query: string,
+    locale = "en",
+    limits?: {
+      productLimit?: number;
+      vendorLimit?: number;
+      industryLimit?: number;
+      placeLimit?: number;
+    }
+  ) {
+    const industryLimit = limits?.industryLimit ?? 12;
+    const vendorLimit = limits?.vendorLimit ?? 24;
+    const productLimit = limits?.productLimit ?? 12;
+    const placeLimit = limits?.placeLimit ?? 12;
+
+    const q = query.trim();
+    const labelMap = await this.shopTypeService.resolveLabelMap(locale);
+    const shopTypes = await this.shopTypeService.listActivePublic(locale);
+    const qLower = q.toLowerCase();
+
+    const industries = shopTypes
+      .filter(
+        (type) =>
+          type.label.toLowerCase().includes(qLower) ||
+          type.slug.toLowerCase().includes(qLower.replace(/\s+/g, "_"))
+      )
+      .slice(0, industryLimit)
+      .map((type) => ({
+        slug: type.slug,
+        label: type.label,
+        href: `/vendors?industry=${encodeURIComponent(type.slug)}`,
+      }));
+
+    const industrySlugs = industries.map((item) => item.slug);
+
+    const [directVendors, industryVendors, productPage] = await Promise.all([
+      this.vendorProfileRepository.listPublic({ search: q }),
+      industrySlugs.length
+        ? this.vendorProfileRepository.listPublic({
+            industryTypes: industrySlugs,
+          })
+        : Promise.resolve([]),
+      this.productRepository.listPublic({
+        search: q,
+        skip: 0,
+        take: productLimit,
+        sort: "newest",
+      }),
+    ]);
+
+    const vendorById = new Map<string, (typeof directVendors)[number]>();
+    for (const vendor of [...directVendors, ...industryVendors]) {
+      vendorById.set(vendor.id, vendor);
+    }
+
+    const placeMap = new Map<
+      string,
+      { kind: "city" | "country"; label: string; href: string }
+    >();
+    for (const vendor of vendorById.values()) {
+      const city = vendor.address?.city?.trim();
+      const country = vendor.address?.country?.trim();
+      if (city && city.toLowerCase().includes(qLower)) {
+        const key = `city:${city.toLowerCase()}`;
+        if (!placeMap.has(key)) {
+          placeMap.set(key, {
+            kind: "city",
+            label: city,
+            href: `/vendors?city=${encodeURIComponent(city)}`,
+          });
+        }
+      }
+      if (country && country.toLowerCase().includes(qLower)) {
+        const key = `country:${country.toLowerCase()}`;
+        if (!placeMap.has(key)) {
+          placeMap.set(key, {
+            kind: "country",
+            label: country,
+            href: `/vendors?country=${encodeURIComponent(country)}`,
+          });
+        }
+      }
+    }
+
+    // If query looks like a place but no vendor address hit yet, still surface chips
+    // when any active vendor lives there.
+    if (placeMap.size === 0 && q.length >= 2) {
+      const [byCity, byCountry] = await Promise.all([
+        this.vendorProfileRepository.listPublic({ city: q }),
+        this.vendorProfileRepository.listPublic({ country: q }),
+      ]);
+      for (const vendor of byCity) {
+        const city = vendor.address?.city?.trim();
+        if (!city) continue;
+        placeMap.set(`city:${city.toLowerCase()}`, {
+          kind: "city",
+          label: city,
+          href: `/vendors?city=${encodeURIComponent(city)}`,
+        });
+        vendorById.set(vendor.id, vendor);
+      }
+      for (const vendor of byCountry) {
+        const country = vendor.address?.country?.trim();
+        if (!country) continue;
+        placeMap.set(`country:${country.toLowerCase()}`, {
+          kind: "country",
+          label: country,
+          href: `/vendors?country=${encodeURIComponent(country)}`,
+        });
+        vendorById.set(vendor.id, vendor);
+      }
+    }
+
+    return {
+      query: q,
+      products: productPage.items,
+      productTotal: productPage.total,
+      vendors: [...vendorById.values()]
+        .slice(0, vendorLimit)
+        .map((vendor) => this.toPublicVendor(vendor, labelMap)),
+      industries,
+      places: [...placeMap.values()].slice(0, placeLimit),
+    };
+  }
+
+  private toPublicVendor(
+    vendor: {
+      id: string;
+      storeName: string | null;
+      storeSlug: string | null;
+      logoUrl: string | null;
+      description: string | null;
+      industryType: string | null;
+      approvedAt: Date | null;
+      address?: { city: string; country: string } | null;
+      _count: { products: number };
+    },
+    labelMap: Map<string, string>
+  ) {
+    return {
       id: vendor.id,
       storeName: vendor.storeName!,
       storeSlug: vendor.storeSlug!,
@@ -407,9 +599,11 @@ export class CatalogQueryService {
       industryLabel: vendor.industryType
         ? labelMap.get(vendor.industryType) ?? vendor.industryType
         : null,
+      city: vendor.address?.city ?? null,
+      country: vendor.address?.country ?? null,
       productCount: vendor._count.products,
       approvedAt: vendor.approvedAt?.toISOString() ?? null,
-    }));
+    };
   }
 
   async getVendorStore(storeSlug: string) {

@@ -2,7 +2,7 @@
   "Homepage": {
     "direction": "rtl",
     "navbar": {
-      "searchPlaceholder": "فروشگاه را جستجو کنید",
+      "searchPlaceholder": "جستجوی محصولات، فروشندگان، صنعت، شهر، کشور…",
       "cartLabel": "سبد"
     },
     "store": {
@@ -4903,6 +4903,38 @@
           ]
         }
       ]
+    }
+  },
+  "SearchPages": {
+    "suggest": {
+      "loading": "در حال جستجو…",
+      "noMatches": "هنوز نتیجه‌ای نیست — ادامه دهید یا Enter بزنید.",
+      "clear": "پاک کردن جستجو",
+      "products": "محصولات",
+      "vendors": "فروشندگان",
+      "industries": "صنایع",
+      "places": "مکان‌ها",
+      "city": "شهر",
+      "country": "کشور",
+      "viewAllResults": "مشاهده همه نتایج برای «{query}»"
+    },
+    "results": {
+      "eyebrow": "جستجوی بازار",
+      "titleWithQuery": "نتایج برای «{query}»",
+      "titleEmpty": "جستجو در منداوی",
+      "subtitle": "محصولات، فروشندگان، صنایع، شهرها و کشورها را پیدا کنید.",
+      "emptyHint": "نام محصول، فروشگاه، صنعت، شهر یا کشور را در نوار جستجو بنویسید.",
+      "noResults": "نتیجه‌ای پیدا نشد",
+      "noResultsHint": "کلمه دیگری امتحان کنید — نام فروشگاه، صنعت، شهر یا کشور.",
+      "browseProducts": "مشاهده محصولات",
+      "industriesTitle": "صنایع",
+      "placesTitle": "مناطق و کشورها",
+      "city": "شهر",
+      "country": "کشور",
+      "vendorsTitle": "فروشندگان",
+      "seeAllVendors": "مشاهده همه فروشندگان مطابق",
+      "productsTitle": "محصولات",
+      "seeAllProducts": "مشاهده همه {count} محصول"
     }
   },
   "VendorsPages": {

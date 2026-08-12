@@ -2,7 +2,7 @@
   "Homepage": {
     "direction": "rtl",
     "navbar": {
-      "searchPlaceholder": "پلورنځی ولټوئ",
+      "searchPlaceholder": "محصولات، پلورونکي، صنعت، ښار، هیواد ولټوئ…",
       "cartLabel": "کارټ"
     },
     "store": {
@@ -4903,6 +4903,38 @@
           ]
         }
       ]
+    }
+  },
+  "SearchPages": {
+    "suggest": {
+      "loading": "لټون کېږي…",
+      "noMatches": "تر اوسه سمون نشته — ولیکئ یا Enter ووهئ.",
+      "clear": "لټون پاک کړئ",
+      "products": "محصولات",
+      "vendors": "پلورونکي",
+      "industries": "صنعتونه",
+      "places": "ځایونه",
+      "city": "ښار",
+      "country": "هیواد",
+      "viewAllResults": "ټولې پایلې د «{query}» لپاره وګورئ"
+    },
+    "results": {
+      "eyebrow": "د مارکیټ لټون",
+      "titleWithQuery": "پایلې د «{query}» لپاره",
+      "titleEmpty": "منداوی ولټوئ",
+      "subtitle": "محصولات، پلورونکي، صنعتونه، ښارونه او هیوادونه ومومئ.",
+      "emptyHint": "په لټون کې د محصول، پلورنځي، صنعت، ښار یا هیواد نوم ولیکئ.",
+      "noResults": "هیڅ پایله ونه موندل شوه",
+      "noResultsHint": "بل کلمه هڅه وکړئ — د پلورنځي نوم، صنعت، ښار یا هیواد.",
+      "browseProducts": "محصولات وګورئ",
+      "industriesTitle": "صنعتونه",
+      "placesTitle": "سیمو او هیوادونه",
+      "city": "ښار",
+      "country": "هیواد",
+      "vendorsTitle": "پلورونکي",
+      "seeAllVendors": "ټول سمون لرونکي پلورونکي وګورئ",
+      "productsTitle": "محصولات",
+      "seeAllProducts": "ټول {count} محصولات وګورئ"
     }
   },
   "VendorsPages": {

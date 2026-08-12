@@ -46,6 +46,7 @@ import { CurrencySelector } from "@/components/layout/header/CurrencySelector";
 import { LanguageSelector } from "@/components/layout/header/LanguageSelector";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
 import { CategoriesMegaMenu } from "@/components/layout/header/CategoriesMegaMenu";
+import { HeaderSearchSuggest } from "@/components/layout/header/HeaderSearchSuggest";
 import { MobileNavMenu } from "@/components/layout/header/MobileNavMenu";
 import { resolveCategoryLabel } from "@/lib/categories/category-labels";
 import { isVendorShopPathname } from "@/lib/routing/vendor-storefront-routes";
@@ -352,6 +353,7 @@ export default function Header() {
   const [charIndex, setCharIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [showSearchSuggest, setShowSearchSuggest] = useState(false);
 
   const headerWrapRef = useRef<HTMLDivElement>(null);
 
@@ -439,28 +441,40 @@ export default function Header() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (!pathname.includes("/products")) return;
-    setSearchQuery(searchParams.get("search") ?? "");
+    if (pathname.includes("/search")) {
+      setSearchQuery(searchParams.get("q") ?? searchParams.get("search") ?? "");
+      return;
+    }
+    if (pathname.includes("/products")) {
+      setSearchQuery(searchParams.get("search") ?? "");
+    }
   }, [pathname, searchParams]);
 
   const handleSearchInputChange = (value: string) => {
     setSearchQuery(value);
+    setShowSearchSuggest(value.trim().length >= 2);
+    if (pathname.includes("/search") && !value.trim()) {
+      router.replace("/search");
+      return;
+    }
     if (pathname.includes("/products") && !value.trim()) {
       router.replace("/products");
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitSearch = useCallback(() => {
     const term = searchQuery.trim();
+    setShowSearchSuggest(false);
     if (!term) {
-      if (pathname.includes("/products")) {
+      if (pathname.includes("/search")) {
+        router.replace("/search");
+      } else if (pathname.includes("/products")) {
         router.replace("/products");
       }
       return;
     }
-    router.push(`/products?search=${encodeURIComponent(term)}`);
-  };
+    router.push(`/search?q=${encodeURIComponent(term)}`);
+  }, [pathname, router, searchQuery]);
 
   const handleLogin = () => {
     if (pathname.startsWith("/auth/")) {
@@ -524,7 +538,9 @@ export default function Header() {
         {/* Red nav: logo on start (left in EN, right in PS/Dari), utils on end */}
         <header
           dir={isRtl ? "rtl" : "ltr"}
-          className={`relative z-[9999] overflow-x-clip overflow-y-visible border-b border-black/10 shadow-[0_2px_12px_rgba(0,0,0,0.15)] ${HEADER_BAR_CLASS}`}
+          className={`relative z-[9999] border-b border-black/10 shadow-[0_2px_12px_rgba(0,0,0,0.15)] ${HEADER_BAR_CLASS} ${
+            showSearchSuggest ? "overflow-visible" : "overflow-x-clip overflow-y-visible"
+          }`}
         >
           <div className="w-full min-w-0 px-2 py-2.5 sm:px-3 sm:py-3 lg:px-4">
             <div className="flex min-w-0 flex-nowrap items-center gap-2 sm:gap-3 lg:gap-4">
@@ -540,34 +556,25 @@ export default function Header() {
                 />
               </LocaleLink>
 
-              {/* Pill search */}
-              <form
-                onSubmit={handleSearch}
-                className={`group hidden h-11 min-w-0 max-w-3xl flex-1 items-center rounded-full border border-white/25 bg-white shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-white/40 md:flex ${isRtl ? "flex-row-reverse pr-1.5 pl-4" : "pl-1.5 pr-4"}`}
-              >
-                <button
-                  type="submit"
-                  className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#ec1b23] text-white transition-colors hover:bg-[#c4161d]"
-                  aria-label={copy.searchButton}
-                >
-                  <Search size={18} />
-                </button>
-                <input
-                  value={searchQuery}
-                  onChange={(e) => handleSearchInputChange(e.target.value)}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
-                  placeholder={
-                    isSearchFocused || searchQuery
-                      ? t("searchPlaceholder")
-                      : placeholderText
-                  }
-                  className="min-w-0 flex-1 bg-transparent px-3 text-[14px] font-medium text-gray-900 outline-none placeholder:text-gray-400"
-                />
-                <span className="hidden shrink-0 items-center gap-1 border-s border-gray-200 ps-3 text-xs font-semibold text-gray-500 sm:inline-flex">
-                  {copy.products}
-                </span>
-              </form>
+              {/* Pill search + live suggest */}
+              <HeaderSearchSuggest
+                variant="desktop"
+                query={searchQuery}
+                open={showSearchSuggest}
+                onOpenChange={(open) => {
+                  setShowSearchSuggest(open);
+                  setIsSearchFocused(open);
+                }}
+                onQueryChange={handleSearchInputChange}
+                onSubmitSearch={submitSearch}
+                placeholder={
+                  isSearchFocused || searchQuery
+                    ? t("searchPlaceholder")
+                    : placeholderText
+                }
+                searchButtonLabel={copy.searchButton}
+                isRtl={isRtl}
+              />
 
               {/* End side: Categories + lang/currency + utils (right in EN, left in PS/Dari) */}
               <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2 lg:gap-3">
@@ -697,31 +704,25 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Mobile search */}
-            <form
-              onSubmit={handleSearch}
-              className={`relative mt-2 flex h-10 items-center rounded-full border border-white/20 bg-white px-1.5 md:hidden ${isRtl ? "flex-row-reverse" : ""}`}
-            >
-              <button
-                type="submit"
-                className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#ec1b23] text-white"
-                aria-label={copy.searchButton}
-              >
-                <Search size={16} />
-              </button>
-              <input
-                value={searchQuery}
-                onChange={(e) => handleSearchInputChange(e.target.value)}
-                onFocus={() => setIsSearchFocused(true)}
-                onBlur={() => setIsSearchFocused(false)}
-                placeholder={
-                  isSearchFocused || searchQuery
-                    ? copy.mobileSearchPlaceholder
-                    : placeholderText
-                }
-                className="min-w-0 flex-1 bg-transparent px-2.5 text-[14px] font-medium text-gray-900 outline-none placeholder:text-gray-400"
-              />
-            </form>
+            {/* Mobile search + live suggest */}
+            <HeaderSearchSuggest
+              variant="mobile"
+              query={searchQuery}
+              open={showSearchSuggest}
+              onOpenChange={(open) => {
+                setShowSearchSuggest(open);
+                setIsSearchFocused(open);
+              }}
+              onQueryChange={handleSearchInputChange}
+              onSubmitSearch={submitSearch}
+              placeholder={
+                isSearchFocused || searchQuery
+                  ? copy.mobileSearchPlaceholder
+                  : placeholderText
+              }
+              searchButtonLabel={copy.searchButton}
+              isRtl={isRtl}
+            />
           </div>
         </header>
 
