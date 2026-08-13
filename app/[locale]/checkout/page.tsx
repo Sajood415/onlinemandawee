@@ -814,10 +814,17 @@ function DeliveryCostStep({
   const pickupLocations = summary?.pickupLocations ?? [];
   const isPickup = deliveryMethod === "PICKUP";
   const isExpress = deliveryMethod === "EXPRESS";
+  const isRtl = locale !== "en";
   const [customsAccepted, setCustomsAccepted] = useState(false);
+  const [customsModalOpen, setCustomsModalOpen] = useState(false);
 
   useEffect(() => {
-    if (!isExpress) setCustomsAccepted(false);
+    if (!isExpress) {
+      setCustomsAccepted(false);
+      setCustomsModalOpen(false);
+      return;
+    }
+    setCustomsModalOpen(true);
   }, [isExpress]);
 
   const canContinue =
@@ -874,21 +881,94 @@ function DeliveryCostStep({
       </div>
 
       {isExpress ? (
-        <div className="space-y-2">
-          <label className="flex cursor-pointer items-start gap-3 border border-neutral-200 px-4 py-3 text-left">
-            <input
-              type="checkbox"
-              checked={customsAccepted}
-              onChange={(e) => setCustomsAccepted(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-[#0F3460]"
-            />
-            <span className="text-sm text-neutral-700">
-              {copy.deliveryMethod.customsCheckbox}
-            </span>
-          </label>
-          {!customsAccepted ? (
-            <p className="text-xs text-neutral-500">{copy.deliveryMethod.customsRequired}</p>
-          ) : null}
+        <div className="space-y-2 border border-neutral-200 px-4 py-3">
+          {customsAccepted ? (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p className="flex items-start gap-2 text-sm text-neutral-700">
+                <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#0F3460]" />
+                <span>{copy.deliveryMethod.customsModal.accepted}</span>
+              </p>
+              <button
+                type="button"
+                onClick={() => setCustomsModalOpen(true)}
+                className="text-xs font-semibold text-[#0F3460] underline"
+              >
+                {copy.deliveryMethod.customsModal.review}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm text-neutral-700">{copy.deliveryMethod.customsRequired}</p>
+              <button
+                type="button"
+                onClick={() => setCustomsModalOpen(true)}
+                className="text-sm font-semibold text-[#0F3460] underline"
+              >
+                {copy.deliveryMethod.customsModal.title}
+              </button>
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {customsModalOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setCustomsModalOpen(false);
+          }}
+        >
+          <div
+            dir={isRtl ? "rtl" : "ltr"}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="customs-duty-title"
+            className="w-full max-w-md border border-neutral-200 bg-white shadow-xl"
+          >
+            <div className="flex items-start justify-between border-b border-neutral-200 px-5 py-4">
+              <h2
+                id="customs-duty-title"
+                className="text-lg font-semibold text-neutral-900"
+              >
+                {copy.deliveryMethod.customsModal.title}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setCustomsModalOpen(false)}
+                className="p-1 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800"
+                aria-label={copy.deliveryMethod.customsModal.cancel}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-3 px-5 py-4">
+              <p className="text-sm leading-relaxed text-neutral-700">
+                {copy.deliveryMethod.customsModal.body}
+              </p>
+              <p className="text-sm font-medium text-neutral-800">
+                {copy.deliveryMethod.customsCheckbox}
+              </p>
+            </div>
+            <div className="flex flex-col-reverse gap-2 border-t border-neutral-200 px-5 py-4 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setCustomsModalOpen(false)}
+                className="border border-neutral-300 px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-neutral-400"
+              >
+                {copy.deliveryMethod.customsModal.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomsAccepted(true);
+                  setCustomsModalOpen(false);
+                }}
+                className="bg-[#0F3460] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+              >
+                {copy.deliveryMethod.customsModal.confirm}
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
 

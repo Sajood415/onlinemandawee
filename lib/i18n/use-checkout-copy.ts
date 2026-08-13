@@ -66,6 +66,14 @@ export function useCheckoutCopy() {
         standardHint: t("deliveryMethod.standardHint"),
         customsCheckbox: t("deliveryMethod.customsCheckbox"),
         customsRequired: t("deliveryMethod.customsRequired"),
+        customsModal: {
+          title: t("deliveryMethod.customsModal.title"),
+          body: t("deliveryMethod.customsModal.body"),
+          confirm: t("deliveryMethod.customsModal.confirm"),
+          cancel: t("deliveryMethod.customsModal.cancel"),
+          accepted: t("deliveryMethod.customsModal.accepted"),
+          review: t("deliveryMethod.customsModal.review"),
+        },
       },
       contact: {
         fullName: t("contact.fullName"),

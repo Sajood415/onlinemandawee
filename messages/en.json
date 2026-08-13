@@ -4243,7 +4243,15 @@
       "expressHint": "Seller ships straight to your address.",
       "standardHint": "Goes to our warehouse first, then we ship to you.",
       "customsCheckbox": "I understand any customs or import charges are paid by me and are not included in this total.",
-      "customsRequired": "Please confirm you understand customs charges before continuing."
+      "customsRequired": "Please confirm you understand customs charges before continuing.",
+      "customsModal": {
+        "title": "Customs & import charges",
+        "body": "With Express, the seller ships straight to you. If the package crosses a border, any customs duty or import fees are paid by you. They are not included in this checkout total.",
+        "confirm": "I understand",
+        "cancel": "Not now",
+        "accepted": "You confirmed that customs and import charges are paid by you.",
+        "review": "Review again"
+      }
     },
     "contact": {
       "fullName": "Full Name",
