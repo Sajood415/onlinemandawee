@@ -48,6 +48,8 @@ type AddCartItemOptions = {
 
 type CartContextType = {
   cart: Cart;
+  /** False until localStorage cart has been read (avoids empty-cart redirects on remount). */
+  hasHydrated: boolean;
   isLoading: boolean;
   itemCount: number;
   total: number;
@@ -85,16 +87,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const locale = useLocale() as SupportedLocale;
   const { currency, convertPrice } = useCurrency();
   const [cart, setCart] = useState<Cart>({ items: [] });
+  const [hasHydrated, setHasHydrated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem(CART_STORAGE_KEY);
-    if (stored) {
-      try {
+    try {
+      const stored = localStorage.getItem(CART_STORAGE_KEY);
+      if (stored) {
         setCart(normalizeCart(JSON.parse(stored)));
-      } catch (e) {
-        console.error("Failed to parse cart:", e);
       }
+    } catch (e) {
+      console.error("Failed to parse cart:", e);
+    } finally {
+      setHasHydrated(true);
     }
   }, []);
 
@@ -366,6 +371,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     <CartContext.Provider
       value={{
         cart,
+        hasHydrated,
         isLoading,
         itemCount,
         total,

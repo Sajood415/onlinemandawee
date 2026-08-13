@@ -1608,7 +1608,7 @@ export default function CheckoutPage() {
   const locale = useLocale();
   const copy = useCheckoutCopy();
   const validators = useMemo(() => createCheckoutValidators(copy), [copy]);
-  const { cart, removeItem, refreshCartPrices } = useCart();
+  const { cart, hasHydrated, removeItem, refreshCartPrices } = useCart();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { currency } = useCurrency();
@@ -1688,10 +1688,12 @@ export default function CheckoutPage() {
   }, [refreshCartPrices]);
 
   useEffect(() => {
+    // Wait for localStorage hydration — language switches remount the cart empty for a tick.
+    if (!hasHydrated) return;
     if (cartItems.length === 0 && !successOrderNumber) {
       router.replace("/");
     }
-  }, [cartItems.length, router, successOrderNumber]);
+  }, [hasHydrated, cartItems.length, router, successOrderNumber]);
 
   const scrollToCheckoutStep = useCallback(() => {
     stepPanelRef.current?.scrollIntoView({ behavior: "instant", block: "start" });
