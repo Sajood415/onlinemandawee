@@ -2777,7 +2777,7 @@
           "pendingMembership": "عضویت پرداخت‌نشده",
           "pendingInvoices": "{count} فاکتور پرداخت‌نشده",
           "feesCollected": "کارمزد جمع‌شده از سفارش‌ها",
-          "feesCollectedSub": "کل کمیسیون ۳٫۹۹٪ جمع‌آوری‌شده از این فروشنده",
+          "feesCollectedSub": "کل کمیسیون جمع‌آوری‌شده از سفارش‌های این فروشنده",
           "membershipStatus": "وضعیت عضویت",
           "trialEnds": "پایان دوره آزمایشی",
           "periodStart": "شروع دوره",
@@ -2837,11 +2837,34 @@
           "DRIVERS_LICENSE": "گواهینامه رانندگی",
           "NATIONAL_ID": "شناسنامه ملی"
         },
+        "feeOverrides": {
+          "title": "تخفیف یا معاف کردن کارمزدها",
+          "help": "عضویت ماهانه و کمیسیون فروش را جدا تنظیم کنید. تاریخ پایان اختیاری هر کارمزد را خودکار به نرخ پیش‌فرض برمی‌گرداند (بدون ایمیل).",
+          "platformDisabled": "فروشگاه‌های PLATFORM از عضویت و کمیسیون معاف هستند.",
+          "membershipTitle": "عضویت ماهانه",
+          "commissionTitle": "کمیسیون فروش",
+          "defaultLabel": "پیش‌فرض پلتفرم: {value}",
+          "mode": "تنظیم",
+          "modeDefault": "استفاده از پیش‌فرض پلتفرم",
+          "modeCustom": "مبلغ / نرخ سفارشی",
+          "modeWaive": "معاف (۰)",
+          "membershipAmount": "مبلغ ماهانه (USD)",
+          "commissionPercent": "درصد کمیسیون",
+          "endsAt": "پایان در (اختیاری)",
+          "endsAtHint": "خالی بگذارید تا خودتان تغییر دهید. زمان گذشته رد می‌شود.",
+          "effectiveNow": "اکنون فعال: {membership}/ماه · {commission} در هر فروش",
+          "save": "ذخیره تنظیم کارمزد",
+          "saving": "در حال ذخیره…",
+          "invalidMembershipAmount": "مبلغ ماهانه معتبر وارد کنید",
+          "invalidCommissionPercent": "درصد کمیسیون بین ۰ و ۱۰۰ وارد کنید"
+        },
         "toasts": {
           "markedPaid": "فاکتور پرداخت‌شده علامت خورد",
           "markPaidFailed": "علامت پرداخت ممکن نشد",
           "waived": "فاکتور معاف شد",
-          "waiveFailed": "معاف کردن فاکتور ممکن نشد"
+          "waiveFailed": "معاف کردن فاکتور ممکن نشد",
+          "feesSaved": "تنظیم کارمزد ذخیره شد — به فروشنده ایمیل ارسال شد",
+          "feesSaveFailed": "ذخیره تنظیم کارمزد ممکن نشد"
         }
       }
     },

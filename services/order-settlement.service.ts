@@ -1,12 +1,12 @@
 import { Prisma } from "@prisma/client";
 
-import { env } from "@/config/env.shared";
 import { computeInitialPayoutHoldUntil } from "@/lib/payout/payout-hold";
 import { resolveVendorSettlementDeliveryAmount } from "@/lib/delivery/vendor-settlement-delivery";
 import {
   calculateCommissionAmountMinor,
   resolveCommissionBaseAmountMinor,
 } from "@/lib/platform/transaction-fee";
+import { resolveCommissionRateBps } from "@/lib/vendors/fee-overrides";
 import { prisma } from "@/lib/db/prisma";
 import { OrderRepository } from "@/repositories/order.repository";
 
@@ -24,6 +24,8 @@ type VendorOrderForSettlement = {
   currency: string;
   vendorProfile?: {
     sellerType?: "PLATFORM" | "THIRD_PARTY";
+    commissionRateBpsOverride?: number | null;
+    commissionRateOverrideEndsAt?: Date | string | null;
   };
 };
 
@@ -47,12 +49,25 @@ export class OrderSettlementService {
     const effectiveDeliveryMethod =
       vendorOrder.deliveryMethod ?? input.deliveryMethod ?? null;
 
+    const vendorProfile =
+      vendorOrder.vendorProfile ??
+      (await prisma.vendorProfile.findUnique({
+        where: { id: vendorOrder.vendorProfileId },
+        select: {
+          sellerType: true,
+          commissionRateBpsOverride: true,
+          commissionRateOverrideEndsAt: true,
+        },
+      }));
+
     const sellerType =
-      vendorOrder.sellerType ??
-      vendorOrder.vendorProfile?.sellerType ??
-      "THIRD_PARTY";
-    const isPlatformVendor = sellerType === "PLATFORM";
-    const rateBps = isPlatformVendor ? 0 : env.COMMISSION_RATE_BPS;
+      vendorOrder.sellerType ?? vendorProfile?.sellerType ?? "THIRD_PARTY";
+    const rateBps = resolveCommissionRateBps({
+      sellerType,
+      commissionRateBpsOverride: vendorProfile?.commissionRateBpsOverride ?? null,
+      commissionRateOverrideEndsAt:
+        vendorProfile?.commissionRateOverrideEndsAt ?? null,
+    });
     // STANDARD third-party delivery never settles to the vendor (Mandawee keeps it).
     const settlementDeliveryAmount = resolveVendorSettlementDeliveryAmount({
       deliveryMethod: effectiveDeliveryMethod,
@@ -69,15 +84,16 @@ export class OrderSettlementService {
       deliveryAmount: settlementDeliveryAmount,
       deliveryMethod: effectiveDeliveryMethod,
     });
-    const commissionAmount = isPlatformVendor
-      ? 0
-      : Math.min(
-          calculateCommissionAmountMinor({
-            baseAmountMinor: baseAmount,
-            rateBps,
-          }),
-          effectiveGrandTotal
-        );
+    const commissionAmount =
+      rateBps <= 0
+        ? 0
+        : Math.min(
+            calculateCommissionAmountMinor({
+              baseAmountMinor: baseAmount,
+              rateBps,
+            }),
+            effectiveGrandTotal
+          );
     const netEarningsAmount = effectiveGrandTotal - commissionAmount;
 
     const holdUntil = computeInitialPayoutHoldUntil(effectiveDeliveryMethod);

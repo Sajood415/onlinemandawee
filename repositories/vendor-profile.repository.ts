@@ -164,6 +164,51 @@ export class VendorProfileRepository {
     });
   }
 
+  updateFeeOverrides(input: {
+    vendorProfileId: string;
+    membershipFeeAmountOverride: number | null;
+    membershipFeeOverrideEndsAt: Date | null;
+    commissionRateBpsOverride: number | null;
+    commissionRateOverrideEndsAt: Date | null;
+  }) {
+    return prisma.vendorProfile.update({
+      where: { id: input.vendorProfileId },
+      data: {
+        membershipFeeAmountOverride: input.membershipFeeAmountOverride,
+        membershipFeeOverrideEndsAt: input.membershipFeeOverrideEndsAt,
+        commissionRateBpsOverride: input.commissionRateBpsOverride,
+        commissionRateOverrideEndsAt: input.commissionRateOverrideEndsAt,
+      },
+      include: {
+        user: true,
+        kycDocuments: true,
+        address: true,
+        payoutMethod: true,
+        agreementAcceptance: true,
+      },
+    });
+  }
+
+  listWithExpiredFeeOverrides(now = new Date()) {
+    return prisma.vendorProfile.findMany({
+      where: {
+        OR: [
+          {
+            membershipFeeAmountOverride: { isSet: true },
+            membershipFeeOverrideEndsAt: { lte: now },
+          },
+          {
+            commissionRateBpsOverride: { isSet: true },
+            commissionRateOverrideEndsAt: { lte: now },
+          },
+        ],
+      },
+      include: {
+        user: true,
+      },
+    });
+  }
+
   findByStripeCustomerId(stripeCustomerId: string) {
     return prisma.vendorProfile.findFirst({
       where: { stripeCustomerId },

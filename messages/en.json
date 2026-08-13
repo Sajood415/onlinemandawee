@@ -2777,7 +2777,7 @@
           "pendingMembership": "Unpaid membership",
           "pendingInvoices": "{count} unpaid invoice(s)",
           "feesCollected": "Fees collected from orders",
-          "feesCollectedSub": "Total 3.99% commission collected from this vendor",
+          "feesCollectedSub": "Total commission collected from this vendor’s orders",
           "membershipStatus": "Membership status",
           "trialEnds": "Trial ends",
           "periodStart": "Period start",
@@ -2837,11 +2837,34 @@
           "DRIVERS_LICENSE": "Driver’s license",
           "NATIONAL_ID": "National ID"
         },
+        "feeOverrides": {
+          "title": "Discount or waive fees",
+          "help": "Set monthly membership and sales commission separately. Optional end date/time returns each fee to the platform default automatically (no email).",
+          "platformDisabled": "PLATFORM shops are already exempt from membership and sales commission.",
+          "membershipTitle": "Monthly membership",
+          "commissionTitle": "Sales commission",
+          "defaultLabel": "Platform default: {value}",
+          "mode": "Setting",
+          "modeDefault": "Use platform default",
+          "modeCustom": "Custom amount / rate",
+          "modeWaive": "Waive (0)",
+          "membershipAmount": "Monthly amount (USD)",
+          "commissionPercent": "Commission percent",
+          "endsAt": "Ends at (optional)",
+          "endsAtHint": "Leave empty to keep until you change it. Past times are rejected.",
+          "effectiveNow": "Effective now: {membership}/month · {commission} per sale",
+          "save": "Save fee overrides",
+          "saving": "Saving…",
+          "invalidMembershipAmount": "Enter a valid monthly amount",
+          "invalidCommissionPercent": "Enter a commission percent between 0 and 100"
+        },
         "toasts": {
           "markedPaid": "Invoice marked paid",
           "markPaidFailed": "Could not mark invoice paid",
           "waived": "Invoice waived",
-          "waiveFailed": "Could not waive invoice"
+          "waiveFailed": "Could not waive invoice",
+          "feesSaved": "Fee overrides saved — vendor emailed",
+          "feesSaveFailed": "Could not save fee overrides"
         }
       }
     },

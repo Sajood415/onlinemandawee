@@ -352,6 +352,12 @@ model VendorProfile {
   /// Shop type slug from ShopType (e.g. FOOD_BEVERAGES). Legacy enum values kept as strings.
   industryType                   String?
   sellerType                     SellerType                 @default(THIRD_PARTY)
+  /// null = env MEMBERSHIP_FEE_AMOUNT; 0 = waive; else custom amount (minor units).
+  membershipFeeAmountOverride    Int?
+  membershipFeeOverrideEndsAt    DateTime?
+  /// null = env COMMISSION_RATE_BPS; 0 = waive; else custom rate in basis points.
+  commissionRateBpsOverride      Int?
+  commissionRateOverrideEndsAt   DateTime?
   logoUrl                        String?
   businessLicenseUrl             String?
   description                    String?
@@ -397,6 +403,8 @@ model VendorProfile {
   @@index([stripeCustomerId])
   @@index([stripeSubscriptionId])
   @@index([storeSlug])
+  @@index([membershipFeeOverrideEndsAt])
+  @@index([commissionRateOverrideEndsAt])
 }
 
 /// Admin-managed shop / industry types for vendor profiles and browse filters.

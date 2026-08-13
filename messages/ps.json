@@ -2777,7 +2777,7 @@
           "pendingMembership": "نه تادیه شوی غړیتوب",
           "pendingInvoices": "{count} نه تادیه شوي رسید(ونه)",
           "feesCollected": "له فرمایشونو راټول شوي فیسونه",
-          "feesCollectedSub": "د دې پلورونکي ټول ۳.۹۹٪ کمېشن",
+          "feesCollectedSub": "له دې پلورونکي فرمایشونو ټول راټول شوی کمېشن",
           "membershipStatus": "د غړیتوب حالت",
           "trialEnds": "ازمایښت پای ته رسېږي",
           "periodStart": "د مودې پیل",
@@ -2837,11 +2837,34 @@
           "DRIVERS_LICENSE": "د موټر چلولو جواز",
           "NATIONAL_ID": "ملي پېژندپاڼه"
         },
+        "feeOverrides": {
+          "title": "فیسونه تخفیف یا معاف کړئ",
+          "help": "میاشتنی غړیتوب او د پلور کمېشن جلا تنظیم کړئ. اختیاري پای نیټه هر فیس په اوتومات ډول اصلي نرخ ته راګرځوي (پرته له برېښنالیک).",
+          "platformDisabled": "PLATFORM پلورنځي له غړیتوب او کمېشن څخه معاف دي.",
+          "membershipTitle": "میاشتنی غړیتوب",
+          "commissionTitle": "د پلور کمېشن",
+          "defaultLabel": "د پلیټفارم اصلي: {value}",
+          "mode": "تنظیم",
+          "modeDefault": "د پلیټفارم اصلي وکاروئ",
+          "modeCustom": "دودیزه اندازه / نرخ",
+          "modeWaive": "معاف (۰)",
+          "membershipAmount": "میاشتنۍ اندازه (USD)",
+          "commissionPercent": "د کمېشن سلنه",
+          "endsAt": "پای ته رسېږي (اختیاري)",
+          "endsAtHint": "خالي پرېږدئ تر څو تاسو یې بدل نه کړئ. تېر وخت رد کېږي.",
+          "effectiveNow": "اوس فعال: {membership}/میاشت · {commission} په هر پلور",
+          "save": "د فیس تنظیمات خوندي کړئ",
+          "saving": "خوندي کېږي…",
+          "invalidMembershipAmount": "سمه میاشتنۍ اندازه وليکئ",
+          "invalidCommissionPercent": "د کمېشن سلنه د ۰ او ۱۰۰ ترمنځ وليکئ"
+        },
         "toasts": {
           "markedPaid": "رسید تادیه په نښه شو",
           "markPaidFailed": "رسید تادیه نه شو په نښه کول",
           "waived": "رسید معاف شو",
-          "waiveFailed": "رسید نه شو معاف کول"
+          "waiveFailed": "رسید نه شو معاف کول",
+          "feesSaved": "د فیس تنظیمات خوندي شول — پلورونکي ته برېښنالیک ولاړ",
+          "feesSaveFailed": "د فیس تنظیمات خوندي نه شول"
         }
       }
     },

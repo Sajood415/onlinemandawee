@@ -4,6 +4,10 @@ import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
+import {
+  AdminVendorFeeOverridesForm,
+  type VendorFeeOverridesDto,
+} from "@/components/admin/vendors/AdminVendorFeeOverridesForm";
 import { useDashboardGuard } from "@/components/dashboard/use-dashboard-guard";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import type { SellerType } from "@/domain/vendor/vendor-types";
@@ -73,6 +77,7 @@ type VendorDetail = {
     pendingMembershipCount: number;
     totalPlatformCommissionCollected: number;
   };
+  feeOverrides?: VendorFeeOverridesDto;
   subscription: {
     status: "TRIAL" | "ACTIVE" | "FAILED" | "SUSPENDED";
     trialEndsAt: string | null;
@@ -846,6 +851,19 @@ export default function AdminVendorDetailPage() {
             </dl>
           </details>
         </div>
+
+        {vendor.feeOverrides ? (
+          <AdminVendorFeeOverridesForm
+            vendorId={vendor.id}
+            disabled={vendor.sellerType === "PLATFORM"}
+            feeOverrides={vendor.feeOverrides}
+            onSaved={(next) =>
+              setVendor((current) =>
+                current ? { ...current, feeOverrides: next } : current
+              )
+            }
+          />
+        ) : null}
       </Section>
 
       <Section title={`${td("sections.products")} (${vendor.products.length})`}>

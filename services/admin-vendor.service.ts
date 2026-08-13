@@ -1,6 +1,7 @@
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { sendTransactionalEmail } from "@/lib/mail/send-transactional-email";
+import { buildVendorFeeOverrideEmail } from "@/lib/mail/vendor-fee-override-email";
 import { buildVendorReviewStatusEmailHtml } from "@/lib/mail/vendor-review-status-email-html";
 import { AuditLogRepository } from "@/repositories/audit-log.repository";
 import { CommissionLedgerRepository } from "@/repositories/commission-ledger.repository";
@@ -14,6 +15,15 @@ import {
   syncVendorBillingAccess,
 } from "@/lib/membership/billing-access";
 import { isMembershipBillingSuspension } from "@/lib/membership/subscription-policy";
+import {
+  commissionOverrideExpired,
+  defaultCommissionRateBps,
+  defaultMembershipFeeAmountMinor,
+  isMembershipFeeWaived,
+  membershipOverrideExpired,
+  resolveCommissionRateBps,
+  resolveMembershipFeeAmountMinor,
+} from "@/lib/vendors/fee-overrides";
 import { MembershipBillingService } from "@/services/membership-billing.service";
 import { ShopTypeService } from "@/services/shop-type.service";
 import { VendorSubscriptionService } from "@/services/vendor-subscription.service";
@@ -153,6 +163,20 @@ export class AdminVendorService {
         pendingMembershipCount: pendingInvoices.length,
         totalPlatformCommissionCollected,
       },
+      feeOverrides: {
+        currency: env.MEMBERSHIP_INVOICE_CURRENCY,
+        defaultMembershipFeeAmount: defaultMembershipFeeAmountMinor(),
+        defaultCommissionRateBps: defaultCommissionRateBps(),
+        membershipFeeAmountOverride: vendor.membershipFeeAmountOverride ?? null,
+        membershipFeeOverrideEndsAt:
+          vendor.membershipFeeOverrideEndsAt?.toISOString() ?? null,
+        commissionRateBpsOverride: vendor.commissionRateBpsOverride ?? null,
+        commissionRateOverrideEndsAt:
+          vendor.commissionRateOverrideEndsAt?.toISOString() ?? null,
+        effectiveMembershipFeeAmount: resolveMembershipFeeAmountMinor(vendor),
+        effectiveCommissionRateBps: resolveCommissionRateBps(vendor),
+        membershipExempt: isMembershipFeeWaived(vendor),
+      },
       subscription: {
         status: vendor.subscriptionStatus,
         trialEndsAt: vendor.subscriptionTrialEndsAt?.toISOString() ?? null,
@@ -210,6 +234,226 @@ export class AdminVendorService {
         invoiceHostedUrl: invoice.invoiceHostedUrl,
         waivedReason: invoice.waivedReason,
       })),
+    };
+  }
+
+  async updateFeeOverrides(
+    vendorProfileId: string,
+    input: {
+      membershipFeeAmountOverride: number | null;
+      membershipFeeOverrideEndsAt?: string | null;
+      commissionRateBpsOverride: number | null;
+      commissionRateOverrideEndsAt?: string | null;
+    },
+    admin: AuthenticatedUser
+  ) {
+    const vendor = await this.requireVendor(vendorProfileId);
+
+    if (vendor.sellerType === "PLATFORM") {
+      throw new AppError({
+        code: ERROR_CODE.BAD_REQUEST,
+        message:
+          "PLATFORM vendors are already exempt from membership and sales commission",
+        statusCode: 400,
+      });
+    }
+
+    const membershipFeeAmountOverride = input.membershipFeeAmountOverride;
+    const commissionRateBpsOverride = input.commissionRateBpsOverride;
+    const membershipFeeOverrideEndsAt =
+      membershipFeeAmountOverride == null
+        ? null
+        : input.membershipFeeOverrideEndsAt
+          ? new Date(input.membershipFeeOverrideEndsAt)
+          : null;
+    const commissionRateOverrideEndsAt =
+      commissionRateBpsOverride == null
+        ? null
+        : input.commissionRateOverrideEndsAt
+          ? new Date(input.commissionRateOverrideEndsAt)
+          : null;
+
+    const before = {
+      membershipFeeAmountOverride: vendor.membershipFeeAmountOverride ?? null,
+      membershipFeeOverrideEndsAt:
+        vendor.membershipFeeOverrideEndsAt?.toISOString() ?? null,
+      commissionRateBpsOverride: vendor.commissionRateBpsOverride ?? null,
+      commissionRateOverrideEndsAt:
+        vendor.commissionRateOverrideEndsAt?.toISOString() ?? null,
+    };
+
+    const after = {
+      membershipFeeAmountOverride,
+      membershipFeeOverrideEndsAt:
+        membershipFeeOverrideEndsAt?.toISOString() ?? null,
+      commissionRateBpsOverride,
+      commissionRateOverrideEndsAt:
+        commissionRateOverrideEndsAt?.toISOString() ?? null,
+    };
+
+    const unchanged =
+      before.membershipFeeAmountOverride === after.membershipFeeAmountOverride &&
+      before.membershipFeeOverrideEndsAt === after.membershipFeeOverrideEndsAt &&
+      before.commissionRateBpsOverride === after.commissionRateBpsOverride &&
+      before.commissionRateOverrideEndsAt === after.commissionRateOverrideEndsAt;
+
+    if (unchanged) {
+      return {
+        id: vendor.id,
+        feeOverrides: {
+          ...after,
+          currency: env.MEMBERSHIP_INVOICE_CURRENCY,
+          defaultMembershipFeeAmount: defaultMembershipFeeAmountMinor(),
+          defaultCommissionRateBps: defaultCommissionRateBps(),
+          effectiveMembershipFeeAmount: resolveMembershipFeeAmountMinor(vendor),
+          effectiveCommissionRateBps: resolveCommissionRateBps(vendor),
+          membershipExempt: isMembershipFeeWaived(vendor),
+        },
+        updatedAt: vendor.updatedAt.toISOString(),
+      };
+    }
+
+    const updated = await this.vendorProfileRepository.updateFeeOverrides({
+      vendorProfileId,
+      membershipFeeAmountOverride,
+      membershipFeeOverrideEndsAt,
+      commissionRateBpsOverride,
+      commissionRateOverrideEndsAt,
+    });
+
+    try {
+      await this.vendorSubscriptionService.syncMembershipBillingAfterFeeChange(
+        vendorProfileId
+      );
+    } catch {
+      // Fee overrides are saved; Stripe sync is best-effort.
+    }
+
+    await this.auditLogRepository.create({
+      actorUserId: admin.id,
+      actorRole: admin.role,
+      action: "admin.vendor_fees_updated",
+      entityType: "VendorProfile",
+      entityId: vendorProfileId,
+      metadata: { from: before, to: after },
+    });
+
+    const membershipChanged =
+      before.membershipFeeAmountOverride !== after.membershipFeeAmountOverride ||
+      before.membershipFeeOverrideEndsAt !== after.membershipFeeOverrideEndsAt;
+    const commissionChanged =
+      before.commissionRateBpsOverride !== after.commissionRateBpsOverride ||
+      before.commissionRateOverrideEndsAt !== after.commissionRateOverrideEndsAt;
+
+    const emailChange: Parameters<typeof buildVendorFeeOverrideEmail>[0]["change"] =
+      {};
+    if (membershipChanged) {
+      emailChange.membership =
+        after.membershipFeeAmountOverride == null
+          ? { kind: "default" }
+          : after.membershipFeeAmountOverride === 0
+            ? {
+                kind: "waived",
+                endsAt: after.membershipFeeOverrideEndsAt,
+              }
+            : {
+                kind: "custom",
+                amountMinor: after.membershipFeeAmountOverride,
+                endsAt: after.membershipFeeOverrideEndsAt,
+              };
+    }
+    if (commissionChanged) {
+      emailChange.commission =
+        after.commissionRateBpsOverride == null
+          ? { kind: "default" }
+          : after.commissionRateBpsOverride === 0
+            ? {
+                kind: "waived",
+                endsAt: after.commissionRateOverrideEndsAt,
+              }
+            : {
+                kind: "custom",
+                rateBps: after.commissionRateBpsOverride,
+                endsAt: after.commissionRateOverrideEndsAt,
+              };
+    }
+
+    if (emailChange.membership || emailChange.commission) {
+      const email = buildVendorFeeOverrideEmail({
+        appName: env.APP_NAME,
+        storeName: updated.storeName,
+        currency: env.MEMBERSHIP_INVOICE_CURRENCY,
+        change: emailChange,
+      });
+      try {
+        await sendTransactionalEmail({
+          to: updated.user.email,
+          ...email,
+        });
+      } catch {
+        // Do not fail admin save if email delivery fails.
+      }
+    }
+
+    return {
+      id: updated.id,
+      feeOverrides: {
+        ...after,
+        currency: env.MEMBERSHIP_INVOICE_CURRENCY,
+        defaultMembershipFeeAmount: defaultMembershipFeeAmountMinor(),
+        defaultCommissionRateBps: defaultCommissionRateBps(),
+        effectiveMembershipFeeAmount: resolveMembershipFeeAmountMinor(updated),
+        effectiveCommissionRateBps: resolveCommissionRateBps(updated),
+        membershipExempt: isMembershipFeeWaived(updated),
+      },
+      updatedAt: updated.updatedAt.toISOString(),
+    };
+  }
+
+  /** Clear expired overrides (silent). Used by cron / internal route. */
+  async clearExpiredFeeOverrides(now = new Date()) {
+    const rows = await this.vendorProfileRepository.listWithExpiredFeeOverrides(now);
+    let clearedMembership = 0;
+    let clearedCommission = 0;
+
+    for (const vendor of rows) {
+      const clearMembership = membershipOverrideExpired(vendor, now);
+      const clearCommission = commissionOverrideExpired(vendor, now);
+      if (!clearMembership && !clearCommission) continue;
+
+      await this.vendorProfileRepository.updateFeeOverrides({
+        vendorProfileId: vendor.id,
+        membershipFeeAmountOverride: clearMembership
+          ? null
+          : (vendor.membershipFeeAmountOverride ?? null),
+        membershipFeeOverrideEndsAt: clearMembership
+          ? null
+          : (vendor.membershipFeeOverrideEndsAt ?? null),
+        commissionRateBpsOverride: clearCommission
+          ? null
+          : (vendor.commissionRateBpsOverride ?? null),
+        commissionRateOverrideEndsAt: clearCommission
+          ? null
+          : (vendor.commissionRateOverrideEndsAt ?? null),
+      });
+
+      if (clearMembership) {
+        clearedMembership += 1;
+        try {
+          await this.vendorSubscriptionService.syncMembershipBillingAfterFeeChange(
+            vendor.id
+          );
+        } catch {
+          // Best effort Stripe resync after membership override expiry.
+        }
+      }
+      if (clearCommission) clearedCommission += 1;
+    }
+
+    return {
+      scanned: rows.length,
+      clearedMembership,
+      clearedCommission,
     };
   }
 

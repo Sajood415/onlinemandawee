@@ -6,6 +6,11 @@ import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { syncVendorBillingAccess } from "@/lib/membership/billing-access";
 import { stripeSubscriptionPeriod } from "@/lib/stripe/subscription-fields";
 import { getStripeServerClient } from "@/lib/stripe/server";
+import {
+  isMembershipFeeWaived,
+  isMembershipOverrideActive,
+  resolveMembershipFeeAmountMinor,
+} from "@/lib/vendors/fee-overrides";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
 
 type VendorProfileWithUser = Awaited<
@@ -26,10 +31,10 @@ export class VendorSubscriptionService {
         statusCode: 404,
       });
     }
-    if (vendor.sellerType === "PLATFORM") {
+    if (isMembershipFeeWaived(vendor)) {
       throw new AppError({
         code: ERROR_CODE.BAD_REQUEST,
-        message: "PLATFORM vendors are exempt from membership billing",
+        message: "This vendor is exempt from membership billing",
         statusCode: 400,
       });
     }
@@ -65,10 +70,10 @@ export class VendorSubscriptionService {
         statusCode: 404,
       });
     }
-    if (vendor.sellerType === "PLATFORM") {
+    if (isMembershipFeeWaived(vendor)) {
       throw new AppError({
         code: ERROR_CODE.BAD_REQUEST,
-        message: "PLATFORM vendors are exempt from membership billing",
+        message: "This vendor is exempt from membership billing",
         statusCode: 400,
       });
     }
@@ -150,8 +155,8 @@ export class VendorSubscriptionService {
 
     return {
       status: vendor.subscriptionStatus,
-      membershipExempt: vendor.sellerType === "PLATFORM",
-      monthlyAmount: env.MEMBERSHIP_FEE_AMOUNT,
+      membershipExempt: isMembershipFeeWaived(vendor),
+      monthlyAmount: resolveMembershipFeeAmountMinor(vendor),
       currency: env.MEMBERSHIP_INVOICE_CURRENCY,
       trialEndsAt: vendor.subscriptionTrialEndsAt?.toISOString() ?? null,
       isInTrial: vendor.subscriptionStatus === "TRIAL",
@@ -192,10 +197,10 @@ export class VendorSubscriptionService {
         statusCode: 404,
       });
     }
-    if (vendor.sellerType === "PLATFORM") {
+    if (isMembershipFeeWaived(vendor)) {
       throw new AppError({
         code: ERROR_CODE.BAD_REQUEST,
-        message: "PLATFORM vendors are exempt from membership billing",
+        message: "This vendor is exempt from membership billing",
         statusCode: 400,
       });
     }
@@ -223,8 +228,8 @@ export class VendorSubscriptionService {
         statusCode: 404,
       });
     }
-    if (vendor.sellerType === "PLATFORM") {
-      await this.disableMembershipBillingForPlatformVendor(vendor);
+    if (isMembershipFeeWaived(vendor)) {
+      await this.disableMembershipBillingForExemptVendor(vendor);
       return null;
     }
 
@@ -260,7 +265,7 @@ export class VendorSubscriptionService {
       customer: customer.id,
       collection_method: "charge_automatically",
       ...(trialEnd != null ? { trial_end: trialEnd } : {}),
-      items: [await this.resolveSubscriptionItem()],
+      items: [await this.resolveSubscriptionItem(vendor)],
       payment_settings: {
         save_default_payment_method: "on_subscription",
       },
@@ -272,6 +277,45 @@ export class VendorSubscriptionService {
 
     await this.syncVendorFromStripeSubscription(vendor.id, subscription);
     return subscription;
+  }
+
+  /**
+   * After admin fee override changes: waive disables billing;
+   * otherwise recreate subscription so Stripe amount matches the override.
+   */
+  async syncMembershipBillingAfterFeeChange(vendorProfileId: string) {
+    const vendor = await this.vendorProfileRepository.findById(vendorProfileId);
+    if (!vendor) {
+      throw new AppError({
+        code: ERROR_CODE.NOT_FOUND,
+        message: "Vendor profile not found",
+        statusCode: 404,
+      });
+    }
+
+    if (isMembershipFeeWaived(vendor)) {
+      await this.disableMembershipBillingForExemptVendor(vendor);
+      return null;
+    }
+
+    const stripe = getStripeServerClient();
+    if (vendor.stripeSubscriptionId) {
+      try {
+        const existing = await stripe.subscriptions.retrieve(vendor.stripeSubscriptionId);
+        if (existing.status !== "canceled") {
+          await stripe.subscriptions.cancel(existing.id);
+        }
+      } catch {
+        // Best effort — local recreate still proceeds.
+      }
+      await this.vendorProfileRepository.updateStep({
+        vendorProfileId: vendor.id,
+        onboardingStep: vendor.onboardingStep,
+        stripeSubscriptionId: null,
+      });
+    }
+
+    return this.ensureSubscriptionForVendor(vendorProfileId);
   }
 
   async syncVendorFromStripeSubscription(vendorProfileId: string, subscription: Stripe.Subscription) {
@@ -339,22 +383,29 @@ export class VendorSubscriptionService {
     return created;
   }
 
-  private async resolveSubscriptionItem(): Promise<Stripe.SubscriptionCreateParams.Item> {
-    if (env.STRIPE_MEMBERSHIP_PRICE_ID) {
+  private async resolveSubscriptionItem(
+    vendor: NonNullable<VendorProfileWithUser>
+  ): Promise<Stripe.SubscriptionCreateParams.Item> {
+    const unitAmount = resolveMembershipFeeAmountMinor(vendor);
+    // Shared fixed Stripe price only when no active custom override.
+    if (env.STRIPE_MEMBERSHIP_PRICE_ID && !isMembershipOverrideActive(vendor)) {
       return { price: env.STRIPE_MEMBERSHIP_PRICE_ID };
     }
 
     const stripe = getStripeServerClient();
     const product = await stripe.products.create({
       name: "Vendor Membership",
-      metadata: { purpose: "membership_subscription" },
+      metadata: {
+        purpose: "membership_subscription",
+        vendorProfileId: vendor.id,
+      },
     });
 
     return {
       price_data: {
         currency: env.MEMBERSHIP_INVOICE_CURRENCY.toLowerCase(),
         product: product.id,
-        unit_amount: env.MEMBERSHIP_FEE_AMOUNT,
+        unit_amount: unitAmount,
         recurring: {
           interval: "month",
         },
@@ -391,7 +442,7 @@ export class VendorSubscriptionService {
     return new Date(value * 1000);
   }
 
-  private async disableMembershipBillingForPlatformVendor(
+  private async disableMembershipBillingForExemptVendor(
     vendor: NonNullable<VendorProfileWithUser>
   ) {
     const stripe = getStripeServerClient();

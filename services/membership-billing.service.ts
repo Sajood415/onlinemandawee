@@ -14,6 +14,7 @@ import {
   syncVendorBillingAccess,
   vendorHasPendingMembershipCharges,
 } from "@/lib/membership/billing-access";
+import { resolveMembershipFeeAmountMinor } from "@/lib/vendors/fee-overrides";
 import { MembershipInvoiceRepository } from "@/repositories/membership-invoice.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
 
@@ -34,10 +35,6 @@ export class MembershipBillingService {
 
   async enforceSubscriptionCompliance() {
     const now = new Date();
-    const monthlyFeeLabel = formatMembershipFee(
-      env.MEMBERSHIP_FEE_AMOUNT,
-      env.MEMBERSHIP_INVOICE_CURRENCY
-    );
     const vendors = await this.vendorProfileRepository.listForMembershipBilling();
 
     let suspendedCount = 0;
@@ -45,6 +42,10 @@ export class MembershipBillingService {
     let warnedCount = 0;
 
     for (const vendor of vendors) {
+      const monthlyFeeLabel = formatMembershipFee(
+        resolveMembershipFeeAmountMinor(vendor, now),
+        env.MEMBERSHIP_INVOICE_CURRENCY
+      );
       const shouldSuspendForFailedGrace =
         vendor.subscriptionStatus === "FAILED" &&
         vendor.subscriptionGracePeriodEndsAt != null &&
@@ -150,7 +151,7 @@ export class MembershipBillingService {
     const latestInvoice = invoices[0] ?? null;
 
     return {
-      monthlyAmount: env.MEMBERSHIP_FEE_AMOUNT,
+      monthlyAmount: resolveMembershipFeeAmountMinor(vendor),
       currency: env.MEMBERSHIP_INVOICE_CURRENCY,
       trialEndsAt: trialEndsAt.toISOString(),
       isInTrial: vendor.subscriptionStatus === "TRIAL",

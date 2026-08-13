@@ -141,6 +141,68 @@ export const adminVendorSellerTypeUpdateSchema = z.object({
   confirmDowngrade: z.boolean().optional(),
 });
 
+const optionalEndsAtSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .refine((value) => !Number.isNaN(Date.parse(value)), {
+    message: "Invalid date/time",
+  })
+  .nullable()
+  .optional();
+
+/**
+ * null amount/bps = use platform default (and clear endsAt).
+ * 0 = waive.
+ * endsAt optional ISO/local datetime string; rejected if in the past when an override is active.
+ */
+export const adminVendorFeeOverridesSchema = z
+  .object({
+    membershipFeeAmountOverride: z
+      .number()
+      .int()
+      .min(0)
+      .max(1_000_000)
+      .nullable(),
+    membershipFeeOverrideEndsAt: optionalEndsAtSchema,
+    commissionRateBpsOverride: z
+      .number()
+      .int()
+      .min(0)
+      .max(10_000)
+      .nullable(),
+    commissionRateOverrideEndsAt: optionalEndsAtSchema,
+  })
+  .superRefine((value, ctx) => {
+    const now = Date.now();
+    if (
+      value.membershipFeeAmountOverride != null &&
+      value.membershipFeeOverrideEndsAt
+    ) {
+      const end = Date.parse(value.membershipFeeOverrideEndsAt);
+      if (!Number.isNaN(end) && end <= now) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["membershipFeeOverrideEndsAt"],
+          message: "Membership override end time must be in the future",
+        });
+      }
+    }
+    if (
+      value.commissionRateBpsOverride != null &&
+      value.commissionRateOverrideEndsAt
+    ) {
+      const end = Date.parse(value.commissionRateOverrideEndsAt);
+      if (!Number.isNaN(end) && end <= now) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["commissionRateOverrideEndsAt"],
+          message: "Commission override end time must be in the future",
+        });
+      }
+    }
+  });
+
 export const vendorIdParamsSchema = z.object({
   id: z.string().min(1),
 });
