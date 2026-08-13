@@ -299,16 +299,31 @@ function OrderCard({
         <div className="border-t border-neutral-200 bg-white px-4 py-4 space-y-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-              {t("orders.deliveryAddress")}
+              {order.deliveryMethod === "PICKUP"
+                ? t("orders.pickUpFrom")
+                : t("orders.deliveryAddress")}
             </p>
-            <p className="mt-1 text-sm text-neutral-700">
-              {order.shippingAddress.fullName} · {order.shippingAddress.phone}
-            </p>
-            <p className="text-sm text-neutral-700">
-              {formatPostalAddress(order.shippingAddress) || (
-                <span className="text-neutral-500">{t("orders.addressNotRecorded")}</span>
-              )}
-            </p>
+            {order.deliveryMethod === "PICKUP" ? (
+              <div className="mt-1 space-y-1 text-sm text-neutral-700">
+                {order.vendorOrders.map((vendorOrder) => (
+                  <p key={vendorOrder.id}>
+                    {vendorOrder.vendorStoreName ?? t("orders.vendor")}
+                  </p>
+                ))}
+                <p className="text-neutral-500">{t("orders.pickupAddressHint")}</p>
+              </div>
+            ) : (
+              <>
+                <p className="mt-1 text-sm text-neutral-700">
+                  {order.shippingAddress.fullName} · {order.shippingAddress.phone}
+                </p>
+                <p className="text-sm text-neutral-700">
+                  {formatPostalAddress(order.shippingAddress) || (
+                    <span className="text-neutral-500">{t("orders.addressNotRecorded")}</span>
+                  )}
+                </p>
+              </>
+            )}
           </div>
 
           <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 space-y-1.5 text-sm">

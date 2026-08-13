@@ -718,25 +718,31 @@ function OrderRow({
           <div className="grid gap-5 lg:grid-cols-2">
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                {t("deliveryAddress")}
+                {order.deliveryMethod === "PICKUP" ? t("pickUpFrom") : t("deliveryAddress")}
               </p>
               <div className="rounded-xl bg-neutral-50 p-4 text-sm text-neutral-700">
-                <p className="font-medium text-neutral-900">
-                  {order.order.shippingFullName}
-                </p>
-                <p className="mt-1">{order.order.shippingAddressLine1}</p>
-                <p>
-                  {order.order.shippingCity}
-                  {order.order.shippingPostalCode
-                    ? `, ${order.order.shippingPostalCode}`
-                    : ""}
-                </p>
-                <p>{order.order.shippingCountry}</p>
-                {order.order.shippingPhone ? (
-                  <p className="mt-2 text-neutral-500">
-                    {order.order.shippingPhone}
-                  </p>
-                ) : null}
+                {order.deliveryMethod === "PICKUP" ? (
+                  <p>{t("customerPickupNote")}</p>
+                ) : (
+                  <>
+                    <p className="font-medium text-neutral-900">
+                      {order.order.shippingFullName}
+                    </p>
+                    <p className="mt-1">{order.order.shippingAddressLine1}</p>
+                    <p>
+                      {order.order.shippingCity}
+                      {order.order.shippingPostalCode
+                        ? `, ${order.order.shippingPostalCode}`
+                        : ""}
+                    </p>
+                    <p>{order.order.shippingCountry}</p>
+                    {order.order.shippingPhone ? (
+                      <p className="mt-2 text-neutral-500">
+                        {order.order.shippingPhone}
+                      </p>
+                    ) : null}
+                  </>
+                )}
               </div>
             </div>
 

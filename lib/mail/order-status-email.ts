@@ -146,9 +146,22 @@ export function buildOrderPlacedEmail(
       : "";
 
   const followUpLine =
-    options.deliveryMethod === "STANDARD"
-      ? "We'll email you as your order moves through our warehouse and out for delivery."
-      : "We will email you again when it ships.";
+    options.deliveryMethod === "PICKUP"
+      ? "We'll email you when your order is ready for pickup."
+      : options.deliveryMethod === "STANDARD"
+        ? "We'll email you as your order moves through our warehouse and out for delivery."
+        : "We will email you again when it ships.";
+
+  const addressLabel =
+    options.deliveryMethod === "PICKUP" ? "Pick up from:" : "Ship to:";
+  const addressSection =
+    options.deliveryMethod === "PICKUP" &&
+    !ctx.shippingAddress.addressLine1.trim() &&
+    !ctx.shippingAddress.city.trim()
+      ? `<p style="margin-top:20px;font-size:13px;color:#64748b;font-weight:600">${addressLabel}</p>
+    <div class="address-box">See your order tracking page for the pickup location.</div>`
+      : `<p style="margin-top:20px;font-size:13px;color:#64748b;font-weight:600">${addressLabel}</p>
+    ${addressBlock(ctx)}`;
 
   const body = `
     <span class="badge">✅ Order Confirmed</span>
@@ -162,8 +175,7 @@ export function buildOrderPlacedEmail(
 
     ${itemsTable(ctx)}
 
-    <p style="margin-top:20px;font-size:13px;color:#64748b;font-weight:600">Delivering to:</p>
-    ${addressBlock(ctx)}
+    ${addressSection}
 
     <p style="margin-top:20px">${paymentNote}</p>
     ${standardDeliveryNote}
@@ -244,8 +256,13 @@ export function buildVendorNewOrderEmail(ctx: VendorOrderEmailContext) {
 
     ${itemsTable(itemsCtx)}
 
-    <p style="margin-top:20px;font-size:13px;color:#64748b;font-weight:600">Deliver to:</p>
-    ${addressBlock(itemsCtx)}
+    ${
+      ctx.deliveryMethod === "PICKUP"
+        ? `<p style="margin-top:20px;font-size:13px;color:#64748b;font-weight:600">Pickup:</p>
+    <div class="address-box">Customer will pick up this order from your store.</div>`
+        : `<p style="margin-top:20px;font-size:13px;color:#64748b;font-weight:600">Ship to:</p>
+    ${addressBlock(itemsCtx)}`
+    }
 
     <p style="margin-top:20px">${paymentNote}</p>
     ${
@@ -279,9 +296,11 @@ export function buildVendorNewOrderEmail(ctx: VendorOrderEmailContext) {
       `Your total: ${formatCurrency(ctx.vendorTotalAmount, ctx.currency)}.`,
       paymentText,
       "",
-      ctx.deliveryMethod === "STANDARD"
-        ? "Standard delivery: ship items to the platform warehouse from Vendor Orders → Send to warehouse (include tracking/AWB)."
-        : "",
+      ctx.deliveryMethod === "PICKUP"
+        ? "Pickup: customer will collect this order from your store."
+        : ctx.deliveryMethod === "STANDARD"
+          ? "Standard delivery: ship items to the platform warehouse from Vendor Orders → Send to warehouse (include tracking/AWB)."
+          : "",
       "",
       "Sign in to your vendor dashboard to accept and fulfil this order.",
     ].join("\n"),

@@ -115,6 +115,13 @@ export function GuestOrderTrackingView({
     { key: "delivered", label: copy.stepDelivered },
   ];
 
+  const isPickupOrder =
+    order.vendorOrders.length > 0 &&
+    order.vendorOrders.every((vendorOrder) => vendorOrder.deliveryMethod === "PICKUP");
+  const pickupLocations = order.vendorOrders.filter(
+    (vendorOrder) => vendorOrder.deliveryMethod === "PICKUP"
+  );
+
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="space-y-5">
       <section className="border border-neutral-200/80 bg-white px-5 py-5 sm:px-6 sm:py-6">
@@ -201,17 +208,57 @@ export function GuestOrderTrackingView({
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-              {copy.shippingTo}
+              {isPickupOrder ? copy.pickUpFrom : copy.shippingTo}
             </p>
-            <p className="mt-1.5 flex items-start gap-2 text-sm leading-relaxed text-neutral-700">
-              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-400" />
-              <span>
-                {order.shippingAddress.addressLine1}
-                <br />
-                {order.shippingAddress.city}, {order.shippingAddress.country}
-                {order.shippingAddress.postalCode ? ` ${order.shippingAddress.postalCode}` : ""}
-              </span>
-            </p>
+            {isPickupOrder ? (
+              <div className="mt-1.5 space-y-3 text-sm leading-relaxed text-neutral-700">
+                {pickupLocations.length > 0 ? (
+                  pickupLocations.map((location, index) => (
+                    <p
+                      key={`${location.storeName ?? "pickup"}-${index}`}
+                      className="flex items-start gap-2"
+                    >
+                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-400" />
+                      <span>
+                        {location.storeName ? (
+                          <span className="font-medium text-neutral-900">
+                            {location.storeName}
+                            <br />
+                          </span>
+                        ) : null}
+                        {location.pickupAddress ? (
+                          <>
+                            {location.pickupAddress.addressLine1}
+                            <br />
+                            {location.pickupAddress.city}, {location.pickupAddress.country}
+                            {location.pickupAddress.postalCode
+                              ? ` ${location.pickupAddress.postalCode}`
+                              : ""}
+                          </>
+                        ) : (
+                          copy.pickupAddressPending
+                        )}
+                      </span>
+                    </p>
+                  ))
+                ) : (
+                  <p className="flex items-start gap-2">
+                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-400" />
+                    <span>{copy.pickupAddressPending}</span>
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="mt-1.5 flex items-start gap-2 text-sm leading-relaxed text-neutral-700">
+                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-400" />
+                <span>
+                  {order.shippingAddress.addressLine1}
+                  <br />
+                  {order.shippingAddress.city}, {order.shippingAddress.country}
+                  {order.shippingAddress.postalCode ? ` ${order.shippingAddress.postalCode}` : ""}
+                </span>
+              </p>
+            )}
           </div>
         </div>
 

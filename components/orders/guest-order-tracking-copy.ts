@@ -58,7 +58,13 @@ export function getGuestOrderTrackingCopy(locale: SupportedLocale) {
     orderTotal: en ? "Total" : ps ? "ټول" : "مجموع",
     payment: en ? "Payment" : ps ? "تادیه" : "پرداخت",
     delivery: en ? "Delivery" : ps ? "تحویل" : "تحویل",
-    shippingTo: en ? "Shipping to" : ps ? "لېږل کېږي" : "ارسال به",
+    shippingTo: en ? "Ship to" : ps ? "لېږل کیږي" : "ارسال به",
+    pickUpFrom: en ? "Pick up from" : ps ? "اخیستل له" : "تحویل از",
+    pickupAddressPending: en
+      ? "Pickup address will be confirmed by the seller."
+      : ps
+        ? "د اخیستلو پته به پلورونکی تایید کړي."
+        : "آدرس تحویل حضوری توسط فروشنده تأیید می‌شود.",
     customer: en ? "Customer" : ps ? "پیرودونکی" : "مشتری",
     contact: en ? "Contact" : ps ? "اړیکه" : "تماس",
     vendor: en ? "Seller" : ps ? "پلورونکی" : "فروشنده",

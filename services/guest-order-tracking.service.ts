@@ -22,7 +22,7 @@ export class GuestOrderTrackingService {
       });
     }
 
-    return serializeGuestPublicOrder(order);
+    return await serializeGuestPublicOrder(order);
   }
 
   async lookupOrderByNumberAndEmail(input: {
@@ -45,7 +45,7 @@ export class GuestOrderTrackingService {
 
     const resolved = await this.ensureGuestTrackingToken(order);
     return {
-      order: serializeGuestPublicOrder(resolved),
+      order: await serializeGuestPublicOrder(resolved),
       trackingToken: resolved.guestTrackingToken,
     };
   }

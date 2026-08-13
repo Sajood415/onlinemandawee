@@ -7,11 +7,20 @@ export type GuestPublicOrderItem = {
   lineTotalAmount: number;
 };
 
+export type GuestPublicPickupAddress = {
+  addressLine1: string;
+  city: string;
+  country: string;
+  postalCode: string | null;
+};
+
 export type GuestPublicVendorOrder = {
   storeName: string | null;
   status: string;
   deliveredAt: string | null;
   deliveryMethod: "PICKUP" | "EXPRESS" | "STANDARD" | null;
+  /** Store / warehouse address when deliveryMethod is PICKUP. */
+  pickupAddress: GuestPublicPickupAddress | null;
   /** Customer-facing carrier tracking (Express). Standard uses outboundShipment.trackingRef. */
   trackingRef: string | null;
   currency: string;

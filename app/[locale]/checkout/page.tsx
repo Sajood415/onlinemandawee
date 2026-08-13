@@ -1624,7 +1624,7 @@ export default function CheckoutPage() {
   /** Pickup skips delivery-cost step: Shipping → Payment (2 steps). */
   const paymentStepIndex = isPickupFlow ? 1 : 2;
   const stepLabels = isPickupFlow
-    ? ([copy.stepLabels[0], copy.stepLabels[2]] as const)
+    ? ([copy.steps.pickup, copy.stepLabels[2]] as const)
     : ([copy.stepLabels[0], copy.stepLabels[1], copy.stepLabels[2]] as const);
   const [customerPrefillReady, setCustomerPrefillReady] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<CustomerAddress[]>([]);
