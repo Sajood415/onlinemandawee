@@ -8,7 +8,7 @@ import type {
 } from "@/domain/order/order-status";
 import { prisma } from "@/lib/db/prisma";
 import { normalizeEmailForAuth } from "@/lib/utils/normalize-email";
-import { guestTrackingOrderInclude } from "@/lib/orders/serialize-guest-public-order";
+import { guestTrackingOrderInclude } from "@/lib/orders/guest-tracking-order-include";
 
 const orderAdminInclude = {
   user: true,
