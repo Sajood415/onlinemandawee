@@ -1,6 +1,6 @@
 import cron, { type ScheduledTask } from "node-cron";
 
-import { AdminVendorService } from "@/services/admin-vendor.service";
+import { clearExpiredFeeOverrides } from "@/lib/vendors/clear-expired-fee-overrides";
 import { RefundService } from "@/services/refund.service";
 
 const REFUND_OVERDUE_ESCALATION_CRON = "0 * * * *";
@@ -22,7 +22,6 @@ export function startRefundOverdueEscalationScheduler() {
   }
 
   const refundService = new RefundService();
-  const adminVendorService = new AdminVendorService();
   const task = cron.schedule(REFUND_OVERDUE_ESCALATION_CRON, async () => {
     console.info("[refund-overdue-escalation] Hourly execution started");
     try {
@@ -34,7 +33,7 @@ export function startRefundOverdueEscalationScheduler() {
 
     // Also clear expired vendor fee overrides (silent) if dedicated worker is not running.
     try {
-      const feeResult = await adminVendorService.clearExpiredFeeOverrides();
+      const feeResult = await clearExpiredFeeOverrides();
       console.info("[vendor-fee-override-expiry] Success", feeResult);
     } catch (error) {
       console.error("[vendor-fee-override-expiry] Failure", error);
@@ -47,4 +46,3 @@ export function startRefundOverdueEscalationScheduler() {
     `[refund-overdue-escalation] Scheduler started (${REFUND_OVERDUE_ESCALATION_CRON})`
   );
 }
-

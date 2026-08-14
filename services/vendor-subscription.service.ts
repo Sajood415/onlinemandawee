@@ -1,6 +1,6 @@
 import type Stripe from "stripe";
 
-import { env } from "@/config/env";
+import { env } from "@/config/env.shared";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { syncVendorBillingAccess } from "@/lib/membership/billing-access";

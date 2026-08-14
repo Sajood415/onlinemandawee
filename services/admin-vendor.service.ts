@@ -16,18 +16,17 @@ import {
 } from "@/lib/membership/billing-access";
 import { isMembershipBillingSuspension } from "@/lib/membership/subscription-policy";
 import {
-  commissionOverrideExpired,
   defaultCommissionRateBps,
   defaultMembershipFeeAmountMinor,
   isMembershipFeeWaived,
-  membershipOverrideExpired,
   resolveCommissionRateBps,
   resolveMembershipFeeAmountMinor,
 } from "@/lib/vendors/fee-overrides";
 import { MembershipBillingService } from "@/services/membership-billing.service";
 import { ShopTypeService } from "@/services/shop-type.service";
 import { VendorSubscriptionService } from "@/services/vendor-subscription.service";
-import { env } from "@/config/env";
+import { env } from "@/config/env.shared";
+import { clearExpiredFeeOverrides as clearExpiredFeeOverridesCore } from "@/lib/vendors/clear-expired-fee-overrides";
 
 import type { AuthenticatedUser } from "@/domain/auth/authenticated-user";
 import type { VendorStatus } from "@/domain/vendor/vendor-status";
@@ -412,49 +411,7 @@ export class AdminVendorService {
 
   /** Clear expired overrides (silent). Used by cron / internal route. */
   async clearExpiredFeeOverrides(now = new Date()) {
-    const rows = await this.vendorProfileRepository.listWithExpiredFeeOverrides(now);
-    let clearedMembership = 0;
-    let clearedCommission = 0;
-
-    for (const vendor of rows) {
-      const clearMembership = membershipOverrideExpired(vendor, now);
-      const clearCommission = commissionOverrideExpired(vendor, now);
-      if (!clearMembership && !clearCommission) continue;
-
-      await this.vendorProfileRepository.updateFeeOverrides({
-        vendorProfileId: vendor.id,
-        membershipFeeAmountOverride: clearMembership
-          ? null
-          : (vendor.membershipFeeAmountOverride ?? null),
-        membershipFeeOverrideEndsAt: clearMembership
-          ? null
-          : (vendor.membershipFeeOverrideEndsAt ?? null),
-        commissionRateBpsOverride: clearCommission
-          ? null
-          : (vendor.commissionRateBpsOverride ?? null),
-        commissionRateOverrideEndsAt: clearCommission
-          ? null
-          : (vendor.commissionRateOverrideEndsAt ?? null),
-      });
-
-      if (clearMembership) {
-        clearedMembership += 1;
-        try {
-          await this.vendorSubscriptionService.syncMembershipBillingAfterFeeChange(
-            vendor.id
-          );
-        } catch {
-          // Best effort Stripe resync after membership override expiry.
-        }
-      }
-      if (clearCommission) clearedCommission += 1;
-    }
-
-    return {
-      scanned: rows.length,
-      clearedMembership,
-      clearedCommission,
-    };
+    return clearExpiredFeeOverridesCore(now);
   }
 
   async updateSellerType(

@@ -1,4 +1,4 @@
-import { env } from "@/config/env";
+import { env } from "@/config/env.shared";
 import { notifyAdmins } from "@/lib/admin/notify-admins";
 import { prisma } from "@/lib/db/prisma";
 import {

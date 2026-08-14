@@ -19,7 +19,7 @@
     "categories:consolidate-baby-care": "dotenv -e .env.local -- node --import tsx scripts/consolidate-baby-care-category.ts",
     "realtime:dev": "npm run dev --prefix realtime",
     "realtime:build": "npm run build --prefix realtime",
-    "worker:refund-overdue-escalation": "node --import tsx scripts/refund-overdue-escalation-worker.ts"
+    "worker:refund-overdue-escalation": "dotenv -e .env -e .env.local -- node --import tsx scripts/refund-overdue-escalation-worker.ts"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "^10.3.0",
