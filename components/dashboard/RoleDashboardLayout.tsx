@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { Suspense, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { LogOut, PanelLeft, X } from "lucide-react";
@@ -10,7 +9,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { LanguageSelector } from "@/components/layout/header/LanguageSelector";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { HEADER_LOGO_SRC } from "@/components/layout/header/header-copy";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { useAuth } from "@/store/auth-context";
 
@@ -155,13 +154,11 @@ function RoleDashboardLayoutInner({
             className="flex w-full justify-center px-2 py-2"
             onClick={() => setOpen(false)}
           >
-            <Image
-              src={HEADER_LOGO_SRC}
+            <BrandLogo
+              variant="light"
               alt={tc("brandName")}
-              width={220}
-              height={60}
-              className="h-11 w-auto max-w-[90%] object-contain object-center sm:h-12"
               priority
+              className="h-11 w-auto max-w-[90%] object-contain object-center sm:h-12"
             />
           </Link>
         </div>

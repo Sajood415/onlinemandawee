@@ -237,7 +237,6 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
   },
 };
 
-export const HEADER_LOGO_SRC =
-  "https://onlinemandawee.com/cdn/shop/files/ON_4_150x.png?v=1763220040";
+export const HEADER_LOGO_SRC = "/logos/onlinemandawee-logo-light.png";
 export const HEADER_BRAND_COLOR = "#ec1b23";
 export const HEADER_BAR_CLASS = "bg-[#ec1b23]";

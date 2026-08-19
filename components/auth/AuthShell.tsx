@@ -1,11 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Link } from "@/i18n/navigation";
-import { HEADER_LOGO_SRC } from "@/components/layout/header/header-copy";
 
 export const AUTH_INPUT_CLASS =
   "w-full border-0 border-b border-neutral-300 bg-transparent px-0 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#0F3460]";
@@ -49,14 +48,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
 
         <div className="mb-6 flex items-center justify-between gap-3">
           <Link href="/" className="inline-flex items-center gap-2">
-            <Image
-              src={HEADER_LOGO_SRC}
-              alt="Mandawee"
-              width={140}
-              height={36}
-              className="h-8 w-auto brightness-0 invert"
-              priority
-            />
+            <BrandLogo variant="light" alt="Mandawee" priority className="h-9 w-auto" />
           </Link>
           <Link
             href="/"

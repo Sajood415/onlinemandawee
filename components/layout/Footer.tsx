@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { Mail, Phone, CreditCard } from "lucide-react";
 
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Link } from "@/i18n/navigation";
 
 /* ── Route map ───────────────────────────────────────────────────────────── */
@@ -119,12 +119,10 @@ export default function Footer() {
           {/* BRAND */}
           <div className="space-y-7">
             <Link href="/" className="inline-block">
-              <Image
-                src="/logos/onlinemandawee-logo.png"
+              <BrandLogo
+                variant="dark"
                 alt="Online Mandawee"
-                width={220}
-                height={68}
-                className="h-22 w-auto transition-opacity hover:opacity-80"
+                className="h-12 w-auto sm:h-14"
               />
             </Link>
 

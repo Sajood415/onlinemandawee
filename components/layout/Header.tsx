@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { CatalogImage } from "@/components/catalog/CatalogImage";
 import { useEffect, useRef, useState, useCallback, useMemo, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
@@ -39,9 +38,9 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import {
   HEADER_BAR_CLASS,
-  HEADER_LOGO_SRC,
   headerCopy,
 } from "@/components/layout/header/header-copy";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { CurrencySelector } from "@/components/layout/header/CurrencySelector";
 import { LanguageSelector } from "@/components/layout/header/LanguageSelector";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
@@ -546,13 +545,11 @@ export default function Header() {
             <div className="flex min-w-0 flex-nowrap items-center gap-2 sm:gap-3 lg:gap-4">
               {/* Logo — start side: left in LTR, right in RTL */}
               <LocaleLink href="/" className="shrink-0">
-                <Image
-                  src={HEADER_LOGO_SRC}
+                <BrandLogo
+                  variant="light"
                   alt="Mandawee"
-                  width={220}
-                  height={60}
-                  className="h-8 w-auto sm:h-9 md:h-10 transition-opacity hover:opacity-90"
                   priority
+                  className="h-9 w-auto sm:h-10 md:h-11"
                 />
               </LocaleLink>
 
