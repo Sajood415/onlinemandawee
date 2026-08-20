@@ -30,6 +30,7 @@ import {
 import { AddressAutocompleteInput } from "@/components/address/AddressAutocompleteInput";
 import { CheckoutPayPalCardForm } from "@/components/checkout/CheckoutPayPalCardForm";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { PortalOverlay } from "@/components/ui/PortalOverlay";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { isPayPalCheckoutConfigured } from "@/lib/paypal/client";
 import {
@@ -89,6 +90,7 @@ type QuoteSummary = {
   subtotalAmount: number;
   deliveryAmount: number;
   discountAmount: number;
+  taxAmount: number;
   grandTotalAmount: number;
   currency: string;
   lineItems: LineItem[];
@@ -146,6 +148,7 @@ type PriceSummary = {
   subtotalAmount: number;
   deliveryAmount: number;
   discountAmount: number;
+  taxAmount: number;
   grandTotalAmount: number;
   currency: string;
   lineItems: LineItem[];
@@ -912,64 +915,66 @@ function DeliveryCostStep({
       ) : null}
 
       {customsModalOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setCustomsModalOpen(false);
-          }}
-        >
+        <PortalOverlay open={customsModalOpen}>
           <div
-            dir={isRtl ? "rtl" : "ltr"}
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="customs-duty-title"
-            className="w-full max-w-md border border-neutral-200 bg-white shadow-xl"
+            className="fixed inset-0 z-[10060] flex min-h-[100dvh] w-screen items-center justify-center bg-black/40 p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setCustomsModalOpen(false);
+            }}
           >
-            <div className="flex items-start justify-between border-b border-neutral-200 px-5 py-4">
-              <h2
-                id="customs-duty-title"
-                className="text-lg font-semibold text-neutral-900"
-              >
-                {copy.deliveryMethod.customsModal.title}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setCustomsModalOpen(false)}
-                className="p-1 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800"
-                aria-label={copy.deliveryMethod.customsModal.cancel}
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="space-y-3 px-5 py-4">
-              <p className="text-sm leading-relaxed text-neutral-700">
-                {copy.deliveryMethod.customsModal.body}
-              </p>
-              <p className="text-sm font-medium text-neutral-800">
-                {copy.deliveryMethod.customsCheckbox}
-              </p>
-            </div>
-            <div className="flex flex-col-reverse gap-2 border-t border-neutral-200 px-5 py-4 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                onClick={() => setCustomsModalOpen(false)}
-                className="border border-neutral-300 px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-neutral-400"
-              >
-                {copy.deliveryMethod.customsModal.cancel}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setCustomsAccepted(true);
-                  setCustomsModalOpen(false);
-                }}
-                className="bg-[#0F3460] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
-              >
-                {copy.deliveryMethod.customsModal.confirm}
-              </button>
+            <div
+              dir={isRtl ? "rtl" : "ltr"}
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="customs-duty-title"
+              className="w-full max-w-md border border-neutral-200 bg-white shadow-xl"
+            >
+              <div className="flex items-start justify-between border-b border-neutral-200 px-5 py-4">
+                <h2
+                  id="customs-duty-title"
+                  className="text-lg font-semibold text-neutral-900"
+                >
+                  {copy.deliveryMethod.customsModal.title}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setCustomsModalOpen(false)}
+                  className="p-1 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800"
+                  aria-label={copy.deliveryMethod.customsModal.cancel}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="space-y-3 px-5 py-4">
+                <p className="text-sm leading-relaxed text-neutral-700">
+                  {copy.deliveryMethod.customsModal.body}
+                </p>
+                <p className="text-sm font-medium text-neutral-800">
+                  {copy.deliveryMethod.customsCheckbox}
+                </p>
+              </div>
+              <div className="flex flex-col-reverse gap-2 border-t border-neutral-200 px-5 py-4 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setCustomsModalOpen(false)}
+                  className="border border-neutral-300 px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-neutral-400"
+                >
+                  {copy.deliveryMethod.customsModal.cancel}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomsAccepted(true);
+                    setCustomsModalOpen(false);
+                  }}
+                  className="bg-[#0F3460] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+                >
+                  {copy.deliveryMethod.customsModal.confirm}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </PortalOverlay>
       ) : null}
 
       {loading ? (
@@ -1548,10 +1553,14 @@ function OrderSummary({
           <span>{copy.summary.subtotal}</span>
           <span>{formatAmount(summary.subtotalAmount, summary.currency, locale)}</span>
         </div>
-        {hasDeliveryBreakdown ? (
+        {hasDeliveryBreakdown || hasPricedDelivery ? (
           <div className="flex justify-between text-neutral-500">
             <span>{copy.summary.delivery}</span>
-            <span>{formatAmount(summary.deliveryAmount, summary.currency, locale)}</span>
+            <span>
+              {summary.deliveryAmount === 0
+                ? copy.summary.free
+                : formatAmount(summary.deliveryAmount, summary.currency, locale)}
+            </span>
           </div>
         ) : deliveryError ? (
           <div className="space-y-1">
@@ -1571,13 +1580,19 @@ function OrderSummary({
         ) : (
           <div className="flex justify-between text-neutral-500">
             <span>{copy.summary.delivery}</span>
-            <span>
-              {summary.deliveryAmount === 0
-                ? copy.summary.calculatedAtPayment
-                : formatAmount(summary.deliveryAmount, summary.currency, locale)}
-            </span>
+            <span className="text-neutral-400">{copy.summary.calculatedAtPayment}</span>
           </div>
         )}
+        {hasPricedDelivery || isPaymentStep ? (
+          <div className="flex justify-between text-neutral-500">
+            <span>{copy.summary.tax}</span>
+            <span>
+              {summary.taxAmount > 0
+                ? formatAmount(summary.taxAmount, summary.currency, locale)
+                : copy.summary.taxNotApplicable}
+            </span>
+          </div>
+        ) : null}
         {summary.discountAmount > 0 ? (
           <div className="flex justify-between text-emerald-700">
             <span>{copy.summary.discount}</span>
@@ -1755,6 +1770,7 @@ export default function CheckoutPage() {
     subtotalAmount: data.subtotalAmount,
     deliveryAmount: data.deliveryAmount,
     discountAmount: data.discountAmount ?? 0,
+    taxAmount: data.taxAmount ?? 0,
     grandTotalAmount: data.grandTotalAmount,
     currency: data.currency,
     lineItems: data.lineItems,
@@ -2075,6 +2091,7 @@ export default function CheckoutPage() {
       subtotalAmount,
       deliveryAmount: 0,
       discountAmount: 0,
+      taxAmount: 0,
       grandTotalAmount: subtotalAmount,
       currency,
       lineItems,

@@ -670,6 +670,8 @@ model Order {
   subtotalAmount        Int
   deliveryAmount        Int
   discountAmount        Int
+  /// Exclusive sales tax (Stripe Tax). 0 when not applicable (e.g. Afghanistan).
+  taxAmount             Int           @default(0)
   grandTotalAmount      Int
   shippingFullName      String
   shippingPhone         String

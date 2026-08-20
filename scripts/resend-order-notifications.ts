@@ -5,6 +5,7 @@ import {
   buildOrderPlacedEmail,
   buildVendorNewOrderEmail,
 } from "@/lib/mail/order-status-email";
+import { isPlaceholderMailbox } from "@/lib/mail/resolve-mailbox";
 
 const prisma = new PrismaClient();
 
@@ -108,7 +109,7 @@ async function main() {
 
   for (const vendorOrder of order.vendorOrders) {
     const vendorEmail = vendorOrder.vendorProfile.user.email;
-    if (!vendorEmail) continue;
+    if (!vendorEmail || isPlaceholderMailbox(vendorEmail)) continue;
 
     const vendorEmailContent = buildVendorNewOrderEmail({
       vendorName: vendorOrder.vendorProfile.user.fullName,

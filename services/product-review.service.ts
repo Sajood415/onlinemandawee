@@ -55,10 +55,44 @@ export class ProductReviewService {
 
   private async recomputeAggregate(productId: string) {
     const aggregate = await this.productReviewRepository.aggregateForProduct(productId);
+    const ratingAverage = Math.round(aggregate.average * 10) / 10;
+    const reviewCount = aggregate.count;
     await this.productRepository.updateRatingAggregate(productId, {
-      ratingAverage: Math.round(aggregate.average * 10) / 10,
-      reviewCount: aggregate.count,
+      ratingAverage,
+      reviewCount,
     });
+    return { ratingAverage, reviewCount };
+  }
+
+  /**
+   * Product.ratingAverage / reviewCount can drift from ProductReview rows
+   * (seeds, deleted reviews, admin hides). Heal when they disagree.
+   */
+  async ensureRatingAggregateSynced(productId: string) {
+    const product = await this.productRepository.findById(productId);
+    if (!product) {
+      const aggregate = await this.productReviewRepository.aggregateForProduct(productId);
+      return {
+        ratingAverage: Math.round(aggregate.average * 10) / 10,
+        reviewCount: aggregate.count,
+      };
+    }
+
+    const aggregate = await this.productReviewRepository.aggregateForProduct(productId);
+    const ratingAverage = Math.round(aggregate.average * 10) / 10;
+    const reviewCount = aggregate.count;
+
+    if (
+      product.reviewCount !== reviewCount ||
+      Math.abs((product.ratingAverage ?? 0) - ratingAverage) > 0.05
+    ) {
+      await this.productRepository.updateRatingAggregate(productId, {
+        ratingAverage,
+        reviewCount,
+      });
+    }
+
+    return { ratingAverage, reviewCount };
   }
 
   async createForUser(
@@ -124,6 +158,7 @@ export class ProductReviewService {
   }
 
   async listPublicForProduct(productId: string, pagination: { page: number; pageSize: number }) {
+    const summary = await this.ensureRatingAggregateSynced(productId);
     const { rows, total } = await this.productReviewRepository.listPublicByProduct(
       productId,
       pagination
@@ -135,6 +170,8 @@ export class ProductReviewService {
       page: pagination.page,
       pageSize: pagination.pageSize,
       totalPages: Math.max(1, Math.ceil(total / pagination.pageSize)),
+      ratingAverage: summary.ratingAverage,
+      reviewCount: summary.reviewCount,
     };
   }
 

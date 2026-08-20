@@ -56,13 +56,16 @@ export function applyQuoteCurrency(
     subtotalAmount: convertMinorUnits(quote.subtotalAmount, quote.currency, currency),
     deliveryAmount: convertMinorUnits(quote.deliveryAmount, quote.currency, currency),
     discountAmount: convertMinorUnits(quote.discountAmount, quote.currency, currency),
+    taxAmount: convertMinorUnits(quote.taxAmount, quote.currency, currency),
     grandTotalAmount: convertMinorUnits(quote.grandTotalAmount, quote.currency, currency),
     currency,
     lineItems,
     appliedCoupons,
     vendorSummaries,
     deliveryBreakdown,
+    ...(quote.pickupLocations ? { pickupLocations: quote.pickupLocations } : {}),
     deliveryMethod: quote.deliveryMethod,
     requiresDeliveryAddress: quote.requiresDeliveryAddress,
+    stripeTaxCalculationId: quote.stripeTaxCalculationId ?? null,
   };
 }

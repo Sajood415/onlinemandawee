@@ -24,11 +24,7 @@ export function getProductReviewsCopy(locale: SupportedLocale) {
     cancel: en ? "Cancel" : ps ? "لغوه کول" : "لغو",
     loadMore: en ? "Load more reviews" : ps ? "نورې بیاکتنې وګورئ" : "مشاهده نظرات بیشتر",
     loading: en ? "Loading reviews..." : ps ? "بیاکتنې پورته کېږي..." : "در حال بارگذاری نظرات...",
-    empty: en
-      ? "No reviews yet. Be the first to review this product!"
-      : ps
-        ? "تر اوسه بیاکتنه نشته. لومړی کس شئ چې دا محصول بیاکتنه کړئ!"
-        : "هنوز نظری ثبت نشده است. اولین نفری باشید که نظر می‌دهید!",
+    empty: en ? "No review" : ps ? "بیاکتنه نشته" : "نظری نیست",
     ratingRequired: en
       ? "Please select a star rating"
       : ps

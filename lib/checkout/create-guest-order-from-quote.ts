@@ -184,6 +184,7 @@ export async function createGuestOrderFromQuote(input: {
       subtotalAmount: input.quote.subtotalAmount,
       deliveryAmount: input.quote.deliveryAmount,
       discountAmount: input.quote.discountAmount,
+      taxAmount: input.quote.taxAmount ?? 0,
       grandTotalAmount: input.quote.grandTotalAmount,
       shippingFullName: input.guestName,
       shippingPhone: input.guestPhone,

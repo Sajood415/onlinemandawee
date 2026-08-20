@@ -126,14 +126,6 @@ export default function Footer() {
               />
             </Link>
 
-            <p
-              className={`text-sm leading-relaxed text-slate-500 max-w-xs ${
-                isRtl ? "ml-auto" : ""
-              }`}
-            >
-              {t("description")}
-            </p>
-
             {/* Contact */}
             <div className="space-y-3">
               <a

@@ -208,6 +208,7 @@ export class OrderRepository {
     subtotalAmount: number;
     deliveryAmount: number;
     discountAmount: number;
+    taxAmount?: number;
     grandTotalAmount: number;
     shippingFullName: string;
     shippingPhone: string;
@@ -249,6 +250,7 @@ export class OrderRepository {
         subtotalAmount: input.subtotalAmount,
         deliveryAmount: input.deliveryAmount,
         discountAmount: input.discountAmount,
+        taxAmount: input.taxAmount ?? 0,
         grandTotalAmount: input.grandTotalAmount,
         shippingFullName: input.shippingFullName,
         shippingPhone: input.shippingPhone,

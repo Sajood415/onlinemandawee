@@ -65,13 +65,25 @@ export function ProductDetailShowcase({
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [tab, setTab] = useState<TabKey>("description");
+  const [liveRating, setLiveRating] = useState(product.rating);
+  const [liveReviews, setLiveReviews] = useState(product.reviews);
 
   useEffect(() => {
     setSelectedImage(0);
     setSelectedVariantId(resolveDefaultCatalogVariant(product.variants)?.id ?? null);
     setQuantity(1);
     setTab("description");
-  }, [product.id, product.variants]);
+    setLiveRating(product.rating);
+    setLiveReviews(product.reviews);
+  }, [product.id, product.rating, product.reviews, product.variants]);
+
+  const handleReviewSummaryChange = (summary: {
+    ratingAverage: number;
+    reviewCount: number;
+  }) => {
+    setLiveRating(summary.ratingAverage);
+    setLiveReviews(summary.reviewCount);
+  };
 
   const activeVariants = useMemo(
     () => getActiveCatalogVariants(product.variants),
@@ -109,10 +121,7 @@ export function ProductDetailShowcase({
       ? resolveLocalizedRecord(product.categoryName, locale)
       : product.category;
 
-  const highlights =
-    product.features.length > 0
-      ? product.features
-      : [product.description[locale]].filter(Boolean);
+  const highlights = product.features.filter(Boolean);
 
   const handleAddToCart = async () => {
     setIsAdding(true);
@@ -264,20 +273,20 @@ export function ProductDetailShowcase({
                   <Star
                     key={i}
                     className={`h-3.5 w-3.5 ${
-                      i < Math.floor(product.rating)
+                      i < Math.floor(liveRating)
                         ? "fill-amber-400 text-amber-400"
                         : "fill-neutral-200 text-neutral-200"
                     }`}
                   />
                 ))}
               </div>
-              {product.reviews > 0 ? (
+              {liveReviews > 0 ? (
                 <button
                   type="button"
                   onClick={() => setTab("reviews")}
                   className="text-sm text-neutral-500 hover:text-[#0F3460] hover:underline"
                 >
-                  {product.rating.toFixed(1)} · {product.reviews} {copy.reviews}
+                  {liveRating.toFixed(1)} · {liveReviews} {copy.reviews}
                 </button>
               ) : (
                 <button
@@ -509,7 +518,11 @@ export function ProductDetailShowcase({
             </div>
           ) : (
             <div className="py-6">
-              <ProductReviews productId={product.id} locale={locale} />
+              <ProductReviews
+                productId={product.id}
+                locale={locale}
+                onSummaryChange={handleReviewSummaryChange}
+              />
             </div>
           )}
         </section>

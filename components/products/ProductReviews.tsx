@@ -36,11 +36,14 @@ type ReviewsResponse = {
   page: number;
   pageSize: number;
   totalPages: number;
+  ratingAverage?: number;
+  reviewCount?: number;
 };
 
 type ProductReviewsProps = {
   productId: string;
   locale: SupportedLocale;
+  onSummaryChange?: (summary: { ratingAverage: number; reviewCount: number }) => void;
 };
 
 const localeForDate: Record<SupportedLocale, string> = {
@@ -89,7 +92,7 @@ function StarPicker({
   );
 }
 
-export function ProductReviews({ productId, locale }: ProductReviewsProps) {
+export function ProductReviews({ productId, locale, onSummaryChange }: ProductReviewsProps) {
   const copy = getProductReviewsCopy(locale);
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const canReview =
@@ -122,8 +125,19 @@ export function ProductReviews({ productId, locale }: ProductReviewsProps) {
       setPage(data.page);
       setTotalPages(data.totalPages);
       setTotal(data.total);
+      if (typeof data.ratingAverage === "number" && typeof data.reviewCount === "number") {
+        onSummaryChange?.({
+          ratingAverage: data.ratingAverage,
+          reviewCount: data.reviewCount,
+        });
+      } else {
+        onSummaryChange?.({
+          ratingAverage: 0,
+          reviewCount: data.total,
+        });
+      }
     },
-    [productId]
+    [onSummaryChange, productId]
   );
 
   useEffect(() => {
@@ -173,17 +187,15 @@ export function ProductReviews({ productId, locale }: ProductReviewsProps) {
 
     setSubmitting(true);
     try {
-      const response = await fetchWithAuth(`/api/catalog/products/${productId}/reviews`, {
+      await fetchWithAuth(`/api/catalog/products/${productId}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rating, comment: comment.trim() }),
       });
-      const created = await parseApiResponse<ProductReview>(response);
-      setReviews((current) => [created, ...current]);
-      setTotal((current) => current + 1);
       setRating(0);
       setComment("");
       toast.success(copy.submitSuccess);
+      await loadReviews(1);
     } catch (error) {
       const message = error instanceof Error ? error.message : copy.submitFailed;
       if (isAuthErrorMessage(message)) {

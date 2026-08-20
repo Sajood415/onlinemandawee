@@ -12,6 +12,7 @@ import { ERROR_CODE } from "@/lib/errors/error-codes";
 import { CategoryRepository } from "@/repositories/category.repository";
 import { ProductRepository } from "@/repositories/product.repository";
 import { VendorProfileRepository } from "@/repositories/vendor-profile.repository";
+import { ProductReviewService } from "@/services/product-review.service";
 import { ShopTypeService } from "@/services/shop-type.service";
 import type { PublicProductsQuery } from "@/validators/catalog.validator";
 
@@ -78,7 +79,8 @@ export class CatalogQueryService {
     private readonly categoryRepository = new CategoryRepository(),
     private readonly productRepository = new ProductRepository(),
     private readonly vendorProfileRepository = new VendorProfileRepository(),
-    private readonly shopTypeService = new ShopTypeService()
+    private readonly shopTypeService = new ShopTypeService(),
+    private readonly productReviewService = new ProductReviewService()
   ) {}
 
   async listCategories() {
@@ -383,12 +385,20 @@ export class CatalogQueryService {
       });
     }
 
+    const ratingSummary = await this.productReviewService.ensureRatingAggregateSynced(
+      product.id
+    );
     const availableCoupons = await listPublicCouponsForProduct(
       product.id,
       product.vendorProfileId
     );
 
-    return { ...product, availableCoupons };
+    return {
+      ...product,
+      ratingAverage: ratingSummary.ratingAverage,
+      reviewCount: ratingSummary.reviewCount,
+      availableCoupons,
+    };
   }
 
   async listVendors(filters?: {

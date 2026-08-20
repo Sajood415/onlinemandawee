@@ -10,11 +10,7 @@ export function getProductDetailCopy(locale: SupportedLocale) {
     products: en ? "Products" : ps ? "محصولات" : "محصولات",
     visitStore: en ? "Visit the store" : ps ? "پلورنځی وګورئ" : "مشاهده فروشگاه",
     reviews: en ? "reviews" : ps ? "بیاکتنې" : "نظرات",
-    beFirstReview: en
-      ? "Be the first to review this product"
-      : ps
-        ? "لومړی بیاکتنه وکړئ"
-        : "اولین نفر باشید که نظر می‌دهد",
+    beFirstReview: en ? "No review" : ps ? "بیاکتنه نشته" : "نظری نیست",
     inStock: en ? "In stock" : ps ? "په ذخیره کې" : "موجود",
     soldOut: en ? "Sold out" : ps ? "پلورل شوی" : "ناموجود",
     stock: en ? "Stock" : ps ? "ذخیره" : "موجودی",

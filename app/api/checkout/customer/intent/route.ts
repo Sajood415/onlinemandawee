@@ -112,6 +112,7 @@ export const POST = withErrorHandling(
           source: "customer_checkout",
           itemCount: String(parsed.data.items.length),
           couponCount: String(quote.appliedCoupons.length),
+          taxAmount: String(quote.taxAmount),
           checkoutContextHash,
           checkoutCustomerUserId: context.auth.id,
         },

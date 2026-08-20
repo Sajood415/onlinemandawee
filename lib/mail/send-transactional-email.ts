@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 import { env } from "@/config/env.shared";
 import { AppError } from "@/lib/errors/app-error";
 import { ERROR_CODE } from "@/lib/errors/error-codes";
+import { resolveTransactionalFromAddress } from "@/lib/mail/resolve-mailbox";
 
 export async function sendTransactionalEmail(input: {
   to: string;
@@ -33,7 +34,7 @@ export async function sendTransactionalEmail(input: {
         : undefined,
   });
 
-  const from = env.SMTP_FROM ?? "Online Mandawee <noreply@onlinemandawee.com>";
+  const from = resolveTransactionalFromAddress();
 
   await transporter.sendMail({
     from,

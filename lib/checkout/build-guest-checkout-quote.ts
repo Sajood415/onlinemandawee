@@ -24,6 +24,7 @@ import {
 } from "@/lib/delivery/calculate-guest-delivery";
 import { getWarehouseAddress } from "@/lib/delivery/get-warehouse-address";
 import { resolveVendorSettlementDeliveryAmount } from "@/lib/delivery/vendor-settlement-delivery";
+import { calculateCheckoutTaxAmount } from "@/lib/stripe/calculate-checkout-tax";
 import { prisma } from "@/lib/db/prisma";
 import { isMongoObjectId } from "@/lib/db/object-id";
 import type { PostalAddress } from "@/lib/maps/google-maps";
@@ -94,6 +95,8 @@ export type GuestCheckoutQuote = {
   subtotalAmount: number;
   deliveryAmount: number;
   discountAmount: number;
+  /** Exclusive sales tax from Stripe Tax (0 for AF / unsupported / no address). */
+  taxAmount: number;
   grandTotalAmount: number;
   currency: string;
   lineItems: GuestCheckoutLineItem[];
@@ -103,6 +106,7 @@ export type GuestCheckoutQuote = {
   pickupLocations?: GuestCheckoutPickupLocation[];
   deliveryMethod: DeliveryMethod;
   requiresDeliveryAddress: boolean;
+  stripeTaxCalculationId?: string | null;
 };
 
 export { GuestCheckoutQuoteError };
@@ -494,7 +498,25 @@ export async function buildGuestCheckoutQuote(input: {
   }
 
   const discountAmount = appliedCoupons.reduce((sum, coupon) => sum + coupon.discountAmount, 0);
-  const grandTotalAmount = Math.max(0, subtotalAmount + deliveryAmount - discountAmount);
+
+  const taxableSubtotal = Math.max(0, subtotalAmount - discountAmount);
+  const discountFactor =
+    subtotalAmount > 0 ? taxableSubtotal / subtotalAmount : 0;
+  const taxResult = await calculateCheckoutTaxAmount({
+    currency,
+    deliveryAmount,
+    deliveryAddress: input.deliveryAddress ?? null,
+    lineItems: lineItems.map((item, index) => ({
+      amount: Math.max(0, Math.round(item.lineTotalAmount * discountFactor)),
+      quantity: 1,
+      reference: item.productId || `line_${index}`,
+    })),
+  });
+  const taxAmount = taxResult.taxAmount;
+  const grandTotalAmount = Math.max(
+    0,
+    subtotalAmount + deliveryAmount - discountAmount + taxAmount
+  );
 
   const vendorSellerType = new Map<string, SellerType>();
   for (const item of lineItems) {
@@ -582,6 +604,7 @@ export async function buildGuestCheckoutQuote(input: {
     subtotalAmount,
     deliveryAmount,
     discountAmount,
+    taxAmount,
     grandTotalAmount,
     currency,
     lineItems,
@@ -591,6 +614,7 @@ export async function buildGuestCheckoutQuote(input: {
     ...(pickupLocations.length > 0 ? { pickupLocations } : {}),
     deliveryMethod: selectedThirdPartyMethod,
     requiresDeliveryAddress,
+    stripeTaxCalculationId: taxResult.stripeTaxCalculationId,
   };
 
   return applyQuoteCurrency(quote, currency);

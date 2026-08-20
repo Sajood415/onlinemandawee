@@ -6,6 +6,7 @@ import {
   type OrderEmailContext,
 } from "@/lib/mail/order-status-email";
 import { sendTransactionalEmail } from "@/lib/mail/send-transactional-email";
+import { resolveVendorOrderNotifyEmail } from "@/lib/mail/resolve-mailbox";
 
 type VendorGroupInput = {
   vendorProfileId: string;
@@ -35,7 +36,11 @@ export async function sendVendorOrderNotifications(input: {
   try {
     const vendors = await prisma.vendorProfile.findMany({
       where: { id: { in: input.vendorGroups.map((group) => group.vendorProfileId) } },
-      include: { user: { select: { email: true, fullName: true } } },
+      select: {
+        id: true,
+        storeName: true,
+        user: { select: { email: true, fullName: true } },
+      },
     });
     const vendorById = new Map(vendors.map((vendor) => [vendor.id, vendor]));
 
@@ -43,6 +48,9 @@ export async function sendVendorOrderNotifications(input: {
       input.vendorGroups.map(async (group) => {
         const vendor = vendorById.get(group.vendorProfileId);
         if (!vendor?.user.email) return;
+
+        const notifyEmail = resolveVendorOrderNotifyEmail(vendor.user.email);
+        if (!notifyEmail) return;
 
         const email = buildVendorNewOrderEmail({
           vendorName: vendor.user.fullName,
@@ -60,7 +68,7 @@ export async function sendVendorOrderNotifications(input: {
           deliveryMethod: group.deliveryMethod,
         });
 
-        await sendTransactionalEmail({ to: vendor.user.email, ...email });
+        await sendTransactionalEmail({ to: notifyEmail, ...email });
       })
     );
   } catch {

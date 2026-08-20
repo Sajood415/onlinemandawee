@@ -117,6 +117,7 @@ export const POST = withErrorHandling(async (request) => {
         source: "guest_checkout",
         itemCount: String(parsed.data.items.length),
         couponCount: String(quote.appliedCoupons.length),
+        taxAmount: String(quote.taxAmount),
         checkoutContextHash,
         checkoutGuestEmailHash,
       },
