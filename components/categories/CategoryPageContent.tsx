@@ -54,7 +54,10 @@ export function CategoryPageContent({ slug, locale, isRtl }: CategoryPageContent
         }
 
         const categoryData = (await categoryRes.json()).data as PublicCategoryDetail;
-        const catalogProducts = await fetchPublicCatalogProducts({ category: slug });
+        const catalogProducts = await fetchPublicCatalogProducts({
+          category: slug,
+          store: "mandawee",
+        });
 
         if (!mounted) return;
         setCategory(categoryData);

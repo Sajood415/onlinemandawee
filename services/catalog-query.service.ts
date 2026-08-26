@@ -1,5 +1,10 @@
 import { serializePublicCategoryDetail } from "@/lib/categories/public-category";
+import { resolveCategoryFallbackImage } from "@/lib/categories/category-fallback-images";
 import { parseCategoryImageUrl } from "@/lib/localization/category-content";
+import {
+  resolveVendorGroupLabel,
+  VENDOR_CATEGORY_GROUPS,
+} from "@/lib/categories/vendor-category-groups";
 import {
   listPublicCouponsForProduct,
   listPublicCouponsForProducts,
@@ -24,6 +29,7 @@ type PublicListFilters = {
   maxPriceMinor?: number;
   inStock?: boolean;
   productIds?: string[];
+  sellerType?: "PLATFORM" | "THIRD_PARTY";
 };
 
 type CatalogFacets = {
@@ -88,12 +94,45 @@ export class CatalogQueryService {
 
     return categories.map((category) => ({
       ...category,
-      image: parseCategoryImageUrl(category.translations) ?? undefined,
+      image:
+        parseCategoryImageUrl(category.translations) ??
+        resolveCategoryFallbackImage(category.slug) ??
+        undefined,
       children: category.children.map((child) => ({
         ...child,
-        image: parseCategoryImageUrl(child.translations) ?? undefined,
+        image:
+          parseCategoryImageUrl(child.translations) ??
+          resolveCategoryFallbackImage(child.slug) ??
+          undefined,
       })),
     }));
+  }
+
+  async listVendorCategoryGroups(locale = "en") {
+    const shopTypes = await this.shopTypeService.listActivePublic(locale);
+    const shopTypeBySlug = new Map(shopTypes.map((shopType) => [shopType.slug, shopType]));
+
+    return VENDOR_CATEGORY_GROUPS.map((group) => {
+      const children = group.shopTypeSlugs
+        .map((slug) => shopTypeBySlug.get(slug))
+        .filter((shopType): shopType is NonNullable<typeof shopType> => shopType != null)
+        .map((shopType) => ({
+          id: shopType.slug,
+          slug: shopType.slug,
+          name: shopType.label,
+          image: shopType.image ?? undefined,
+          href: `/vendors?industry=${encodeURIComponent(shopType.slug)}`,
+        }));
+
+      return {
+        id: group.slug,
+        slug: group.slug,
+        name: resolveVendorGroupLabel(group, locale),
+        image: group.image ?? children[0]?.image,
+        href: "/vendors",
+        children,
+      };
+    }).filter((group) => group.children.length > 0);
   }
 
   async getCategoryBySlug(slug: string) {
@@ -305,6 +344,8 @@ export class CatalogQueryService {
 
     const onSaleProductIds = await this.resolveOnSaleProductIds();
 
+    const sellerType = filters.store === "mandawee" ? ("PLATFORM" as const) : undefined;
+
     const baseFilters: PublicListFilters = {
       categoryIds,
       vendorStoreSlugs: vendorStoreSlugs.length > 0 ? vendorStoreSlugs : undefined,
@@ -315,6 +356,7 @@ export class CatalogQueryService {
         filters.maxPrice != null ? Math.round(filters.maxPrice * 100) : undefined,
       inStock: filters.inStock,
       productIds: filters.onSale ? onSaleProductIds : undefined,
+      sellerType,
     };
 
     if (filters.onSale && onSaleProductIds.length === 0) {

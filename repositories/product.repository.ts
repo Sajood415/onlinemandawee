@@ -266,6 +266,7 @@ export class ProductRepository {
     maxPriceMinor?: number;
     inStock?: boolean;
     productIds?: string[];
+    sellerType?: "PLATFORM" | "THIRD_PARTY";
   }): Prisma.ProductWhereInput {
     const vendorStoreSlugs = filters.vendorStoreSlugs?.filter(Boolean);
     const andClauses: Prisma.ProductWhereInput[] = [];
@@ -388,16 +389,17 @@ export class ProductRepository {
             },
           }
         : {}),
-      vendorProfile: vendorStoreSlugs?.length
-        ? {
-            storeSlug: {
-              in: vendorStoreSlugs,
-            },
-            status: "ACTIVE",
-          }
-        : {
-            status: "ACTIVE",
-          },
+      vendorProfile: {
+        status: "ACTIVE",
+        ...(filters.sellerType ? { sellerType: filters.sellerType } : {}),
+        ...(vendorStoreSlugs?.length
+          ? {
+              storeSlug: {
+                in: vendorStoreSlugs,
+              },
+            }
+          : {}),
+      },
       ...(andClauses.length > 0 ? { AND: andClauses } : {}),
     };
   }
@@ -427,6 +429,7 @@ export class ProductRepository {
     maxPriceMinor?: number;
     inStock?: boolean;
     productIds?: string[];
+    sellerType?: "PLATFORM" | "THIRD_PARTY";
     sort?: "newest" | "price-asc" | "price-desc" | "rating" | "relevance";
     skip?: number;
     take?: number;
@@ -463,6 +466,7 @@ export class ProductRepository {
     maxPriceMinor?: number;
     inStock?: boolean;
     productIds?: string[];
+    sellerType?: "PLATFORM" | "THIRD_PARTY";
   }) {
     return prisma.product.count({
       where: this.buildPublicWhere(filters),
@@ -477,6 +481,7 @@ export class ProductRepository {
     maxPriceMinor?: number;
     inStock?: boolean;
     productIds?: string[];
+    sellerType?: "PLATFORM" | "THIRD_PARTY";
   }) {
     return prisma.product.groupBy({
       by: ["categoryId"],
@@ -493,6 +498,7 @@ export class ProductRepository {
     maxPriceMinor?: number;
     inStock?: boolean;
     productIds?: string[];
+    sellerType?: "PLATFORM" | "THIRD_PARTY";
   }) {
     return prisma.product.groupBy({
       by: ["vendorProfileId"],
@@ -509,6 +515,7 @@ export class ProductRepository {
     maxPriceMinor?: number;
     inStock?: boolean;
     productIds?: string[];
+    sellerType?: "PLATFORM" | "THIRD_PARTY";
   }) {
     return prisma.product.aggregate({
       where: this.buildPublicWhere(filters),

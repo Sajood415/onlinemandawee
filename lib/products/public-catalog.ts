@@ -223,6 +223,7 @@ function catalogProductsCacheKey(filters?: {
   category?: string;
   vendor?: string;
   search?: string;
+  store?: string;
 }) {
   return JSON.stringify(filters ?? {});
 }
@@ -235,6 +236,7 @@ export async function fetchPublicCatalogProducts(filters?: {
   category?: string;
   vendor?: string;
   search?: string;
+  store?: "mandawee";
 }) {
   const cacheKey = catalogProductsCacheKey(filters);
   const inFlight = catalogProductsRequests.get(cacheKey);
@@ -245,6 +247,7 @@ export async function fetchPublicCatalogProducts(filters?: {
     if (filters?.category) params.set("category", filters.category);
     if (filters?.vendor) params.set("vendor", filters.vendor);
     if (filters?.search) params.set("search", filters.search);
+    if (filters?.store) params.set("store", filters.store);
     // Legacy callers expect a full list; request a large first page.
     params.set("page", "1");
     params.set("pageSize", String(LEGACY_CATALOG_PAGE_SIZE));

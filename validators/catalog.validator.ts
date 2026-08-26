@@ -135,6 +135,8 @@ export const publicProductsQuerySchema = z.object({
   maxPrice: z.coerce.number().min(0).optional(),
   inStock: queryBooleanSchema,
   onSale: queryBooleanSchema,
+  /** When `mandawee`, only Online Mandawee (platform) store products. */
+  store: z.enum(["mandawee"]).optional(),
 });
 
 export type PublicProductsQuery = z.infer<typeof publicProductsQuerySchema>;

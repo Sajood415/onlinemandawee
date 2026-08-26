@@ -23,7 +23,11 @@ export type MegaMenuCategory = {
   }[];
 };
 
+export type MegaMenuBrowseMode = "platform" | "vendor";
+
 type CategoriesMegaMenuProps = {
+  browseMode: MegaMenuBrowseMode;
+  onBrowseModeChange: (mode: MegaMenuBrowseMode) => void;
   categories: MegaMenuCategory[];
   activeCategory: MegaMenuCategory | null;
   onSelectCategory: (slug: string) => void;
@@ -60,7 +64,7 @@ function MegaThumb({
           src={image}
           alt=""
           fill
-          className="object-contain object-center p-0.5"
+          className="object-cover object-center"
           sizes="40px"
         />
       ) : (
@@ -103,7 +107,7 @@ function SubcategoryCircle({
               src={image}
               alt=""
               fill
-              className="object-contain object-center p-1.5 transition-transform duration-300 group-hover:scale-105"
+              className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
               sizes="72px"
             />
           ) : (
@@ -120,7 +124,20 @@ function SubcategoryCircle({
   );
 }
 
+function sidebarActiveClass(isActive: boolean, isRtl: boolean) {
+  if (!isActive) {
+    return "text-neutral-600 hover:bg-white hover:text-neutral-900";
+  }
+  return `bg-white font-semibold text-[#0F3460] ${
+    isRtl
+      ? "shadow-[inset_-3px_0_0_#ec1b23]"
+      : "shadow-[inset_3px_0_0_#ec1b23]"
+  }`;
+}
+
 export function CategoriesMegaMenu({
+  browseMode,
+  onBrowseModeChange,
   categories,
   activeCategory,
   onSelectCategory,
@@ -142,7 +159,19 @@ export function CategoriesMegaMenu({
     ? activeCategory.children.length > 0
       ? formatCategoriesOf(copy.megaCategoriesOf, activeCategory.label)
       : copy.megaRelatedCategories
-    : copy.exploreCategories;
+    : browseMode === "vendor"
+      ? copy.megaBrowseVendors
+      : copy.exploreCategories;
+
+  const allInLabel =
+    browseMode === "vendor"
+      ? `${copy.megaAllShopsIn} ${activeCategory?.label ?? ""}`
+      : `${copy.megaAllIn} ${activeCategory?.label ?? ""}`;
+
+  const browseModes: { mode: MegaMenuBrowseMode; label: string }[] = [
+    { mode: "platform", label: copy.megaBrowseMandawee },
+    { mode: "vendor", label: copy.megaBrowseVendors },
+  ];
 
   return (
     <motion.div
@@ -153,14 +182,59 @@ export function CategoriesMegaMenu({
       className="absolute inset-x-0 top-full z-[9999] px-2 pt-1 sm:px-3 lg:px-4"
     >
       <div
-        className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-[0_18px_50px_rgba(15,52,96,0.14)]"
+        className="flex flex-col overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-[0_18px_50px_rgba(15,52,96,0.14)]"
         style={{
           height: "min(480px, calc(100dvh - var(--header-height) - 12px))",
         }}
       >
         <div
-          className={`flex h-full min-h-0 ${isRtl ? "flex-row-reverse" : ""}`}
+          className={`flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-4 sm:px-5 ${
+            isRtl ? "flex-row-reverse" : ""
+          }`}
         >
+          <div
+            className={`flex min-w-0 gap-1 sm:gap-2 ${isRtl ? "flex-row-reverse" : ""}`}
+            role="tablist"
+            aria-label={copy.categories}
+          >
+            {browseModes.map(({ mode, label }) => {
+              const isActive = browseMode === mode;
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => onBrowseModeChange(mode)}
+                  className={`relative shrink-0 px-2 py-3.5 text-[13px] font-medium transition-colors sm:px-3 sm:text-sm ${
+                    isActive
+                      ? "font-semibold text-[#0F3460]"
+                      : "text-neutral-500 hover:text-neutral-800"
+                  }`}
+                >
+                  {label}
+                  {isActive ? (
+                    <span
+                      className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#ec1b23] sm:inset-x-3"
+                      aria-hidden
+                    />
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition-colors hover:bg-neutral-200"
+            aria-label={copy.close}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className={`flex min-h-0 flex-1 ${isRtl ? "flex-row-reverse" : ""}`}>
           <aside
             className={`h-full w-[220px] shrink-0 overflow-y-auto bg-[#fbfcfe] py-2 sm:w-[240px] ${
               isRtl ? "border-s border-gray-100" : "border-e border-gray-100"
@@ -177,15 +251,7 @@ export function CategoriesMegaMenu({
                   onClick={() => onSelectCategory(category.slug)}
                   className={`flex w-full items-center gap-3 px-3 py-2.5 text-sm transition-colors ${
                     isRtl ? "flex-row-reverse text-right" : "text-left"
-                  } ${
-                    isActive
-                      ? `bg-white font-semibold text-[#0F3460] ${
-                          isRtl
-                            ? "shadow-[inset_-3px_0_0_#ec1b23]"
-                            : "shadow-[inset_3px_0_0_#ec1b23]"
-                        }`
-                      : "text-neutral-600 hover:bg-white hover:text-neutral-900"
-                  }`}
+                  } ${sidebarActiveClass(isActive, isRtl)}`}
                 >
                   <span className="min-w-0 flex-1 line-clamp-1">
                     {category.label}
@@ -202,39 +268,27 @@ export function CategoriesMegaMenu({
           </aside>
 
           <div className="relative min-w-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
-            <div className="mb-5 flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h3 className="text-base font-semibold tracking-tight text-neutral-900 sm:text-lg">
-                  {panelTitle}
-                </h3>
-                {activeCategory ? (
-                  <LocaleLink
-                    href={activeCategory.href}
-                    onClick={onClose}
-                    className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-[#0F3460] transition-colors hover:text-[#ec1b23]"
-                  >
-                    <span>
-                      {copy.megaAllIn} {activeCategory.label}
-                    </span>
-                    <ChevronRight
-                      size={14}
-                      className={isRtl ? "rotate-180" : undefined}
-                    />
-                  </LocaleLink>
-                ) : null}
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition-colors hover:bg-neutral-200"
-                aria-label={copy.close}
-              >
-                <X size={16} />
-              </button>
+            <div className="mb-5 min-w-0">
+              <h3 className="text-base font-semibold tracking-tight text-neutral-900 sm:text-lg">
+                {panelTitle}
+              </h3>
+              {activeCategory ? (
+                <LocaleLink
+                  href={activeCategory.href}
+                  onClick={onClose}
+                  className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-[#0F3460] transition-colors hover:text-[#ec1b23]"
+                >
+                  <span>{allInLabel}</span>
+                  <ChevronRight
+                    size={14}
+                    className={isRtl ? "rotate-180" : undefined}
+                  />
+                </LocaleLink>
+              ) : null}
             </div>
 
             {panelItems.length > 0 ? (
-              <div className="flex flex-wrap gap-x-4 gap-y-5 sm:gap-x-6 sm:gap-y-6">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(92px,1fr))] gap-x-4 gap-y-5 sm:grid-cols-[repeat(auto-fill,minmax(104px,1fr))] sm:gap-x-5 sm:gap-y-6">
                 {panelItems.map((item) => (
                   <SubcategoryCircle
                     key={item.id}

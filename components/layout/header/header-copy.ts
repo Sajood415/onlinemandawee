@@ -44,6 +44,9 @@ export type HeaderCopy = {
   profile: string;
   favorites: string;
   hotDiscounts: string;
+  megaBrowseMandawee: string;
+  megaBrowseVendors: string;
+  megaAllShopsIn: string;
   categories: string;
   megaAllIn: string;
   megaCategoriesOf: string;
@@ -106,6 +109,9 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     profile: "Profile",
     favorites: "Favorites",
     hotDiscounts: "Discounts",
+    megaBrowseMandawee: "Online Mandawee",
+    megaBrowseVendors: "Vendor shops",
+    megaAllShopsIn: "All shops in",
     categories: "Categories",
     megaAllIn: "All in",
     megaCategoriesOf: "Categories of {name}",
@@ -166,6 +172,9 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     profile: "پروفایل",
     favorites: "خوښې",
     hotDiscounts: "تخفیفونه",
+    megaBrowseMandawee: "آنلاین منداوی",
+    megaBrowseVendors: "د پلورونکو پلورنځي",
+    megaAllShopsIn: "ټول پلورنځي په",
     categories: "کټګورۍ",
     megaAllIn: "ټول په",
     megaCategoriesOf: "د {name} کټګورۍ",
@@ -226,6 +235,9 @@ export const headerCopy: Record<SupportedLocale, HeaderCopy> = {
     profile: "پروفایل",
     favorites: "علاقه‌مندی‌ها",
     hotDiscounts: "تخفیف‌ها",
+    megaBrowseMandawee: "منداوی آنلاین",
+    megaBrowseVendors: "فروشگاه‌های فروشندگان",
+    megaAllShopsIn: "همه فروشگاه‌های",
     categories: "دسته‌بندی‌ها",
     megaAllIn: "همه در",
     megaCategoriesOf: "دسته‌های {name}",

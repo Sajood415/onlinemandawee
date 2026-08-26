@@ -44,10 +44,11 @@ import { BrandLogo } from "@/components/brand/BrandLogo";
 import { CurrencySelector } from "@/components/layout/header/CurrencySelector";
 import { LanguageSelector } from "@/components/layout/header/LanguageSelector";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
-import { CategoriesMegaMenu } from "@/components/layout/header/CategoriesMegaMenu";
+import { CategoriesMegaMenu, type MegaMenuBrowseMode } from "@/components/layout/header/CategoriesMegaMenu";
 import { HeaderSearchSuggest } from "@/components/layout/header/HeaderSearchSuggest";
 import { MobileNavMenu } from "@/components/layout/header/MobileNavMenu";
 import { resolveCategoryLabel } from "@/lib/categories/category-labels";
+import { resolveCategoryFallbackImage } from "@/lib/categories/category-fallback-images";
 import { isVendorShopPathname } from "@/lib/routing/vendor-storefront-routes";
 import {
   localizeDelivery,
@@ -104,7 +105,7 @@ function getFallbackCategories(locale: SupportedLocale) {
     slug,
     href: `/category/${slug}`,
     label: localeLabels[locale],
-    image: undefined as string | undefined,
+    image: resolveCategoryFallbackImage(slug),
     children: [] as {
       id: string;
       slug: string;
@@ -300,11 +301,29 @@ export default function Header() {
       }[];
     }[]
   >([]);
-  const [activeMegaCategorySlug, setActiveMegaCategorySlug] = useState<string | null>(null);
+  const [vendorCatalogCategories, setVendorCatalogCategories] = useState<
+    {
+      id: string;
+      slug: string;
+      name: string;
+      href: string;
+      image?: string;
+      children: {
+        id: string;
+        slug: string;
+        name: string;
+        image?: string;
+        href: string;
+      }[];
+    }[]
+  >([]);
+  const [megaBrowseMode, setMegaBrowseMode] = useState<MegaMenuBrowseMode>("platform");
+  const [activePlatformMegaSlug, setActivePlatformMegaSlug] = useState<string | null>(null);
+  const [activeVendorMegaSlug, setActiveVendorMegaSlug] = useState<string | null>(null);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
 
-  const categoryItems = useMemo(() => {
+  const platformCategoryItems = useMemo(() => {
     if (catalogCategories.length > 0) {
       return catalogCategories.map((category) => ({
         id: category.id,
@@ -329,11 +348,47 @@ export default function Header() {
     return getFallbackCategories(safeLocale);
   }, [catalogCategories, safeLocale]);
 
+  const vendorCategoryItems = useMemo(
+    () =>
+      vendorCatalogCategories.map((category) => ({
+        id: category.id,
+        slug: category.slug,
+        href: category.href,
+        label: category.name,
+        image: category.image,
+        children: category.children.map((child) => ({
+          id: child.id,
+          slug: child.slug,
+          href: child.href,
+          label: child.name,
+          image: child.image,
+        })),
+      })),
+    [vendorCatalogCategories]
+  );
+
+  const megaCategoryItems =
+    megaBrowseMode === "platform" ? platformCategoryItems : vendorCategoryItems;
+
+  const activeMegaCategorySlug =
+    megaBrowseMode === "platform" ? activePlatformMegaSlug : activeVendorMegaSlug;
+
+  const setActiveMegaCategorySlug = (slug: string) => {
+    if (megaBrowseMode === "platform") {
+      setActivePlatformMegaSlug(slug);
+      return;
+    }
+    setActiveVendorMegaSlug(slug);
+  };
+
   const activeMegaCategory = useMemo(() => {
-    if (categoryItems.length === 0) return null;
-    if (!activeMegaCategorySlug) return categoryItems[0];
-    return categoryItems.find((item) => item.slug === activeMegaCategorySlug) ?? categoryItems[0];
-  }, [activeMegaCategorySlug, categoryItems]);
+    if (megaCategoryItems.length === 0) return null;
+    if (!activeMegaCategorySlug) return megaCategoryItems[0];
+    return (
+      megaCategoryItems.find((item) => item.slug === activeMegaCategorySlug) ??
+      megaCategoryItems[0]
+    );
+  }, [activeMegaCategorySlug, megaCategoryItems]);
 
   const cartSheetVariants = useMemo(() => getCartSheetVariants(isRtl), [isRtl]);
 
@@ -410,6 +465,39 @@ export default function Header() {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadVendorCategories = async () => {
+      try {
+        const res = await fetch(`/api/catalog/vendor-categories?locale=${safeLocale}`);
+        if (!res.ok) return;
+        const data = await parseApiResponse<
+          {
+            id: string;
+            slug: string;
+            name: string;
+            href: string;
+            image?: string;
+            children: {
+              id: string;
+              slug: string;
+              name: string;
+              image?: string;
+              href: string;
+            }[];
+          }[]
+        >(res);
+        if (mounted) setVendorCatalogCategories(data);
+      } catch {
+        // keep empty vendor menu until API succeeds
+      }
+    };
+    void loadVendorCategories();
+    return () => {
+      mounted = false;
+    };
+  }, [safeLocale]);
 
   // Typewriter effect - stops when user focuses on search
   useEffect(() => {
@@ -491,9 +579,14 @@ export default function Header() {
 
   useEffect(() => {
     if (!showCategoriesDropdown) return;
-    if (categoryItems.length === 0) return;
-    setActiveMegaCategorySlug((current) => current ?? categoryItems[0].slug);
-  }, [showCategoriesDropdown, categoryItems]);
+    if (megaCategoryItems.length === 0) return;
+    const firstSlug = megaCategoryItems[0].slug;
+    if (megaBrowseMode === "platform") {
+      setActivePlatformMegaSlug(firstSlug);
+      return;
+    }
+    setActiveVendorMegaSlug(firstSlug);
+  }, [showCategoriesDropdown, megaBrowseMode, megaCategoryItems]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -813,7 +906,9 @@ export default function Header() {
             <AnimatePresence>
               {showCategoriesDropdown ? (
                 <CategoriesMegaMenu
-                  categories={categoryItems}
+                  browseMode={megaBrowseMode}
+                  onBrowseModeChange={setMegaBrowseMode}
+                  categories={megaCategoryItems}
                   activeCategory={activeMegaCategory}
                   onSelectCategory={setActiveMegaCategorySlug}
                   onClose={closeAll}
