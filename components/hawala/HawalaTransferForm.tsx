@@ -35,7 +35,7 @@ function fieldClassName(error?: string, multiline = false) {
   } ${
     error
       ? "border-red-400 focus:border-red-500"
-      : "border-neutral-300 focus:border-[#0F3460]"
+      : "border-neutral-300 focus:border-secondary"
   }`;
 }
 
@@ -297,7 +297,7 @@ export function HawalaTransferForm() {
               {isAuthenticated && user?.role === "CUSTOMER" ? (
                 <Link
                   href="/account/hawala"
-                  className="inline-flex min-h-11 items-center justify-center bg-[#0F3460] px-5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+                  className="inline-flex min-h-11 items-center justify-center bg-secondary px-5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
                 >
                   {t("trackInAccount")}
                 </Link>
@@ -325,7 +325,7 @@ export function HawalaTransferForm() {
     >
       <div className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#0F3460]">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-secondary">
             {t("badge")}
           </p>
           <h2 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900">{t("title")}</h2>
@@ -606,7 +606,7 @@ export function HawalaTransferForm() {
               <>
                 <p className="text-sm text-neutral-700">
                   {t("receiverGets")}{" "}
-                  <span className="text-2xl font-bold tracking-tight text-[#0F3460]">
+                  <span className="text-2xl font-bold tracking-tight text-secondary">
                     {conversion.receiveAmount.toLocaleString(undefined, {
                       maximumFractionDigits: 2,
                     })}{" "}
@@ -642,7 +642,7 @@ export function HawalaTransferForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="inline-flex w-full items-center justify-center gap-2 bg-[#0F3460] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          className="inline-flex w-full items-center justify-center gap-2 bg-secondary px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
           {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           {submitting ? t("submitting") : t("submit")}

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { Check, ChevronDown, SlidersHorizontal, Store, Tag, Wallet, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -22,27 +22,56 @@ type ProductsFilterSidebarProps = {
   categoryTranslations?: Record<string, unknown>;
 };
 
+function Checkbox({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border transition-colors ${
+        checked
+          ? "border-secondary bg-secondary text-white"
+          : "border-neutral-300 bg-white group-hover:border-secondary/50"
+      }`}
+    >
+      {checked ? <Check className="h-3 w-3" strokeWidth={3} /> : null}
+    </span>
+  );
+}
+
 function Accordion({
   title,
+  icon,
   defaultOpen = true,
   children,
 }: {
   title: string;
+  icon?: React.ReactNode;
   defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border-b border-neutral-200 py-3">
+    <div className="border-b border-neutral-100 py-4 last:border-b-0 last:pb-0">
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="flex w-full items-center justify-between gap-2 text-start text-sm font-bold text-neutral-900"
+        className="flex w-full items-center justify-between gap-2 rounded text-start text-sm font-bold text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
       >
-        {title}
-        <ChevronDown className={`h-4 w-4 text-neutral-400 transition ${open ? "rotate-180" : ""}`} />
+        <span className="flex items-center gap-2">
+          {icon ? <span className="text-secondary/60">{icon}</span> : null}
+          {title}
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 text-neutral-400 transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
-      {open ? <div className="mt-3 space-y-2">{children}</div> : null}
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="mt-3.5 space-y-1">{children}</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -68,16 +97,50 @@ export function ProductsFilterSidebar({
   const priceFloor = Math.floor(facets.priceMin);
   const priceCeil = Math.ceil(facets.priceMax || 1000);
 
+  const activeCount =
+    (value.category ? 1 : 0) +
+    value.vendors.length +
+    (value.minPrice != null ? 1 : 0) +
+    (value.maxPrice != null ? 1 : 0) +
+    (value.inStock ? 1 : 0) +
+    (value.onSale ? 1 : 0);
+
+  const clearAll = () =>
+    onChange({ category: "", vendors: [], minPrice: null, maxPrice: null, inStock: false, onSale: false });
+
   return (
-    <aside className="border border-neutral-200/80 bg-white px-4 py-2">
-      <Accordion title={t("categories")}>
+    <aside className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_8px_30px_rgba(15,52,96,0.06)]">
+      <div className="flex items-center justify-between gap-2 bg-secondary/5 px-4 py-3.5">
+        <span className="flex items-center gap-2 text-sm font-bold text-neutral-900">
+          <SlidersHorizontal className="h-4 w-4 text-secondary" />
+          {t("filters")}
+          {activeCount > 0 ? (
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1.5 text-[11px] font-bold text-white">
+              {activeCount}
+            </span>
+          ) : null}
+        </span>
+        {activeCount > 0 ? (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="flex items-center gap-1 rounded text-xs font-semibold text-neutral-500 transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
+          >
+            <X className="h-3.5 w-3.5" />
+            {t("clearAll")}
+          </button>
+        ) : null}
+      </div>
+
+      <div className="px-4 py-1">
+      <Accordion title={t("categories")} icon={<Tag className="h-4 w-4" />}>
         <button
           type="button"
           onClick={() => onChange({ ...value, category: "" })}
-          className={`block w-full px-1 py-1.5 text-start text-sm ${
+          className={`block w-full rounded-lg px-2.5 py-2 text-start text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
             !value.category
-              ? "font-semibold text-[#0F3460]"
-              : "text-neutral-600 hover:text-[#0F3460]"
+              ? "bg-secondary/8 font-semibold text-secondary"
+              : "text-neutral-600 hover:bg-neutral-50 hover:text-secondary"
           }`}
         >
           {t("allCategories")}
@@ -90,17 +153,23 @@ export function ProductsFilterSidebar({
               <button
                 type="button"
                 onClick={() => onChange({ ...value, category: category.slug })}
-                className={`flex w-full items-center justify-between gap-2 px-1 py-1.5 text-start text-sm ${
+                className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-start text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
                   selected
-                    ? "font-semibold text-[#0F3460]"
-                    : "text-neutral-600 hover:text-[#0F3460]"
+                    ? "bg-secondary/8 font-semibold text-secondary"
+                    : "text-neutral-600 hover:bg-neutral-50 hover:text-secondary"
                 }`}
               >
                 <span>{label}</span>
-                <span className="text-xs text-neutral-400">{category.count}</span>
+                <span
+                  className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] ${
+                    selected ? "bg-secondary/15 text-secondary" : "bg-neutral-100 text-neutral-500"
+                  }`}
+                >
+                  {category.count}
+                </span>
               </button>
               {category.children.length > 0 ? (
-                <div className="ms-3 space-y-1 border-s border-neutral-100 ps-2">
+                <div className="ms-3.5 space-y-0.5 border-s border-neutral-200 ps-2.5">
                   {category.children.map((child) => {
                     const childLabel = resolveCategoryLabel(child.slug, child.name, locale);
                     const childSelected = value.category === child.slug;
@@ -109,14 +178,22 @@ export function ProductsFilterSidebar({
                         key={child.id}
                         type="button"
                         onClick={() => onChange({ ...value, category: child.slug })}
-                        className={`flex w-full items-center justify-between gap-2 py-1 text-start text-sm ${
+                        className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-start text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
                           childSelected
-                            ? "font-semibold text-[#0F3460]"
-                            : "text-neutral-500 hover:text-[#0F3460]"
+                            ? "bg-secondary/8 font-semibold text-secondary"
+                            : "text-neutral-500 hover:bg-neutral-50 hover:text-secondary"
                         }`}
                       >
                         <span>{childLabel}</span>
-                        <span className="text-xs text-neutral-400">{child.count}</span>
+                        <span
+                          className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] ${
+                            childSelected
+                              ? "bg-secondary/15 text-secondary"
+                              : "bg-neutral-100 text-neutral-500"
+                          }`}
+                        >
+                          {child.count}
+                        </span>
                       </button>
                     );
                   })}
@@ -127,9 +204,9 @@ export function ProductsFilterSidebar({
         })}
       </Accordion>
 
-      <Accordion title={t("price")}>
-        <div className="grid grid-cols-2 gap-2">
-          <label className="text-xs text-neutral-500">
+      <Accordion title={t("price")} icon={<Wallet className="h-4 w-4" />}>
+        <div className="grid grid-cols-2 gap-2.5">
+          <label className="block text-xs font-medium text-neutral-500">
             {t("minPrice")}
             <input
               type="number"
@@ -143,10 +220,10 @@ export function ProductsFilterSidebar({
                     event.target.value === "" ? null : Math.max(0, Number(event.target.value)),
                 })
               }
-              className="mt-1 w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm outline-none focus:border-[#0F3460]"
+              className="mt-1.5 w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-2 text-sm text-neutral-800 outline-none transition focus:border-secondary focus:ring-2 focus:ring-secondary/15"
             />
           </label>
-          <label className="text-xs text-neutral-500">
+          <label className="block text-xs font-medium text-neutral-500">
             {t("maxPrice")}
             <input
               type="number"
@@ -160,13 +237,13 @@ export function ProductsFilterSidebar({
                     event.target.value === "" ? null : Math.max(0, Number(event.target.value)),
                 })
               }
-              className="mt-1 w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm outline-none focus:border-[#0F3460]"
+              className="mt-1.5 w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-2 text-sm text-neutral-800 outline-none transition focus:border-secondary focus:ring-2 focus:ring-secondary/15"
             />
           </label>
         </div>
       </Accordion>
 
-      <Accordion title={t("vendors")} defaultOpen={false}>
+      <Accordion title={t("vendors")} icon={<Store className="h-4 w-4" />} defaultOpen={false}>
         {facets.vendors.length === 0 ? (
           <p className="text-sm text-neutral-400">—</p>
         ) : (
@@ -175,18 +252,21 @@ export function ProductsFilterSidebar({
             return (
               <label
                 key={vendor.storeSlug}
-                className="flex cursor-pointer items-center justify-between gap-2 px-1 py-1.5 text-sm text-neutral-700"
+                className="group flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm text-neutral-700 transition hover:bg-neutral-50"
               >
-                <span className="flex min-w-0 items-center gap-2">
+                <span className="flex min-w-0 items-center gap-2.5">
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggleVendor(vendor.storeSlug)}
-                    className="accent-[#0F3460]"
+                    className="sr-only"
                   />
+                  <Checkbox checked={checked} />
                   <span className="truncate">{vendor.storeName}</span>
                 </span>
-                <span className="text-xs text-neutral-400">{vendor.count}</span>
+                <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-neutral-100 px-1.5 text-[11px] text-neutral-500">
+                  {vendor.count}
+                </span>
               </label>
             );
           })
@@ -194,31 +274,38 @@ export function ProductsFilterSidebar({
       </Accordion>
 
       <Accordion title={t("filters")} defaultOpen>
-        <label className="flex cursor-pointer items-center justify-between gap-2 px-1 py-1.5 text-sm text-neutral-700">
-          <span className="flex items-center gap-2">
+        <label className="group flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm text-neutral-700 transition hover:bg-neutral-50">
+          <span className="flex items-center gap-2.5">
             <input
               type="checkbox"
               checked={value.inStock}
               onChange={(event) => onChange({ ...value, inStock: event.target.checked })}
-              className="accent-[#0F3460]"
+              className="sr-only"
             />
+            <Checkbox checked={value.inStock} />
             {t("inStock")}
           </span>
-          <span className="text-xs text-neutral-400">{facets.inStockCount}</span>
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-neutral-100 px-1.5 text-[11px] text-neutral-500">
+            {facets.inStockCount}
+          </span>
         </label>
-        <label className="flex cursor-pointer items-center justify-between gap-2 px-1 py-1.5 text-sm text-neutral-700">
-          <span className="flex items-center gap-2">
+        <label className="group flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm text-neutral-700 transition hover:bg-neutral-50">
+          <span className="flex items-center gap-2.5">
             <input
               type="checkbox"
               checked={value.onSale}
               onChange={(event) => onChange({ ...value, onSale: event.target.checked })}
-              className="accent-[#0F3460]"
+              className="sr-only"
             />
+            <Checkbox checked={value.onSale} />
             {t("onSale")}
           </span>
-          <span className="text-xs text-neutral-400">{facets.onSaleCount}</span>
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-neutral-100 px-1.5 text-[11px] text-neutral-500">
+            {facets.onSaleCount}
+          </span>
         </label>
       </Accordion>
+      </div>
     </aside>
   );
 }

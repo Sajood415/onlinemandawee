@@ -58,7 +58,7 @@ export default function ProductDetailPage() {
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center bg-white">
-        <Loader2 className="h-7 w-7 animate-spin text-[#0F3460]/35" />
+        <Loader2 className="h-7 w-7 animate-spin text-secondary/35" />
       </div>
     );
   }
@@ -71,7 +71,7 @@ export default function ProductDetailPage() {
           <h1 className="mt-4 text-2xl font-bold text-neutral-900">{copy.notFound}</h1>
           <Link
             href="/products"
-            className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#0F3460] hover:underline"
+            className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-secondary hover:underline"
           >
             <ChevronLeft className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
             {copy.backToProducts}

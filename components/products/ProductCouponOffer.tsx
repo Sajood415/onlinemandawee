@@ -43,7 +43,7 @@ export function ProductCouponImageBadge({ coupon }: Pick<ProductCouponOfferProps
 
   return (
     <div className="absolute left-2 top-2 z-10">
-      <span className="inline-flex items-center rounded-sm bg-[#ec1b23] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+      <span className="inline-flex items-center rounded-sm bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
         {badgeLabel}
       </span>
     </div>
@@ -56,8 +56,8 @@ export function ProductCouponPriceHint({ coupon, locale }: ProductCouponOfferPro
 
   return (
     <p className="mt-1 flex min-w-0 items-center gap-1 text-[11px] text-neutral-500">
-      <Tag className="h-3 w-3 shrink-0 text-[#ec1b23]" aria-hidden />
-      <span className="truncate font-mono font-semibold text-[#ec1b23]">{coupon.code}</span>
+      <Tag className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+      <span className="truncate font-mono font-semibold text-primary">{coupon.code}</span>
       <span aria-hidden>·</span>
       <span className="truncate">{checkoutHint}</span>
     </p>

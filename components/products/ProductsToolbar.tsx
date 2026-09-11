@@ -33,12 +33,12 @@ export function ProductsToolbar({
   labels,
 }: ProductsToolbarProps) {
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-neutral-200/80 bg-white p-3 shadow-[0_8px_30px_rgba(15,52,96,0.05)] sm:p-4">
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-neutral-200/80 bg-white p-3 shadow-[0_8px_30px_rgba(15,52,96,0.06)] sm:p-4">
       <div className="flex flex-wrap items-center gap-2.5">
         <button
           type="button"
           onClick={onOpenFilters}
-          className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm font-semibold text-[#0f3460] transition hover:border-[#0f3460]/20 hover:bg-white lg:hidden"
+          className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm font-semibold text-secondary transition hover:border-secondary/20 hover:bg-white lg:hidden"
         >
           <SlidersHorizontal className="h-4 w-4" />
           {labels.filterShort}

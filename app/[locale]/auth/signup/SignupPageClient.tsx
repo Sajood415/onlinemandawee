@@ -250,7 +250,7 @@ export function SignupPageClient() {
       footer={
         <p className="text-sm text-neutral-600">
           {t("alreadyHave")}{" "}
-          <Link href="/auth/login" className="font-semibold text-[#0F3460] underline-offset-4 hover:underline">
+          <Link href="/auth/login" className="font-semibold text-secondary underline-offset-4 hover:underline">
             {t("signIn")}
           </Link>
         </p>
@@ -381,7 +381,7 @@ export function SignupPageClient() {
               setMessage(null);
               setError(null);
             }}
-            className="inline-flex w-full items-center justify-center text-sm font-semibold text-[#0F3460] underline-offset-4 hover:underline"
+            className="inline-flex w-full items-center justify-center text-sm font-semibold text-secondary underline-offset-4 hover:underline"
           >
             {t("editDetails")}
           </button>

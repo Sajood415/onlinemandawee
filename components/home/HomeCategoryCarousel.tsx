@@ -4,11 +4,12 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { resolveCategoryLabel } from "@/lib/categories/category-labels";
 import { parseApiResponse } from "@/lib/http/parse-api-response";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
-import { useHorizontalScroll } from "./useHorizontalScroll";
+import { useSliderOverflow } from "@/hooks/use-slider-overflow";
 import { HomeSectionHeader } from "./HomeSectionHeader";
 
 type ApiCategory = {
@@ -51,7 +52,7 @@ function CategoryCircle({
     >
       <div className="relative flex h-[92px] w-[92px] items-center justify-center min-[390px]:h-[104px] min-[390px]:w-[104px] sm:h-[118px] sm:w-[118px]">
         <div
-          className="absolute inset-0 rounded-full bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)] ring-1 ring-gray-100 transition group-hover:shadow-[0_12px_28px_rgba(236,27,35,0.12)] group-hover:ring-[#ec1b23]/25"
+          className="absolute inset-0 rounded-full bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)] ring-1 ring-gray-100 transition group-hover:shadow-[0_12px_28px_rgba(236,27,35,0.12)] group-hover:ring-primary/25"
           aria-hidden
         />
         <div className="relative z-1 flex h-[78px] w-[78px] items-center justify-center overflow-hidden rounded-full bg-[#F7F4EF] min-[390px]:h-[88px] min-[390px]:w-[88px] sm:h-[100px] sm:w-[100px]">
@@ -71,7 +72,7 @@ function CategoryCircle({
         </div>
       </div>
       <div className="w-full text-center">
-        <p className="line-clamp-2 text-sm font-bold leading-snug text-[#0F3460]">
+        <p className="line-clamp-2 text-sm font-bold leading-snug text-secondary">
           {tile.label}
         </p>
         {typeof tile.productCount === "number" ? (
@@ -111,7 +112,6 @@ export function HomeCategoryCarousel() {
     locale === "ps" || locale === "fa-AF" ? locale : "en";
   const isRtl = safeLocale !== "en";
   const [apiCategories, setApiCategories] = useState<ApiCategory[]>([]);
-  const { ref, scroll } = useHorizontalScroll();
 
   useEffect(() => {
     let mounted = true;
@@ -138,6 +138,8 @@ export function HomeCategoryCarousel() {
     [apiCategories, safeLocale],
   );
 
+  const { ref, isOverflowing, scrollBy } = useSliderOverflow<HTMLDivElement>([tiles.length]);
+
   if (tiles.length === 0) return null;
 
   return (
@@ -146,18 +148,38 @@ export function HomeCategoryCarousel() {
         title={t("shopByCategory")}
         subtitle={t("shopByCategorySubtitle")}
         isRtl={isRtl}
-        onPrev={() => scroll(-1)}
-        onNext={() => scroll(1)}
-        prevLabel={t("categories.previous")}
-        nextLabel={t("categories.next")}
         viewAllHref="/products"
         viewAllLabel={t("viewAllCategories")}
+        centered
       />
 
       <div className="relative">
+        {isOverflowing ? (
+          <>
+            <button
+              type="button"
+              onClick={() => scrollBy(-1)}
+              aria-label={t("categories.previous")}
+              className="absolute -left-3 top-[46px] z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-500 shadow-md transition hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 sm:flex min-[390px]:top-[52px] sm:top-[59px]"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollBy(1)}
+              aria-label={t("categories.next")}
+              className="absolute -right-3 top-[46px] z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-500 shadow-md transition hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 sm:flex min-[390px]:top-[52px] sm:top-[59px]"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </>
+        ) : null}
+
         <div
           ref={ref}
-          className="flex gap-3 overflow-x-auto px-0.5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] min-[390px]:gap-4 sm:gap-6 sm:px-1 [&::-webkit-scrollbar]:hidden"
+          className={`flex gap-3 overflow-x-auto scroll-smooth px-0.5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] min-[390px]:gap-4 sm:gap-6 sm:px-1 [&::-webkit-scrollbar]:hidden ${
+            isOverflowing ? "justify-start" : "justify-center"
+          }`}
         >
           {tiles.map((tile) => (
             <CategoryCircle

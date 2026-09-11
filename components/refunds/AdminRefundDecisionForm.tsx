@@ -84,7 +84,7 @@ export function AdminRefundDecisionForm({
               onClick={() => setDecisionType(option)}
               className={`rounded-lg px-3 py-2 text-xs font-semibold ${
                 decisionType === option
-                  ? "bg-[#0f3460] text-white"
+                  ? "bg-secondary text-white"
                   : "border border-neutral-300 text-neutral-700"
               }`}
             >
@@ -133,7 +133,7 @@ export function AdminRefundDecisionForm({
           type="button"
           onClick={() => setConfirmOpen(true)}
           disabled={submitting}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-50"
         >
           {t("submit")}
         </button>
@@ -185,7 +185,7 @@ export function AdminRefundDecisionForm({
                 type="button"
                 disabled={submitting}
                 onClick={() => void handleSubmit()}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
               >
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 {submitting ? t("submitting") : t("confirmYes")}

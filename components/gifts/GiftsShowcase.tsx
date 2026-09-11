@@ -113,14 +113,14 @@ export function GiftsShowcase() {
             sizes="100vw"
             priority
           />
-          <div className="absolute inset-0 bg-[#0F3460]/82" />
+          <div className="absolute inset-0 bg-secondary/82" />
           <div
             aria-hidden
             className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,255,255,0.16),transparent_44%)]"
           />
         </div>
 
-        <div className="relative mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
+        <div className="relative mx-auto w-full max-w-[1540px] px-3.5 py-10 sm:px-6 sm:py-12 lg:py-14">
           <nav className="mb-5 flex items-center gap-2 text-sm text-white/70">
             <Link href="/" className="transition hover:text-white hover:underline">
               {t("home")}
@@ -141,7 +141,7 @@ export function GiftsShowcase() {
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <a
               href="#gift-request"
-              className="inline-flex min-h-11 items-center justify-center bg-white px-5 py-2.5 text-sm font-semibold text-[#0F3460] transition hover:bg-neutral-100"
+              className="inline-flex min-h-11 items-center justify-center bg-white px-5 py-2.5 text-sm font-semibold text-secondary transition hover:bg-neutral-100"
             >
               {t("cta.requestGift")}
             </a>
@@ -156,7 +156,7 @@ export function GiftsShowcase() {
       </section>
 
       <section className="w-full min-w-0 py-3 sm:py-4">
-        <div className="mx-auto w-full max-w-[1540px] px-4 sm:px-6">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 sm:px-6">
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:gap-3">
             {DUO_IMAGES.map((item) => (
               <a
@@ -171,7 +171,7 @@ export function GiftsShowcase() {
                   className="object-cover object-center transition duration-500 hover:scale-[1.02]"
                   sizes="(max-width: 640px) 100vw, 50vw"
                 />
-                <div className="absolute inset-0 bg-linear-to-t from-[#0F3460]/75 via-[#0F3460]/15 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-secondary/75 via-secondary/15 to-transparent" />
                 <span className="absolute inset-s-3 bottom-3 text-sm font-semibold text-white sm:inset-s-4 sm:bottom-4 sm:text-base">
                   {t(item.labelKey)}
                 </span>
@@ -182,7 +182,7 @@ export function GiftsShowcase() {
       </section>
 
       <section className="w-full min-w-0 pb-3 sm:pb-4">
-        <div className="mx-auto w-full max-w-[1540px] px-4 sm:px-6">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 sm:px-6">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
             {PROMO_IMAGES.map((item) => (
               <a
@@ -197,7 +197,7 @@ export function GiftsShowcase() {
                   className="object-cover object-center transition duration-500 group-hover:scale-[1.03]"
                   sizes="(max-width: 640px) 50vw, 25vw"
                 />
-                <div className="absolute inset-0 bg-[#0F3460]/30 transition group-hover:bg-[#0F3460]/15" />
+                <div className="absolute inset-0 bg-secondary/30 transition group-hover:bg-secondary/15" />
                 <span className="absolute inset-s-2 bottom-2 text-xs font-semibold text-white drop-shadow sm:inset-s-3 sm:bottom-3 sm:text-sm">
                   {t(item.labelKey)}
                 </span>
@@ -208,21 +208,21 @@ export function GiftsShowcase() {
       </section>
 
       <section id="gift-request" className="w-full min-w-0 py-4 sm:py-6">
-        <div className="mx-auto w-full max-w-[1540px] px-4 sm:px-6">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 sm:px-6">
           <GiftRequestForm locale={locale} />
         </div>
       </section>
 
       <section className="w-full border-t border-black/5">
-        <div className="mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12">
-          <h2 className="text-lg font-bold text-neutral-900 sm:text-xl">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 py-10 sm:px-6 sm:py-12">
+          <h2 className="text-lg font-bold tracking-tight text-neutral-900 sm:text-xl">
             {t("howItWorks.title")}
           </h2>
           <p className="mt-1 max-w-xl text-sm text-neutral-500">{t("howItWorks.subtitle")}</p>
           <ol className="mt-8 grid gap-8 sm:grid-cols-3 sm:gap-10">
             {steps.map((step, index) => (
               <li key={step.title} className="min-w-0">
-                <span className="block text-3xl font-bold tabular-nums text-[#0F3460]/25">
+                <span className="block text-3xl font-bold tabular-nums text-secondary/25">
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <h3 className="mt-2 text-base font-semibold text-neutral-900">{step.title}</h3>
@@ -236,10 +236,10 @@ export function GiftsShowcase() {
       </section>
 
       <section id="gift-sets" className="w-full border-t border-black/5 bg-white/50">
-        <div className="mx-auto w-full max-w-[1540px] px-4 py-8 sm:px-6 sm:py-10">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 py-8 sm:px-6 sm:py-10">
           <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-xl font-bold text-neutral-900 sm:text-2xl">
+              <h2 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">
                 {t("curatedTitle")}
               </h2>
               <p className="mt-1 text-sm text-neutral-600">{t("curatedSubtitle")}</p>
@@ -251,7 +251,7 @@ export function GiftsShowcase() {
 
           {loading ? (
             <div className="flex min-h-[240px] items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-[#0F3460]/40" />
+              <Loader2 className="h-8 w-8 animate-spin text-secondary/40" />
             </div>
           ) : giftProducts.length > 0 ? (
             <div className="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-3 xl:gap-4 2xl:grid-cols-4">
@@ -271,7 +271,7 @@ export function GiftsShowcase() {
               <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">{t("noGiftsHint")}</p>
               <Link
                 href="/products"
-                className="mt-6 inline-flex bg-[#0F3460] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+                className="mt-6 inline-flex bg-secondary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
               >
                 {t("browseAll")}
               </Link>
@@ -288,7 +288,7 @@ export function GiftsShowcasePage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-[#eef1f6]">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0F3460]/40" />
+          <Loader2 className="h-8 w-8 animate-spin text-secondary/40" />
         </div>
       }
     >

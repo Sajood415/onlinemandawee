@@ -46,7 +46,7 @@ function fieldClassName(error?: string, multiline = false) {
   } ${
     error
       ? "border-red-400 focus:border-red-500"
-      : "border-neutral-300 focus:border-[#0F3460]"
+      : "border-neutral-300 focus:border-secondary"
   }`;
 }
 
@@ -335,7 +335,7 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
               {isAuthenticated && user?.role === "CUSTOMER" ? (
                 <Link
                   href="/account/gift-requests"
-                  className="inline-flex min-h-11 items-center justify-center bg-[#0F3460] px-5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+                  className="inline-flex min-h-11 items-center justify-center bg-secondary px-5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
                 >
                   {copy.trackInAccount}
                 </Link>
@@ -363,7 +363,7 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
     >
       <div className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#0F3460]">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-secondary">
             {copy.requestBadge}
           </p>
           <h2 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900">
@@ -637,7 +637,7 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
                   <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
                     <input
                       type="checkbox"
-                      className="h-4 w-4 border-neutral-300 text-[#0F3460] focus:ring-[#0F3460]/30"
+                      className="h-4 w-4 border-neutral-300 text-secondary focus:ring-secondary/30"
                       checked={form.dressForMale}
                       onChange={(event) => updateField("dressForMale", event.target.checked)}
                     />
@@ -646,7 +646,7 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
                   <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
                     <input
                       type="checkbox"
-                      className="h-4 w-4 border-neutral-300 text-[#0F3460] focus:ring-[#0F3460]/30"
+                      className="h-4 w-4 border-neutral-300 text-secondary focus:ring-secondary/30"
                       checked={form.dressForFemale}
                       onChange={(event) => updateField("dressForFemale", event.target.checked)}
                     />
@@ -674,7 +674,7 @@ export function GiftRequestForm({ locale }: GiftRequestFormProps) {
         <button
           type="submit"
           disabled={submitting}
-          className="inline-flex w-full items-center justify-center gap-2 bg-[#0F3460] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          className="inline-flex w-full items-center justify-center gap-2 bg-secondary px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
           {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           {submitting ? copy.submitting : copy.submit}

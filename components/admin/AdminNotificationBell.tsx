@@ -150,7 +150,7 @@ export function AdminNotificationBell() {
               type="button"
               onClick={() => void markAllRead()}
               disabled={unreadCount === 0}
-              className="text-xs font-semibold text-[#0F3460] disabled:opacity-40"
+              className="text-xs font-semibold text-secondary disabled:opacity-40"
             >
               {t("markAllRead")}
             </button>
@@ -172,13 +172,13 @@ export function AdminNotificationBell() {
                         setOpen(false);
                       }}
                       className={`block px-4 py-3 transition hover:bg-neutral-50 ${
-                        item.read ? "bg-white" : "bg-[#0F3460]/[0.04]"
+                        item.read ? "bg-white" : "bg-secondary/[0.04]"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-semibold text-neutral-900">{item.title}</p>
                         {!item.read ? (
-                          <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#0F3460]" />
+                          <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-secondary" />
                         ) : null}
                       </div>
                       <p className="mt-1 text-xs text-neutral-600">{item.body}</p>

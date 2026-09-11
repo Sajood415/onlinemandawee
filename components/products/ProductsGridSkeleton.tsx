@@ -14,9 +14,9 @@ export function ProductsGridSkeleton({ count = 8 }: { count?: number }) {
       {Array.from({ length: count }).map((_, index) => (
         <div
           key={index}
-          className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_8px_30px_rgba(15,52,96,0.05)]"
+          className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_8px_30px_rgba(15,52,96,0.06)]"
         >
-          <div className="aspect-[4/5] animate-pulse bg-gradient-to-br from-neutral-100 to-neutral-50" />
+          <div className="aspect-square animate-pulse bg-gradient-to-br from-neutral-100 to-neutral-50" />
           <div className="space-y-3 p-4">
             <div className="h-2.5 w-16 animate-pulse rounded-full bg-neutral-200" />
             <div className="h-4 w-full animate-pulse rounded bg-neutral-200" />

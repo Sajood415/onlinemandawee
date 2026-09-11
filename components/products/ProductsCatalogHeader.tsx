@@ -24,11 +24,11 @@ export function ProductsCatalogHeader({
   return (
     <div className="mb-5">
       <nav className="mb-3 flex flex-wrap items-center gap-1.5 text-sm text-neutral-400">
-        <Link href="/" className="transition hover:text-[#0F3460] hover:underline">
+        <Link href="/" className="transition hover:text-secondary hover:underline">
           {t("home")}
         </Link>
         <ChevronRight className={`h-3.5 w-3.5 shrink-0 ${isRtl ? "rotate-180" : ""}`} />
-        <Link href="/products" className="transition hover:text-[#0F3460] hover:underline">
+        <Link href="/products" className="transition hover:text-secondary hover:underline">
           {t("title")}
         </Link>
         {categoryLabel ? (

@@ -567,7 +567,7 @@ export default function AdminDeliveryRulesPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+          <h1 className="text-2xl font-bold text-secondary">{t("title")}</h1>
           <p className="mt-1 max-w-2xl text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <div className="flex shrink-0 flex-nowrap items-center gap-2">
@@ -582,7 +582,7 @@ export default function AdminDeliveryRulesPage() {
           <button
             type="button"
             onClick={openCreate}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#0f3460] px-3 py-2 text-sm font-semibold whitespace-nowrap text-white hover:bg-[#0a2847]"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-sm font-semibold whitespace-nowrap text-white hover:bg-[#0a2847]"
           >
             <Plus className="h-4 w-4" />
             {t("createRule")}
@@ -607,7 +607,7 @@ export default function AdminDeliveryRulesPage() {
               type="button"
               disabled={quickSetupBusy}
               onClick={() => void setupAfghanistanKm()}
-              className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+              className="mt-3 inline-flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-xs font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
             >
               {quickSetupBusy ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -622,7 +622,7 @@ export default function AdminDeliveryRulesPage() {
               type="button"
               disabled={quickSetupBusy}
               onClick={() => void setupAfghanistanKm()}
-              className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+              className="mt-3 inline-flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-xs font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
             >
               {quickSetupBusy ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -928,7 +928,7 @@ export default function AdminDeliveryRulesPage() {
                   type="button"
                   disabled={submitting}
                   onClick={() => void submitForm()}
-                  className="rounded-lg bg-[#0f3460] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  className="rounded-lg bg-secondary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
                 >
                   {submitting
                     ? t("saving")

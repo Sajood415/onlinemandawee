@@ -117,12 +117,12 @@ export function SearchableSelect({
             ? `flex w-full items-center justify-between gap-2 border-0 border-b bg-transparent px-0 py-2.5 text-left text-sm outline-none transition disabled:text-neutral-400 ${
                 error
                   ? "border-red-400 focus:border-red-500"
-                  : "border-neutral-300 focus:border-[#0F3460]"
+                  : "border-neutral-300 focus:border-secondary"
               }`
             : `flex w-full items-center justify-between gap-2 rounded-xl border px-4 py-3 text-left text-sm outline-none transition disabled:bg-gray-50 disabled:text-gray-400 ${
                 error
                   ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100"
-                  : "border-gray-200 focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10"
+                  : "border-gray-200 focus:border-secondary focus:ring-2 focus:ring-secondary/10"
               }`
         }
         aria-expanded={open}
@@ -160,7 +160,7 @@ export function SearchableSelect({
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder={searchPlaceholder}
-                className="w-full border border-neutral-200 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#0F3460] [&::-ms-clear]:hidden [&::-webkit-search-cancel-button]:hidden"
+                className="w-full border border-neutral-200 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-secondary [&::-ms-clear]:hidden [&::-webkit-search-cancel-button]:hidden"
               />
             </div>
           </div>
@@ -170,7 +170,7 @@ export function SearchableSelect({
                 <button
                   type="button"
                   onClick={() => selectValue(search.trim())}
-                  className="flex w-full px-3 py-2.5 text-left text-sm text-[#0F3460] hover:bg-[#0F3460]/5"
+                  className="flex w-full px-3 py-2.5 text-left text-sm text-secondary hover:bg-secondary/5"
                 >
                   &ldquo;{search.trim()}&rdquo;
                 </button>
@@ -184,9 +184,9 @@ export function SearchableSelect({
                   <button
                     type="button"
                     onClick={() => selectValue(option.value)}
-                    className={`flex w-full flex-col px-3 py-2.5 text-left text-sm transition hover:bg-[#0F3460]/5 ${
+                    className={`flex w-full flex-col px-3 py-2.5 text-left text-sm transition hover:bg-secondary/5 ${
                       option.value === value
-                        ? "bg-[#0F3460]/8 font-semibold text-[#0F3460]"
+                        ? "bg-secondary/8 font-semibold text-secondary"
                         : "text-neutral-800"
                     }`}
                   >

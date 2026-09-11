@@ -112,7 +112,7 @@ export function MobileNavMenu({
         className={`relative inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-2.5 py-2 text-[12px] font-medium whitespace-nowrap transition-colors ${
           surface === "light"
             ? isOpen
-              ? "bg-gray-100 font-semibold text-[#ec1b23]"
+              ? "bg-gray-100 font-semibold text-primary"
               : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
             : isOpen
               ? "bg-white/10 text-white"
@@ -157,7 +157,7 @@ export function MobileNavMenu({
                           }}
                           className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold transition-colors ${
                             active
-                              ? "bg-[#ec1b23] text-white"
+                              ? "bg-primary text-white"
                               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                           }`}
                         >
@@ -189,7 +189,7 @@ export function MobileNavMenu({
                           }}
                           className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold transition-colors ${
                             active
-                              ? "bg-[#ec1b23] text-white"
+                              ? "bg-primary text-white"
                               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                           }`}
                         >

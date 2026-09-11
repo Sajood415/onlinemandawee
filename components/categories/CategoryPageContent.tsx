@@ -90,7 +90,7 @@ export function CategoryPageContent({ slug, locale, isRtl }: CategoryPageContent
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center bg-[#f2f3f7]">
-        <div className="mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 py-10 sm:px-6 lg:px-8">
           <ProductsGridSkeleton />
         </div>
       </div>
@@ -99,8 +99,8 @@ export function CategoryPageContent({ slug, locale, isRtl }: CategoryPageContent
 
   if (notFound || !category) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-bold text-[#0F3460]">{t("notFound")}</h1>
+      <div className="mx-auto max-w-[1540px] px-3.5 py-16 text-center sm:px-6 lg:px-8">
+        <h1 className="text-2xl font-bold text-secondary">{t("notFound")}</h1>
         <Link href="/products" className="mt-4 inline-block text-primary hover:underline">
           {t("browseAll")}
         </Link>

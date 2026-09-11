@@ -669,7 +669,7 @@ export function AdminProductEditPanel({ product, onSaved, onCancel }: Props) {
         <button
           type="submit"
           disabled={saving}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#0F3460] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {saving ? t("saving") : t("save")}

@@ -157,7 +157,7 @@ export function AdminGiftRequestQuoteForm({
   };
 
   return (
-    <section className="rounded-xl border border-[#0f3460]/15 bg-[#0f3460]/5 p-4">
+    <section className="rounded-xl border border-secondary/15 bg-secondary/5 p-4">
       <h3 className="text-sm font-semibold text-neutral-900">{t("title")}</h3>
       <p className="mt-1 text-xs text-neutral-600">{t("subtitle")}</p>
 
@@ -204,7 +204,7 @@ export function AdminGiftRequestQuoteForm({
                 step="0.01"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
-                className="w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10"
+                className="w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10"
                 placeholder={t("amountPlaceholder")}
               />
             </label>
@@ -215,7 +215,7 @@ export function AdminGiftRequestQuoteForm({
               <select
                 value={currency}
                 onChange={(event) => setCurrency(event.target.value)}
-                className="w-full rounded-lg border border-neutral-200 px-3 py-3 text-sm outline-none focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10"
+                className="w-full rounded-lg border border-neutral-200 px-3 py-3 text-sm outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10"
               >
                 {SUPPORTED_CURRENCIES.map((code) => (
                   <option key={code} value={code}>
@@ -239,7 +239,7 @@ export function AdminGiftRequestQuoteForm({
             <textarea
               value={quoteNote}
               onChange={(event) => setQuoteNote(event.target.value)}
-              className="min-h-[88px] w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10"
+              className="min-h-[88px] w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10"
               placeholder={t("notePlaceholder")}
             />
           </label>
@@ -296,7 +296,7 @@ export function AdminGiftRequestQuoteForm({
             type="button"
             disabled={sending || uploading}
             onClick={() => void handleSendQuote()}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-60"
           >
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {request.quoteSentAt ? t("resend") : t("send")}
@@ -305,12 +305,12 @@ export function AdminGiftRequestQuoteForm({
       ) : null}
 
       {canMarkOfflinePaid ? (
-        <div className="mt-4 space-y-3 border-t border-[#0f3460]/10 pt-4">
+        <div className="mt-4 space-y-3 border-t border-secondary/10 pt-4">
           <p className="text-xs text-neutral-600">{t("offlineHelp")}</p>
           <input
             value={offlineNote}
             onChange={(event) => setOfflineNote(event.target.value)}
-            className="w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10"
+            className="w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10"
             placeholder={t("offlineNotePlaceholder")}
           />
           <button

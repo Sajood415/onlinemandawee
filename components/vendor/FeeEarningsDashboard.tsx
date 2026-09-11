@@ -67,7 +67,7 @@ export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
     <section className="mt-10 space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-[#0f3460]">{t("title")}</h2>
+          <h2 className="text-lg font-bold text-secondary">{t("title")}</h2>
           <p className="mt-1 text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <Link
@@ -125,7 +125,7 @@ export function FeeEarningsDashboard({ data }: { data: FeeEarningsBoard }) {
               <p className="text-xs font-semibold uppercase tracking-wide text-primary">
                 {t("monthlySubscription")}
               </p>
-              <p className="mt-2 text-lg font-bold text-[#0f3460]">
+              <p className="mt-2 text-lg font-bold text-secondary">
                 {formatCurrency(
                   data.subscription.monthlyAmount,
                   data.subscription.currency

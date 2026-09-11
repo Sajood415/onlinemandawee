@@ -217,8 +217,8 @@ export function ProductReviews({ productId, locale, onSummaryChange }: ProductRe
   return (
     <section id="reviews" className="border-t border-neutral-200 pt-8">
       <div className="mb-5 flex items-center gap-2">
-        <MessageSquareText className="h-5 w-5 text-[#0f3460]" />
-        <h2 className="text-lg font-bold text-neutral-900">
+        <MessageSquareText className="h-5 w-5 text-secondary" />
+        <h2 className="text-lg font-bold tracking-tight text-neutral-900 sm:text-xl">
           {copy.title} {total > 0 ? `(${total})` : ""}
         </h2>
       </div>
@@ -237,14 +237,14 @@ export function ProductReviews({ productId, locale, onSummaryChange }: ProductRe
                 onChange={(event) => setComment(event.target.value)}
                 disabled={submitting}
                 placeholder={copy.placeholder}
-                className="min-h-[100px] w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/15 disabled:bg-neutral-100"
+                className="min-h-[100px] w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-secondary focus:ring-2 focus:ring-secondary/15 disabled:bg-neutral-100"
                 maxLength={1000}
               />
             </div>
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#0f3460] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-xl bg-secondary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {submitting ? copy.submitting : copy.submit}

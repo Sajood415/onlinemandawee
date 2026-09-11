@@ -32,7 +32,7 @@ type Props = {
 };
 
 const INPUT =
-  "w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20";
+  "w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20";
 
 function formatMoney(amount: number, currency: string) {
   try {
@@ -155,7 +155,7 @@ export function AdminOrderDisputePanel({
               </div>
               <Link
                 href={`/admin/disputes/${refundCase.id}`}
-                className="text-xs font-semibold text-[#0F3460] hover:underline"
+                className="text-xs font-semibold text-secondary hover:underline"
               >
                 View
               </Link>
@@ -211,7 +211,7 @@ export function AdminOrderDisputePanel({
             type="button"
             disabled={refunding || !canRefund}
             onClick={() => void onMarkRefunded()}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#0F3460] px-3 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
           >
             {refunding ? (
               <Loader2 className="h-4 w-4 animate-spin" />

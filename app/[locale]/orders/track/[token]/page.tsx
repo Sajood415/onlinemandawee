@@ -57,7 +57,7 @@ export default function GuestOrderTrackPage({
     <GuestOrderTrackingShell title={copy.trackOrder} subtitle={copy.orderDetails}>
       {loading ? (
         <div className="flex min-h-[200px] items-center justify-center bg-white px-5 py-10 text-sm text-neutral-500 shadow-[0_20px_50px_-28px_rgba(15,52,96,0.35)]">
-          <Loader2 className="me-2 h-5 w-5 animate-spin text-[#0F3460]/40" />
+          <Loader2 className="me-2 h-5 w-5 animate-spin text-secondary/40" />
           {copy.loading}
         </div>
       ) : error || !order ? (
@@ -65,7 +65,7 @@ export default function GuestOrderTrackPage({
           <p className="text-sm text-neutral-700">{error ?? copy.invalidLink}</p>
           <Link
             href="/orders"
-            className="mt-6 inline-flex items-center justify-center bg-[#0F3460] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+            className="mt-6 inline-flex items-center justify-center bg-secondary px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
           >
             {copy.findOrder}
           </Link>

@@ -132,7 +132,7 @@ function RoleDashboardLayoutInner({
       className="flex h-full min-h-0 w-full overflow-hidden bg-[#f3f6fb]"
     >
       <aside
-        className={`flex h-full w-64 shrink-0 flex-col border-e border-white/10 bg-linear-to-b from-[#0f3460] to-[#123f74] py-4 text-white transition-transform duration-200 ease-out max-lg:fixed max-lg:inset-y-0 max-lg:start-0 max-lg:z-50 max-lg:max-w-[min(18rem,88vw)] ${
+        className={`flex h-full w-64 shrink-0 flex-col border-e border-white/10 bg-linear-to-b from-secondary to-[#123f74] py-4 text-white transition-transform duration-200 ease-out max-lg:fixed max-lg:inset-y-0 max-lg:start-0 max-lg:z-50 max-lg:max-w-[min(18rem,88vw)] ${
           open
             ? "max-lg:translate-x-0 max-lg:shadow-[4px_0_32px_rgba(15,52,96,0.25)] max-lg:rtl:shadow-[-4px_0_32px_rgba(15,52,96,0.25)]"
             : isRtl
@@ -216,7 +216,7 @@ function RoleDashboardLayoutInner({
           >
             <PanelLeft className="h-5 w-5 stroke-2 rtl:rotate-180" />
           </button>
-          <h1 className="min-w-0 flex-1 truncate text-base font-semibold tracking-tight text-[#0f3460] sm:text-lg lg:text-xl">
+          <h1 className="min-w-0 flex-1 truncate text-base font-semibold tracking-tight text-secondary sm:text-lg lg:text-xl">
             {topBarTitle}
           </h1>
           {topBarEnd}

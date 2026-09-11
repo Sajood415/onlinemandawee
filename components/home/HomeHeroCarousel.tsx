@@ -188,7 +188,7 @@ export function HomeHeroCarousel() {
           <div className="relative min-w-0 flex-1">
             <Link
               href={slide.href}
-              className="relative block aspect-[2/1] w-full overflow-hidden rounded-2xl bg-neutral-100 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#ec1b23]/40"
+              className="relative block aspect-[2/1] w-full overflow-hidden rounded-2xl bg-neutral-100 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               <HeroSlideMedia slide={slide} label={label} forMobile />
               <HomeBannerContentOverlay
@@ -235,7 +235,7 @@ export function HomeHeroCarousel() {
       <div className="relative mx-auto hidden max-w-[1600px] sm:block">
         <Link
           href={slide.href}
-          className="relative block h-[clamp(220px,28vw,380px)] w-full min-w-0 overflow-hidden rounded-2xl bg-neutral-100 outline-none shadow-[0_10px_36px_rgba(15,23,42,0.1)] ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#ec1b23]/40 sm:rounded-3xl lg:h-[clamp(260px,26vw,420px)]"
+          className="relative block h-[clamp(220px,28vw,380px)] w-full min-w-0 overflow-hidden rounded-2xl bg-neutral-100 outline-none shadow-[0_10px_36px_rgba(15,23,42,0.1)] ring-offset-2 focus-visible:ring-2 focus-visible:ring-primary/40 sm:rounded-3xl lg:h-[clamp(260px,26vw,420px)]"
         >
           <HeroSlideMedia slide={slide} label={label} />
           <HomeBannerContentOverlay

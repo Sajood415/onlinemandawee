@@ -61,7 +61,7 @@ function SectionBody({ section }: { section: LegalSection }) {
       {section.subsections?.map((subsection) => (
         <div
           key={subsection.title}
-          className="min-w-0 space-y-2 border-s-2 border-[#0F3460]/25 ps-4"
+          className="min-w-0 space-y-2 border-s-2 border-secondary/25 ps-4"
         >
           <h3 className="break-words text-sm font-semibold text-neutral-900 sm:text-base">
             {subsection.title}
@@ -98,12 +98,12 @@ export function LegalPageShowcase({ pageKey }: LegalPageShowcaseProps) {
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="w-full min-w-0 bg-[#eef1f6]">
-      <section className="relative overflow-hidden bg-linear-to-br from-[#163f73] via-[#0F3460] to-[#0a2748] text-white">
+      <section className="relative overflow-hidden bg-linear-to-br from-[#163f73] via-secondary to-[#0a2748] text-white">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(255,255,255,0.16),transparent_42%)]"
         />
-        <div className="relative mx-auto w-full max-w-[1540px] px-4 py-8 sm:px-6 sm:py-10 lg:py-12">
+        <div className="relative mx-auto w-full max-w-[1540px] px-3.5 py-8 sm:px-6 sm:py-10 lg:py-12">
           <nav className="mb-5 flex flex-wrap items-center gap-2 text-sm text-white/70">
             <Link href="/" className="transition hover:text-white hover:underline">
               {tShared("home")}
@@ -127,7 +127,7 @@ export function LegalPageShowcase({ pageKey }: LegalPageShowcaseProps) {
         </div>
       </section>
 
-      <div className="mx-auto w-full min-w-0 max-w-[1540px] px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto w-full min-w-0 max-w-[1540px] px-3.5 py-8 sm:px-6 sm:py-10">
         <div className="grid min-w-0 gap-8 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)]">
           <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
             <div className="min-w-0 border border-neutral-200/80 bg-white px-4 py-4 sm:px-5">
@@ -139,7 +139,7 @@ export function LegalPageShowcase({ pageKey }: LegalPageShowcaseProps) {
                   <a
                     key={section.id}
                     href={`#${section.id}`}
-                    className="inline-flex max-w-full break-words border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-600 transition hover:border-[#0F3460]/30 hover:text-[#0F3460] lg:block lg:border-0 lg:bg-transparent lg:px-0 lg:py-0.5"
+                    className="inline-flex max-w-full break-words border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-600 transition hover:border-secondary/30 hover:text-secondary lg:block lg:border-0 lg:bg-transparent lg:px-0 lg:py-0.5"
                   >
                     {section.title}
                   </a>
@@ -174,7 +174,7 @@ export function LegalPageShowcase({ pageKey }: LegalPageShowcaseProps) {
                 <Link
                   key={link.href}
                   href={link.href as "/terms" | "/privacy" | "/refunds" | "/contact" | "/help" | "/vendor/register"}
-                  className="text-sm font-semibold text-[#0F3460] underline-offset-4 hover:underline"
+                  className="text-sm font-semibold text-secondary underline-offset-4 hover:underline"
                 >
                   {link.label}
                 </Link>
@@ -183,7 +183,7 @@ export function LegalPageShowcase({ pageKey }: LegalPageShowcaseProps) {
           </section>
         ) : null}
 
-        <section className="mt-6 bg-[#0F3460] px-5 py-7 text-white sm:px-8 sm:py-8">
+        <section className="mt-6 bg-secondary px-5 py-7 text-white sm:px-8 sm:py-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-lg font-bold sm:text-xl">{tShared("contactTitle")}</h3>
@@ -192,7 +192,7 @@ export function LegalPageShowcase({ pageKey }: LegalPageShowcaseProps) {
             <div className="flex flex-wrap gap-2">
               <a
                 href={`mailto:${SITE_CONTACT.email}`}
-                className="inline-flex min-h-11 items-center justify-center gap-2 bg-white px-5 py-2.5 text-sm font-semibold text-[#0F3460] transition hover:bg-neutral-100"
+                className="inline-flex min-h-11 items-center justify-center gap-2 bg-white px-5 py-2.5 text-sm font-semibold text-secondary transition hover:bg-neutral-100"
               >
                 <Mail className="h-4 w-4" />
                 {tShared("emailLabel")}

@@ -162,7 +162,7 @@ export function GiftRequestMediaFields({
         ) : null}
 
         <label
-          className={`inline-flex cursor-pointer items-center gap-2 border border-dashed border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:border-[#0F3460] hover:text-[#0F3460] ${
+          className={`inline-flex cursor-pointer items-center gap-2 border border-dashed border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:border-secondary hover:text-secondary ${
             disabled || uploadingImage || !canAddImage ? "pointer-events-none opacity-60" : ""
           }`}
         >
@@ -222,7 +222,7 @@ export function GiftRequestMediaFields({
         ) : null}
 
         <label
-          className={`inline-flex cursor-pointer items-center gap-2 border border-dashed border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:border-[#0F3460] hover:text-[#0F3460] ${
+          className={`inline-flex cursor-pointer items-center gap-2 border border-dashed border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:border-secondary hover:text-secondary ${
             disabled || uploadingVideo || !canAddVideo ? "pointer-events-none opacity-60" : ""
           }`}
         >

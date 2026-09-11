@@ -429,8 +429,8 @@ function OrderCard({
 
               {vendorOrder.deliveryMethod === "STANDARD" ||
               vendorOrder.deliveryMethod === "EXPRESS" ? (
-                <div className="mt-3 rounded-lg border border-[#0F3460]/15 bg-[#0F3460]/5 px-3 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#0F3460]">
+                <div className="mt-3 rounded-lg border border-secondary/15 bg-secondary/5 px-3 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
                     {t("orders.trackingNumber")}
                   </p>
                   {customerTrackingRef ? (

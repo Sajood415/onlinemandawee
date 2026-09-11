@@ -247,7 +247,7 @@ export function AdminSupplyRequests() {
         accessorKey: "requestNumber",
         header: t("columns.requestNumber"),
         cell: ({ row }) => (
-          <span className="font-mono text-sm font-semibold text-[#0f3460]">
+          <span className="font-mono text-sm font-semibold text-secondary">
             {row.original.requestNumber}
           </span>
         ),
@@ -296,7 +296,7 @@ export function AdminSupplyRequests() {
           <button
             type="button"
             onClick={() => openDetail(row.original)}
-            className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:border-[#0f3460]/30 hover:bg-[#0f3460]/5"
+            className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:border-secondary/30 hover:bg-secondary/5"
           >
             <Eye className="h-3.5 w-3.5" />
             {t("view")}
@@ -319,7 +319,7 @@ export function AdminSupplyRequests() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+          <h1 className="text-2xl font-bold text-secondary">{t("title")}</h1>
           <p className="mt-1 max-w-2xl text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <button
@@ -341,7 +341,7 @@ export function AdminSupplyRequests() {
             onClick={() => setStatusTab(status)}
             className={`-mb-px border-b-2 px-3 py-2 text-sm font-semibold transition ${
               statusTab === status
-                ? "border-[#0f3460] text-[#0f3460]"
+                ? "border-secondary text-secondary"
                 : "border-transparent text-neutral-500 hover:text-neutral-800"
             }`}
           >
@@ -356,7 +356,7 @@ export function AdminSupplyRequests() {
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder={t("searchPlaceholder")}
-          className="w-full rounded-lg border border-neutral-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10"
+          className="w-full rounded-lg border border-neutral-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-secondary focus:ring-2 focus:ring-secondary/10"
         />
       </div>
 
@@ -384,7 +384,7 @@ export function AdminSupplyRequests() {
             <div className="sticky top-0 z-10 border-b border-neutral-100 bg-white px-6 py-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="font-mono text-lg font-bold text-[#0f3460]">
+                  <h2 className="font-mono text-lg font-bold text-secondary">
                     {selected.requestNumber}
                   </h2>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -417,7 +417,7 @@ export function AdminSupplyRequests() {
                     onClick={() => setDetailTab(tab.id)}
                     className={`-mb-px border-b-2 px-3 py-2 text-sm font-semibold transition ${
                       detailTab === tab.id
-                        ? "border-[#0f3460] text-[#0f3460]"
+                        ? "border-secondary text-secondary"
                         : "border-transparent text-neutral-500 hover:text-neutral-800"
                     }`}
                   >
@@ -530,7 +530,7 @@ export function AdminSupplyRequests() {
                               href={url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="break-all text-sm text-[#0f3460] hover:underline"
+                              className="break-all text-sm text-secondary hover:underline"
                             >
                               {url}
                             </a>
@@ -626,7 +626,7 @@ export function AdminSupplyRequests() {
                       onChange={(event) =>
                         handleStatusSelect(event.target.value as SupplyRequestStatus)
                       }
-                      className="w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10 disabled:opacity-60"
+                      className="w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 disabled:opacity-60"
                     >
                       {SUPPLY_STATUSES.map((status) => (
                         <option key={status} value={status}>
@@ -696,7 +696,7 @@ export function AdminSupplyRequests() {
                 type="button"
                 disabled={statusUpdating}
                 onClick={() => void applyStatusChange(pendingStatus)}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
               >
                 {statusUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 {statusUpdating ? t("statusConfirm.saving") : t("statusConfirm.confirm")}

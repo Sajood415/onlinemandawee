@@ -441,7 +441,7 @@ function AdminReportsContent() {
                     })
                   }
                   disabled={reactivatingVendorId === invoice.vendorProfileId}
-                  className="rounded-md bg-[#0f3460] px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                  className="rounded-md bg-secondary px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
                 >
                   {reactivatingVendorId === invoice.vendorProfileId
                     ? t("reactivating")
@@ -561,7 +561,7 @@ function AdminReportsContent() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#0f3460]">{t("pageTitle")}</h1>
+          <h1 className="text-2xl font-bold text-secondary">{t("pageTitle")}</h1>
           <p className="mt-1 max-w-2xl text-sm text-neutral-600">{t("pageSubtitle")}</p>
         </div>
         <button
@@ -592,13 +592,13 @@ function AdminReportsContent() {
                 onClick={() => selectTab(item.id)}
                 className={`relative inline-flex shrink-0 items-center gap-2 whitespace-nowrap px-5 py-3.5 text-sm font-semibold transition sm:px-6 ${
                   active
-                    ? "text-[#0f3460]"
+                    ? "text-secondary"
                     : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800"
                 }`}
               >
                 {item.label}
                 {active ? (
-                  <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-[#0f3460] sm:inset-x-4" />
+                  <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-secondary sm:inset-x-4" />
                 ) : null}
               </button>
             );
@@ -816,7 +816,7 @@ function AdminReportsContent() {
                 type="button"
                 disabled={Boolean(actingInvoiceId)}
                 onClick={() => void submitWaive()}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
               >
                 {actingInvoiceId === waiveTarget.id ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -877,7 +877,7 @@ function AdminReportsContent() {
                     void reactivateVendor(confirmAction.vendorProfileId);
                   }
                 }}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
               >
                 {confirmBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 {confirmBusy

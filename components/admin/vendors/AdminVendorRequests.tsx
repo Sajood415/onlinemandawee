@@ -490,13 +490,13 @@ export function AdminVendorRequests() {
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder={t("searchPlaceholder")}
-              className="w-full rounded-lg border border-neutral-200 bg-white py-2 pe-3 ps-9 text-sm text-neutral-700 outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+              className="w-full rounded-lg border border-neutral-200 bg-white py-2 pe-3 ps-9 text-sm text-neutral-700 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20"
             />
           </label>
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-            className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-700 outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+            className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-700 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20"
           >
             {statusFilters.map((status) => (
               <option key={status} value={status}>
@@ -509,7 +509,7 @@ export function AdminVendorRequests() {
             onChange={(event) =>
               setSellerTypeFilter(event.target.value as SellerTypeFilter)
             }
-            className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-700 outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+            className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-700 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20"
           >
             <option value="ALL">{t("allShopTypes")}</option>
             <option value="THIRD_PARTY">{t("sellerTypes.THIRD_PARTY")}</option>
@@ -659,7 +659,7 @@ export function AdminVendorRequests() {
                 value={rejectReason}
                 onChange={(event) => setRejectReason(event.target.value)}
                 rows={4}
-                className="mt-3 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-700 outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+                className="mt-3 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-700 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20"
                 placeholder={t("confirm.rejectPlaceholder")}
               />
             ) : null}
@@ -669,7 +669,7 @@ export function AdminVendorRequests() {
                 value={actionReason}
                 onChange={(event) => setActionReason(event.target.value)}
                 rows={4}
-                className="mt-3 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-700 outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+                className="mt-3 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-700 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20"
                 placeholder={t("confirm.suspendPlaceholder")}
               />
             ) : null}
@@ -767,7 +767,7 @@ export function AdminVendorRequests() {
                     pendingSellerTypeChange.targetSellerType === "THIRD_PARTY" &&
                     !downgradeConfirmed)
                 }
-                className="rounded-lg bg-[#0f3460] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                className="rounded-lg bg-secondary px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
                 {actionSubmitting ? t("confirm.saving") : t("confirm.confirm")}
               </button>

@@ -114,7 +114,7 @@ function PriceRangeSlider({
       />
       <div className="mt-3 flex items-center justify-between text-sm">
         <span className="font-medium text-neutral-600">{formatPriceLabel(0)}</span>
-        <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#0f3460] shadow-sm">
+        <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-secondary shadow-sm">
           {maxPriceLabel} {formatPriceLabel(localValue)}
         </span>
       </div>
@@ -141,10 +141,10 @@ export function ProductsFiltersPanel({
   return (
     <div className={`space-y-6 ${className}`}>
       <div className="flex items-center gap-2 border-b border-neutral-100 pb-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f3460]/10 text-[#0f3460]">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary/10 text-secondary">
           <SlidersHorizontal className="h-4 w-4" />
         </div>
-        <h2 className="text-sm font-bold tracking-tight text-[#0f3460]">
+        <h2 className="text-sm font-bold tracking-tight text-secondary">
           {labels.filters}
         </h2>
       </div>
@@ -161,11 +161,11 @@ export function ProductsFiltersPanel({
                 key={cat.id}
                 type="button"
                 onClick={() => onCategoryChange(cat.id)}
-                className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-all ${
+                className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
                   isRtl ? "text-right" : "text-left"
                 } ${
                   active
-                    ? "bg-[#0f3460] font-semibold text-white shadow-sm"
+                    ? "bg-secondary font-semibold text-white shadow-sm"
                     : "text-neutral-700 hover:bg-neutral-50"
                 }`}
               >

@@ -129,16 +129,16 @@ function BabyPackagesContent() {
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="w-full min-w-0 bg-[#eef1f6]">
-      <div className="mx-auto w-full max-w-[1540px] px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mx-auto w-full max-w-[1540px] px-3.5 py-6 sm:px-6 sm:py-8">
         <div className="mb-6">
           <nav aria-label={tCommon("breadcrumb")} className="mb-3 flex flex-wrap items-center gap-1.5 text-sm text-neutral-400">
-            <Link href="/" className="transition hover:text-[#0F3460] hover:underline">
+            <Link href="/" className="transition hover:text-secondary hover:underline">
               {t("home")}
             </Link>
             <ChevronRight className={`h-3.5 w-3.5 shrink-0 ${isRtl ? "rotate-180" : ""}`} />
             <Link
               href={`/category/${BABY_CARE_CATEGORY}`}
-              className="transition hover:text-[#0F3460] hover:underline"
+              className="transition hover:text-secondary hover:underline"
             >
               {t("babyCare")}
             </Link>
@@ -156,14 +156,14 @@ function BabyPackagesContent() {
             <div className="flex flex-wrap gap-2">
               <Link
                 href={`/category/${BABY_CARE_CATEGORY}`}
-                className="inline-flex items-center gap-2 border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#0F3460] transition hover:border-[#0F3460]/35"
+                className="inline-flex items-center gap-2 border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-secondary transition hover:border-secondary/35"
               >
                 <Package className="h-4 w-4" />
                 {t("browseBabyCare")}
               </Link>
               <Link
                 href="/gifts"
-                className="inline-flex items-center gap-2 bg-[#0F3460] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+                className="inline-flex items-center gap-2 bg-secondary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
               >
                 <Gift className="h-4 w-4" />
                 {t("requestCustom")}
@@ -183,7 +183,7 @@ function BabyPackagesContent() {
                 <Link
                   key={group.slug}
                   href={`/category/${group.slug}`}
-                  className="inline-flex items-center gap-2 border border-neutral-200 bg-[#f7f8fb] px-3 py-2 text-sm font-medium text-[#0F3460] transition hover:border-[#0F3460]/35 hover:bg-white"
+                  className="inline-flex items-center gap-2 border border-neutral-200 bg-[#f7f8fb] px-3 py-2 text-sm font-medium text-secondary transition hover:border-secondary/35 hover:bg-white"
                 >
                   <span>{group.name}</span>
                   {group.count != null ? (
@@ -207,7 +207,7 @@ function BabyPackagesContent() {
                   page: 1,
                 })
               }
-              className="border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-800 outline-none focus:border-[#0F3460]"
+              className="border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-800 outline-none focus:border-secondary"
             >
               <option value="newest">{t("sortNewest")}</option>
               <option value="price-asc">{t("sortPriceAsc")}</option>
@@ -219,15 +219,15 @@ function BabyPackagesContent() {
 
         {loading ? (
           <div className="flex min-h-[280px] items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-[#0F3460]/40" />
+            <Loader2 className="h-8 w-8 animate-spin text-secondary/40" />
           </div>
         ) : products.length === 0 ? (
-          <div className="border border-neutral-200/80 bg-white px-6 py-16 text-center">
-            <h2 className="text-xl font-bold text-neutral-900">{t("noProducts")}</h2>
+          <div className="rounded-2xl border border-neutral-200/80 bg-white px-6 py-16 text-center">
+            <h2 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">{t("noProducts")}</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">{t("noProductsHint")}</p>
             <Link
               href="/products"
-              className="mt-6 inline-flex bg-[#0F3460] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+              className="mt-6 inline-flex bg-secondary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
             >
               {t("browseProducts")}
             </Link>
@@ -250,7 +250,7 @@ function BabyPackagesContent() {
                     type="button"
                     disabled={page <= 1}
                     onClick={() => replaceQuery({ page: page - 1 })}
-                    className="border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:border-[#0F3460]/30 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:border-secondary/30 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {t("previous")}
                   </button>
@@ -258,7 +258,7 @@ function BabyPackagesContent() {
                     type="button"
                     disabled={page >= pageCount}
                     onClick={() => replaceQuery({ page: page + 1 })}
-                    className="border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:border-[#0F3460]/30 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:border-secondary/30 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {t("next")}
                   </button>
@@ -277,7 +277,7 @@ export function BabyPackagesShowcase() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-[#eef1f6]">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0F3460]/40" />
+          <Loader2 className="h-8 w-8 animate-spin text-secondary/40" />
         </div>
       }
     >

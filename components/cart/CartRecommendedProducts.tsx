@@ -37,10 +37,10 @@ export function CartRecommendedProducts({
   return (
     <section className="mt-14 border-t border-neutral-200 pt-10">
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="text-lg font-bold tracking-tight text-neutral-900">{copy.recommended}</h2>
+        <h2 className="text-lg font-bold tracking-tight text-neutral-900 sm:text-xl">{copy.recommended}</h2>
         <Link
           href="/products"
-          className="inline-flex items-center gap-1 text-sm font-medium text-neutral-500 transition hover:text-[#0F3460]"
+          className="inline-flex items-center gap-1 text-sm font-medium text-neutral-500 transition hover:text-secondary"
         >
           {t("viewAll")}
           <ArrowRight className="h-3.5 w-3.5" />

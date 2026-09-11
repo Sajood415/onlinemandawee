@@ -65,7 +65,7 @@ export default function CartPage() {
   if (!hydrated || isLoading) {
     return (
       <div className="min-h-screen bg-white">
-        <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 py-8 sm:px-6 lg:px-8 lg:py-12">
           <CartPageSkeleton />
         </div>
       </div>
@@ -76,16 +76,16 @@ export default function CartPage() {
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-white">
-      <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+      <div className="mx-auto w-full max-w-[1540px] px-3.5 py-8 sm:px-6 lg:px-8 lg:py-12">
         <nav
           aria-label={tCommon("breadcrumb")}
           className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-neutral-400"
         >
-          <Link href="/" className="transition hover:text-[#0F3460] hover:underline">
+          <Link href="/" className="transition hover:text-secondary hover:underline">
             {tBreadcrumb("home")}
           </Link>
           <ChevronRight className={`h-3.5 w-3.5 shrink-0 ${isRtl ? "rotate-180" : ""}`} />
-          <Link href="/products" className="transition hover:text-[#0F3460] hover:underline">
+          <Link href="/products" className="transition hover:text-secondary hover:underline">
             {copy.continueShopping}
           </Link>
           <ChevronRight className={`h-3.5 w-3.5 shrink-0 ${isRtl ? "rotate-180" : ""}`} />

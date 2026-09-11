@@ -142,7 +142,7 @@ function SupplyStripePaymentForm({
           <button
             type="button"
             onClick={onRetry}
-            className="text-sm font-semibold text-[#0f3460] underline hover:no-underline"
+            className="text-sm font-semibold text-secondary underline hover:no-underline"
           >
             {t("reloadForm")}
           </button>
@@ -170,7 +170,7 @@ function SupplyStripePaymentForm({
       <button
         type="submit"
         disabled={!stripe || !elements || !paymentElementReady || paying}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-60 sm:w-auto"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-60 sm:w-auto"
       >
         {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
         {paying ? t("processing") : t("payNow")}
@@ -266,7 +266,7 @@ export function SupplyRequestQuotePayment({
               onClick={() => setPaymentTab("stripe")}
               className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
                 paymentTab === "stripe"
-                  ? "bg-[#0F3460] text-white"
+                  ? "bg-secondary text-white"
                   : "text-neutral-600 hover:bg-neutral-50 disabled:opacity-40"
               }`}
             >
@@ -278,7 +278,7 @@ export function SupplyRequestQuotePayment({
               onClick={() => setPaymentTab("paypal")}
               className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
                 paymentTab === "paypal"
-                  ? "bg-[#0F3460] text-white"
+                  ? "bg-secondary text-white"
                   : "text-neutral-600 hover:bg-neutral-50 disabled:opacity-40"
               }`}
             >
@@ -298,7 +298,7 @@ export function SupplyRequestQuotePayment({
                 <button
                   type="button"
                   onClick={() => void loadIntent()}
-                  className="text-sm font-semibold text-[#0f3460] underline hover:no-underline"
+                  className="text-sm font-semibold text-secondary underline hover:no-underline"
                 >
                   {t("tryAgain")}
                 </button>

@@ -74,7 +74,7 @@ export function VendorProductListCards({
                 <p className="truncate font-medium text-neutral-900">
                   {product.name}
                 </p>
-                <p className="mt-0.5 text-sm font-semibold text-[#0f3460]">
+                <p className="mt-0.5 text-sm font-semibold text-secondary">
                   {price}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">

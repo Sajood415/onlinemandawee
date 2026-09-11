@@ -97,7 +97,7 @@ export function LoginPageClient() {
       footer={
         <p className="text-sm text-neutral-600">
           {t("newCustomer")}{" "}
-          <Link href="/auth/signup" className="font-semibold text-[#0F3460] underline-offset-4 hover:underline">
+          <Link href="/auth/signup" className="font-semibold text-secondary underline-offset-4 hover:underline">
             {t("createAccount")}
           </Link>
         </p>
@@ -139,7 +139,7 @@ export function LoginPageClient() {
 
       <Link
         href="/auth/forgot-password"
-        className="mt-4 inline-block text-sm font-semibold text-[#0F3460] underline-offset-4 hover:underline"
+        className="mt-4 inline-block text-sm font-semibold text-secondary underline-offset-4 hover:underline"
       >
         {t("forgotPassword")}
       </Link>

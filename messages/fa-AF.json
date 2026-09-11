@@ -2398,6 +2398,8 @@
       "home": "خانه",
       "allProducts": "همه محصولات",
       "subcategories": "خرید بر اساس نوع",
+      "previousSubcategories": "زیرمجموعه‌های قبلی",
+      "nextSubcategories": "زیرمجموعه‌های بعدی",
       "searchPlaceholder": "جستجو در این دسته...",
       "noProducts": "هنوز محصولی در این دسته وجود ندارد.",
       "noSearchResults": "محصولی در این دسته یافت نشد.",

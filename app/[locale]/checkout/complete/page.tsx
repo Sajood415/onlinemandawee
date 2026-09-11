@@ -116,11 +116,11 @@ function CheckoutCompleteShell({
           aria-label={copy.breadcrumb}
           className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-neutral-400"
         >
-          <Link href="/" className="transition hover:text-[#0F3460] hover:underline">
+          <Link href="/" className="transition hover:text-secondary hover:underline">
             {copy.home}
           </Link>
           <ChevronRight className={`h-3.5 w-3.5 shrink-0 ${isRtl ? "rotate-180" : ""}`} />
-          <Link href="/checkout" className="transition hover:text-[#0F3460] hover:underline">
+          <Link href="/checkout" className="transition hover:text-secondary hover:underline">
             {copy.title}
           </Link>
           <ChevronRight className={`h-3.5 w-3.5 shrink-0 ${isRtl ? "rotate-180" : ""}`} />
@@ -135,7 +135,7 @@ function CheckoutCompleteShell({
 function CompleteLoading({ message }: { message: string }) {
   return (
     <div className="flex min-h-[240px] flex-col items-center justify-center border border-neutral-200 px-6 py-16 text-center">
-      <Loader2 className="h-8 w-8 animate-spin text-[#0F3460]/40" />
+      <Loader2 className="h-8 w-8 animate-spin text-secondary/40" />
       <p className="mt-4 text-sm text-neutral-600">{message}</p>
     </div>
   );
@@ -248,7 +248,7 @@ function CheckoutCompletePageContent() {
           <p className="mx-auto mt-2 max-w-md text-sm text-neutral-600">{state.message}</p>
           <Link
             href="/checkout"
-            className="mt-6 inline-flex bg-[#0F3460] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+            className="mt-6 inline-flex bg-secondary px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
           >
             {copy.complete.returnCheckout}
           </Link>
@@ -260,11 +260,11 @@ function CheckoutCompletePageContent() {
           <p className="mt-2 text-sm text-neutral-600">
             {copy.complete.successBody.replace("{orderNumber}", state.orderNumber)}
           </p>
-          <p className="mt-4 text-lg font-bold text-[#0F3460]">{state.orderNumber}</p>
+          <p className="mt-4 text-lg font-bold text-secondary">{state.orderNumber}</p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href={state.destinationHref}
-              className="inline-flex bg-[#0F3460] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+              className="inline-flex bg-secondary px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
             >
               {state.destinationLabel}
             </Link>

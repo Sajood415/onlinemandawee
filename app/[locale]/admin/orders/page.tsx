@@ -533,7 +533,7 @@ export default function AdminOrdersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+          <h1 className="text-2xl font-bold text-secondary">{t("title")}</h1>
           <p className="mt-1 text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <button
@@ -649,7 +649,7 @@ export default function AdminOrdersPage() {
           <button
             type="button"
             onClick={applyFilters}
-            className="rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847]"
+            className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847]"
           >
             {t("applyFilters")}
           </button>
@@ -952,7 +952,7 @@ export default function AdminOrdersPage() {
                           <div className="min-w-0">
                             <Link
                               href={`/admin/vendors/${vendorOrder.vendorProfileId}`}
-                              className="font-semibold text-[#0F3460] hover:underline"
+                              className="font-semibold text-secondary hover:underline"
                             >
                               {vendorOrder.vendorStoreName ??
                                 vendorOrder.vendorStoreSlug ??

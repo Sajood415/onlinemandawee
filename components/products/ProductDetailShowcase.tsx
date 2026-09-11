@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   ChevronRight,
@@ -67,6 +67,19 @@ export function ProductDetailShowcase({
   const [tab, setTab] = useState<TabKey>("description");
   const [liveRating, setLiveRating] = useState(product.rating);
   const [liveReviews, setLiveReviews] = useState(product.reviews);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const addToCartRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const target = addToCartRef.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { rootMargin: "-64px 0px 0px 0px" }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     setSelectedImage(0);
@@ -163,16 +176,16 @@ export function ProductDetailShowcase({
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-white">
-      <div className="mx-auto w-full max-w-[1540px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+      <div className="mx-auto w-full max-w-[1540px] px-3.5 py-5 sm:px-6 lg:px-8 lg:py-7">
         <nav
           aria-label={copy.breadcrumb}
-          className="mb-5 flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-neutral-400"
+          className="mb-3 flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-neutral-400"
         >
-          <Link href="/" className="transition hover:text-[#0F3460] hover:underline">
+          <Link href="/" className="transition hover:text-secondary hover:underline">
             {copy.home}
           </Link>
           <ChevronRight className={`h-3.5 w-3.5 shrink-0 ${isRtl ? "rotate-180" : ""}`} />
-          <Link href="/products" className="transition hover:text-[#0F3460] hover:underline">
+          <Link href="/products" className="transition hover:text-secondary hover:underline">
             {copy.products}
           </Link>
           {categoryLabel ? (
@@ -180,7 +193,7 @@ export function ProductDetailShowcase({
               <ChevronRight className={`h-3.5 w-3.5 shrink-0 ${isRtl ? "rotate-180" : ""}`} />
               <Link
                 href={`/category/${product.category}`}
-                className="transition hover:text-[#0F3460] hover:underline"
+                className="transition hover:text-secondary hover:underline"
               >
                 {categoryLabel}
               </Link>
@@ -201,9 +214,9 @@ export function ProductDetailShowcase({
                       key={`${img}-${idx}`}
                       type="button"
                       onClick={() => setSelectedImage(idx)}
-                      className={`relative aspect-square w-full overflow-hidden border transition ${
+                      className={`relative aspect-square w-full overflow-hidden rounded-xl border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                         selectedImage === idx
-                          ? "border-[#0F3460]"
+                          ? "border-secondary"
                           : "border-neutral-200 hover:border-neutral-400"
                       }`}
                     >
@@ -213,7 +226,7 @@ export function ProductDetailShowcase({
                 </div>
               ) : null}
 
-              <div className="relative min-h-[280px] flex-1 aspect-square overflow-hidden bg-neutral-50 sm:min-h-[420px]">
+              <div className="relative min-h-[280px] flex-1 aspect-square overflow-hidden rounded-2xl bg-neutral-50 sm:min-h-[420px]">
                 <CatalogImage
                   src={images[selectedImage] ?? images[0]}
                   alt={product.name[locale]}
@@ -223,7 +236,7 @@ export function ProductDetailShowcase({
                   sizes="(max-width: 1024px) 100vw, 45vw"
                 />
                 {product.badge ? (
-                  <span className="absolute bottom-3 inset-s-3 bg-[#ec1b23] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+                  <span className="absolute bottom-3 inset-s-3 rounded-lg bg-primary px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
                     {product.badge[locale]}
                   </span>
                 ) : null}
@@ -237,8 +250,8 @@ export function ProductDetailShowcase({
                     key={`m-${img}-${idx}`}
                     type="button"
                     onClick={() => setSelectedImage(idx)}
-                    className={`relative h-16 w-16 shrink-0 overflow-hidden border ${
-                      selectedImage === idx ? "border-[#0F3460]" : "border-neutral-200"
+                    className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                      selectedImage === idx ? "border-secondary" : "border-neutral-200"
                     }`}
                   >
                     <CatalogImage src={img} alt="" fill className="object-contain p-1" sizes="64px" />
@@ -256,14 +269,14 @@ export function ProductDetailShowcase({
               </p>
               <Link
                 href={`/vendors/${product.vendorSlug}`}
-                className="inline-flex items-center gap-1 text-sm font-semibold text-[#ec1b23] hover:underline"
+                className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
               >
                 <Store className="h-3.5 w-3.5" />
                 {copy.visitStore}
               </Link>
             </div>
 
-            <h1 className="mt-2 text-2xl font-bold leading-snug tracking-tight text-[#0F3460] sm:text-[1.75rem]">
+            <h1 className="mt-2 text-2xl font-bold leading-snug tracking-tight text-secondary sm:text-[1.75rem]">
               {product.name[locale]}
             </h1>
 
@@ -284,7 +297,7 @@ export function ProductDetailShowcase({
                 <button
                   type="button"
                   onClick={() => setTab("reviews")}
-                  className="text-sm text-neutral-500 hover:text-[#0F3460] hover:underline"
+                  className="text-sm text-neutral-500 hover:text-secondary hover:underline"
                 >
                   {liveRating.toFixed(1)} · {liveReviews} {copy.reviews}
                 </button>
@@ -292,7 +305,7 @@ export function ProductDetailShowcase({
                 <button
                   type="button"
                   onClick={() => setTab("reviews")}
-                  className="text-sm text-neutral-500 hover:text-[#0F3460] hover:underline"
+                  className="text-sm text-neutral-500 hover:text-secondary hover:underline"
                 >
                   {copy.beFirstReview}
                 </button>
@@ -307,8 +320,8 @@ export function ProductDetailShowcase({
             {"availableCoupons" in product &&
             product.availableCoupons &&
             product.availableCoupons.length > 0 ? (
-              <div className="mt-4 border border-[#ec1b23]/20 bg-[#ec1b23]/5 px-3 py-3">
-                <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[#ec1b23]">
+              <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 px-3 py-3">
+                <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-primary">
                   <Tag className="h-3.5 w-3.5" />
                   {copy.availableOffers}
                 </p>
@@ -316,7 +329,7 @@ export function ProductDetailShowcase({
                   {product.availableCoupons.map((coupon) => (
                     <span
                       key={coupon.code}
-                      className="border border-[#ec1b23]/25 bg-white px-2.5 py-1 text-xs font-semibold text-[#ec1b23]"
+                      className="rounded-full border border-primary/25 bg-white px-2.5 py-1 text-xs font-semibold text-primary"
                     >
                       {coupon.code} · {coupon.label}
                     </span>
@@ -332,7 +345,7 @@ export function ProductDetailShowcase({
                 <dd className="flex items-center gap-1.5 font-medium text-neutral-900">
                   {inStock ? (
                     <>
-                      <Check className="h-4 w-4 text-[#0F3460]" />
+                      <Check className="h-4 w-4 text-secondary" />
                       {copy.inStock}
                       {availableStock > 0 ? ` (${availableStock})` : ""}
                     </>
@@ -382,9 +395,9 @@ export function ProductDetailShowcase({
                         type="button"
                         disabled={soldOut}
                         onClick={() => setSelectedVariantId(variant.id)}
-                        className={`border px-3 py-2 text-sm transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                        className={`rounded-xl border px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
                           selected
-                            ? "border-[#ec1b23] bg-white font-semibold text-neutral-900"
+                            ? "border-primary bg-white font-semibold text-neutral-900"
                             : "border-neutral-300 text-neutral-700 hover:border-neutral-500"
                         }`}
                       >
@@ -399,12 +412,12 @@ export function ProductDetailShowcase({
 
             <div className="mt-5">
               <p className="mb-2 text-sm font-semibold text-neutral-800">{copy.quantity}</p>
-              <div className="inline-flex items-center border border-neutral-300">
+              <div className="inline-flex items-center rounded-xl border border-neutral-300">
                 <button
                   type="button"
                   disabled={!inStock}
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="flex h-10 w-10 items-center justify-center text-lg text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40"
+                  className="flex h-10 w-10 items-center justify-center rounded-l-xl text-lg text-neutral-600 transition hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-40"
                 >
                   −
                 </button>
@@ -415,34 +428,36 @@ export function ProductDetailShowcase({
                   type="button"
                   disabled={!inStock || quantity >= availableStock}
                   onClick={() => setQuantity((q) => Math.min(availableStock, q + 1))}
-                  className="flex h-10 w-10 items-center justify-center text-lg text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40"
+                  className="flex h-10 w-10 items-center justify-center rounded-r-xl text-lg text-neutral-600 transition hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-40"
                 >
                   +
                 </button>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => void handleAddToCart()}
-              disabled={isAdding || !inStock}
-              className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 bg-[#ec1b23] px-5 text-sm font-bold text-white transition hover:bg-[#c9161d] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isAdding ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ShoppingCart className="h-4 w-4" />
-              )}
-              {isAdding ? copy.adding : copy.addToCart}
-            </button>
+            <div ref={addToCartRef}>
+              <button
+                type="button"
+                onClick={() => void handleAddToCart()}
+                disabled={isAdding || !inStock}
+                className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-lg transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isAdding ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ShoppingCart className="h-4 w-4" />
+                )}
+                {isAdding ? copy.adding : copy.addToCart}
+              </button>
+            </div>
           </section>
 
           {/* Trust sidebar */}
-          <aside className="hidden border border-neutral-200 lg:block lg:self-start">
+          <aside className="hidden rounded-2xl border border-neutral-200 lg:block lg:self-start">
             <ul className="divide-y divide-neutral-200">
               {trustItems.map((item) => (
                 <li key={item.title} className="flex items-start gap-3 px-4 py-4">
-                  <item.icon className="mt-0.5 h-5 w-5 shrink-0 text-[#0F3460]" strokeWidth={1.75} />
+                  <item.icon className="mt-0.5 h-5 w-5 shrink-0 text-secondary" strokeWidth={1.75} />
                   <div>
                     <p className="text-sm font-semibold text-neutral-900">{item.title}</p>
                     <p className="mt-0.5 text-xs leading-relaxed text-neutral-500">
@@ -456,10 +471,10 @@ export function ProductDetailShowcase({
         </div>
 
         {/* Mobile trust strip */}
-        <div className="mt-6 grid grid-cols-2 gap-3 border border-neutral-200 p-3 lg:hidden">
+        <div className="mt-6 grid grid-cols-2 gap-3 rounded-2xl border border-neutral-200 p-3 lg:hidden">
           {trustItems.map((item) => (
             <div key={item.title} className="flex items-start gap-2">
-              <item.icon className="mt-0.5 h-4 w-4 shrink-0 text-[#0F3460]" />
+              <item.icon className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
               <div>
                 <p className="text-xs font-semibold text-neutral-900">{item.title}</p>
                 <p className="text-[11px] text-neutral-500">{item.description}</p>
@@ -474,9 +489,9 @@ export function ProductDetailShowcase({
             <button
               type="button"
               onClick={() => setTab("description")}
-              className={`px-5 py-3 text-sm font-semibold uppercase tracking-wide transition ${
+              className={`px-5 py-3 text-sm font-semibold uppercase tracking-wide transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-secondary ${
                 tab === "description"
-                  ? "border-b-2 border-[#0F3460] text-[#0F3460]"
+                  ? "border-b-2 border-secondary text-secondary"
                   : "text-neutral-500 hover:text-neutral-800"
               }`}
             >
@@ -485,9 +500,9 @@ export function ProductDetailShowcase({
             <button
               type="button"
               onClick={() => setTab("reviews")}
-              className={`px-5 py-3 text-sm font-semibold uppercase tracking-wide transition ${
+              className={`px-5 py-3 text-sm font-semibold uppercase tracking-wide transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-secondary ${
                 tab === "reviews"
-                  ? "border-b-2 border-[#0F3460] text-[#0F3460]"
+                  ? "border-b-2 border-secondary text-secondary"
                   : "text-neutral-500 hover:text-neutral-800"
               }`}
             >
@@ -503,7 +518,7 @@ export function ProductDetailShowcase({
                   <ul className="mt-3 space-y-2">
                     {highlights.map((item, idx) => (
                       <li key={`${item}-${idx}`} className="flex gap-2 text-sm text-neutral-700">
-                        <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[#0F3460]" />
+                        <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-secondary" />
                         <span className="leading-relaxed">{item}</span>
                       </li>
                     ))}
@@ -536,6 +551,30 @@ export function ProductDetailShowcase({
           />
         </div>
       </div>
+
+      {showStickyBar ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 px-3.5 py-2.5 shadow-[0_-8px_30px_rgba(15,52,96,0.1)] backdrop-blur-sm sm:hidden">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs text-neutral-500">{product.name[locale]}</p>
+              <p className="text-base font-bold text-neutral-900">{displayPrice}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleAddToCart()}
+              disabled={isAdding || !inStock}
+              className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-lg transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isAdding ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ShoppingCart className="h-4 w-4" />
+              )}
+              {isAdding ? copy.adding : copy.addToCart}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

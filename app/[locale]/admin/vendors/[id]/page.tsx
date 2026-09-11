@@ -434,7 +434,7 @@ export default function AdminVendorDetailPage() {
       <div className="space-y-4 pb-8">
         <Link
           href="/admin/vendors"
-          className="text-sm font-semibold text-[#0F3460] hover:underline"
+          className="text-sm font-semibold text-secondary hover:underline"
         >
           {td("back")}
         </Link>
@@ -510,7 +510,7 @@ export default function AdminVendorDetailPage() {
         <div className="min-w-0">
           <Link
             href="/admin/vendors"
-            className="text-sm font-semibold text-[#0F3460] hover:underline"
+            className="text-sm font-semibold text-secondary hover:underline"
           >
             {td("back")}
           </Link>
@@ -649,7 +649,7 @@ export default function AdminVendorDetailPage() {
                   href={vendor.address.proofOfAddressUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="font-medium text-[#0F3460] hover:underline"
+                  className="font-medium text-secondary hover:underline"
                 >
                   {td("fields.proofOfAddress")} ↗
                 </a>
@@ -1087,7 +1087,7 @@ export default function AdminVendorDetailPage() {
                 value={rejectReason}
                 onChange={(event) => setRejectReason(event.target.value)}
                 rows={4}
-                className="mt-3 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+                className="mt-3 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20"
                 placeholder={t("confirm.rejectPlaceholder")}
               />
             ) : null}
@@ -1097,7 +1097,7 @@ export default function AdminVendorDetailPage() {
                 value={actionReason}
                 onChange={(event) => setActionReason(event.target.value)}
                 rows={4}
-                className="mt-3 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+                className="mt-3 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20"
                 placeholder={t("confirm.suspendPlaceholder")}
               />
             ) : null}

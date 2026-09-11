@@ -62,8 +62,8 @@ export default function LocalizedNotFoundPage() {
       dir={isRtl ? "rtl" : "ltr"}
       className="min-h-[70vh] bg-[#f6f8fc] px-4 py-12 sm:px-6 lg:px-8"
     >
-      <div className="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-[#0f3460]/10 bg-white shadow-[0_20px_60px_rgba(15,52,96,0.08)]">
-        <div className="bg-linear-to-br from-[#0f3460] via-[#123f74] to-[#0f3460] px-6 py-10 text-white sm:px-10">
+      <div className="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-secondary/10 bg-white shadow-[0_20px_60px_rgba(15,52,96,0.08)]">
+        <div className="bg-linear-to-br from-secondary via-[#123f74] to-secondary px-6 py-10 text-white sm:px-10">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
             <AlertTriangle className="h-4 w-4" />
             {t.badge}
@@ -76,28 +76,28 @@ export default function LocalizedNotFoundPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <Link
               href="/"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0f3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2847]"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2847]"
             >
               <Home className="h-4 w-4" />
               {t.home}
             </Link>
             <Link
               href="/products"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#0f3460]/20 bg-white px-4 py-3 text-sm font-semibold text-[#0f3460] transition hover:bg-[#0f3460]/5"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-secondary/20 bg-white px-4 py-3 text-sm font-semibold text-secondary transition hover:bg-secondary/5"
             >
               <PackageSearch className="h-4 w-4" />
               {t.products}
             </Link>
             <Link
               href="/deals"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#0f3460]/20 bg-white px-4 py-3 text-sm font-semibold text-[#0f3460] transition hover:bg-[#0f3460]/5"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-secondary/20 bg-white px-4 py-3 text-sm font-semibold text-secondary transition hover:bg-secondary/5"
             >
               <Tag className="h-4 w-4" />
               {t.deals}
             </Link>
             <Link
               href="/baby-packages"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#0f3460]/20 bg-white px-4 py-3 text-sm font-semibold text-[#0f3460] transition hover:bg-[#0f3460]/5"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-secondary/20 bg-white px-4 py-3 text-sm font-semibold text-secondary transition hover:bg-secondary/5"
             >
               <Baby className="h-4 w-4" />
               {t.babyPackages}

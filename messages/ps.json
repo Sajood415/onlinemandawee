@@ -2398,6 +2398,8 @@
       "home": "کور",
       "allProducts": "ټول محصولات",
       "subcategories": "د ډول له مخې وپلټئ",
+      "previousSubcategories": "پخوانۍ فرعي کټګورۍ",
+      "nextSubcategories": "راتلونکې فرعي کټګورۍ",
       "searchPlaceholder": "په دې کټګورۍ کې لټون...",
       "noProducts": "په دې کټګورۍ کې اوس مهال محصول نشته.",
       "noSearchResults": "په دې کټګورۍ کې هیڅ محصول ونه موندل شو.",

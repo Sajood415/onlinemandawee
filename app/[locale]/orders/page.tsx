@@ -24,7 +24,7 @@ function fieldClassName(hasError = false) {
   return `w-full border-0 border-b bg-transparent px-0 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 ${
     hasError
       ? "border-red-400 focus:border-red-500"
-      : "border-neutral-300 focus:border-[#0F3460]"
+      : "border-neutral-300 focus:border-secondary"
   }`;
 }
 
@@ -85,7 +85,7 @@ export default function OrdersLookupPage() {
         >
           <div className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#0F3460]">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-secondary">
                 {copy.formBadge}
               </p>
               <h2 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900">
@@ -159,7 +159,7 @@ export default function OrdersLookupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex w-full items-center justify-center gap-2 bg-[#0F3460] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              className="inline-flex w-full items-center justify-center gap-2 bg-secondary px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -173,7 +173,7 @@ export default function OrdersLookupPage() {
               {copy.helpCenter}{" "}
               <Link
                 href="/contact"
-                className="font-semibold text-[#0F3460] underline-offset-2 hover:underline"
+                className="font-semibold text-secondary underline-offset-2 hover:underline"
               >
                 {copy.helpLink}
               </Link>

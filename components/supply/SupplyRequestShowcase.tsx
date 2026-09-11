@@ -43,14 +43,14 @@ export function SupplyRequestShowcase() {
             sizes="100vw"
             priority
           />
-          <div className="absolute inset-0 bg-[#0F3460]/82" />
+          <div className="absolute inset-0 bg-secondary/82" />
           <div
             aria-hidden
             className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,255,255,0.16),transparent_44%)]"
           />
         </div>
 
-        <div className="relative mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
+        <div className="relative mx-auto w-full max-w-[1540px] px-3.5 py-10 sm:px-6 sm:py-12 lg:py-14">
           <nav className="mb-5 flex items-center gap-2 text-sm text-white/70">
             <Link href="/" className="transition hover:text-white hover:underline">
               {t("home")}
@@ -71,7 +71,7 @@ export function SupplyRequestShowcase() {
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <a
               href="#supply-request"
-              className="inline-flex min-h-11 items-center justify-center bg-white px-5 py-2.5 text-sm font-semibold text-[#0F3460] transition hover:bg-neutral-100"
+              className="inline-flex min-h-11 items-center justify-center bg-white px-5 py-2.5 text-sm font-semibold text-secondary transition hover:bg-neutral-100"
             >
               {t("cta.requestSupply")}
             </a>
@@ -86,13 +86,13 @@ export function SupplyRequestShowcase() {
       </section>
 
       <section id="supply-request" className="w-full min-w-0 py-4 sm:py-6">
-        <div className="mx-auto w-full max-w-[1540px] px-4 sm:px-6">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 sm:px-6">
           <SupplyRequestForm locale={locale} />
         </div>
       </section>
 
       <section id="how-it-works" className="w-full border-t border-black/5">
-        <div className="mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 py-10 sm:px-6 sm:py-12">
           <h2 className="text-lg font-bold text-neutral-900 sm:text-xl">
             {t("howItWorks.title")}
           </h2>
@@ -102,7 +102,7 @@ export function SupplyRequestShowcase() {
           <ol className="mt-8 grid gap-8 sm:grid-cols-3 sm:gap-10">
             {steps.map((step, index) => (
               <li key={step.title} className="min-w-0">
-                <span className="block text-3xl font-bold tabular-nums text-[#0F3460]/25">
+                <span className="block text-3xl font-bold tabular-nums text-secondary/25">
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <h3 className="mt-2 text-base font-semibold text-neutral-900">
@@ -118,9 +118,9 @@ export function SupplyRequestShowcase() {
       </section>
 
       <section className="w-full border-t border-black/5 bg-white/50">
-        <div className="mx-auto w-full max-w-[1540px] px-4 py-8 sm:px-6 sm:py-10">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 py-8 sm:px-6 sm:py-10">
           <div className="flex flex-col items-center gap-3 text-center sm:gap-4">
-            <Package className="h-10 w-10 text-[#0F3460]/40" />
+            <Package className="h-10 w-10 text-secondary/40" />
             <h2 className="text-xl font-bold text-neutral-900 sm:text-2xl">
               {t("valueTitle")}
             </h2>
@@ -129,7 +129,7 @@ export function SupplyRequestShowcase() {
             </p>
             <a
               href="#supply-request"
-              className="mt-2 inline-flex bg-[#0F3460] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+              className="mt-2 inline-flex bg-secondary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
             >
               {t("cta.requestSupply")}
             </a>
@@ -145,7 +145,7 @@ export function SupplyRequestShowcasePage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-[#eef1f6]">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0F3460]/40" />
+          <Loader2 className="h-8 w-8 animate-spin text-secondary/40" />
         </div>
       }
     >

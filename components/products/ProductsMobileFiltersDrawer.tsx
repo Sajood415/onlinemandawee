@@ -63,7 +63,7 @@ export function ProductsMobileFiltersDrawer({
             exit={{ opacity: 0 }}
             aria-label="Close filters"
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-[#0f3460]/40 backdrop-blur-[2px] lg:hidden"
+            className="fixed inset-0 z-40 bg-secondary/40 backdrop-blur-[2px] lg:hidden"
           />
           <motion.aside
             initial={{ x: isRtl ? "100%" : "-100%" }}
@@ -75,7 +75,7 @@ export function ProductsMobileFiltersDrawer({
             }`}
           >
             <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-4">
-              <h2 className="text-lg font-bold text-[#0f3460]">{labels.filters}</h2>
+              <h2 className="text-lg font-bold text-secondary">{labels.filters}</h2>
               <button
                 type="button"
                 onClick={onClose}

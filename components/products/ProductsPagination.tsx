@@ -27,7 +27,7 @@ export function ProductsPagination({
           type="button"
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
-          className="border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:border-[#0F3460]/30 disabled:cursor-not-allowed disabled:opacity-40"
+          className="border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:border-secondary/30 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {t("previous")}
         </button>
@@ -35,7 +35,7 @@ export function ProductsPagination({
           type="button"
           disabled={page >= pageCount}
           onClick={() => onPageChange(page + 1)}
-          className="border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:border-[#0F3460]/30 disabled:cursor-not-allowed disabled:opacity-40"
+          className="border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:border-secondary/30 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {t("next")}
         </button>

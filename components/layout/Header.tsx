@@ -171,10 +171,10 @@ function SecondaryNavLink({
       <LocaleLink
         href={href}
         aria-current={active ? "page" : undefined}
-        className={`inline-flex items-center gap-1.5 rounded-full bg-[#ec1b23]/10 px-2.5 py-1.5 text-[12px] font-semibold whitespace-nowrap text-[#ec1b23] ring-1 ring-[#ec1b23]/20 transition-colors hover:bg-[#ec1b23]/15 lg:px-3 lg:text-[13px] ${className}`}
+        className={`inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1.5 text-[12px] font-semibold whitespace-nowrap text-primary ring-1 ring-primary/20 transition-colors hover:bg-primary/15 lg:px-3 lg:text-[13px] ${className}`}
       >
         {badge ? (
-          <span className="rounded-full bg-[#ec1b23] px-1.5 py-px text-[9px] font-bold uppercase leading-none text-white">
+          <span className="rounded-full bg-primary px-1.5 py-px text-[9px] font-bold uppercase leading-none text-white">
             {badge}
           </span>
         ) : null}
@@ -190,8 +190,8 @@ function SecondaryNavLink({
       aria-current={active ? "page" : undefined}
       className={`inline-flex items-center gap-1.5 px-2 py-2 text-[12px] font-medium whitespace-nowrap transition-colors lg:gap-2 lg:px-2.5 lg:text-[13px] ${
         active
-          ? "font-semibold text-[#ec1b23]"
-          : "text-gray-600 hover:text-[#ec1b23]"
+          ? "font-semibold text-primary"
+          : "text-gray-600 hover:text-primary"
       } ${className}`}
     >
       {icon ? <span className="shrink-0 opacity-80">{icon}</span> : null}
@@ -223,7 +223,7 @@ function HeaderUtilButton({
       <span className="relative flex h-9 w-9 items-center justify-center text-white">
         {icon}
         {badge && badge > 0 ? (
-          <span className="absolute -end-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-bold text-[#ec1b23]">
+          <span className="absolute -end-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-bold text-primary">
             {badge > 99 ? "99+" : badge}
           </span>
         ) : null}
@@ -673,7 +673,7 @@ export default function Header() {
                     type="button"
                     onMouseEnter={() => setShowCategoriesDropdown(true)}
                     onClick={() => setShowCategoriesDropdown(true)}
-                    className="hidden h-10 cursor-pointer items-center gap-2 rounded-2xl border border-white/90 bg-white px-3.5 text-sm font-bold text-[#ec1b23] shadow-sm transition-colors hover:bg-white/95 md:inline-flex"
+                    className="hidden h-10 cursor-pointer items-center gap-2 rounded-2xl border border-white/90 bg-white px-3.5 text-sm font-bold text-primary shadow-sm transition-colors hover:bg-white/95 md:inline-flex"
                   >
                     <Menu size={18} />
                     <span>{copy.categories}</span>
@@ -777,7 +777,7 @@ export default function Header() {
                   >
                     <ShoppingBasket size={22} strokeWidth={1.75} />
                     {itemCount > 0 ? (
-                      <span className="absolute -end-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-bold text-[#ec1b23]">
+                      <span className="absolute -end-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-bold text-primary">
                         {itemCount}
                       </span>
                     ) : null}
@@ -880,7 +880,7 @@ export default function Header() {
                 <div className="ml-auto flex shrink-0 items-center gap-1 lg:gap-2">
                   <LocaleLink
                     href="/vendor/register"
-                    className="inline-flex items-center px-2.5 py-2 text-[12px] font-semibold whitespace-nowrap text-[#ec1b23] transition-colors hover:text-[#c4161d] lg:text-[13px]"
+                    className="inline-flex items-center px-2.5 py-2 text-[12px] font-semibold whitespace-nowrap text-primary transition-colors hover:text-primary/90 lg:text-[13px]"
                   >
                     {copy.sellOnPlatform}
                   </LocaleLink>
@@ -953,11 +953,11 @@ export default function Header() {
               <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-100 bg-white p-6">
                 <div className="flex items-center gap-3">
                   <motion.div
-                    className="rounded-2xl border border-[#0F3460]/15 bg-[#0F3460]/10 p-3"
+                    className="rounded-2xl border border-secondary/15 bg-secondary/10 p-3"
                     whileHover={{ scale: 1.05 }}
                     transition={{ type: "spring", stiffness: 400 }}
                   >
-                    <ShoppingBasket size={26} className="text-[#0F3460]" />
+                    <ShoppingBasket size={26} className="text-secondary" />
                   </motion.div>
                   <div>
                     <h2 className="text-xl font-black leading-none tracking-tight text-neutral-900">
@@ -1125,7 +1125,7 @@ export default function Header() {
                   <LocaleLink
                     href="/cart"
                     onClick={() => setIsCartOpen(false)}
-                    className="group flex w-full items-center justify-center gap-2 rounded-full bg-[#0F3460] py-4 font-bold text-white shadow-lg transition-all hover:bg-[#0a2540]"
+                    className="group flex w-full items-center justify-center gap-2 rounded-full bg-secondary py-4 font-bold text-white shadow-lg transition-all hover:bg-[#0a2540]"
                   >
                     {copy.viewFullBasket}
                     <ArrowRight

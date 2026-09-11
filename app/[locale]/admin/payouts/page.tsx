@@ -278,7 +278,7 @@ export default function AdminPayoutsPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+          <h1 className="text-2xl font-bold text-secondary">{t("title")}</h1>
           <p className="mt-1 max-w-2xl text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <button
@@ -319,7 +319,7 @@ export default function AdminPayoutsPage() {
                   onClick={() => setTab(item.id)}
                   className={`relative inline-flex shrink-0 items-center gap-2 whitespace-nowrap px-5 py-3.5 text-sm font-semibold transition sm:px-6 ${
                     active
-                      ? "text-[#0f3460]"
+                      ? "text-secondary"
                       : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800"
                   }`}
                 >
@@ -327,14 +327,14 @@ export default function AdminPayoutsPage() {
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                       active
-                        ? "bg-[#0f3460]/10 text-[#0f3460]"
+                        ? "bg-secondary/10 text-secondary"
                         : "bg-neutral-100 text-neutral-600"
                     }`}
                   >
                     {item.count}
                   </span>
                   {active ? (
-                    <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-[#0f3460] sm:inset-x-4" />
+                    <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-secondary sm:inset-x-4" />
                   ) : null}
                 </button>
               );
@@ -444,7 +444,7 @@ export default function AdminPayoutsPage() {
                               type="button"
                               onClick={() => setApproveTarget(payout)}
                               disabled={activeActionId === payout.id}
-                              className="rounded-lg bg-[#0f3460] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+                              className="rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
                             >
                               {t("actions.approvePay")}
                             </button>
@@ -587,7 +587,7 @@ export default function AdminPayoutsPage() {
                 type="button"
                 disabled={Boolean(activeActionId)}
                 onClick={confirmApprove}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
               >
                 {activeActionId === approveTarget.id ? (
                   <>
@@ -654,7 +654,7 @@ export default function AdminPayoutsPage() {
                     <dt className="text-xs uppercase tracking-wide text-neutral-500">
                       {t("detail.netPayout")}
                     </dt>
-                    <dd className="mt-1 text-lg font-bold text-[#0f3460]">
+                    <dd className="mt-1 text-lg font-bold text-secondary">
                       {money(detail.amount, detail.currency)}
                     </dd>
                   </div>
@@ -739,10 +739,10 @@ export default function AdminPayoutsPage() {
                   </section>
                 ) : null}
 
-                <section className="rounded-xl border border-[#0f3460]/20 bg-[#0f3460]/5 p-4">
+                <section className="rounded-xl border border-secondary/20 bg-secondary/5 p-4">
                   <div className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5 text-[#0f3460]" />
-                    <h3 className="text-sm font-semibold text-[#0f3460]">
+                    <Building2 className="h-5 w-5 text-secondary" />
+                    <h3 className="text-sm font-semibold text-secondary">
                       {t("detail.bankTitle")}
                     </h3>
                   </div>
@@ -800,7 +800,7 @@ export default function AdminPayoutsPage() {
                     type="button"
                     onClick={() => setApproveTarget(detail)}
                     disabled={activeActionId === detail.id}
-                    className="rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+                    className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
                   >
                     {t("actions.approvePay")}
                   </button>

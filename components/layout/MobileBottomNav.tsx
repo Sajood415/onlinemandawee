@@ -89,24 +89,24 @@ export function MobileBottomNav() {
               <Link
                 href={item.href}
                 className={`relative flex h-full flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
-                  active ? "text-[#ec1b23]" : "text-gray-500"
+                  active ? "text-primary" : "text-gray-500"
                 }`}
               >
                 <span className="relative inline-flex">
                   <Icon
                     size={22}
                     strokeWidth={active ? 2.4 : 2}
-                    className={active ? "text-[#ec1b23]" : "text-gray-500"}
+                    className={active ? "text-primary" : "text-gray-500"}
                   />
                   {badge && badge > 0 ? (
-                    <span className="absolute -end-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ec1b23] px-1 text-[9px] font-bold text-white">
+                    <span className="absolute -end-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-white">
                       {badge > 99 ? "99+" : badge}
                     </span>
                   ) : null}
                 </span>
                 <span
                   className={`max-w-full truncate text-[10px] leading-tight ${
-                    active ? "font-semibold text-[#ec1b23]" : "font-medium text-gray-500"
+                    active ? "font-semibold text-primary" : "font-medium text-gray-500"
                   }`}
                 >
                   {item.label}

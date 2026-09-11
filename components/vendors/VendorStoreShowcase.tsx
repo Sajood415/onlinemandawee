@@ -226,15 +226,15 @@ export function VendorStoreShowcase() {
   if (!apiStore) {
     return (
       <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-[#eef1f6]">
-        <div className="mx-auto max-w-[1540px] px-4 py-20 text-center sm:px-6">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center bg-[#0F3460]/10 text-[#0F3460]">
+        <div className="mx-auto max-w-[1540px] px-3.5 py-20 text-center sm:px-6">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary/10 text-secondary">
             <Store className="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-bold text-neutral-900">{t("notFound")}</h1>
           <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">{t("notFoundHint")}</p>
           <Link
             href="/vendors"
-            className="mt-6 inline-flex bg-[#0F3460] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+            className="mt-6 inline-flex rounded-xl bg-secondary px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
           >
             {t("backToVendors")}
           </Link>
@@ -246,8 +246,8 @@ export function VendorStoreShowcase() {
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="w-full min-w-0 bg-[#eef1f6]">
       {isOwner ? (
-        <div className="sticky top-0 z-40 border-b border-[#0F3460]/15 bg-[#0F3460] text-white shadow-sm">
-          <div className="mx-auto flex w-full max-w-[1540px] flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="sticky top-0 z-40 border-b border-secondary/15 bg-secondary text-white shadow-sm">
+          <div className="mx-auto flex w-full max-w-[1540px] flex-col gap-3 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/70">
                 {t("owner.previewBadge")}
@@ -259,7 +259,7 @@ export function VendorStoreShowcase() {
                 type="button"
                 onClick={() => logoInputRef.current?.click()}
                 disabled={uploadingLogo}
-                className="inline-flex items-center gap-1.5 border border-white/30 bg-white/10 px-3 py-2 text-xs font-semibold transition hover:bg-white/20 disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/30 bg-white/10 px-3 py-2 text-xs font-semibold transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary disabled:opacity-60"
               >
                 {uploadingLogo ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -270,14 +270,14 @@ export function VendorStoreShowcase() {
               </button>
               <Link
                 href="/vendor/promotions"
-                className="inline-flex items-center gap-1.5 border border-white/30 bg-white/10 px-3 py-2 text-xs font-semibold transition hover:bg-white/20"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/30 bg-white/10 px-3 py-2 text-xs font-semibold transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary"
               >
                 <Megaphone className="h-3.5 w-3.5" />
                 {t("owner.editBanners")}
               </Link>
               <Link
                 href="/vendor/dashboard"
-                className="inline-flex items-center gap-1.5 bg-white px-3 py-2 text-xs font-semibold text-[#0F3460] transition hover:bg-neutral-100"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-secondary transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary"
               >
                 <LayoutDashboard className="h-3.5 w-3.5" />
                 {t("owner.backToDashboard")}
@@ -307,11 +307,11 @@ export function VendorStoreShowcase() {
             sizes="100vw"
             priority
           />
-          <div className="absolute inset-0 bg-linear-to-t from-[#0a2748] via-[#0F3460]/55 to-[#0F3460]/20" />
+          <div className="absolute inset-0 bg-linear-to-t from-[#0a2748] via-secondary/55 to-secondary/20" />
         </div>
 
         <div className="absolute inset-x-0 bottom-0">
-          <div className="mx-auto w-full max-w-[1540px] px-4 pb-6 sm:px-6 sm:pb-8">
+          <div className="mx-auto w-full max-w-[1540px] px-3.5 pb-6 sm:px-6 sm:pb-8">
             <nav className="mb-4 flex flex-wrap items-center gap-2 text-sm text-white/70">
               <Link href="/" className="transition hover:text-white hover:underline">
                 {t("home")}
@@ -325,11 +325,11 @@ export function VendorStoreShowcase() {
             </nav>
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-5">
-              <div className="relative h-20 w-20 shrink-0 overflow-hidden border-2 border-white bg-white shadow-md sm:h-24 sm:w-24">
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 border-white bg-white shadow-md sm:h-24 sm:w-24">
                 {vendorLogo ? (
                   <Image src={vendorLogo} alt={vendorName} fill className="object-cover" />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-[#0F3460]/5 text-[#0F3460]">
+                  <div className="flex h-full w-full items-center justify-center bg-secondary/5 text-secondary">
                     <Store className="h-8 w-8" />
                   </div>
                 )}
@@ -339,7 +339,7 @@ export function VendorStoreShowcase() {
                     onClick={() => logoInputRef.current?.click()}
                     disabled={uploadingLogo}
                     aria-label={t("owner.editLogo")}
-                    className="absolute bottom-1 end-1 flex h-8 w-8 items-center justify-center bg-[#0F3460] text-white shadow-sm transition hover:bg-[#0a2540] disabled:opacity-70"
+                    className="absolute bottom-1 end-1 flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-white shadow-sm transition hover:bg-[#0a2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 disabled:opacity-70"
                   >
                     {uploadingLogo ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -374,16 +374,16 @@ export function VendorStoreShowcase() {
 
       {(promoBanners.length > 0 || publicCoupons.length > 0 || isOwner) && (
         <section className="border-b border-black/5 bg-white/70">
-          <div className="mx-auto w-full max-w-[1540px] space-y-4 px-4 py-5 sm:px-6">
+          <div className="mx-auto w-full max-w-[1540px] space-y-4 px-3.5 py-5 sm:px-6">
             {isOwner && promoBanners.length === 0 ? (
-              <div className="flex flex-wrap items-center justify-between gap-3 border border-dashed border-[#0F3460]/25 bg-[#0F3460]/5 px-4 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-secondary/25 bg-secondary/5 px-4 py-4">
                 <div>
-                  <p className="text-sm font-semibold text-[#0F3460]">{t("owner.noBannersTitle")}</p>
+                  <p className="text-sm font-semibold text-secondary">{t("owner.noBannersTitle")}</p>
                   <p className="mt-0.5 text-xs text-neutral-600">{t("owner.noBannersHint")}</p>
                 </div>
                 <Link
                   href="/vendor/promotions"
-                  className="inline-flex items-center gap-1.5 bg-[#0F3460] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#0a2540]"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-secondary px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#0a2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
                 >
                   <Megaphone className="h-3.5 w-3.5" />
                   {t("owner.editBanners")}
@@ -394,7 +394,7 @@ export function VendorStoreShowcase() {
             {promoBanners.length > 0 ? (
               <div className="grid gap-3 md:grid-cols-2">
                 {promoBanners.map((banner) => (
-                  <div key={banner.id} className="relative h-36 overflow-hidden sm:h-40">
+                  <div key={banner.id} className="relative h-36 overflow-hidden rounded-2xl sm:h-40">
                     <CatalogImage
                       src={banner.imageUrl}
                       alt={banner.title}
@@ -402,14 +402,14 @@ export function VendorStoreShowcase() {
                       className="object-cover"
                       sizes="(max-width: 768px) 100vw, 50vw"
                     />
-                    <div className="absolute inset-0 bg-linear-to-t from-[#0F3460]/90 via-[#0F3460]/40 to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-secondary/90 via-secondary/40 to-transparent" />
                     <div className="absolute inset-x-0 bottom-0 p-4 text-white">
                       <p className="text-base font-bold sm:text-lg">{banner.title}</p>
                       {banner.subtitle ? (
                         <p className="mt-0.5 text-sm text-white/85">{banner.subtitle}</p>
                       ) : null}
                       {banner.couponCode ? (
-                        <p className="mt-2 inline-block bg-white px-2.5 py-1 font-mono text-xs font-bold text-[#0F3460]">
+                        <p className="mt-2 inline-block rounded-lg bg-white px-2.5 py-1 font-mono text-xs font-bold text-secondary">
                           {t("useCode")}: {banner.couponCode}
                         </p>
                       ) : null}
@@ -417,7 +417,7 @@ export function VendorStoreShowcase() {
                     {isOwner ? (
                       <Link
                         href="/vendor/promotions"
-                        className="absolute end-3 top-3 inline-flex items-center gap-1 bg-white/95 px-2.5 py-1.5 text-[11px] font-semibold text-[#0F3460] shadow-sm transition hover:bg-white"
+                        className="absolute end-3 top-3 inline-flex items-center gap-1 rounded-lg bg-white/95 px-2.5 py-1.5 text-[11px] font-semibold text-secondary shadow-sm transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
                       >
                         <Megaphone className="h-3 w-3" />
                         {t("owner.editBanners")}
@@ -433,7 +433,7 @@ export function VendorStoreShowcase() {
                 {publicCoupons.map((coupon) => (
                   <span
                     key={coupon.code}
-                    className="border border-[#0F3460]/20 bg-[#0F3460]/5 px-3 py-1.5 text-xs font-semibold text-[#0F3460]"
+                    className="rounded-full border border-secondary/20 bg-secondary/5 px-3 py-1.5 text-xs font-semibold text-secondary"
                   >
                     {coupon.code} · {coupon.label}
                   </span>
@@ -445,23 +445,23 @@ export function VendorStoreShowcase() {
       )}
 
       <section className="w-full">
-        <div className="mx-auto w-full max-w-[1540px] px-4 py-8 sm:px-6 sm:py-10">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 py-8 sm:px-6 sm:py-10">
           <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-            <h2 className="text-xl font-bold text-neutral-900 sm:text-2xl">{t("productsTitle")}</h2>
+            <h2 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">{t("productsTitle")}</h2>
             <p className="text-sm text-neutral-500">
               {t("productsCount", { count: vendorProducts.length })}
             </p>
           </div>
 
           {vendorProducts.length === 0 ? (
-            <div className="border border-neutral-200/80 bg-white px-6 py-14 text-center">
+            <div className="rounded-2xl border border-neutral-200/80 bg-white px-6 py-14 text-center">
               <Store className="mx-auto mb-4 h-10 w-10 text-neutral-300" />
               <h3 className="text-lg font-bold text-neutral-900">{t("noProducts")}</h3>
               <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">{t("noProductsHint")}</p>
               {isOwner ? (
                 <Link
                   href="/vendor/products"
-                  className="mt-6 inline-flex items-center gap-1.5 bg-[#0F3460] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+                  className="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-secondary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
                 >
                   <ArrowLeft className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
                   {t("owner.manageProducts")}
@@ -469,7 +469,7 @@ export function VendorStoreShowcase() {
               ) : (
                 <Link
                   href="/vendors"
-                  className="mt-6 inline-flex bg-[#0F3460] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+                  className="mt-6 inline-flex rounded-xl bg-secondary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
                 >
                   {t("backToVendors")}
                 </Link>

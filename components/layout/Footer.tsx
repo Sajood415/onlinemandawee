@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Mail, Phone, CreditCard } from "lucide-react";
+import { ChevronDown, Mail, Phone, CreditCard } from "lucide-react";
 
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Link } from "@/i18n/navigation";
@@ -95,6 +96,19 @@ export default function Footer() {
   const isRtl = safeLocale !== "en";
   const copy = footerUiCopy[safeLocale];
   const t = useTranslations("Homepage.footer");
+  const [openColumns, setOpenColumns] = useState<Set<number>>(new Set());
+
+  const toggleColumn = (index: number) => {
+    setOpenColumns((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
 
   // Only use Company, Support, Policies — Socials handled via icons
   const columns = (t.raw("columns") as FooterColumn[]).filter(
@@ -109,15 +123,17 @@ export default function Footer() {
       dir={isRtl ? "rtl" : "ltr"}
       className="bg-footer-bg text-slate-700 border-t border-slate-200"
     >
+      <div className="h-1 w-full bg-gradient-to-r from-primary via-secondary to-primary" />
+
       {/* ── MAIN GRID ──────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+      <div className="mx-auto max-w-[1540px] px-3.5 sm:px-6 lg:px-8 py-10 sm:py-16">
         <div
           className={`grid gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-[2fr_1fr_1fr_1fr] lg:gap-12 ${
             isRtl ? "text-right" : "text-left"
           }`}
         >
           {/* BRAND */}
-          <div className="space-y-7">
+          <div className="space-y-6 sm:space-y-7">
             <Link href="/" className="inline-block">
               <BrandLogo
                 variant="dark"
@@ -188,7 +204,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="h-10 w-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-primary hover:border-primary/40 hover:shadow-md transition-all cursor-pointer shadow-sm"
+                  className="h-10 w-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-primary hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all cursor-pointer shadow-sm"
                 >
                   {icon}
                 </a>
@@ -197,46 +213,68 @@ export default function Footer() {
           </div>
 
           {/* NAV COLUMNS — Company / Support / Policies */}
-          {columns.map((column, columnIndex) => (
-            <div key={column.title}>
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-5">
-                {column.title}
-              </h3>
-              <ul className="space-y-3.5">
-                {column.links.map((label: string, linkIndex: number) => {
-                  if (HIDDEN_COLUMN_LINK_INDICES[columnIndex]?.has(linkIndex)) {
-                    return null;
-                  }
-                  const href =
-                    NAV_COLUMN_PATHS[columnIndex]?.[linkIndex] ??
-                    LINK_MAP[label] ??
-                    "#";
-                  return (
-                    <li key={label}>
-                      <Link
-                        href={href}
-                        className="text-sm text-slate-500 hover:text-primary transition-colors cursor-pointer"
-                      >
-                        {label}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+          {columns.map((column, columnIndex) => {
+            const isOpen = openColumns.has(columnIndex);
+            return (
+              <div
+                key={column.title}
+                className="border-b border-slate-200 sm:border-0"
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleColumn(columnIndex)}
+                  aria-expanded={isOpen}
+                  className="flex w-full items-center justify-between py-3.5 text-xs font-black text-slate-900 uppercase tracking-[0.2em] sm:pointer-events-none sm:cursor-default sm:py-0 sm:mb-5"
+                >
+                  {column.title}
+                  <ChevronDown
+                    className={`h-4 w-4 text-slate-400 transition-transform sm:hidden ${
+                      isOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                <div
+                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out sm:!grid-rows-[1fr] ${
+                    isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                  }`}
+                >
+                  <ul className="space-y-3.5 overflow-hidden pb-3.5 sm:pb-0">
+                    {column.links.map((label: string, linkIndex: number) => {
+                      if (HIDDEN_COLUMN_LINK_INDICES[columnIndex]?.has(linkIndex)) {
+                        return null;
+                      }
+                      const href =
+                        NAV_COLUMN_PATHS[columnIndex]?.[linkIndex] ??
+                        LINK_MAP[label] ??
+                        "#";
+                      return (
+                        <li key={label}>
+                          <Link
+                            href={href}
+                            className="text-sm text-slate-500 hover:text-primary transition-colors cursor-pointer"
+                          >
+                            {label}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
       {/* ── BOTTOM BAR ─────────────────────────────────────────────────── */}
       <div className="border-t border-slate-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mx-auto max-w-[1540px] px-3.5 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
           <p className="text-xs text-slate-500 order-2 sm:order-1">
             {t("copyright")}
           </p>
 
           <div
-            className={`flex items-center gap-6 order-1 sm:order-2 ${
+            className={`flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-x-6 order-1 sm:order-2 ${
               isRtl ? "flex-row-reverse" : ""
             }`}
           >
@@ -254,7 +292,7 @@ export default function Footer() {
                 {copy.terms}
               </Link>
             </div>
-            <div className="h-4 w-px bg-slate-200" />
+            <div className="hidden h-4 w-px bg-slate-200 sm:block" />
             <div className="flex items-center gap-2 text-xs text-slate-400">
               <CreditCard size={14} />
               <span>{copy.secureCheckout}</span>

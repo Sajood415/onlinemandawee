@@ -142,7 +142,7 @@ export function RefundCaseDetailView({
                 orderNumber: refundCase.order.orderNumber,
               })}
             </p>
-            <h1 className="mt-1 text-xl font-semibold tracking-tight text-[#0f3460]">
+            <h1 className="mt-1 text-xl font-semibold tracking-tight text-secondary">
               {refundCase.orderItem.productName}
             </h1>
             <p className="mt-1 text-sm text-neutral-600">{refundCase.reason}</p>

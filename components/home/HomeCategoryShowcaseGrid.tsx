@@ -104,48 +104,46 @@ export function HomeCategoryShowcaseGrid() {
   return (
     <section className="w-full min-w-0">
       <div className="mb-4 flex items-end justify-between gap-3">
-        <h2 className="text-lg font-bold tracking-tight text-[#0F3460] sm:text-xl">
+        <h2 className="text-lg font-bold tracking-tight text-neutral-900 sm:text-xl">
           {t("selectedCategories")}
         </h2>
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {cards.map((card) => (
           <article
             key={card.categoryId}
-            className="rounded-2xl border border-gray-100 bg-[#FAFBFC] p-3 shadow-[0_4px_16px_rgba(15,23,42,0.04)] sm:rounded-3xl sm:p-4"
+            className="rounded-2xl border border-gray-100 bg-[#FAFBFC] p-2.5 shadow-[0_4px_16px_rgba(15,23,42,0.04)] sm:p-4"
           >
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h3 className="line-clamp-1 text-sm font-bold text-[#0F3460] sm:text-base">
+            <div className="mb-2.5 flex items-center justify-between gap-2 sm:mb-3">
+              <h3 className="line-clamp-1 text-xs font-bold text-secondary sm:text-base">
                 {card.categoryLabel}
               </h3>
-              <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-[#ec1b23]/10 px-2 text-xs font-bold text-[#ec1b23]">
+              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-bold text-primary sm:h-7 sm:min-w-7 sm:px-2 sm:text-xs">
                 {card.products.length}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
               {card.products.map((product) => (
                 <Link
                   key={product.id}
                   href={`/products/${product.id}`}
-                  className="group relative block overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-100"
+                  className="group relative block aspect-square overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-100 sm:rounded-xl"
                 >
-                  <div className="relative aspect-square">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={product.image}
-                      alt={localizedProductName(product, safeLocale)}
-                      className="block h-full w-full object-contain p-2 transition-transform duration-200 group-hover:scale-105"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={product.image}
+                    alt={localizedProductName(product, safeLocale)}
+                    className="block h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </Link>
               ))}
             </div>
-            <div className="mt-3">
+            <div className="mt-2.5 sm:mt-3">
               <Link
                 href={`/category/${card.categorySlug}`}
-                className="inline-flex items-center gap-1 rounded-full bg-[#0F3460] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#0a2540]"
+                className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold text-white transition hover:bg-[#0a2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 sm:px-3 sm:py-1.5 sm:text-xs"
               >
                 {viewIcon}
                 <span>{t("viewAll")}</span>

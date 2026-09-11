@@ -68,8 +68,8 @@ export function ContentPageView({ page }: ContentPageViewProps) {
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-[#f6f8fc]">
-      <section className="border-b border-[#0f3460]/10 bg-gradient-to-br from-[#0f3460] via-[#123f74] to-[#0f3460] text-white">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <section className="border-b border-secondary/10 bg-gradient-to-br from-secondary via-[#123f74] to-secondary text-white">
+        <div className="mx-auto max-w-[1540px] px-3.5 py-8 sm:px-6 sm:py-10 lg:px-8">
           <nav className="mb-5 flex items-center gap-2 text-sm text-white/70">
             <Link href="/" className="transition hover:text-white hover:underline">
               {copy.home}
@@ -94,7 +94,7 @@ export function ContentPageView({ page }: ContentPageViewProps) {
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1540px] px-3.5 py-8 sm:px-6 lg:px-8">
         {showLanguageNotice ? (
           <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:px-5">
             <Globe className="mt-0.5 h-4 w-4 shrink-0" />
@@ -190,7 +190,7 @@ export function ContentPageView({ page }: ContentPageViewProps) {
         ) : null}
 
         {page.showContactBlock !== false ? (
-          <section className="mt-8 overflow-hidden rounded-2xl border border-[#0f3460]/10 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm sm:p-8">
+          <section className="mt-8 overflow-hidden rounded-2xl border border-secondary/10 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm sm:p-8">
             <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-center">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">{copy.contactTitle}</h2>

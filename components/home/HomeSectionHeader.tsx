@@ -16,6 +16,7 @@ type HomeSectionHeaderProps = {
   onNext?: () => void;
   prevLabel?: string;
   nextLabel?: string;
+  centered?: boolean;
 };
 
 export function HomeSectionHeader({
@@ -30,16 +31,46 @@ export function HomeSectionHeader({
   onNext,
   prevLabel = "Previous",
   nextLabel = "Next",
+  centered = false,
 }: HomeSectionHeaderProps) {
+  if (centered) {
+    return (
+      <div className="mb-4 flex flex-col items-center gap-1.5 text-center sm:mb-5">
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <h2 className="text-lg font-bold tracking-tight text-neutral-900 sm:text-xl lg:text-2xl">
+            {title}
+          </h2>
+          {typeof count === "number" ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+              {badgeIcon}
+              {count}
+            </span>
+          ) : null}
+        </div>
+        {subtitle ? <p className="text-xs text-gray-500 sm:text-sm">{subtitle}</p> : null}
+        {viewAllHref && viewAllLabel ? (
+          <Link
+            href={viewAllHref}
+            className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-secondary transition hover:text-secondary/80 sm:text-sm"
+          >
+            {isRtl ? <ChevronRight className="h-3.5 w-3.5" /> : null}
+            <span>{viewAllLabel}</span>
+            {!isRtl ? <ChevronRight className="h-3.5 w-3.5" /> : null}
+          </Link>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className="mb-4 flex flex-wrap items-end justify-between gap-3 sm:mb-5">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-bold tracking-tight text-[#0F3460] sm:text-xl lg:text-2xl">
+          <h2 className="text-lg font-bold tracking-tight text-neutral-900 sm:text-xl lg:text-2xl">
             {title}
           </h2>
           {typeof count === "number" ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#ec1b23]/10 px-2 py-0.5 text-xs font-bold text-[#ec1b23]">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
               {badgeIcon}
               {count}
             </span>
@@ -74,7 +105,7 @@ export function HomeSectionHeader({
         {viewAllHref && viewAllLabel ? (
           <Link
             href={viewAllHref}
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#0F3460] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#0a2540] sm:text-sm"
+            className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#0a2540] sm:text-sm"
           >
             {isRtl ? <ChevronRight className="h-3.5 w-3.5" /> : null}
             <span>{viewAllLabel}</span>

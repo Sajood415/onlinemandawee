@@ -434,7 +434,7 @@ export default function AdminSettingsPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+          <h1 className="text-2xl font-bold text-secondary">{t("title")}</h1>
           <p className="mt-1 max-w-2xl text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <button
@@ -462,7 +462,7 @@ export default function AdminSettingsPage() {
             onClick={() => setTab(item.id)}
             className={`-mb-px border-b-2 px-3 py-2 text-sm font-semibold transition ${
               tab === item.id
-                ? "border-[#0f3460] text-[#0f3460]"
+                ? "border-secondary text-secondary"
                 : "border-transparent text-neutral-500 hover:text-neutral-800"
             }`}
           >
@@ -600,7 +600,7 @@ export default function AdminSettingsPage() {
                 <button
                   type="submit"
                   disabled={addingKeyword || !keywordInput.trim()}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
                 >
                   {addingKeyword ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -694,7 +694,7 @@ export default function AdminSettingsPage() {
                 <button
                   type="submit"
                   disabled={addingShopType || !shopTypeName.trim()}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60 sm:col-span-2 sm:w-fit"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60 sm:col-span-2 sm:w-fit"
                 >
                   {addingShopType ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -869,7 +869,7 @@ export default function AdminSettingsPage() {
             type="button"
             disabled={saving || loading}
             onClick={() => void onSave()}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {saving ? t("saving") : t("save")}

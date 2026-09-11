@@ -125,7 +125,7 @@ function DealProductCard({
           ) : null}
         </div>
         {discountLabel ? (
-          <span className="shrink-0 rounded-lg bg-[#0F3460] px-2 py-1 text-xs font-bold text-white">
+          <span className="shrink-0 rounded-lg bg-secondary px-2 py-1 text-xs font-bold text-white">
             {discountLabel}
           </span>
         ) : null}
@@ -146,10 +146,10 @@ function PromoAside({
   isRtl: boolean;
 }) {
   return (
-    <aside className="flex w-full shrink-0 flex-row items-center justify-between gap-2 border-b border-white/15 px-3 py-3 text-white sm:w-[10.5rem] sm:flex-col sm:justify-between sm:border-b-0 sm:px-4 sm:py-6">
+    <aside className="flex w-full shrink-0 flex-row items-center justify-between gap-3 border-b border-white/15 px-3.5 py-3.5 text-white sm:w-[10.5rem] sm:flex-col sm:justify-between sm:border-b-0 sm:px-4 sm:py-6">
       <div className="flex min-w-0 flex-1 flex-col items-start text-start sm:w-full sm:items-center sm:text-center">
-        <p className="text-xs font-bold leading-snug sm:text-[15px]">{title}</p>
-        <div className="mt-2 flex items-center gap-1 sm:mt-4 sm:gap-1.5">
+        <p className="text-[13px] font-bold leading-snug sm:text-[15px]">{title}</p>
+        <div className="mt-2.5 flex items-center gap-1 sm:mt-4 sm:gap-1.5">
           <CountdownUnit value={countdown.hours} />
           <span className="text-xs font-bold sm:text-sm">:</span>
           <CountdownUnit value={countdown.minutes} />
@@ -161,13 +161,13 @@ function PromoAside({
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-col items-end gap-2 sm:w-full sm:items-center">
+      <div className="flex shrink-0 flex-col items-end gap-2.5 sm:w-full sm:items-center">
         <div className="sm:hidden">
           <OfferSmileyIcon />
         </div>
         <Link
           href="/deals"
-          className="inline-flex items-center gap-1 text-[11px] font-semibold text-white transition hover:text-white/90 sm:mt-5 sm:text-sm"
+          className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold text-white transition hover:bg-white/10 hover:text-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary sm:mt-5 sm:text-sm"
         >
           {isRtl ? <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : null}
           <span>{viewAllLabel}</span>
@@ -287,10 +287,10 @@ export function HomeCouponDealsRail() {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-bold tracking-tight text-[#0F3460] sm:text-xl lg:text-2xl">
+            <h2 className="text-lg font-bold tracking-tight text-neutral-900 sm:text-xl lg:text-2xl">
               {t("specialDiscounts")}
             </h2>
-            <span className="inline-flex items-center rounded-full bg-[#ec1b23]/10 px-2 py-0.5 text-xs font-bold text-[#ec1b23]">
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
               {dealProducts.length}
             </span>
           </div>
@@ -298,14 +298,14 @@ export function HomeCouponDealsRail() {
         </div>
         <Link
           href="/deals"
-          className="inline-flex items-center gap-1.5 rounded-full bg-[#0F3460] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#0a2540] sm:text-sm"
+          className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#0a2540] sm:text-sm"
         >
           {t("viewAll")}
           {isRtl ? <ChevronLeft className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-xl bg-[#0F3460] p-1.5 sm:rounded-2xl sm:p-2.5">
+      <div className="overflow-hidden rounded-xl bg-secondary p-1.5 sm:rounded-2xl sm:p-2.5">
         <div className="flex flex-col overflow-hidden rounded-lg sm:flex-row sm:rounded-xl">
           <div className={`order-1 shrink-0 ${isRtl ? "sm:order-1" : "sm:order-2"}`}>{promoAside}</div>
           <div className={`order-2 min-w-0 sm:flex-1 ${isRtl ? "sm:order-2" : "sm:order-1"}`}>

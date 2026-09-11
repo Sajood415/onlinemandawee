@@ -68,7 +68,7 @@ function MegaThumb({
           sizes="40px"
         />
       ) : (
-        <span className="text-[#0F3460]/70" aria-hidden>
+        <span className="text-secondary/70" aria-hidden>
           {fallback}
         </span>
       )}
@@ -98,7 +98,7 @@ function SubcategoryCircle({
     >
       <span className="relative flex h-[76px] w-[76px] items-center justify-center sm:h-[88px] sm:w-[88px]">
         <span
-          className="absolute inset-0 rounded-full bg-white shadow-[0_6px_18px_rgba(15,52,96,0.08)] ring-1 ring-gray-100 transition duration-200 group-hover:shadow-[0_10px_24px_rgba(236,27,35,0.12)] group-hover:ring-[#ec1b23]/20"
+          className="absolute inset-0 rounded-full bg-white shadow-[0_6px_18px_rgba(15,52,96,0.08)] ring-1 ring-gray-100 transition duration-200 group-hover:shadow-[0_10px_24px_rgba(236,27,35,0.12)] group-hover:ring-primary/20"
           aria-hidden
         />
         <span className="relative z-1 flex h-[62px] w-[62px] items-center justify-center overflow-hidden rounded-full bg-[#f7f8fb] sm:h-[72px] sm:w-[72px]">
@@ -111,13 +111,13 @@ function SubcategoryCircle({
               sizes="72px"
             />
           ) : (
-            <span className="text-[#0F3460]/65 transition-colors group-hover:text-[#ec1b23]">
+            <span className="text-secondary/65 transition-colors group-hover:text-primary">
               {fallback}
             </span>
           )}
         </span>
       </span>
-      <span className="line-clamp-2 text-center text-[12px] font-medium leading-snug text-neutral-700 transition-colors group-hover:text-[#0F3460] sm:text-[13px]">
+      <span className="line-clamp-2 text-center text-[12px] font-medium leading-snug text-neutral-700 transition-colors group-hover:text-secondary sm:text-[13px]">
         {label}
       </span>
     </LocaleLink>
@@ -128,7 +128,7 @@ function sidebarActiveClass(isActive: boolean, isRtl: boolean) {
   if (!isActive) {
     return "text-neutral-600 hover:bg-white hover:text-neutral-900";
   }
-  return `bg-white font-semibold text-[#0F3460] ${
+  return `bg-white font-semibold text-secondary ${
     isRtl
       ? "shadow-[inset_-3px_0_0_#ec1b23]"
       : "shadow-[inset_3px_0_0_#ec1b23]"
@@ -208,14 +208,14 @@ export function CategoriesMegaMenu({
                   onClick={() => onBrowseModeChange(mode)}
                   className={`relative shrink-0 px-2 py-3.5 text-[13px] font-medium transition-colors sm:px-3 sm:text-sm ${
                     isActive
-                      ? "font-semibold text-[#0F3460]"
+                      ? "font-semibold text-secondary"
                       : "text-neutral-500 hover:text-neutral-800"
                   }`}
                 >
                   {label}
                   {isActive ? (
                     <span
-                      className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#ec1b23] sm:inset-x-3"
+                      className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-primary sm:inset-x-3"
                       aria-hidden
                     />
                   ) : null}
@@ -276,7 +276,7 @@ export function CategoriesMegaMenu({
                 <LocaleLink
                   href={activeCategory.href}
                   onClick={onClose}
-                  className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-[#0F3460] transition-colors hover:text-[#ec1b23]"
+                  className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-secondary transition-colors hover:text-primary"
                 >
                   <span>{allInLabel}</span>
                   <ChevronRight

@@ -5,7 +5,6 @@ import { Link } from "@/i18n/navigation";
 import { Heart, Loader2, ShoppingBag, Truck } from "lucide-react";
 
 import { CatalogImage } from "@/components/catalog/CatalogImage";
-import { QuantitySelector } from "@/components/cart/QuantitySelector";
 import {
   getPrimaryProductCoupon,
   ProductCouponImageBadge,
@@ -18,7 +17,6 @@ import {
   getActiveCatalogVariants,
   resolveDefaultCatalogVariant,
 } from "@/lib/products/public-catalog";
-import { resolveAvailableStockQty } from "@/lib/products/product-stock";
 import {
   localizeDelivery,
   localizeVendor,
@@ -45,16 +43,11 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
   const inStock = "inStock" in product ? product.inStock : true;
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
-  const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
   const { formatPrice } = useCurrency();
   const productCurrency =
     "currency" in product && product.currency ? product.currency : "USD";
   const priceLabel = formatPrice(product.price, productCurrency);
-  const description =
-    "description" in product && product.description
-      ? product.description[locale]
-      : "";
   const primaryCoupon = getPrimaryProductCoupon(
     "availableCoupons" in product ? product.availableCoupons : undefined
   );
@@ -67,7 +60,7 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
     try {
       await addItem(
         product.id,
-        quantity,
+        1,
         defaultVariant
           ? { variantId: defaultVariant.id, variantName: defaultVariant.name }
           : undefined
@@ -85,7 +78,7 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
       <div className="relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_8px_30px_rgba(15,52,96,0.06)] transition-all duration-300 hover:-translate-y-1 hover:border-neutral-300 hover:shadow-[0_20px_50px_rgba(15,52,96,0.12)]">
         <Link
           href={`/products/${product.id}`}
-          className="relative block aspect-[4/5] shrink-0 overflow-hidden bg-gradient-to-b from-neutral-50 to-white"
+          className="relative block aspect-square shrink-0 overflow-hidden bg-gradient-to-b from-neutral-50 to-white"
         >
           <CatalogImage
             src={product.image}
@@ -95,7 +88,7 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
           />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0f3460]/10 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-secondary/10 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
           {product.badge ? (
             <div className="absolute left-3 top-3 z-10">
@@ -115,6 +108,13 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
 
           {primaryCoupon ? <ProductCouponImageBadge coupon={primaryCoupon} /> : null}
 
+          {product.reviews > 0 ? (
+            <div className="absolute bottom-2.5 left-2.5 z-10 flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 text-[10px] font-semibold text-neutral-700 shadow-sm backdrop-blur-sm">
+              <StarRating rating={product.rating} showValue={false} />
+              <span>{product.rating.toFixed(1)}</span>
+            </div>
+          ) : null}
+
           <button
             type="button"
             aria-label={isWishlisted ? copy.removeFromWishlist : copy.addToWishlist}
@@ -124,7 +124,7 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
               event.stopPropagation();
               setIsWishlisted((value) => !value);
             }}
-            className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/95 text-neutral-600 shadow-md backdrop-blur-sm transition-all hover:scale-105 hover:text-primary"
+            className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/95 text-neutral-600 shadow-md backdrop-blur-sm transition-all hover:scale-105 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             <Heart
               className={`h-4 w-4 ${isWishlisted ? "fill-primary text-primary" : ""}`}
@@ -135,26 +135,20 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
         <div className="flex min-w-0 flex-1 flex-col p-3 sm:p-4">
           <Link
             href={`/vendors/${product.vendorSlug}`}
-            className="mb-1.5 inline-flex w-fit text-[11px] font-semibold uppercase tracking-[0.14em] text-[#0f3460]/70 transition hover:text-primary"
+            className="mb-1 inline-flex w-fit truncate text-[11px] font-medium text-neutral-400 transition hover:text-secondary"
           >
             <bdi dir="ltr">{localizeVendor(product.vendor, locale)}</bdi>
           </Link>
 
           <Link href={`/products/${product.id}`} className="block">
-            <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-neutral-900 transition-colors group-hover:text-[#0f3460]">
+            <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-neutral-900 transition-colors group-hover:text-secondary">
               {product.name[locale]}
             </h3>
           </Link>
 
-          {description ? (
-            <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-neutral-500">
-              {description}
-            </p>
-          ) : null}
-
           <div className="mt-3 min-w-0">
             <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-2 sm:gap-y-0.5">
-              <span className="text-base font-bold tracking-tight text-[#0f3460] sm:text-lg">
+              <span className="text-base font-bold tracking-tight text-neutral-900">
                 {priceLabel}
               </span>
             </div>
@@ -167,42 +161,7 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
             </p>
           </div>
 
-          <div className="mt-3 border-t border-neutral-100 pt-3">
-            {product.reviews > 0 ? (
-              <StarRating rating={product.rating} reviews={product.reviews} />
-            ) : (
-              <span className="text-xs text-neutral-400">{copy.noReviews}</span>
-            )}
-          </div>
-
           <div className="mt-auto flex flex-col gap-3 pt-4">
-            {!hasVariants ? (
-              <div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-                <span className="shrink-0 text-xs font-semibold text-neutral-600">
-                  {copy.quantity}
-                </span>
-                <div className="flex min-w-0 w-full justify-center lg:w-auto lg:justify-end">
-                  <QuantitySelector
-                    compact
-                    quantity={quantity}
-                    onDecrease={() => setQuantity((value) => Math.max(1, value - 1))}
-                    onIncrease={() =>
-                      setQuantity((value) => {
-                        const maxQty = resolveAvailableStockQty(
-                          {
-                            stockQty: product.stockQty,
-                            variants: "variants" in product ? product.variants : undefined,
-                          },
-                          defaultVariant?.id
-                        );
-                        return Math.min(maxQty, value + 1);
-                      })
-                    }
-                    disabled={isAdding || !inStock}
-                  />
-                </div>
-              </div>
-            ) : null}
             {hasVariants && inStock ? (
               <Link
                 href={`/products/${product.id}`}
@@ -216,7 +175,7 @@ export function ProductCard({ product, locale, priority = false }: ProductCardPr
                 type="button"
                 onClick={handleAddToCart}
                 disabled={isAdding || !inStock}
-                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isAdding ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

@@ -7,13 +7,13 @@ import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Link } from "@/i18n/navigation";
 
 export const AUTH_INPUT_CLASS =
-  "w-full border-0 border-b border-neutral-300 bg-transparent px-0 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#0F3460]";
+  "w-full border-0 border-b border-neutral-300 bg-transparent px-0 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-secondary";
 
 export const AUTH_BUTTON_CLASS =
-  "inline-flex w-full min-h-11 items-center justify-center bg-[#0F3460] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-50";
+  "inline-flex w-full min-h-11 items-center justify-center bg-secondary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-50";
 
 export const AUTH_SECONDARY_BUTTON_CLASS =
-  "inline-flex w-full min-h-11 items-center justify-center border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-[#0F3460]/30 hover:text-[#0F3460] disabled:opacity-50";
+  "inline-flex w-full min-h-11 items-center justify-center border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-secondary/30 hover:text-secondary disabled:opacity-50";
 
 type AuthShellProps = {
   title: string;
@@ -34,7 +34,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-linear-to-br from-[#163f73] via-[#0F3460] to-[#0a2748]"
+        className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-linear-to-br from-[#163f73] via-secondary to-[#0a2748]"
       />
 
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col px-4 py-8 sm:py-10">
@@ -59,7 +59,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
         </div>
 
         <div className="border border-neutral-200/80 bg-white px-5 py-7 shadow-sm sm:px-7 sm:py-8">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#0F3460]/70">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-secondary/70">
             Mandawee
           </p>
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-neutral-900">{title}</h1>
@@ -72,7 +72,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
         </div>
 
         <p className="mt-6 text-center text-xs text-neutral-500">
-          <Link href="/" className="font-semibold text-[#0F3460] underline-offset-4 hover:underline">
+          <Link href="/" className="font-semibold text-secondary underline-offset-4 hover:underline">
             {t("continueShopping")}
           </Link>
         </p>

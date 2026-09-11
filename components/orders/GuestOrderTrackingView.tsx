@@ -137,7 +137,7 @@ export function GuestOrderTrackingView({
               {copy.customer}: <span className="font-medium text-neutral-900">{order.customerName}</span>
             </p>
           </div>
-          <span className="inline-flex w-fit border border-[#0F3460]/20 bg-[#0F3460]/5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-[#0F3460]">
+          <span className="inline-flex w-fit border border-secondary/20 bg-secondary/5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-secondary">
             {GUEST_VENDOR_STATUS_LABELS[summaryStatus]?.[locale] ?? summaryStatus}
           </span>
         </div>
@@ -158,13 +158,13 @@ export function GuestOrderTrackingView({
                 return (
                   <li key={step.key} className="min-w-0">
                     <div
-                      className={`h-1 w-full ${done ? "bg-[#0F3460]" : "bg-neutral-200"}`}
+                      className={`h-1 w-full ${done ? "bg-secondary" : "bg-neutral-200"}`}
                       aria-hidden
                     />
                     <p
                       className={`mt-2 text-sm font-medium ${
                         current
-                          ? "text-[#0F3460]"
+                          ? "text-secondary"
                           : done
                             ? "text-neutral-800"
                             : "text-neutral-400"
@@ -299,8 +299,8 @@ export function GuestOrderTrackingView({
               </div>
 
               {showTracking ? (
-                <div className="mt-4 rounded-lg border border-[#0F3460]/15 bg-[#0F3460]/5 px-3 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#0F3460]">
+                <div className="mt-4 rounded-lg border border-secondary/15 bg-secondary/5 px-3 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
                     {copy.trackingNumber}
                   </p>
                   {trackingNumber ? (
@@ -382,7 +382,7 @@ export function GuestOrderTrackingView({
         <p className="text-neutral-600">{copy.accountPrompt}</p>
         <Link
           href={signupHref}
-          className="shrink-0 font-semibold text-[#0F3460] underline-offset-4 hover:underline"
+          className="shrink-0 font-semibold text-secondary underline-offset-4 hover:underline"
         >
           {copy.accountCta}
         </Link>
@@ -390,7 +390,7 @@ export function GuestOrderTrackingView({
 
       {showLookupPrompt ? (
         <p className="text-center text-sm text-neutral-500">
-          <Link href="/orders" className="font-medium text-[#0F3460] hover:underline">
+          <Link href="/orders" className="font-medium text-secondary hover:underline">
             {copy.anotherOrder}
           </Link>
         </p>

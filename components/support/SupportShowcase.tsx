@@ -76,7 +76,7 @@ export function SupportShowcase() {
       <section className="w-full min-w-0 border-b border-black/5">
         <div className="mx-auto w-full max-w-[1540px] px-0">
           <div className="grid min-h-[360px] grid-cols-1 lg:min-h-[440px] lg:grid-cols-2">
-            <div className="relative overflow-hidden bg-linear-to-br from-[#163f73] via-[#0F3460] to-[#0a2748] text-white">
+            <div className="relative overflow-hidden bg-linear-to-br from-[#163f73] via-secondary to-[#0a2748] text-white">
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(255,255,255,0.18),transparent_42%)]"
@@ -95,13 +95,13 @@ export function SupportShowcase() {
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   <a
                     href={`mailto:${SITE_CONTACT.email}`}
-                    className="inline-flex min-h-11 items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[#0F3460] shadow-sm transition hover:bg-neutral-100"
+                    className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-secondary shadow-sm transition hover:bg-neutral-100"
                   >
                     {t("cta.emailUs")}
                   </a>
                   <a
                     href="#support-channels"
-                    className="inline-flex min-h-11 items-center justify-center rounded-lg border border-white/30 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                    className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/30 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
                   >
                     {t("cta.viewChannels")}
                   </a>
@@ -123,7 +123,7 @@ export function SupportShowcase() {
       </section>
 
       <section id="support-channels" className="w-full min-w-0 py-4 sm:py-6">
-        <div className="mx-auto w-full max-w-[1540px] px-2 sm:px-4">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 sm:px-4">
           <div className="mb-4 px-1">
             <h2 className="text-xl font-bold text-neutral-900 sm:text-2xl">{t("channels.title")}</h2>
             <p className="mt-1 max-w-2xl text-sm text-neutral-600 sm:text-base">{t("channels.subtitle")}</p>
@@ -135,13 +135,13 @@ export function SupportShowcase() {
                 href={channel.href}
                 className="group rounded-xl border border-neutral-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#0F3460]/10 text-[#0F3460]">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 text-secondary">
                   {channel.icon}
                 </div>
                 <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">
                   {channel.label}
                 </p>
-                <p className="mt-1 text-lg font-bold text-neutral-900 group-hover:text-[#0F3460]">
+                <p className="mt-1 text-lg font-bold text-neutral-900 group-hover:text-secondary">
                   <bdi>{channel.value}</bdi>
                 </p>
                 <p className="mt-1 text-sm text-neutral-600">{channel.hint}</p>
@@ -152,7 +152,7 @@ export function SupportShowcase() {
       </section>
 
       <section className="w-full min-w-0 py-2 sm:py-4">
-        <div className="mx-auto w-full max-w-[1540px] px-2 sm:px-4">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 sm:px-4">
           <div className="mb-3 px-1">
             <h2 className="text-xl font-bold text-neutral-900 sm:text-2xl">{t("topics.title")}</h2>
             <p className="mt-1 max-w-2xl text-sm text-neutral-600 sm:text-base">{t("topics.subtitle")}</p>
@@ -163,7 +163,7 @@ export function SupportShowcase() {
                 key={topic.title}
                 className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#0F3460]/10 text-[#0F3460]">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 text-secondary">
                   {topic.icon}
                 </div>
                 <h3 className="mt-3 text-sm font-bold text-neutral-900 sm:text-base">{topic.title}</h3>
@@ -188,7 +188,7 @@ export function SupportShowcase() {
                     key={tip}
                     className="flex items-start gap-2 rounded-lg bg-[#fafafa] px-3 py-2 text-sm text-neutral-700"
                   >
-                    <span className="mt-1 inline-block h-2 w-2 shrink-0 rounded-full bg-[#0F3460]" aria-hidden />
+                    <span className="mt-1 inline-block h-2 w-2 shrink-0 rounded-full bg-secondary" aria-hidden />
                     <span>{tip}</span>
                   </li>
                 ))}
@@ -196,19 +196,19 @@ export function SupportShowcase() {
               <div className="mt-5 flex flex-wrap gap-2">
                 <Link
                   href="/help"
-                  className="inline-flex min-h-10 items-center justify-center rounded-lg border border-neutral-200 bg-white px-4 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50"
+                  className="inline-flex min-h-10 items-center justify-center rounded-xl border border-neutral-200 bg-white px-4 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50"
                 >
                   {t("links.helpCenter")}
                 </Link>
                 <Link
                   href="/refunds"
-                  className="inline-flex min-h-10 items-center justify-center rounded-lg border border-neutral-200 bg-white px-4 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50"
+                  className="inline-flex min-h-10 items-center justify-center rounded-xl border border-neutral-200 bg-white px-4 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50"
                 >
                   {t("links.refundPolicy")}
                 </Link>
               </div>
             </div>
-            <div className="flex h-full flex-col justify-center bg-[#0F3460] px-4 py-6 text-white sm:px-7 lg:px-10 lg:py-8">
+            <div className="flex h-full flex-col justify-center bg-secondary px-4 py-6 text-white sm:px-7 lg:px-10 lg:py-8">
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
                 <Clock3 className="h-5 w-5" />
               </div>
@@ -227,7 +227,7 @@ export function SupportShowcase() {
       </section>
 
       <section className="w-full min-w-0 py-2 sm:py-4">
-        <div className="mx-auto w-full max-w-[1540px] px-2 sm:px-4">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 sm:px-4">
           <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6">
             <h3 className="text-base font-bold text-neutral-900 sm:text-lg">{t("faq.title")}</h3>
             <div className="mt-4 space-y-2">
@@ -242,7 +242,7 @@ export function SupportShowcase() {
 
       <section className="w-full min-w-0 px-2 py-3 sm:px-4 sm:py-4">
         <div className="mx-auto w-full max-w-[1540px]">
-          <div className="rounded-2xl bg-[#0F3460] px-4 py-5 text-white sm:px-6 sm:py-6">
+          <div className="rounded-2xl bg-secondary px-4 py-5 text-white sm:px-6 sm:py-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="mb-2 inline-flex items-center gap-2 text-sm text-white/80">
@@ -255,13 +255,13 @@ export function SupportShowcase() {
               <div className="flex flex-wrap gap-2">
                 <a
                   href={`mailto:${SITE_CONTACT.email}`}
-                  className="inline-flex min-h-11 items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[#0F3460] transition hover:bg-neutral-100"
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-secondary transition hover:bg-neutral-100"
                 >
                   {t("finalCta.email")}
                 </a>
                 <a
                   href={`tel:${SITE_CONTACT.phoneTel}`}
-                  className="inline-flex min-h-11 items-center justify-center rounded-lg border border-white/30 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/30 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
                   {t("finalCta.call")}
                 </a>

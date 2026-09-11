@@ -58,7 +58,7 @@ export function ProductsMobileFiltersSheet({
       <button
         type="button"
         aria-label={t("closeFilters")}
-        className="absolute inset-0 bg-[#0F3460]/40"
+        className="absolute inset-0 bg-secondary/40"
         onClick={onClose}
       />
       <div
@@ -88,7 +88,7 @@ export function ProductsMobileFiltersSheet({
               onApply(draft);
               onClose();
             }}
-            className="w-full bg-[#0F3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+            className="w-full bg-secondary px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
           >
             {t("applyFilters", { count: resultCount })}
           </button>

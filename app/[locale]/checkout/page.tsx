@@ -327,7 +327,7 @@ function InputField({
         className={`w-full border-0 border-b bg-transparent px-0 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 disabled:text-neutral-400 ${
           error
             ? "border-red-400 focus:border-red-500"
-            : "border-neutral-300 focus:border-[#0F3460]"
+            : "border-neutral-300 focus:border-secondary"
         }`}
       />
       {error ? <p className="mt-1.5 text-xs text-red-600">{error}</p> : null}
@@ -375,7 +375,7 @@ function CouponSection({
               key={offer.code}
               type="button"
               onClick={() => onCouponInputChange(offer.code)}
-              className="border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-[#0F3460] transition hover:border-[#0F3460]"
+              className="border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-secondary transition hover:border-secondary"
             >
               {offer.code}
             </button>
@@ -391,7 +391,7 @@ function CouponSection({
             className={`w-full border-0 border-b bg-transparent px-0 py-2.5 text-sm uppercase text-neutral-900 outline-none transition placeholder:text-neutral-400 ${
               fieldError
                 ? "border-red-400 focus:border-red-500"
-                : "border-neutral-300 focus:border-[#0F3460]"
+                : "border-neutral-300 focus:border-secondary"
             }`}
           />
         </div>
@@ -399,7 +399,7 @@ function CouponSection({
           type="button"
           onClick={onApply}
           disabled={applying || !couponInput.trim()}
-          className="shrink-0 bg-[#0F3460] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-50"
+          className="shrink-0 rounded-xl bg-secondary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:opacity-50"
         >
           {applying ? copy.common.applying : copy.common.apply}
         </button>
@@ -544,7 +544,7 @@ function ShippingAddressStep({
               onClick={() => onDeliveryMethodChange(value)}
               className={`border px-3 py-2.5 text-sm font-semibold transition ${
                 deliveryMethod === value
-                  ? "border-[#0F3460] bg-[#0F3460] text-white"
+                  ? "border-secondary bg-secondary text-white"
                   : "border-neutral-300 text-neutral-700 hover:border-neutral-500"
               }`}
             >
@@ -568,14 +568,14 @@ function ShippingAddressStep({
                   onSelectSavedAddress(saved);
                   setFieldErrors({});
                 }}
-                className="border border-neutral-200 px-4 py-3 text-left text-sm transition hover:border-[#0F3460]"
+                className="border border-neutral-200 px-4 py-3 text-left text-sm transition hover:border-secondary"
               >
                 <p className="font-semibold text-neutral-800">{saved.fullName}</p>
                 <p className="mt-1 text-xs text-neutral-500">
                   {saved.addressLine1}, {saved.city}, {saved.country}
                 </p>
                 {saved.isDefault ? (
-                  <span className="mt-2 inline-block text-[10px] font-semibold uppercase tracking-wide text-[#0F3460]">
+                  <span className="mt-2 inline-block text-[10px] font-semibold uppercase tracking-wide text-secondary">
                     {copy.common.default}
                   </span>
                 ) : null}
@@ -655,7 +655,7 @@ function ShippingAddressStep({
               className={`w-full border-0 border-b bg-transparent px-0 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 disabled:text-neutral-400 ${
                 fieldErrors.addressLine1
                   ? "border-red-400 focus:border-red-500"
-                  : "border-neutral-300 focus:border-[#0F3460]"
+                  : "border-neutral-300 focus:border-secondary"
               }`}
               placeholder={copy.address.streetPlaceholder}
               value={address.addressLine1}
@@ -777,7 +777,7 @@ function ShippingAddressStep({
 
       <button
         type="submit"
-        className="flex w-full items-center justify-center gap-2 bg-[#0F3460] py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-secondary py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
       >
         <ArrowRight size={17} className="shrink-0" strokeWidth={2} />
         {deliveryMethod === "PICKUP"
@@ -863,7 +863,7 @@ function DeliveryCostStep({
                 onClick={() => onDeliveryMethodChange(value)}
                 className={`border px-3 py-2.5 text-left transition ${
                   selected
-                    ? "border-[#0F3460] bg-[#0F3460] text-white"
+                    ? "border-secondary bg-secondary text-white"
                     : "border-neutral-300 text-neutral-700 hover:border-neutral-500"
                 }`}
               >
@@ -888,13 +888,13 @@ function DeliveryCostStep({
           {customsAccepted ? (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="flex items-start gap-2 text-sm text-neutral-700">
-                <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#0F3460]" />
+                <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
                 <span>{copy.deliveryMethod.customsModal.accepted}</span>
               </p>
               <button
                 type="button"
                 onClick={() => setCustomsModalOpen(true)}
-                className="text-xs font-semibold text-[#0F3460] underline"
+                className="text-xs font-semibold text-secondary underline"
               >
                 {copy.deliveryMethod.customsModal.review}
               </button>
@@ -905,7 +905,7 @@ function DeliveryCostStep({
               <button
                 type="button"
                 onClick={() => setCustomsModalOpen(true)}
-                className="text-sm font-semibold text-[#0F3460] underline"
+                className="text-sm font-semibold text-secondary underline"
               >
                 {copy.deliveryMethod.customsModal.title}
               </button>
@@ -927,7 +927,7 @@ function DeliveryCostStep({
               role="alertdialog"
               aria-modal="true"
               aria-labelledby="customs-duty-title"
-              className="w-full max-w-md border border-neutral-200 bg-white shadow-xl"
+              className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white shadow-xl"
             >
               <div className="flex items-start justify-between border-b border-neutral-200 px-5 py-4">
                 <h2
@@ -957,7 +957,7 @@ function DeliveryCostStep({
                 <button
                   type="button"
                   onClick={() => setCustomsModalOpen(false)}
-                  className="border border-neutral-300 px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-neutral-400"
+                  className="rounded-xl border border-neutral-300 px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
                 >
                   {copy.deliveryMethod.customsModal.cancel}
                 </button>
@@ -967,7 +967,7 @@ function DeliveryCostStep({
                     setCustomsAccepted(true);
                     setCustomsModalOpen(false);
                   }}
-                  className="bg-[#0F3460] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+                  className="rounded-xl bg-secondary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
                 >
                   {copy.deliveryMethod.customsModal.confirm}
                 </button>
@@ -987,7 +987,7 @@ function DeliveryCostStep({
           <button
             type="button"
             onClick={onRetry}
-            className="text-sm font-semibold text-[#0F3460] underline"
+            className="text-sm font-semibold text-secondary underline"
           >
             {copy.common.tryAgain}
           </button>
@@ -1053,7 +1053,7 @@ function DeliveryCostStep({
           type="button"
           disabled={!canContinue}
           onClick={onNext}
-          className="flex flex-1 items-center justify-center gap-2 bg-[#0F3460] py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-50"
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-secondary py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:opacity-50"
         >
           <ArrowRight size={17} className="shrink-0" strokeWidth={2} />
           {copy.delivery.continueToPayment}
@@ -1195,7 +1195,7 @@ function PaymentMethodStep({
           <button
             type="button"
             onClick={onRetryQuote}
-            className="text-sm font-semibold text-[#0F3460] underline"
+            className="text-sm font-semibold text-secondary underline"
           >
             {copy.common.tryAgain}
           </button>
@@ -1215,7 +1215,7 @@ function PaymentMethodStep({
               onClick={() => setPaymentTab("stripe")}
               className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
                 paymentTab === "stripe"
-                  ? "bg-[#0F3460] text-white"
+                  ? "bg-secondary text-white"
                   : "text-neutral-600 hover:bg-neutral-50 disabled:opacity-40"
               }`}
             >
@@ -1227,7 +1227,7 @@ function PaymentMethodStep({
               onClick={() => setPaymentTab("paypal")}
               className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
                 paymentTab === "paypal"
-                  ? "bg-[#0F3460] text-white"
+                  ? "bg-secondary text-white"
                   : "text-neutral-600 hover:bg-neutral-50 disabled:opacity-40"
               }`}
             >
@@ -1463,7 +1463,7 @@ function StripePayForm({
         <button
           type="submit"
           disabled={!stripe || !elements || paying}
-          className="flex flex-1 items-center justify-center gap-2 bg-[#0F3460] py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-60"
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-secondary py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:opacity-60"
         >
           {paying ? (
             <>
@@ -1660,7 +1660,7 @@ function SuccessScreen({
             <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
               {copy.success.orderNumber}
             </p>
-            <p className="mt-1 text-xl font-bold text-[#0F3460]">{orderNumber}</p>
+            <p className="mt-1 text-xl font-bold text-secondary">{orderNumber}</p>
           </div>
 
           <p className="text-xs text-neutral-400">{copy.success.keepOrderNumber}</p>
@@ -1671,7 +1671,7 @@ function SuccessScreen({
               <p className="text-sm text-neutral-600">{copy.success.trackOrderHint}</p>
               <Link
                 href={signupHref}
-                className="inline-flex w-full items-center justify-center bg-[#0F3460] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+                className="inline-flex w-full items-center justify-center rounded-xl bg-secondary px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
               >
                 {copy.success.createAccount}
               </Link>
@@ -1687,7 +1687,7 @@ function SuccessScreen({
           <button
             type="button"
             onClick={() => router.push("/")}
-            className="w-full bg-[#0F3460] py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+            className="w-full rounded-xl bg-secondary py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
           >
             {copy.success.continueShopping}
           </button>
@@ -2216,11 +2216,11 @@ export default function CheckoutPage() {
           aria-label={copy.breadcrumb}
           className="mb-5 flex flex-wrap items-center gap-1.5 text-sm text-neutral-400"
         >
-          <Link href="/" className="transition hover:text-[#0F3460] hover:underline">
+          <Link href="/" className="transition hover:text-secondary hover:underline">
             {copy.home}
           </Link>
           <ChevronRight className={`h-3.5 w-3.5 shrink-0 ${isRtl ? "rotate-180" : ""}`} />
-          <Link href="/cart" className="transition hover:text-[#0F3460] hover:underline">
+          <Link href="/cart" className="transition hover:text-secondary hover:underline">
             {copy.cart}
           </Link>
           <ChevronRight className={`h-3.5 w-3.5 shrink-0 ${isRtl ? "rotate-180" : ""}`} />
@@ -2238,7 +2238,7 @@ export default function CheckoutPage() {
             <button
               type="button"
               onClick={() => router.push("/cart")}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0F3460] hover:underline"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-secondary hover:underline"
             >
               <ArrowLeft size={16} className={isRtl ? "rotate-180" : ""} />
               {copy.common.back}
@@ -2257,7 +2257,7 @@ export default function CheckoutPage() {
                         idx < step
                           ? "bg-emerald-600 text-white"
                           : idx === step
-                            ? "bg-[#0F3460] text-white"
+                            ? "bg-secondary text-white"
                             : "bg-neutral-100 text-neutral-400"
                       }`}
                     >

@@ -81,7 +81,7 @@ function FeaturedProductCard({
           className="object-cover object-center"
           sizes="176px"
         />
-        <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-[#E0B252]/20 px-1.5 py-0.5 text-[9px] font-bold text-[#0F3460] ring-1 ring-[#E0B252]/40">
+        <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-[#E0B252]/20 px-1.5 py-0.5 text-[9px] font-bold text-secondary ring-1 ring-[#E0B252]/40">
           <Crown className="h-3 w-3 text-[#E0B252]" />
           {t("featured.badgeShort")}
         </span>
@@ -99,7 +99,7 @@ function FeaturedProductCard({
             onClick={handleAdd}
             disabled={isAdding || !product.inStock}
             aria-label={t("addToCart")}
-            className="inline-flex h-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#ec1b23] px-2.5 text-white transition hover:bg-[#c4161d] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary px-2.5 text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isAdding ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -154,7 +154,7 @@ export function HomeFeaturedBanner() {
     <section className="w-full min-w-0 py-2 sm:py-3">
       <div
         dir={isRtl ? "rtl" : "ltr"}
-        className="relative overflow-hidden rounded-2xl bg-[#0F3460] px-4 py-6 shadow-[0_12px_40px_rgba(15,52,96,0.28)] sm:rounded-3xl sm:px-6 sm:py-8 lg:px-8"
+        className="relative overflow-hidden rounded-2xl bg-secondary px-4 py-6 shadow-[0_12px_40px_rgba(15,52,96,0.28)] sm:rounded-3xl sm:px-6 sm:py-8 lg:px-8"
       >
         <div
           aria-hidden
@@ -203,7 +203,7 @@ export function HomeFeaturedBanner() {
               ) : null}
               <Link
                 href={viewAllHref}
-                className="inline-flex items-center justify-center rounded-full bg-[#ec1b23] px-4 py-2 text-sm font-bold text-white shadow-lg transition hover:bg-[#c4161d]"
+                className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-bold text-white shadow-lg transition hover:bg-primary/90"
               >
                 {t("cta")}
               </Link>
@@ -241,7 +241,7 @@ export function HomeFeaturedBanner() {
                 key={key}
                 className="flex items-center gap-2.5 rounded-xl bg-white/10 px-3 py-2.5 ring-1 ring-white/10"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E0B252] text-[#0F3460]">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E0B252] text-secondary">
                   <Icon className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">

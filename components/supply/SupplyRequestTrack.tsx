@@ -138,7 +138,7 @@ export function SupplyRequestTrack({ token }: SupplyRequestTrackProps) {
   if (loading) {
     return (
       <div className="flex min-h-[360px] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#0f3460]/40" />
+        <Loader2 className="h-8 w-8 animate-spin text-secondary/40" />
       </div>
     );
   }
@@ -151,7 +151,7 @@ export function SupplyRequestTrack({ token }: SupplyRequestTrackProps) {
         <p className="mt-2 text-sm text-neutral-600">{error ?? t("notFoundHint")}</p>
         <Link
           href="/supply-request"
-          className="mt-6 inline-flex bg-[#0F3460] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+          className="mt-6 inline-flex bg-secondary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
         >
           {t("newRequest")}
         </Link>
@@ -167,7 +167,7 @@ export function SupplyRequestTrack({ token }: SupplyRequestTrackProps) {
     <div className="w-full bg-neutral-50 pb-16">
       {/* Header */}
       <div className="border-b border-neutral-200 bg-white px-6 py-6 sm:px-8">
-        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#0f3460]/15 bg-[#0f3460]/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#0f3460]">
+        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-secondary/15 bg-secondary/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-secondary">
           <Package className="h-3.5 w-3.5" />
           {t("badge")}
         </div>
@@ -182,7 +182,7 @@ export function SupplyRequestTrack({ token }: SupplyRequestTrackProps) {
           {/* Request header */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="font-mono text-lg font-bold text-[#0f3460]">
+              <p className="font-mono text-lg font-bold text-secondary">
                 {request.requestNumber}
               </p>
               <p className="mt-0.5 text-sm text-neutral-600">{request.productName}</p>

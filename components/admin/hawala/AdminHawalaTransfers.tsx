@@ -254,7 +254,7 @@ export function AdminHawalaTransfers() {
         accessorKey: "transferNumber",
         header: t("columns.transferNumber"),
         cell: ({ row }) => (
-          <span className="font-mono text-sm font-semibold text-[#0f3460]">
+          <span className="font-mono text-sm font-semibold text-secondary">
             {row.original.transferNumber}
           </span>
         ),
@@ -323,7 +323,7 @@ export function AdminHawalaTransfers() {
           <button
             type="button"
             onClick={() => openDetail(row.original)}
-            className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:border-[#0f3460]/30 hover:bg-[#0f3460]/5"
+            className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:border-secondary/30 hover:bg-secondary/5"
           >
             <Eye className="h-3.5 w-3.5" />
             {t("view")}
@@ -348,7 +348,7 @@ export function AdminHawalaTransfers() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+          <h1 className="text-2xl font-bold text-secondary">{t("title")}</h1>
           <p className="mt-1 max-w-2xl text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -379,7 +379,7 @@ export function AdminHawalaTransfers() {
             onClick={() => setStatusTab(status)}
             className={`-mb-px border-b-2 px-3 py-2 text-sm font-semibold transition ${
               statusTab === status
-                ? "border-[#0f3460] text-[#0f3460]"
+                ? "border-secondary text-secondary"
                 : "border-transparent text-neutral-500 hover:text-neutral-800"
             }`}
           >
@@ -394,7 +394,7 @@ export function AdminHawalaTransfers() {
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder={t("searchPlaceholder")}
-          className="w-full rounded-lg border border-neutral-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10"
+          className="w-full rounded-lg border border-neutral-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-secondary focus:ring-2 focus:ring-secondary/10"
         />
       </div>
 
@@ -421,7 +421,7 @@ export function AdminHawalaTransfers() {
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
             <div className="sticky top-0 z-10 flex items-start justify-between border-b border-neutral-100 bg-white px-6 py-4">
               <div>
-                <h2 className="font-mono text-lg font-bold text-[#0f3460]">
+                <h2 className="font-mono text-lg font-bold text-secondary">
                   {selected.transferNumber}
                 </h2>
                 <div className="mt-2">
@@ -478,7 +478,7 @@ export function AdminHawalaTransfers() {
                 </div>
               </section>
 
-              <section className="rounded-xl border border-[#0f3460]/15 bg-[#0f3460]/5 p-4">
+              <section className="rounded-xl border border-secondary/15 bg-secondary/5 p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <p className="text-sm text-neutral-700">
                     {formatMoney(
@@ -487,7 +487,7 @@ export function AdminHawalaTransfers() {
                       locale
                     )}{" "}
                     →{" "}
-                    <span className="text-lg font-bold text-[#0f3460]">
+                    <span className="text-lg font-bold text-secondary">
                       {formatMoney(
                         selected.receiveAmountMinor,
                         selected.receiveCurrency,
@@ -528,7 +528,7 @@ export function AdminHawalaTransfers() {
                   onChange={(event) =>
                     handleStatusSelect(event.target.value as HawalaTransferStatus)
                   }
-                  className="w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10 disabled:opacity-60"
+                  className="w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 disabled:opacity-60"
                 >
                   {HAWALA_STATUSES.map((status) => (
                     <option key={status} value={status}>
@@ -549,14 +549,14 @@ export function AdminHawalaTransfers() {
                   value={adminNoteDraft}
                   onChange={(event) => setAdminNoteDraft(event.target.value)}
                   disabled={statusUpdating}
-                  className="min-h-[90px] w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10 disabled:opacity-60"
+                  className="min-h-[90px] w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 disabled:opacity-60"
                   placeholder={t("detail.adminNotePlaceholder")}
                 />
                 <button
                   type="button"
                   onClick={() => void handleSaveNote()}
                   disabled={statusUpdating}
-                  className="mt-2 inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-60"
+                  className="mt-2 inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#0a2540] disabled:opacity-60"
                 >
                   {statusUpdating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                   {t("detail.saveNote")}
@@ -605,7 +605,7 @@ export function AdminHawalaTransfers() {
                 type="button"
                 disabled={statusUpdating}
                 onClick={() => void applyStatusChange(pendingStatus)}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
               >
                 {statusUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 {statusUpdating ? t("statusConfirm.saving") : t("statusConfirm.confirm")}

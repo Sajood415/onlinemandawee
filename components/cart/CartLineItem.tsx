@@ -57,7 +57,7 @@ export function CartLineItem({
       <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-start gap-x-4 gap-y-3 sm:grid-cols-[5.5rem_minmax(0,1fr)_7rem_6.5rem] sm:items-center sm:gap-x-5">
         <Link
           href={`/products/${item.productId}`}
-          className="relative aspect-square w-full overflow-hidden bg-neutral-50"
+          className="relative aspect-square w-full overflow-hidden rounded-lg bg-neutral-50"
         >
           <CatalogImage
             src={item.productImage}
@@ -74,7 +74,7 @@ export function CartLineItem({
           </p>
           <Link
             href={`/products/${item.productId}`}
-            className="mt-0.5 block text-sm font-semibold leading-snug text-neutral-900 transition hover:text-[#0F3460] sm:text-[15px]"
+            className="mt-0.5 block text-sm font-semibold leading-snug text-neutral-900 transition hover:text-secondary sm:text-[15px]"
           >
             <span className="line-clamp-2">{item.productName}</span>
           </Link>
@@ -101,7 +101,7 @@ export function CartLineItem({
             type="button"
             onClick={onRemove}
             disabled={busy}
-            className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium text-neutral-400 transition hover:text-red-600 disabled:opacity-40"
+            className="mt-2.5 inline-flex items-center gap-1 rounded text-xs font-medium text-neutral-400 transition hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:opacity-40"
           >
             <Trash2 className="h-3 w-3" />
             {copy.remove}

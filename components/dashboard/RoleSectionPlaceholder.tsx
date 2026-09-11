@@ -23,5 +23,5 @@ export function RoleSectionPlaceholder({ role, title }: RoleSectionPlaceholderPr
     );
   }
 
-  return <p className="text-2xl font-semibold tracking-tight text-[#0f3460]">{title}</p>;
+  return <p className="text-2xl font-semibold tracking-tight text-secondary">{title}</p>;
 }

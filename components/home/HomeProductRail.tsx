@@ -98,8 +98,8 @@ function HomeRailProductCard({ product, locale }: { product: Row; locale: Locale
   };
 
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_4px_18px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(15,23,42,0.1)]">
-      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-[#F7F4EF]">
+    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_8px_30px_rgba(15,52,96,0.06)] transition hover:-translate-y-1 hover:border-neutral-300 hover:shadow-[0_20px_50px_rgba(15,52,96,0.12)]">
+      <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-[#F7F4EF]">
         <Link
           href={`/products/${product.id}`}
           className="absolute inset-0 z-0 block outline-none"
@@ -119,13 +119,13 @@ function HomeRailProductCard({ product, locale }: { product: Row; locale: Locale
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
               product.inStock === false
-                ? "bg-gray-100 text-gray-500"
+                ? "bg-neutral-100 text-neutral-500"
                 : "bg-emerald-50 text-emerald-700"
             }`}
           >
             <span
               className={`h-1.5 w-1.5 rounded-full ${
-                product.inStock === false ? "bg-gray-400" : "bg-emerald-500"
+                product.inStock === false ? "bg-neutral-400" : "bg-emerald-500"
               }`}
             />
             {product.inStock === false ? t("unavailable") : t("available")}
@@ -136,33 +136,33 @@ function HomeRailProductCard({ product, locale }: { product: Row; locale: Locale
           type="button"
           onClick={handleWishlist}
           aria-label={wishlisted ? t("removeFromWishlist") : t("addToWishlist")}
-          className="absolute end-2 bottom-2 z-20 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/95 text-gray-500 shadow-sm transition hover:text-[#ec1b23]"
+          className="absolute end-2 bottom-2 z-20 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/95 text-neutral-500 shadow-sm transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           <Heart
-            className={`h-4 w-4 ${wishlisted ? "fill-[#ec1b23] text-[#ec1b23]" : ""}`}
+            className={`h-4 w-4 ${wishlisted ? "fill-primary text-primary" : ""}`}
           />
         </button>
 
         {product.reviews > 0 ? (
-          <div className="absolute start-2 bottom-2 z-10 flex items-center gap-1 rounded-full bg-white/95 px-1.5 py-0.5 text-[10px] font-semibold text-gray-700 shadow-sm">
+          <div className="absolute start-2 bottom-2 z-10 flex items-center gap-1 rounded-full bg-white/95 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-700 shadow-sm">
             <StarRating rating={product.rating} showValue={false} />
             <span>{product.rating.toFixed(1)}</span>
           </div>
         ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 px-3 py-3">
+      <div className="flex flex-1 flex-col gap-1.5 p-3 sm:p-4">
         <Link href={`/products/${product.id}`} className="outline-none">
-          <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-gray-800">
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-neutral-900">
             {product.name[locale]}
           </h3>
         </Link>
 
         <div className="mt-auto flex items-end justify-between gap-2">
           <div className="min-w-0">
-            <p className="truncate text-base font-bold text-gray-900">{prices.current}</p>
+            <p className="truncate text-base font-bold tracking-tight text-neutral-900">{prices.current}</p>
             {prices.original ? (
-              <p className="truncate text-xs text-gray-400 line-through">{prices.original}</p>
+              <p className="truncate text-xs text-neutral-400 line-through">{prices.original}</p>
             ) : null}
           </div>
           <button
@@ -170,7 +170,7 @@ function HomeRailProductCard({ product, locale }: { product: Row; locale: Locale
             onClick={handleAddToCart}
             disabled={isAdding || product.inStock === false}
             aria-label={t("addToCart")}
-            className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[#ec1b23] px-3 text-xs font-bold text-white transition hover:bg-[#c4161d] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-primary px-3 text-xs font-bold text-white transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isAdding ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
@@ -262,7 +262,7 @@ export function HomeProductRail({
           <div className="flex">
             {Array.from({ length: skeletonCount }).map((_, index) => (
               <div key={`home-rail-skeleton-${index}`} className={`${CELL_CLASS} animate-pulse`}>
-                <div className="aspect-[4/3] rounded-2xl bg-neutral-100" />
+                <div className="aspect-square rounded-2xl bg-neutral-100" />
                 <div className="mt-3 space-y-2 px-1">
                   <div className="h-4 w-full rounded bg-neutral-100" />
                   <div className="h-4 w-3/4 rounded bg-neutral-100" />

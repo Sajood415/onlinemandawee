@@ -50,7 +50,7 @@ export function CartOrderSummary({ subtotal, itemCount }: CartOrderSummaryProps)
 
         <Link
           href="/checkout"
-          className="mt-6 inline-flex w-full items-center justify-center gap-2 bg-[#0F3460] px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-[#0a2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
         >
           {copy.checkout}
           <ArrowRight className="h-4 w-4" />

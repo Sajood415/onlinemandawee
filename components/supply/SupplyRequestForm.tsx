@@ -29,7 +29,7 @@ function fieldClassName(error?: string, multiline = false) {
   } ${
     error
       ? "border-red-400 focus:border-red-500"
-      : "border-neutral-300 focus:border-[#0F3460]"
+      : "border-neutral-300 focus:border-secondary"
   }`;
 }
 
@@ -418,14 +418,14 @@ export function SupplyRequestForm({ locale }: SupplyRequestFormProps) {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href={`/supply-request/track?token=${success.guestTrackingToken}`}
-                className="inline-flex min-h-11 items-center justify-center bg-[#0F3460] px-5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+                className="inline-flex min-h-11 items-center justify-center bg-secondary px-5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
               >
                 {t("trackRequest")}
               </Link>
               {isAuthenticated && user?.role === "CUSTOMER" ? (
                 <Link
                   href="/account/supply-requests"
-                  className="inline-flex min-h-11 items-center justify-center border border-[#0F3460] px-5 text-sm font-semibold text-[#0F3460] transition hover:bg-[#0F3460]/5"
+                  className="inline-flex min-h-11 items-center justify-center border border-secondary px-5 text-sm font-semibold text-secondary transition hover:bg-secondary/5"
                 >
                   {t("trackInAccount")}
                 </Link>
@@ -451,7 +451,7 @@ export function SupplyRequestForm({ locale }: SupplyRequestFormProps) {
       {/* Header */}
       <div className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#0F3460]">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-secondary">
             {t("requestBadge")}
           </p>
           <h2 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900">
@@ -479,7 +479,7 @@ export function SupplyRequestForm({ locale }: SupplyRequestFormProps) {
                 <span
                   className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition ${
                     isActive
-                      ? "bg-[#0F3460] text-white"
+                      ? "bg-secondary text-white"
                       : isPast
                       ? "bg-emerald-500 text-white"
                       : hasError
@@ -491,7 +491,7 @@ export function SupplyRequestForm({ locale }: SupplyRequestFormProps) {
                 </span>
                 <span
                   className={`hidden text-xs font-medium sm:block ${
-                    isActive ? "text-[#0F3460]" : "text-neutral-500"
+                    isActive ? "text-secondary" : "text-neutral-500"
                   }`}
                 >
                   {t(`steps.${step}`)}
@@ -593,7 +593,7 @@ export function SupplyRequestForm({ locale }: SupplyRequestFormProps) {
               <div className="space-y-2">
                 <div className="flex gap-2">
                   <input
-                    className="flex-1 border-0 border-b border-neutral-300 bg-transparent px-0 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#0F3460]"
+                    className="flex-1 border-0 border-b border-neutral-300 bg-transparent px-0 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-secondary"
                     value={form.referenceUrl}
                     onChange={(e) => updateField("referenceUrl", e.target.value)}
                     placeholder={t("placeholders.referenceUrl")}
@@ -622,7 +622,7 @@ export function SupplyRequestForm({ locale }: SupplyRequestFormProps) {
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="min-w-0 flex-1 truncate text-xs text-[#0F3460] hover:underline"
+                      className="min-w-0 flex-1 truncate text-xs text-secondary hover:underline"
                     >
                       {url}
                     </a>
@@ -760,7 +760,7 @@ export function SupplyRequestForm({ locale }: SupplyRequestFormProps) {
                 <label className="inline-flex cursor-pointer items-center gap-3">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 border-neutral-300 text-[#0F3460] focus:ring-[#0F3460]/30"
+                    className="h-4 w-4 border-neutral-300 text-secondary focus:ring-secondary/30"
                     checked={form.allowAlternatives}
                     onChange={(e) => updateField("allowAlternatives", e.target.checked)}
                   />
@@ -894,7 +894,7 @@ export function SupplyRequestForm({ locale }: SupplyRequestFormProps) {
             <button
               type="button"
               onClick={handleNext}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#0F3460] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+              className="inline-flex items-center gap-2 rounded-lg bg-secondary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
             >
               {t("next")}
               <ChevronRight className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
@@ -903,7 +903,7 @@ export function SupplyRequestForm({ locale }: SupplyRequestFormProps) {
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#0F3460] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-lg bg-secondary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

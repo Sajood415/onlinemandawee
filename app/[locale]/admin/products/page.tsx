@@ -491,14 +491,14 @@ export default function AdminProductsPage() {
         <label className="relative min-w-0 flex-1 sm:max-w-xs">
           <Search className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
           <input
-            className="w-full rounded-lg border border-neutral-200 bg-white py-2 pe-3 ps-9 text-sm outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+            className="w-full rounded-lg border border-neutral-200 bg-white py-2 pe-3 ps-9 text-sm outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20"
             placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
         <select
-          className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+          className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20"
           value={vendorFilter}
           onChange={(e) => setVendorFilter(e.target.value)}
         >
@@ -510,7 +510,7 @@ export default function AdminProductsPage() {
           ))}
         </select>
         <select
-          className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+          className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20"
           value={activeFilter}
           onChange={(e) =>
             setActiveFilter(e.target.value as "" | "true" | "false")
@@ -845,7 +845,7 @@ export default function AdminProductsPage() {
                 </label>
                 <textarea
                   rows={3}
-                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20"
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
                   placeholder={t("reject.placeholder")}

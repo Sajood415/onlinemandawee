@@ -79,7 +79,7 @@ export default function AdminDisputesPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+          <h1 className="text-2xl font-bold text-secondary">{t("title")}</h1>
           <p className="mt-1 max-w-2xl text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <button
@@ -112,13 +112,13 @@ export default function AdminDisputesPage() {
                 }}
                 className={`relative inline-flex shrink-0 items-center gap-2 whitespace-nowrap px-5 py-3.5 text-sm font-semibold transition sm:px-6 ${
                   active
-                    ? "text-[#0f3460]"
+                    ? "text-secondary"
                     : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800"
                 }`}
               >
                 {item.label}
                 {active ? (
-                  <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-[#0f3460] sm:inset-x-4" />
+                  <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-secondary sm:inset-x-4" />
                 ) : null}
               </button>
             );

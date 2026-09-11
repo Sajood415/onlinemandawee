@@ -129,7 +129,7 @@ function MetricTile({
     return (
       <Link
         href={href}
-        className="block rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition hover:border-[#0F3460]/25 hover:shadow-md"
+        className="block rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition hover:border-secondary/25 hover:shadow-md"
       >
         {body}
       </Link>
@@ -268,7 +268,7 @@ export default function VendorDashboardPage() {
           <>
             <MetricTile
               href="/vendor/orders"
-              accentClass="bg-[#0F3460]"
+              accentClass="bg-secondary"
               icon={<ShoppingCart className="h-5 w-5" />}
               label={t("tiles.openOrders")}
               value={openOrdersCount.toLocaleString()}
@@ -331,20 +331,20 @@ export default function VendorDashboardPage() {
       <div className="mt-5 flex flex-wrap gap-3">
         <Link
           href="/vendor/orders"
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0F3460] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2847]"
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2847]"
         >
           {t("actions.orders")}
           <ArrowRight className="h-4 w-4 rtl:rotate-180" />
         </Link>
         <Link
           href="/vendor/products"
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 shadow-sm transition hover:border-[#0F3460]/30 hover:text-[#0F3460]"
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 shadow-sm transition hover:border-secondary/30 hover:text-secondary"
         >
           {t("actions.products")}
         </Link>
         <Link
           href="/vendor/reports?tab=fees"
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-neutral-600 transition hover:text-[#0F3460]"
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-neutral-600 transition hover:text-secondary"
         >
           {t("actions.reports")}
           <ArrowRight className="h-4 w-4 rtl:rotate-180" />
@@ -356,7 +356,7 @@ export default function VendorDashboardPage() {
           <h2 className="text-base font-semibold text-neutral-900">{t("recentOrders.title")}</h2>
           <Link
             href="/vendor/orders"
-            className="inline-flex items-center gap-1 text-sm font-semibold text-[#0F3460] hover:underline"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-secondary hover:underline"
           >
             {t("recentOrders.viewAll")}
             <ArrowRight className="h-4 w-4 rtl:rotate-180" />

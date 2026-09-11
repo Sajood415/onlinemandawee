@@ -29,7 +29,7 @@ export default function CategorySlugPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-[#f6f8fc]">
-          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1540px] px-3.5 py-16 sm:px-6 lg:px-8">
             <ProductsGridSkeleton />
           </div>
         </div>

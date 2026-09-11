@@ -57,12 +57,12 @@ export function HowItWorksShowcase() {
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="w-full min-w-0 bg-[#eef1f6]">
-      <section className="relative overflow-hidden bg-linear-to-br from-[#163f73] via-[#0F3460] to-[#0a2748] text-white">
+      <section className="relative overflow-hidden bg-linear-to-br from-[#163f73] via-secondary to-[#0a2748] text-white">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(255,255,255,0.16),transparent_42%)]"
         />
-        <div className="relative mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
+        <div className="relative mx-auto w-full max-w-[1540px] px-3.5 py-10 sm:px-6 sm:py-12 lg:py-14">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
             Mandawee · {t("eyebrow")}
           </p>
@@ -75,7 +75,7 @@ export function HowItWorksShowcase() {
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <Link
               href="/products"
-              className="inline-flex min-h-11 items-center justify-center bg-white px-5 py-2.5 text-sm font-semibold text-[#0F3460] transition hover:bg-neutral-100"
+              className="inline-flex min-h-11 items-center justify-center bg-white px-5 py-2.5 text-sm font-semibold text-secondary transition hover:bg-neutral-100"
             >
               {t("cta.shop")}
             </Link>
@@ -90,7 +90,7 @@ export function HowItWorksShowcase() {
       </section>
 
       <section className="w-full">
-        <div className="mx-auto w-full max-w-[1540px] px-4 py-8 sm:px-6 sm:py-10">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 py-8 sm:px-6 sm:py-10">
           <h2 className="text-xl font-bold text-neutral-900 sm:text-2xl">{t("steps.title")}</h2>
           <p className="mt-1 max-w-xl text-sm text-neutral-500">{t("steps.subtitle")}</p>
 
@@ -101,10 +101,10 @@ export function HowItWorksShowcase() {
                 className="border border-neutral-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <div className="inline-flex h-10 w-10 items-center justify-center bg-[#0F3460]/10 text-[#0F3460]">
+                  <div className="inline-flex h-10 w-10 items-center justify-center bg-secondary/10 text-secondary">
                     {step.icon}
                   </div>
-                  <span className="text-2xl font-bold tabular-nums text-[#0F3460]/20">
+                  <span className="text-2xl font-bold tabular-nums text-secondary/20">
                     {String(index + 1).padStart(2, "0")}
                   </span>
                 </div>
@@ -117,13 +117,13 @@ export function HowItWorksShowcase() {
       </section>
 
       <section className="w-full border-t border-black/5 bg-white/70">
-        <div className="mx-auto w-full max-w-[1540px] px-4 py-8 sm:px-6 sm:py-10">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 py-8 sm:px-6 sm:py-10">
           <h2 className="text-lg font-bold text-neutral-900 sm:text-xl">{t("tips.title")}</h2>
           <ul className="mt-5 space-y-3">
             {tips.map((tip) => (
               <li key={tip} className="flex items-start gap-3 text-sm leading-relaxed text-neutral-700">
                 <span
-                  className="mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full bg-[#0F3460]"
+                  className="mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full bg-secondary"
                   aria-hidden
                 />
                 <span>{tip}</span>
@@ -134,33 +134,33 @@ export function HowItWorksShowcase() {
       </section>
 
       <section className="w-full border-t border-black/5 bg-white">
-        <div className="mx-auto w-full max-w-[1540px] px-4 py-8 sm:px-6 sm:py-10">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 py-8 sm:px-6 sm:py-10">
           <h2 className="text-lg font-bold text-neutral-900 sm:text-xl">{t("links.title")}</h2>
           <div className="mt-5 flex flex-wrap gap-x-6 gap-y-3">
             <Link
               href="/products"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#0F3460] underline-offset-4 hover:underline"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-secondary underline-offset-4 hover:underline"
             >
               <ShoppingBag className="h-4 w-4" />
               {t("links.products")}
             </Link>
             <Link
               href="/refunds"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#0F3460] underline-offset-4 hover:underline"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-secondary underline-offset-4 hover:underline"
             >
               <RefreshCw className="h-4 w-4" />
               {t("links.refunds")}
             </Link>
             <Link
               href="/help"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#0F3460] underline-offset-4 hover:underline"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-secondary underline-offset-4 hover:underline"
             >
               <HelpCircle className="h-4 w-4" />
               {t("links.help")}
             </Link>
             <Link
               href="/contact"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#0F3460] underline-offset-4 hover:underline"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-secondary underline-offset-4 hover:underline"
             >
               <MapPin className="h-4 w-4" />
               {t("links.contact")}

@@ -27,14 +27,14 @@ export function QuantitySelector({
 
   return (
     <div
-      className={`inline-flex items-center border border-neutral-300 ${size}${className ? ` ${className}` : ""}`}
+      className={`inline-flex items-center rounded-xl border border-neutral-300 ${size}${className ? ` ${className}` : ""}`}
     >
       <button
         type="button"
         onClick={onDecrease}
         disabled={disabled}
         aria-label={t("decrease")}
-        className={`flex ${btn} items-center justify-center text-neutral-600 transition hover:bg-neutral-50 hover:text-neutral-900 disabled:opacity-35`}
+        className={`flex ${btn} items-center justify-center rounded-l-xl text-neutral-600 transition hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:opacity-35`}
       >
         <Minus className={icon} />
       </button>
@@ -50,7 +50,7 @@ export function QuantitySelector({
         onClick={onIncrease}
         disabled={disabled}
         aria-label={t("increase")}
-        className={`flex ${btn} items-center justify-center text-neutral-600 transition hover:bg-neutral-50 hover:text-neutral-900 disabled:opacity-35`}
+        className={`flex ${btn} items-center justify-center rounded-r-xl text-neutral-600 transition hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:opacity-35`}
       >
         <Plus className={icon} />
       </button>

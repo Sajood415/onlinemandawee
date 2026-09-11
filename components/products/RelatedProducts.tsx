@@ -38,14 +38,14 @@ export function RelatedProducts({
     <section className="border-t border-neutral-200 pt-10">
       <div className="mb-5 flex flex-wrap items-baseline justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-neutral-900">
+          <h2 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">
             {copy.relatedTitle}
           </h2>
           <p className="mt-1 text-sm text-neutral-500">{copy.relatedSubtitle(label)}</p>
         </div>
         <Link
           href={`/category/${categorySlug}`}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 transition hover:text-[#0F3460]"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 transition hover:text-secondary"
         >
           {copy.viewCategory}
           <ArrowRight className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />

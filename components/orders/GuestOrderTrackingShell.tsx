@@ -35,17 +35,17 @@ export function GuestOrderTrackingShell({
             sizes="100vw"
             priority
           />
-          <div className="absolute inset-0 bg-[#0F3460]/88" />
+          <div className="absolute inset-0 bg-secondary/88" />
           <div
             aria-hidden
             className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.14),transparent_45%)]"
           />
         </div>
 
-        <div className="relative mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
+        <div className="relative mx-auto w-full max-w-[1540px] px-3.5 py-10 sm:px-6 sm:py-12 lg:py-14">
           <nav
             aria-label={copy.breadcrumb}
-            className="mb-5 flex flex-wrap items-center gap-2 text-sm text-white/70"
+            className="mb-5 flex min-w-0 flex-wrap items-center gap-2 text-sm text-white/70"
           >
             <Link href="/" className="transition hover:text-white hover:underline">
               {copy.home}

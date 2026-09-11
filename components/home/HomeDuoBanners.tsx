@@ -29,7 +29,7 @@ export function HomeDuoBanners() {
             key={banner.id}
             href={banner.href}
             aria-label={banner.title}
-            className="relative block min-h-0 min-w-0 flex-1 basis-0 overflow-hidden rounded-xl bg-neutral-100 outline-none ring-offset-2 transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-[#ec1b23]/40 sm:h-full sm:rounded-2xl [height:var(--promo-banner-height-mobile)] sm:[height:unset]"
+            className="relative block min-h-0 min-w-0 flex-1 basis-0 overflow-hidden rounded-xl bg-neutral-100 outline-none ring-offset-2 transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-full sm:rounded-2xl [height:var(--promo-banner-height-mobile)] sm:[height:unset]"
           >
             <img
               src={banner.imageUrl}

@@ -134,7 +134,7 @@ function SupplyRequestCard({
       >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-mono text-sm font-semibold text-[#0f3460]">
+            <p className="font-mono text-sm font-semibold text-secondary">
               {request.requestNumber}
             </p>
             <span
@@ -243,7 +243,7 @@ function SupplyRequestCard({
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="break-all text-sm text-[#0f3460] hover:underline"
+                      className="break-all text-sm text-secondary hover:underline"
                     >
                       {url}
                     </a>
@@ -451,7 +451,7 @@ export function CustomerSupplyRequests() {
   return (
     <div className="w-full bg-neutral-50 pb-16">
       <div className="border-b border-neutral-200 bg-white px-6 py-6 sm:px-8">
-        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#0f3460]/15 bg-[#0f3460]/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#0f3460]">
+        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-secondary/15 bg-secondary/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-secondary">
           <Package className="h-3.5 w-3.5" />
           {t("badge")}
         </div>
@@ -497,7 +497,7 @@ export function CustomerSupplyRequests() {
               </p>
               <Link
                 href="/supply-request"
-                className="mt-4 inline-flex rounded-lg bg-[#0f3460] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0a2847]"
+                className="mt-4 inline-flex rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0a2847]"
               >
                 {t("createRequest")}
               </Link>

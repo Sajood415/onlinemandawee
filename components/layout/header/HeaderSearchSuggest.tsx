@@ -174,7 +174,7 @@ export function HeaderSearchSuggest({
       ? `group relative z-[10040] hidden h-11 min-w-0 max-w-3xl flex-1 items-center rounded-full border border-white/25 bg-white shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-white/40 md:flex ${
           isRtl ? "flex-row-reverse pr-1.5 pl-3" : "pl-1.5 pr-3"
         }`
-      : `relative z-[10040] mt-2 flex h-10 items-center rounded-full border border-white/20 bg-white px-1.5 md:hidden ${
+      : `relative z-[10040] mt-2 flex h-10 items-center rounded-full border border-white/20 bg-white px-1.5 transition-all duration-200 focus-within:ring-2 focus-within:ring-white/40 md:hidden ${
           isRtl ? "flex-row-reverse" : ""
         }`;
 
@@ -239,7 +239,7 @@ export function HeaderSearchSuggest({
                         <span className="line-clamp-1 text-sm font-medium text-neutral-900">
                           {product.name}
                         </span>
-                        <span className="mt-0.5 block text-xs font-semibold text-[#0F3460]">
+                        <span className="mt-0.5 block text-xs font-semibold text-secondary">
                           {formatPrice(
                             product.priceAmount / 100,
                             product.currency
@@ -265,7 +265,7 @@ export function HeaderSearchSuggest({
                         navigateTo(vendor.href);
                       }}
                     >
-                      <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#0F3460]/8 text-[#0F3460]">
+                      <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary/8 text-secondary">
                         {vendor.logoUrl ? (
                           <CatalogImage
                             src={vendor.logoUrl}
@@ -307,7 +307,7 @@ export function HeaderSearchSuggest({
                         navigateTo(industry.href);
                       }}
                     >
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ec1b23]/8 text-[#ec1b23]">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/8 text-primary">
                         <Tags className="h-4 w-4" />
                       </span>
                       <span className="text-sm font-medium text-neutral-900">
@@ -354,7 +354,7 @@ export function HeaderSearchSuggest({
         <div className="border-t border-neutral-100 bg-neutral-50/80 px-3 py-2">
           <button
             type="button"
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-[#ec1b23] transition hover:bg-white"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-primary transition hover:bg-white"
             onPointerDown={(event) => {
               event.preventDefault();
               event.stopPropagation();
@@ -381,7 +381,7 @@ export function HeaderSearchSuggest({
     >
       <button
         type="submit"
-        className={`inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#ec1b23] text-white transition-colors hover:bg-[#c4161d] ${
+        className={`inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-white transition-colors hover:bg-primary/90 ${
           variant === "desktop" ? "h-9 w-9" : "h-8 w-8"
         }`}
         aria-label={searchButtonLabel}

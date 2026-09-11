@@ -34,11 +34,11 @@ export function ProductsPageHeader({
   const tCatalog = useTranslations("ProductsPages.catalog");
 
   return (
-    <section className="relative overflow-hidden border-b border-[#0f3460]/10 bg-gradient-to-br from-[#0f3460] via-[#123f74] to-[#0f3460] text-white">
+    <section className="relative overflow-hidden border-b border-secondary/10 bg-gradient-to-br from-secondary via-[#123f74] to-secondary text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_45%)]" />
       <div className="pointer-events-none absolute -left-20 top-10 h-56 w-56 rounded-full bg-primary/20 blur-3xl" />
 
-      <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <div className="relative mx-auto max-w-[1540px] px-3.5 py-8 sm:px-6 sm:py-10 lg:px-8">
         <nav
           aria-label={tCommon("breadcrumb")}
           className="mb-5 flex min-w-0 items-center gap-2 overflow-hidden text-sm text-white/70"

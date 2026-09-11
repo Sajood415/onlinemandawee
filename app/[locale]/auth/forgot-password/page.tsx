@@ -134,7 +134,7 @@ export default function ForgotPasswordPage() {
       footer={
         <Link
           href="/auth/login"
-          className="text-sm font-semibold text-[#0F3460] underline-offset-4 hover:underline"
+          className="text-sm font-semibold text-secondary underline-offset-4 hover:underline"
         >
           {t("backToLogin")}
         </Link>

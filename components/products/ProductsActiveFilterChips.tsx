@@ -30,7 +30,7 @@ export function ProductsActiveFilterChips({
           key={chip.id}
           type="button"
           onClick={() => onRemove(chip.id)}
-          className="inline-flex items-center gap-1.5 border border-[#0F3460]/20 bg-[#0F3460]/5 px-2.5 py-1 text-xs font-semibold text-[#0F3460] transition hover:bg-[#0F3460]/10"
+          className="inline-flex items-center gap-1.5 rounded-full border border-secondary/20 bg-secondary/5 px-2.5 py-1 text-xs font-semibold text-secondary transition hover:bg-secondary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
           aria-label={`${t("removeFilter")}: ${chip.label}`}
         >
           {chip.label}
@@ -40,7 +40,7 @@ export function ProductsActiveFilterChips({
       <button
         type="button"
         onClick={onClearAll}
-        className="text-xs font-semibold text-neutral-500 underline-offset-2 hover:text-[#0F3460] hover:underline"
+        className="rounded text-xs font-semibold text-neutral-500 underline-offset-2 hover:text-secondary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
       >
         {t("clearAll")}
       </button>

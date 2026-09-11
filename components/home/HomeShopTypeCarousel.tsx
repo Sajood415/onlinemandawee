@@ -4,12 +4,14 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import {
   fetchPublicShopTypes,
   type PublicShopTypeOption,
 } from "@/lib/vendors/public-vendor-listing";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
+import { useSliderOverflow } from "@/hooks/use-slider-overflow";
 import { HomeSectionHeader } from "./HomeSectionHeader";
 
 type DisplayTile = {
@@ -92,6 +94,7 @@ export function HomeShopTypeCarousel() {
   }, [safeLocale]);
 
   const tiles = useMemo(() => buildTiles(shopTypes), [shopTypes]);
+  const { ref: scrollRef, isOverflowing, scrollBy } = useSliderOverflow<HTMLDivElement>([tiles.length]);
 
   if (tiles.length === 0) return null;
 
@@ -102,11 +105,37 @@ export function HomeShopTypeCarousel() {
         isRtl={isRtl}
         viewAllHref="/vendors"
         viewAllLabel={t("viewAllShopTypes")}
+        centered
       />
 
-      {/* Shopino-style: 2 rows, fill by column, scroll sideways if needed */}
-      <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="grid w-max grid-flow-col grid-rows-2 gap-x-3 gap-y-5 px-0.5 pb-1 min-[390px]:gap-x-4 sm:gap-x-5 sm:gap-y-6 sm:px-1">
+      <div className="relative">
+        {isOverflowing ? (
+          <>
+            <button
+              type="button"
+              onClick={() => scrollBy(-1)}
+              aria-label={t("shopTypes.previous")}
+              className="absolute -left-3 top-[38px] z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-500 shadow-md transition hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 sm:flex min-[390px]:top-[42px] sm:top-[48px] lg:top-[52px]"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollBy(1)}
+              aria-label={t("shopTypes.next")}
+              className="absolute -right-3 top-[38px] z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-500 shadow-md transition hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 sm:flex min-[390px]:top-[42px] sm:top-[48px] lg:top-[52px]"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </>
+        ) : null}
+
+        <div
+          ref={scrollRef}
+          className={`flex gap-x-3 overflow-x-auto scroll-smooth pb-1 [-ms-overflow-style:none] [scrollbar-width:none] min-[390px]:gap-x-4 sm:gap-x-5 [&::-webkit-scrollbar]:hidden ${
+            isOverflowing ? "justify-start" : "justify-center"
+          }`}
+        >
           {tiles.map((tile) => (
             <ShopTypeCircle
               key={tile.slug}

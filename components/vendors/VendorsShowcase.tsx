@@ -38,8 +38,8 @@ function IndustryChip({
       <span
         className={`relative flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-full bg-[#EEF0F3] ring-2 transition sm:h-[80px] sm:w-[80px] ${
           active
-            ? "ring-[#0F3460]"
-            : "ring-transparent group-hover:ring-[#0F3460]/30"
+            ? "ring-secondary"
+            : "ring-transparent group-hover:ring-secondary/30"
         }`}
       >
         {image ? (
@@ -56,7 +56,7 @@ function IndustryChip({
       </span>
       <span
         className={`line-clamp-2 text-center text-xs font-semibold leading-snug ${
-          active ? "text-[#0F3460]" : "text-neutral-700"
+          active ? "text-secondary" : "text-neutral-700"
         }`}
       >
         {label}
@@ -162,12 +162,12 @@ export function VendorsShowcase() {
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="w-full min-w-0 bg-[#eef1f6]">
-      <section className="relative overflow-hidden bg-linear-to-br from-[#163f73] via-[#0F3460] to-[#0a2748] text-white">
+      <section className="relative overflow-hidden bg-linear-to-br from-[#163f73] via-secondary to-[#0a2748] text-white">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(255,255,255,0.16),transparent 42%)]"
         />
-        <div className="relative mx-auto w-full max-w-[1540px] px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
+        <div className="relative mx-auto w-full max-w-[1540px] px-3.5 py-10 sm:px-6 sm:py-12 lg:py-14">
           <nav className="mb-5 flex flex-wrap items-center gap-2 text-sm text-white/70">
             <Link href="/" className="transition hover:text-white hover:underline">
               {t("home")}
@@ -191,7 +191,7 @@ export function VendorsShowcase() {
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-[1540px] px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto w-full max-w-[1540px] px-3.5 py-8 sm:px-6 sm:py-10">
         <div className="mb-8 space-y-5 border-b border-neutral-200/80 pb-6">
           <div className="flex flex-wrap items-start gap-3 sm:gap-4">
             <IndustryChip
@@ -213,7 +213,7 @@ export function VendorsShowcase() {
 
         {loading ? (
           <div className="flex min-h-[240px] items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-[#0F3460]/40" />
+            <Loader2 className="h-8 w-8 animate-spin text-secondary/40" />
           </div>
         ) : vendors.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -222,15 +222,15 @@ export function VendorsShowcase() {
             ))}
           </div>
         ) : (
-          <div className="border border-neutral-200/80 bg-white px-6 py-16 text-center">
+          <div className="rounded-2xl border border-neutral-200/80 bg-white px-6 py-16 text-center">
             <Store className="mx-auto mb-4 h-10 w-10 text-neutral-300" />
-            <h2 className="text-xl font-bold text-neutral-900">{t("noVendors")}</h2>
+            <h2 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">{t("noVendors")}</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">{t("noVendorsHint")}</p>
             {selectedIndustry ? (
               <button
                 type="button"
                 onClick={() => selectIndustry(null)}
-                className="mt-6 inline-flex bg-[#0F3460] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+                className="mt-6 inline-flex rounded-xl bg-secondary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
               >
                 {t("clearFilter")}
               </button>

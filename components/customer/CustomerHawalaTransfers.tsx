@@ -70,7 +70,7 @@ function TransferCard({ transfer }: { transfer: CustomerHawalaTransfer }) {
       >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-mono text-sm font-semibold text-[#0f3460]">
+            <p className="font-mono text-sm font-semibold text-secondary">
               {transfer.transferNumber}
             </p>
             <span
@@ -147,8 +147,8 @@ function TransferCard({ transfer }: { transfer: CustomerHawalaTransfer }) {
           ) : null}
 
           {transfer.adminNote ? (
-            <div className="rounded-xl border border-[#0f3460]/15 bg-[#0f3460]/5 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#0f3460]">
+            <div className="rounded-xl border border-secondary/15 bg-secondary/5 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
                 {t("adminNote")}
               </p>
               <p className="mt-1 text-sm text-neutral-700">{transfer.adminNote}</p>
@@ -204,7 +204,7 @@ export function CustomerHawalaTransfers() {
   return (
     <div className="w-full bg-neutral-50 pb-16">
       <div className="border-b border-neutral-200 bg-white px-6 py-6 sm:px-8">
-        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#0f3460]/15 bg-[#0f3460]/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#0f3460]">
+        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-secondary/15 bg-secondary/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-secondary">
           <Banknote className="h-3.5 w-3.5" />
           {t("badge")}
         </div>

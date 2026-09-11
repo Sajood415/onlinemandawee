@@ -95,7 +95,7 @@ function MetricTile({
     return (
       <Link
         href={href}
-        className="block rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition hover:border-[#0F3460]/25 hover:shadow-md"
+        className="block rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition hover:border-secondary/25 hover:shadow-md"
       >
         {body}
       </Link>
@@ -195,7 +195,7 @@ export default function AdminDashboardPage() {
             <select
               value={period}
               onChange={(event) => setPeriod(event.target.value as SignupPeriod)}
-              className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20"
+              className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20"
             >
               <option value="7d">{t("periods.7d")}</option>
               <option value="30d">{t("periods.30d")}</option>
@@ -274,7 +274,7 @@ export default function AdminDashboardPage() {
             />
             <MetricTile
               href="/admin/orders"
-              accentClass="bg-[#0F3460]"
+              accentClass="bg-secondary"
               icon={<ShoppingBag className="h-5 w-5" />}
               label={t("tiles.orders")}
               value={ordersInPeriod.toLocaleString(locale)}

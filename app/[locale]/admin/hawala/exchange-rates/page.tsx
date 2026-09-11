@@ -171,12 +171,12 @@ export default function AdminHawalaExchangeRatesPage() {
       <div>
         <Link
           href="/admin/hawala"
-          className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 transition hover:text-[#0f3460]"
+          className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 transition hover:text-secondary"
         >
           <ArrowLeft className="h-4 w-4" />
           {t("back")}
         </Link>
-        <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+        <h1 className="text-2xl font-bold text-secondary">{t("title")}</h1>
         <p className="mt-1 text-sm text-neutral-600">{t("subtitle")}</p>
         <p className="mt-2 text-sm text-neutral-500">
           {t("apiNote", { percent: HAWALA_API_RATE_MINUS_PERCENT })}
@@ -185,8 +185,8 @@ export default function AdminHawalaExchangeRatesPage() {
 
       <section className="max-w-2xl rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
         <div className="flex items-start gap-3">
-          <div className="rounded-lg bg-[#0f3460]/10 p-2">
-            <Banknote className="h-5 w-5 text-[#0f3460]" />
+          <div className="rounded-lg bg-secondary/10 p-2">
+            <Banknote className="h-5 w-5 text-secondary" />
           </div>
           <div className="flex-1">
             <h2 className="text-base font-semibold text-neutral-900">{t("ratesTitle")}</h2>
@@ -252,7 +252,7 @@ export default function AdminHawalaExchangeRatesPage() {
           type="button"
           disabled={saving || loading || syncing}
           onClick={() => void onSave()}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#0f3460] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0a2847] disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {t("save")}

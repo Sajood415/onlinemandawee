@@ -35,7 +35,7 @@ export function IconButton({
     <button
       onClick={onClick}
       aria-label={ariaLabel}
-      className={`relative ${sizeClass} flex shrink-0 items-center justify-center rounded-full border transition-all duration-300 group active:scale-90 cursor-pointer ${active ? "bg-primary border-primary text-white shadow-xl shadow-primary/30" : idleSurface}`}
+      className={`relative ${sizeClass} flex shrink-0 items-center justify-center rounded-full border transition-all duration-300 group active:scale-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${accentRingClass} ${active ? "bg-primary border-primary text-white shadow-xl shadow-primary/30" : idleSurface}`}
     >
       {children}
       {badge && (

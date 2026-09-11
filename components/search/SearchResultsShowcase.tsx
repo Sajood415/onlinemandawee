@@ -73,25 +73,25 @@ export function SearchResultsShowcase() {
   return (
     <div className="min-h-screen bg-[#eef1f6]">
       <section className="border-b border-neutral-200/80 bg-white">
-        <div className="mx-auto w-full max-w-[1540px] px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-[1540px] px-3.5 py-8 sm:px-6 lg:px-8">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
             {t("eyebrow")}
           </p>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight text-[#0F3460] sm:text-3xl">
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-secondary sm:text-3xl">
             {query ? t("titleWithQuery", { query }) : t("titleEmpty")}
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-[1540px] space-y-10 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1540px] space-y-10 px-3.5 py-8 sm:px-6 lg:px-8">
         {!query ? (
           <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center">
             <p className="text-sm text-neutral-600">{t("emptyHint")}</p>
           </div>
         ) : loading ? (
           <div className="flex min-h-[40vh] items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-[#0F3460]/40" />
+            <Loader2 className="h-8 w-8 animate-spin text-secondary/40" />
           </div>
         ) : !hasAnything ? (
           <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center">
@@ -99,7 +99,7 @@ export function SearchResultsShowcase() {
             <p className="mt-2 text-sm text-neutral-500">{t("noResultsHint")}</p>
             <Link
               href="/products"
-              className="mt-5 inline-flex text-sm font-semibold text-[#ec1b23] hover:underline"
+              className="mt-5 inline-flex text-sm font-semibold text-primary hover:underline"
             >
               {t("browseProducts")}
             </Link>
@@ -109,8 +109,8 @@ export function SearchResultsShowcase() {
             {result!.industries.length > 0 ? (
               <section>
                 <div className="mb-4 flex items-center gap-2">
-                  <Tags className="h-4 w-4 text-[#0F3460]" />
-                  <h2 className="text-lg font-bold text-neutral-900">
+                  <Tags className="h-4 w-4 text-secondary" />
+                  <h2 className="text-lg font-bold tracking-tight text-neutral-900 sm:text-xl">
                     {t("industriesTitle")}
                   </h2>
                 </div>
@@ -119,7 +119,7 @@ export function SearchResultsShowcase() {
                     <Link
                       key={industry.slug}
                       href={industry.href}
-                      className="rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-sm font-medium text-[#0F3460] transition hover:border-[#0F3460]/40 hover:bg-[#0F3460]/5"
+                      className="rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-sm font-medium text-secondary transition hover:border-secondary/40 hover:bg-secondary/5"
                     >
                       {industry.label}
                     </Link>
@@ -131,8 +131,8 @@ export function SearchResultsShowcase() {
             {result!.places.length > 0 ? (
               <section>
                 <div className="mb-4 flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-[#0F3460]" />
-                  <h2 className="text-lg font-bold text-neutral-900">
+                  <MapPin className="h-4 w-4 text-secondary" />
+                  <h2 className="text-lg font-bold tracking-tight text-neutral-900 sm:text-xl">
                     {t("placesTitle")}
                   </h2>
                 </div>
@@ -141,7 +141,7 @@ export function SearchResultsShowcase() {
                     <Link
                       key={`${place.kind}-${place.label}`}
                       href={place.href}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-sm font-medium text-neutral-700 transition hover:border-[#0F3460]/40 hover:text-[#0F3460]"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-sm font-medium text-neutral-700 transition hover:border-secondary/40 hover:text-secondary"
                     >
                       <span className="text-[10px] font-bold uppercase tracking-wide text-neutral-400">
                         {place.kind === "city" ? t("city") : t("country")}
@@ -157,14 +157,14 @@ export function SearchResultsShowcase() {
               <section>
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <Store className="h-4 w-4 text-[#0F3460]" />
-                    <h2 className="text-lg font-bold text-neutral-900">
+                    <Store className="h-4 w-4 text-secondary" />
+                    <h2 className="text-lg font-bold tracking-tight text-neutral-900 sm:text-xl">
                       {t("vendorsTitle")}
                     </h2>
                   </div>
                   <Link
                     href={`/vendors?search=${encodeURIComponent(query)}`}
-                    className="text-sm font-semibold text-[#ec1b23] hover:underline"
+                    className="text-sm font-semibold text-primary hover:underline"
                   >
                     {t("seeAllVendors")}
                   </Link>
@@ -180,12 +180,12 @@ export function SearchResultsShowcase() {
             {products.length > 0 ? (
               <section>
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="text-lg font-bold text-neutral-900">
+                  <h2 className="text-lg font-bold tracking-tight text-neutral-900 sm:text-xl">
                     {t("productsTitle")}
                   </h2>
                   <Link
                     href={`/products?search=${encodeURIComponent(query)}`}
-                    className="text-sm font-semibold text-[#ec1b23] hover:underline"
+                    className="text-sm font-semibold text-primary hover:underline"
                   >
                     {t("seeAllProducts", { count: result!.productTotal })}
                   </Link>

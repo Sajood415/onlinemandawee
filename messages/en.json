@@ -2398,6 +2398,8 @@
       "home": "Home",
       "allProducts": "All Products",
       "subcategories": "Shop by type",
+      "previousSubcategories": "Previous subcategories",
+      "nextSubcategories": "Next subcategories",
       "searchPlaceholder": "Search in this category...",
       "noProducts": "No products in this category yet.",
       "noSearchResults": "No matching products in this category.",

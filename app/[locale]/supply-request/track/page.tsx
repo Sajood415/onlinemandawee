@@ -31,7 +31,7 @@ export default async function SupplyRequestTrackPage({
     <Suspense
       fallback={
         <div className="flex min-h-[360px] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0F3460]/40" />
+          <Loader2 className="h-8 w-8 animate-spin text-secondary/40" />
         </div>
       }
     >

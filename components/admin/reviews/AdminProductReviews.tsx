@@ -216,7 +216,7 @@ export function AdminProductReviews() {
               type="button"
               disabled={actionId === row.original.id}
               onClick={() => void handleToggleHidden(row.original)}
-              className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:border-[#0f3460]/30 hover:bg-[#0f3460]/5 disabled:opacity-60"
+              className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:border-secondary/30 hover:bg-secondary/5 disabled:opacity-60"
             >
               {row.original.isHidden ? (
                 <Eye className="h-3.5 w-3.5" />
@@ -259,7 +259,7 @@ export function AdminProductReviews() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#0f3460]">{t("title")}</h1>
+          <h1 className="text-2xl font-bold text-secondary">{t("title")}</h1>
           <p className="mt-1 max-w-2xl text-sm text-neutral-600">{t("subtitle")}</p>
         </div>
         <button
@@ -281,7 +281,7 @@ export function AdminProductReviews() {
             onClick={() => setVisibilityTab(tab.id)}
             className={`-mb-px border-b-2 px-3 py-2 text-sm font-semibold transition ${
               visibilityTab === tab.id
-                ? "border-[#0f3460] text-[#0f3460]"
+                ? "border-secondary text-secondary"
                 : "border-transparent text-neutral-500 hover:text-neutral-800"
             }`}
           >
@@ -299,7 +299,7 @@ export function AdminProductReviews() {
               onClick={() => setRatingFilter(value)}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                 ratingFilter === value
-                  ? "bg-[#0f3460] text-white"
+                  ? "bg-secondary text-white"
                   : "bg-white text-neutral-600 ring-1 ring-neutral-200 hover:bg-neutral-50"
               }`}
             >
@@ -313,7 +313,7 @@ export function AdminProductReviews() {
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="w-full rounded-lg border border-neutral-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-[#0f3460] focus:ring-2 focus:ring-[#0f3460]/10"
+            className="w-full rounded-lg border border-neutral-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-secondary focus:ring-2 focus:ring-secondary/10"
           />
         </div>
       </div>

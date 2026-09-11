@@ -221,7 +221,7 @@ export function ProductsCatalogShowcase() {
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="w-full min-w-0 bg-[#eef1f6]">
-      <div className="mx-auto w-full max-w-[1540px] px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mx-auto w-full max-w-[1540px] px-3.5 py-6 sm:px-6 sm:py-8">
         <ProductsCatalogHeader
           title={title}
           subtitle={subtitle}
@@ -240,7 +240,7 @@ export function ProductsCatalogShowcase() {
                   key={category.id}
                   type="button"
                   onClick={() => patchState({ category: category.slug })}
-                  className="shrink-0 border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:border-[#0F3460]/30 hover:text-[#0F3460]"
+                  className="shrink-0 border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:border-secondary/30 hover:text-secondary"
                 >
                   {resolveCategoryLabel(category.slug, category.name, locale)}
                   <span className="ms-1.5 text-xs text-neutral-400">{category.count}</span>
@@ -279,23 +279,23 @@ export function ProductsCatalogShowcase() {
 
             {loading ? (
               <div className="flex min-h-[280px] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-[#0F3460]/40" />
+                <Loader2 className="h-8 w-8 animate-spin text-secondary/40" />
               </div>
             ) : products.length === 0 ? (
-              <div className="border border-neutral-200/80 bg-white px-6 py-16 text-center">
-                <h2 className="text-xl font-bold text-neutral-900">{t("noProducts")}</h2>
+              <div className="rounded-2xl border border-neutral-200/80 bg-white px-6 py-16 text-center">
+                <h2 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">{t("noProducts")}</h2>
                 <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">{t("noProductsHint")}</p>
                 <button
                   type="button"
                   onClick={clearAll}
-                  className="mt-6 inline-flex bg-[#0F3460] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
+                  className="mt-6 inline-flex bg-secondary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540]"
                 >
                   {t("clearFilters")}
                 </button>
                 <div className="mt-4">
                   <Link
                     href="/products"
-                    className="text-sm font-semibold text-[#0F3460] underline-offset-4 hover:underline"
+                    className="text-sm font-semibold text-secondary underline-offset-4 hover:underline"
                   >
                     {t("title")}
                   </Link>

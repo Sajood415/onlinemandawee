@@ -165,7 +165,7 @@ export function AdminVendorFeeOverridesForm({
   };
 
   const selectClass =
-    "w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-[#0F3460] focus:ring-2 focus:ring-[#0F3460]/20";
+    "w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20";
   const inputClass = selectClass;
 
   return (
@@ -303,7 +303,7 @@ export function AdminVendorFeeOverridesForm({
           type="button"
           disabled={disabled || saving}
           onClick={() => void onSave()}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#0F3460] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2540] disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a2540] disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {saving ? td("feeOverrides.saving") : td("feeOverrides.save")}
