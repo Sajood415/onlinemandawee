@@ -8,7 +8,7 @@
     "store": {
       "promo": "تحویل رایگان برای سفارش‌های بالای $100",
       "tagline": "ارسال نیازهای روزانه خانواده با راحتی بیشتر.",
-      "shopByCategory": "خرید بر اساس دسته",
+      "shopByCategory": "دسته‌بندی‌ها",
       "shopByCategorySubtitle": "دسته‌های محبوب را ببینید و سریع‌تر آنچه لازم دارید پیدا کنید.",
       "shopByVendorType": "دسته‌ها",
       "shopByVendorTypeSubtitle": "فروشگاه‌ها را بر اساس نوع ببینید و سریع‌تر فروشنده پیدا کنید.",
@@ -131,15 +131,15 @@
       ],
       "categoryTiles": [
         {
-          "slug": "breakfast",
+          "slug": "breakfast-items",
           "label": "اقلام صبحانه"
         },
         {
-          "slug": "grocery",
-          "label": "خوراکی / مواد خوراکی"
+          "slug": "food",
+          "label": "مواد غذایی"
         },
         {
-          "slug": "snacks",
+          "slug": "snack",
           "label": "اسنک بار"
         },
         {
@@ -155,7 +155,7 @@
           "label": "سبزیجات"
         },
         {
-          "slug": "dairy",
+          "slug": "dairy-products",
           "label": "لبنیات"
         },
         {
@@ -171,12 +171,16 @@
           "label": "مراقبت شخصی"
         },
         {
-          "slug": "whey-proteins",
+          "slug": "whey-protien",
           "label": "پروتئین وی"
         },
         {
-          "slug": "stationery-items",
+          "slug": "stationary-items",
           "label": "اقلام قرطاسیه"
+        },
+        {
+          "slug": "ramadan-rations",
+          "label": "جیره رمضان"
         }
       ]
     },

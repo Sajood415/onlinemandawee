@@ -17,7 +17,6 @@ type ApiCategory = {
   name: string;
   slug: string;
   image?: string;
-  productCount?: number;
   translations?: unknown;
 };
 
@@ -26,61 +25,39 @@ type DisplayCategoryTile = {
   href: string;
   label: string;
   image?: string;
-  productCount?: number;
 };
 
-function formatCategoryLabel(label: string) {
-  const trimmed = label.trim();
-  if (!trimmed) return trimmed;
-  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
-}
-
-function CategoryCircle({
+function CategorySquare({
   tile,
   noImageLabel,
-  productsLabel,
 }: {
   tile: DisplayCategoryTile;
   noImageLabel: string;
-  productsLabel: (count: number) => string;
 }) {
   return (
     <Link
       href={tile.href}
       aria-label={tile.label}
-      className="group flex w-[100px] shrink-0 flex-col items-center gap-2.5 outline-none min-[390px]:w-[112px] sm:w-[124px]"
+      className="group flex w-[108px] shrink-0 flex-col items-center gap-2.5 outline-none min-[390px]:w-[124px] sm:w-[140px] lg:w-[152px]"
     >
-      <div className="relative flex h-[92px] w-[92px] items-center justify-center min-[390px]:h-[104px] min-[390px]:w-[104px] sm:h-[118px] sm:w-[118px]">
-        <div
-          className="absolute inset-0 rounded-full bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)] ring-1 ring-gray-100 transition group-hover:shadow-[0_12px_28px_rgba(236,27,35,0.12)] group-hover:ring-primary/25"
-          aria-hidden
-        />
-        <div className="relative z-1 flex h-[78px] w-[78px] items-center justify-center overflow-hidden rounded-full bg-[#F7F4EF] min-[390px]:h-[88px] min-[390px]:w-[88px] sm:h-[100px] sm:w-[100px]">
-          {tile.image ? (
-            <Image
-              src={tile.image}
-              alt=""
-              fill
-              className="object-contain object-center p-2 transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 640px) 104px, 116px"
-            />
-          ) : (
-            <span className="text-[10px] font-medium uppercase text-neutral-400">
-              {noImageLabel}
-            </span>
-          )}
-        </div>
+      <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-[#F3F4F6] shadow-[0_4px_14px_rgba(15,23,42,0.06)] ring-1 ring-black/5 transition duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[0_10px_24px_rgba(15,23,42,0.1)]">
+        {tile.image ? (
+          <Image
+            src={tile.image}
+            alt=""
+            fill
+            className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.04]"
+            sizes="(max-width: 640px) 124px, 152px"
+          />
+        ) : (
+          <span className="flex h-full w-full items-center justify-center px-2 text-center text-[10px] font-medium uppercase text-neutral-400">
+            {noImageLabel}
+          </span>
+        )}
       </div>
-      <div className="w-full text-center">
-        <p className="line-clamp-2 text-sm font-bold leading-snug text-secondary">
-          {tile.label}
-        </p>
-        {typeof tile.productCount === "number" ? (
-          <p className="mt-0.5 text-xs text-gray-400">
-            {productsLabel(tile.productCount)}
-          </p>
-        ) : null}
-      </div>
+      <p className="line-clamp-2 w-full text-center text-[11px] font-bold uppercase leading-snug tracking-wide text-neutral-900 min-[390px]:text-xs sm:text-sm">
+        {tile.label}
+      </p>
     </Link>
   );
 }
@@ -92,16 +69,13 @@ function buildDisplayTiles(
   return apiCategories.map((category) => ({
     slug: category.slug,
     href: `/category/${category.slug}`,
-    label: formatCategoryLabel(
-      resolveCategoryLabel(
-        category.slug,
-        category.name,
-        locale,
-        category.translations,
-      ),
+    label: resolveCategoryLabel(
+      category.slug,
+      category.name,
+      locale,
+      category.translations,
     ),
     image: category.image,
-    productCount: category.productCount,
   }));
 }
 
@@ -146,7 +120,6 @@ export function HomeCategoryCarousel() {
     <section className="w-full min-w-0">
       <HomeSectionHeader
         title={t("shopByCategory")}
-        subtitle={t("shopByCategorySubtitle")}
         isRtl={isRtl}
         viewAllHref="/products"
         viewAllLabel={t("viewAllCategories")}
@@ -160,7 +133,7 @@ export function HomeCategoryCarousel() {
               type="button"
               onClick={() => scrollBy(-1)}
               aria-label={t("categories.previous")}
-              className="absolute -left-3 top-[46px] z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-500 shadow-md transition hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 sm:flex min-[390px]:top-[52px] sm:top-[59px]"
+              className="absolute -left-3 top-[54px] z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-500 shadow-md transition hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 sm:flex min-[390px]:top-[62px] sm:top-[70px] lg:top-[76px]"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -168,7 +141,7 @@ export function HomeCategoryCarousel() {
               type="button"
               onClick={() => scrollBy(1)}
               aria-label={t("categories.next")}
-              className="absolute -right-3 top-[46px] z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-500 shadow-md transition hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 sm:flex min-[390px]:top-[52px] sm:top-[59px]"
+              className="absolute -right-3 top-[54px] z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-500 shadow-md transition hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 sm:flex min-[390px]:top-[62px] sm:top-[70px] lg:top-[76px]"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -177,16 +150,15 @@ export function HomeCategoryCarousel() {
 
         <div
           ref={ref}
-          className={`flex gap-3 overflow-x-auto scroll-smooth px-0.5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] min-[390px]:gap-4 sm:gap-6 sm:px-1 [&::-webkit-scrollbar]:hidden ${
+          className={`flex gap-3 overflow-x-auto scroll-smooth px-0.5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] min-[390px]:gap-4 sm:gap-5 sm:px-1 lg:gap-6 [&::-webkit-scrollbar]:hidden ${
             isOverflowing ? "justify-start" : "justify-center"
           }`}
         >
           {tiles.map((tile) => (
-            <CategoryCircle
+            <CategorySquare
               key={tile.slug}
               tile={tile}
               noImageLabel={t("categories.noImage")}
-              productsLabel={(count) => t("categories.productCount", { count })}
             />
           ))}
         </div>

@@ -2,7 +2,7 @@
 
 import { useLocale } from "next-intl";
 import { HomeHeroCarousel } from "./HomeHeroCarousel";
-import { HomeShopTypeCarousel } from "./HomeShopTypeCarousel";
+import { HomeCategoryCarousel } from "./HomeCategoryCarousel";
 import { HomeDuoBanners } from "./HomeDuoBanners";
 import { HomeSeasonalBanners } from "./HomeSeasonalBanners";
 import { HomeCouponDealsRail } from "./HomeCouponDealsRail";
@@ -22,7 +22,7 @@ export function HomePage() {
 
       <div className="home-content-padding mx-auto w-full min-w-0 max-w-[1540px] space-y-4 py-4 sm:space-y-6 sm:py-6 lg:py-8">
         <div className="rounded-2xl bg-white px-3 py-4 shadow-sm sm:rounded-3xl sm:px-5 sm:py-6 lg:px-6">
-          <HomeShopTypeCarousel />
+          <HomeCategoryCarousel />
         </div>
 
         <HomeFeaturedBanner />

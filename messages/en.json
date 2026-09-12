@@ -8,7 +8,7 @@
     "store": {
       "promo": "Free Delivery on Orders Above $100",
       "tagline": "Delivering everyday essentials with convenience your family deserves.",
-      "shopByCategory": "Shopping by category",
+      "shopByCategory": "Categories",
       "shopByCategorySubtitle": "Browse popular categories and find what you need faster.",
       "shopByVendorType": "Categories",
       "shopByVendorTypeSubtitle": "Browse shops by type and find vendors faster.",
@@ -131,15 +131,15 @@
       ],
       "categoryTiles": [
         {
-          "slug": "breakfast",
+          "slug": "breakfast-items",
           "label": "Breakfast Items"
         },
         {
-          "slug": "grocery",
-          "label": "Food / Edible Grocery"
+          "slug": "food",
+          "label": "Food Items"
         },
         {
-          "slug": "snacks",
+          "slug": "snack",
           "label": "Snack Bar"
         },
         {
@@ -155,7 +155,7 @@
           "label": "Vegetables"
         },
         {
-          "slug": "dairy",
+          "slug": "dairy-products",
           "label": "Dairy Products"
         },
         {
@@ -171,12 +171,16 @@
           "label": "Personal Care"
         },
         {
-          "slug": "whey-proteins",
+          "slug": "whey-protien",
           "label": "Whey Protein"
         },
         {
-          "slug": "stationery-items",
-          "label": "Stationery Items"
+          "slug": "stationary-items",
+          "label": "Stationary Items"
+        },
+        {
+          "slug": "ramadan-rations",
+          "label": "Ramadan Rations"
         }
       ]
     },

@@ -136,7 +136,8 @@ export class CatalogQueryService {
   }
 
   async getCategoryBySlug(slug: string) {
-    const resolvedSlug = slug === "baby" ? "baby-care" : slug;
+    const resolvedSlug =
+      slug === "baby" || slug === "baby-care-diapers-3" ? "baby-care" : slug;
     const category = await this.categoryRepository.findActiveBySlug(resolvedSlug);
 
     if (!category) {

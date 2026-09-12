@@ -81,11 +81,12 @@ const sheetVariants: Variants = {
 
 function getCategoryIcon(slug: string, size = 15) {
   const icons: Record<string, ReactNode> = {
-    breakfast: <Croissant size={size} />,
-    grocery: <ShoppingBag size={size} />,
-    snacks: <Cookie size={size} />,
+    "breakfast-items": <Croissant size={size} />,
+    food: <ShoppingBag size={size} />,
+    snack: <Cookie size={size} />,
     beverages: <Wine size={size} />,
     fruits: <Cherry size={size} />,
+    vegetables: <Cherry size={size} />,
     "baby-care": <Baby size={size} />,
   };
   return icons[slug] ?? <ShoppingBag size={size} />;
@@ -93,11 +94,24 @@ function getCategoryIcon(slug: string, size = 15) {
 
 function getFallbackCategories(locale: SupportedLocale) {
   const labels: Record<string, Record<SupportedLocale, string>> = {
-    breakfast: { en: "Breakfast Items", ps: "د ناشتې توکي", "fa-AF": "اقلام صبحانه" },
-    grocery: { en: "Edible Grocery", ps: "خوراکي توکي", "fa-AF": "مواد خوراکی" },
-    snacks: { en: "Snack Bar", ps: "سنک بار", "fa-AF": "اسنک بار" },
+    "breakfast-items": {
+      en: "Breakfast Items",
+      ps: "د ناشتې توکي",
+      "fa-AF": "اقلام صبحانه",
+    },
+    food: { en: "Food Items", ps: "خوراکي توکي", "fa-AF": "مواد غذایی" },
+    snack: { en: "Snack Bar", ps: "سنک بار", "fa-AF": "اسنک بار" },
     beverages: { en: "Beverages", ps: "مشروبات", "fa-AF": "نوشیدنی‌ها" },
     fruits: { en: "Fruits", ps: "مېوې", "fa-AF": "میوه‌ها" },
+    vegetables: { en: "Vegetables", ps: "سبزيجات", "fa-AF": "سبزیجات" },
+    "dairy-products": { en: "Dairy Products", ps: "لبنیات", "fa-AF": "لبنیات" },
+    "cleaning-products": {
+      en: "Cleaning Products",
+      ps: "د پاکولو توکي",
+      "fa-AF": "مواد شوینده",
+    },
+    "baby-care": { en: "Baby Care", ps: "د ماشوم پاملرنه", "fa-AF": "مراقبت نوزاد" },
+    "personal-care": { en: "Personal Care", ps: "شخصي پاملرنه", "fa-AF": "مراقبت شخصی" },
   };
 
   return Object.entries(labels).map(([slug, localeLabels]) => ({

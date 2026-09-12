@@ -8,7 +8,7 @@
     "store": {
       "promo": "د $100 پورته فرمایشونو لپاره وړیا تحویل",
       "tagline": "هر ورځ اړین توکي د کورنۍ لپاره اسانه پلورنځی.",
-      "shopByCategory": "د کټګورۍ له مخې پلورنځی",
+      "shopByCategory": "کټګورۍ",
       "shopByCategorySubtitle": "مشهورې کټګورۍ وپلټئ او ژر هغه څه ومومئ چې ورته اړتیا لرئ.",
       "shopByVendorType": "کټګورۍ",
       "shopByVendorTypeSubtitle": "د پلورنځي ډول له مخې وپلټئ او پلورونکي ژر ومومئ.",
@@ -131,15 +131,15 @@
       ],
       "categoryTiles": [
         {
-          "slug": "breakfast",
+          "slug": "breakfast-items",
           "label": "د ناشتې توکي"
         },
         {
-          "slug": "grocery",
-          "label": "خوراکي / خوراکي توکي"
+          "slug": "food",
+          "label": "خوراکي توکي"
         },
         {
-          "slug": "snacks",
+          "slug": "snack",
           "label": "سنک بار"
         },
         {
@@ -155,7 +155,7 @@
           "label": "سبزیجات"
         },
         {
-          "slug": "dairy",
+          "slug": "dairy-products",
           "label": "لبنیات"
         },
         {
@@ -171,12 +171,16 @@
           "label": "شخصي پاملرنه"
         },
         {
-          "slug": "whey-proteins",
+          "slug": "whey-protien",
           "label": "وی پروټین"
         },
         {
-          "slug": "stationery-items",
+          "slug": "stationary-items",
           "label": "د قرطاسیه توکي"
+        },
+        {
+          "slug": "ramadan-rations",
+          "label": "د رمضان جیرې"
         }
       ]
     },
