@@ -5025,6 +5025,7 @@
     "catalog": {
       "home": "Home",
       "title": "All products",
+      "heroSubtitle": "Browse everything from Online Mandawee and marketplace vendors in one place.",
       "searchTitle": "Search results",
       "searchSubtitle": "Showing products matching “{query}”",
       "results": "{count, plural, one {# product} other {# products}}",

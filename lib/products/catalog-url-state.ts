@@ -53,7 +53,7 @@ export function parseCatalogUrlState(searchParams: URLSearchParams): CatalogUrlS
 export function catalogStateToSearchParams(state: CatalogUrlState): URLSearchParams {
   const params = new URLSearchParams();
   if (state.search.trim()) params.set("search", state.search.trim());
-  if (state.category) params.set("category", state.category);
+  // Category lives in the path: /products/[slug] — not in the query string.
   if (state.vendors.length) params.set("vendors", state.vendors.join(","));
   if (state.minPrice != null) params.set("minPrice", String(state.minPrice));
   if (state.maxPrice != null) params.set("maxPrice", String(state.maxPrice));
@@ -64,10 +64,20 @@ export function catalogStateToSearchParams(state: CatalogUrlState): URLSearchPar
   return params;
 }
 
+/** Build /products or /products/{category} + query (filters only). */
+export function catalogStateToHref(state: CatalogUrlState): string {
+  const params = catalogStateToSearchParams(state);
+  const qs = params.toString();
+  const base = state.category
+    ? `/products/${encodeURIComponent(state.category)}`
+    : "/products";
+  return qs ? `${base}?${qs}` : base;
+}
+
 export function countActiveCatalogFilters(state: CatalogUrlState) {
   let count = 0;
   if (state.search.trim()) count += 1;
-  if (state.category) count += 1;
+  // Category is path navigation (/products/[slug]), not a sidebar filter.
   count += state.vendors.length;
   if (state.minPrice != null) count += 1;
   if (state.maxPrice != null) count += 1;

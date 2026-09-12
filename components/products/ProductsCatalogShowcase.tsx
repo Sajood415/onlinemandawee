@@ -12,11 +12,12 @@ import { ProductsMobileFiltersSheet } from "@/components/products/ProductsMobile
 import { ProductPlpCard } from "@/components/products/ProductPlpCard";
 import { ProductsPagination } from "@/components/products/ProductsPagination";
 import { ProductsSortBar } from "@/components/products/ProductsSortBar";
-import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { resolveCategoryLabel } from "@/lib/categories/category-labels";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
+import { parseApiResponse } from "@/lib/http/parse-api-response";
 import {
-  catalogStateToSearchParams,
+  catalogStateToHref,
   countActiveCatalogFilters,
   parseCatalogUrlState,
   type CatalogUrlState,
@@ -38,32 +39,87 @@ const EMPTY_FACETS: CatalogFacets = {
   onSaleCount: 0,
 };
 
-export function ProductsCatalogShowcase() {
+type ProductsCatalogShowcaseProps = {
+  /** Category from path: /products/[slug] */
+  pathCategorySlug?: string;
+};
+
+export function ProductsCatalogShowcase({
+  pathCategorySlug = "",
+}: ProductsCatalogShowcaseProps) {
   const t = useTranslations("ProductsPages.catalog");
   const locale = useLocale() as SupportedLocale;
   const isRtl = locale !== "en";
   const searchParams = useSearchParams();
   const router = useRouter();
-  const pathname = usePathname();
 
-  const urlState = useMemo(
+  const queryState = useMemo(
     () => parseCatalogUrlState(searchParams),
     [searchParams]
   );
 
+  const urlState = useMemo<CatalogUrlState>(
+    () => ({
+      ...queryState,
+      category: pathCategorySlug || queryState.category,
+    }),
+    [pathCategorySlug, queryState]
+  );
+
+  // Legacy ?category=slug → /products/slug
+  useEffect(() => {
+    if (pathCategorySlug) return;
+    const legacy = searchParams.get("category");
+    if (!legacy) return;
+    const next = catalogStateToHref({
+      ...parseCatalogUrlState(searchParams),
+      category: legacy,
+    });
+    router.replace(next, { scroll: false });
+  }, [pathCategorySlug, router, searchParams]);
+
   const [products, setProducts] = useState<PublicCatalogProduct[]>([]);
   const [facets, setFacets] = useState<CatalogFacets>(EMPTY_FACETS);
+  const [categoryTree, setCategoryTree] = useState<
+    Array<{
+      slug: string;
+      name: string;
+      translations?: unknown;
+      children?: Array<{ slug: string; name: string; translations?: unknown }>;
+    }>
+  >([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
+  useEffect(() => {
+    let mounted = true;
+    void fetch("/api/catalog/categories")
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = await parseApiResponse<
+          Array<{
+            slug: string;
+            name: string;
+            translations?: unknown;
+            children?: Array<{ slug: string; name: string; translations?: unknown }>;
+          }>
+        >(res);
+        if (mounted) setCategoryTree(data);
+      })
+      .catch(() => {
+        if (mounted) setCategoryTree([]);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const replaceState = useCallback(
     (next: CatalogUrlState) => {
-      const params = catalogStateToSearchParams(next);
-      const qs = params.toString();
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+      router.replace(catalogStateToHref(next), { scroll: false });
     },
-    [pathname, router]
+    [router]
   );
 
   const patchState = useCallback(
@@ -122,36 +178,82 @@ export function ProductsCatalogShowcase() {
 
   const categoryMeta = useMemo(() => {
     if (!urlState.category) return null;
-    for (const category of facets.categories) {
-      if (category.slug === urlState.category) {
-        return {
-          slug: category.slug,
-          name: category.name,
-          label: resolveCategoryLabel(category.slug, category.name, locale),
-        };
-      }
-      for (const child of category.children) {
-        if (child.slug === urlState.category) {
+
+    const resolveFromTree = (
+      tree: Array<{
+        slug: string;
+        name: string;
+        translations?: unknown;
+        children?: Array<{ slug: string; name: string; translations?: unknown }>;
+      }>,
+    ) => {
+      for (const parent of tree) {
+        if (parent.slug === urlState.category) {
           return {
-            slug: child.slug,
-            name: child.name,
-            label: resolveCategoryLabel(child.slug, child.name, locale),
+            slug: parent.slug,
+            label: resolveCategoryLabel(
+              parent.slug,
+              parent.name,
+              locale,
+              parent.translations,
+            ),
+            parent: null as { slug: string; label: string } | null,
           };
         }
+        for (const child of parent.children ?? []) {
+          if (child.slug === urlState.category) {
+            return {
+              slug: child.slug,
+              label: resolveCategoryLabel(
+                child.slug,
+                child.name,
+                locale,
+                child.translations,
+              ),
+              parent: {
+                slug: parent.slug,
+                label: resolveCategoryLabel(
+                  parent.slug,
+                  parent.name,
+                  locale,
+                  parent.translations,
+                ),
+              },
+            };
+          }
+        }
       }
-    }
-    return { slug: urlState.category, name: urlState.category, label: urlState.category };
-  }, [facets.categories, locale, urlState.category]);
+      return null;
+    };
+
+    // Prefer the full category tree (loads fast) so the title never flashes the slug.
+    return (
+      resolveFromTree(categoryTree) ??
+      resolveFromTree(
+        facets.categories.map((category) => ({
+          slug: category.slug,
+          name: category.name,
+          children: category.children,
+        })),
+      )
+    );
+  }, [categoryTree, facets.categories, locale, urlState.category]);
 
   const title = urlState.search.trim()
     ? t("searchTitle")
     : categoryMeta
       ? categoryMeta.label
-      : t("title");
+      : urlState.category
+        ? "" // avoid flashing the slug while the tree loads
+        : t("title");
 
   const subtitle = urlState.search.trim()
     ? t("searchSubtitle", { query: urlState.search.trim() })
-    : undefined;
+    : categoryMeta
+      ? undefined
+      : urlState.category
+        ? undefined
+        : t("heroSubtitle");
 
   const from = total === 0 ? 0 : (urlState.page - 1) * PAGE_SIZE + 1;
   const to = Math.min(urlState.page * PAGE_SIZE, total);
@@ -172,9 +274,6 @@ export function ProductsCatalogShowcase() {
     if (urlState.search.trim()) {
       items.push({ id: "search", label: `“${urlState.search.trim()}”` });
     }
-    if (categoryMeta) {
-      items.push({ id: "category", label: categoryMeta.label });
-    }
     for (const slug of urlState.vendors) {
       const vendor = facets.vendors.find((entry) => entry.storeSlug === slug);
       items.push({ id: `vendor:${slug}`, label: vendor?.storeName ?? slug });
@@ -188,11 +287,10 @@ export function ProductsCatalogShowcase() {
     if (urlState.inStock) items.push({ id: "inStock", label: t("inStock") });
     if (urlState.onSale) items.push({ id: "onSale", label: t("onSale") });
     return items;
-  }, [categoryMeta, facets.vendors, t, urlState]);
+  }, [facets.vendors, t, urlState]);
 
   const removeChip = (id: string) => {
     if (id === "search") patchState({ search: "" });
-    else if (id === "category") patchState({ category: "" });
     else if (id.startsWith("vendor:")) {
       const slug = id.slice("vendor:".length);
       patchState({ vendors: urlState.vendors.filter((entry) => entry !== slug) });
@@ -205,7 +303,7 @@ export function ProductsCatalogShowcase() {
   const clearAll = () => {
     replaceState({
       search: "",
-      category: "",
+      category: urlState.category,
       vendors: [],
       minPrice: null,
       maxPrice: null,
@@ -216,9 +314,6 @@ export function ProductsCatalogShowcase() {
     });
   };
 
-  const popularCategories = facets.categories.filter((category) => category.count > 0).slice(0, 8);
-  const showCategoryChips = !urlState.category && !urlState.search.trim() && popularCategories.length > 0;
-
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="w-full min-w-0 bg-[#eef1f6]">
       <div className="mx-auto w-full max-w-[1540px] px-3.5 py-6 sm:px-6 sm:py-8">
@@ -227,28 +322,11 @@ export function ProductsCatalogShowcase() {
           subtitle={subtitle}
           isRtl={isRtl}
           categoryLabel={categoryMeta?.label}
+          parentCategory={categoryMeta?.parent ?? null}
+          activeCategorySlug={urlState.category || null}
+          showCategoryRail={!urlState.search.trim()}
+          railParentSlug={urlState.category || null}
         />
-
-        {showCategoryChips ? (
-          <div className="mb-5">
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-              {t("browseCategories")}
-            </p>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {popularCategories.map((category) => (
-                <button
-                  key={category.id}
-                  type="button"
-                  onClick={() => patchState({ category: category.slug })}
-                  className="shrink-0 border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:border-secondary/30 hover:text-secondary"
-                >
-                  {resolveCategoryLabel(category.slug, category.name, locale)}
-                  <span className="ms-1.5 text-xs text-neutral-400">{category.count}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
 
         <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
           <div className="hidden lg:block">

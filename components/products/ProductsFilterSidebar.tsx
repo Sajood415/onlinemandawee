@@ -1,12 +1,11 @@
 "use client";
 
-import { Check, ChevronDown, SlidersHorizontal, Store, Tag, Wallet, X } from "lucide-react";
+import { Check, ChevronDown, SlidersHorizontal, Store, Wallet, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import type { CatalogFacets } from "@/lib/products/public-catalog";
 import type { CatalogUrlState } from "@/lib/products/catalog-url-state";
-import { resolveCategoryLabel } from "@/lib/categories/category-labels";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 
 type DraftFilters = Pick<
@@ -98,7 +97,6 @@ export function ProductsFilterSidebar({
   const priceCeil = Math.ceil(facets.priceMax || 1000);
 
   const activeCount =
-    (value.category ? 1 : 0) +
     value.vendors.length +
     (value.minPrice != null ? 1 : 0) +
     (value.maxPrice != null ? 1 : 0) +
@@ -106,7 +104,14 @@ export function ProductsFilterSidebar({
     (value.onSale ? 1 : 0);
 
   const clearAll = () =>
-    onChange({ category: "", vendors: [], minPrice: null, maxPrice: null, inStock: false, onSale: false });
+    onChange({
+      category: value.category,
+      vendors: [],
+      minPrice: null,
+      maxPrice: null,
+      inStock: false,
+      onSale: false,
+    });
 
   return (
     <aside className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_8px_30px_rgba(15,52,96,0.06)]">
@@ -133,77 +138,6 @@ export function ProductsFilterSidebar({
       </div>
 
       <div className="px-4 py-1">
-      <Accordion title={t("categories")} icon={<Tag className="h-4 w-4" />}>
-        <button
-          type="button"
-          onClick={() => onChange({ ...value, category: "" })}
-          className={`block w-full rounded-lg px-2.5 py-2 text-start text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
-            !value.category
-              ? "bg-secondary/8 font-semibold text-secondary"
-              : "text-neutral-600 hover:bg-neutral-50 hover:text-secondary"
-          }`}
-        >
-          {t("allCategories")}
-        </button>
-        {facets.categories.map((category) => {
-          const label = resolveCategoryLabel(category.slug, category.name, locale);
-          const selected = value.category === category.slug;
-          return (
-            <div key={category.id}>
-              <button
-                type="button"
-                onClick={() => onChange({ ...value, category: category.slug })}
-                className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-start text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
-                  selected
-                    ? "bg-secondary/8 font-semibold text-secondary"
-                    : "text-neutral-600 hover:bg-neutral-50 hover:text-secondary"
-                }`}
-              >
-                <span>{label}</span>
-                <span
-                  className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] ${
-                    selected ? "bg-secondary/15 text-secondary" : "bg-neutral-100 text-neutral-500"
-                  }`}
-                >
-                  {category.count}
-                </span>
-              </button>
-              {category.children.length > 0 ? (
-                <div className="ms-3.5 space-y-0.5 border-s border-neutral-200 ps-2.5">
-                  {category.children.map((child) => {
-                    const childLabel = resolveCategoryLabel(child.slug, child.name, locale);
-                    const childSelected = value.category === child.slug;
-                    return (
-                      <button
-                        key={child.id}
-                        type="button"
-                        onClick={() => onChange({ ...value, category: child.slug })}
-                        className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-start text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
-                          childSelected
-                            ? "bg-secondary/8 font-semibold text-secondary"
-                            : "text-neutral-500 hover:bg-neutral-50 hover:text-secondary"
-                        }`}
-                      >
-                        <span>{childLabel}</span>
-                        <span
-                          className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] ${
-                            childSelected
-                              ? "bg-secondary/15 text-secondary"
-                              : "bg-neutral-100 text-neutral-500"
-                          }`}
-                        >
-                          {child.count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
-      </Accordion>
-
       <Accordion title={t("price")} icon={<Wallet className="h-4 w-4" />}>
         <div className="grid grid-cols-2 gap-2.5">
           <label className="block text-xs font-medium text-neutral-500">

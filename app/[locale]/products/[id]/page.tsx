@@ -1,24 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
 import { ChevronLeft, Loader2, ShoppingCart } from "lucide-react";
 
 import { ProductDetailShowcase } from "@/components/products/ProductDetailShowcase";
+import { ProductsCatalogShowcase } from "@/components/products/ProductsCatalogShowcase";
 import { getProductDetailCopy } from "@/components/products/product-detail-copy";
 import type { CatalogRow } from "@/components/products/types";
 import { Link } from "@/i18n/navigation";
+import { isMongoObjectId } from "@/lib/db/object-id";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
 import { fetchPublicCatalogProduct } from "@/lib/products/public-catalog";
 import { fetchRelatedProductsByCategory } from "@/lib/products/related-products";
 
-export default function ProductDetailPage() {
-  const params = useParams();
+function ProductDetailById({ productId }: { productId: string }) {
   const locale = useLocale() as SupportedLocale;
   const isRtl = locale !== "en";
   const copy = getProductDetailCopy(locale);
-  const productId = params.id as string;
 
   const [product, setProduct] = useState<Awaited<
     ReturnType<typeof fetchPublicCatalogProduct>
@@ -89,4 +89,29 @@ export default function ProductDetailPage() {
       isRtl={isRtl}
     />
   );
+}
+
+function CategoryCatalogBySlug({ slug }: { slug: string }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#eef1f6]">
+          <Loader2 className="h-8 w-8 animate-spin text-secondary/40" />
+        </div>
+      }
+    >
+      <ProductsCatalogShowcase pathCategorySlug={slug} />
+    </Suspense>
+  );
+}
+
+export default function ProductsSegmentPage() {
+  const params = useParams();
+  const segment = params.id as string;
+
+  if (isMongoObjectId(segment)) {
+    return <ProductDetailById productId={segment} />;
+  }
+
+  return <CategoryCatalogBySlug slug={segment} />;
 }

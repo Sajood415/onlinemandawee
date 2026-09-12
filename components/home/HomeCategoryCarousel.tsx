@@ -68,7 +68,7 @@ function buildDisplayTiles(
 ): DisplayCategoryTile[] {
   return apiCategories.map((category) => ({
     slug: category.slug,
-    href: `/category/${category.slug}`,
+    href: `/products/${category.slug}`,
     label: resolveCategoryLabel(
       category.slug,
       category.name,

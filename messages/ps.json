@@ -5048,6 +5048,7 @@
     "catalog": {
       "home": "کور",
       "title": "ټول محصولات",
+      "heroSubtitle": "د آنلاین منداوی او ټولو پلورونکو محصولات په یوه ځای کې وپلټئ.",
       "searchTitle": "د لټون پایلې",
       "searchSubtitle": "د «{query}» سره سم محصولات",
       "results": "{count} محصولات",
