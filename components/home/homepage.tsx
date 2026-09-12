@@ -6,7 +6,6 @@ import { HomeShopTypeCarousel } from "./HomeShopTypeCarousel";
 import { HomeDuoBanners } from "./HomeDuoBanners";
 import { HomeSeasonalBanners } from "./HomeSeasonalBanners";
 import { HomeCouponDealsRail } from "./HomeCouponDealsRail";
-import { HomeCategoryShowcaseGrid } from "./HomeCategoryShowcaseGrid";
 import { HomeStackedSections } from "./HomeStackedSections";
 import { HomeFeaturedBanner } from "./HomeFeaturedBanner";
 import { HomeLatestProductsRail } from "./HomeLatestProductsRail";
@@ -35,10 +34,6 @@ export function HomePage() {
         <HomeCouponDealsRail />
         <HomeSeasonalBanners />
         <HomeDuoBanners />
-
-        <div className="rounded-2xl bg-white px-3 py-4 shadow-sm sm:rounded-3xl sm:px-5 sm:py-6 lg:px-6">
-          <HomeCategoryShowcaseGrid />
-        </div>
       </div>
 
       <HomeStackedSections />
