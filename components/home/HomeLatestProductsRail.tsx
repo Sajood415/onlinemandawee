@@ -24,7 +24,6 @@ export function HomeLatestProductsRail() {
       subtitle={t("latestProductsSubtitle")}
       viewAllHref="/products"
       sharedVendorProducts={products}
-      count={products?.length}
       shell
     />
   );

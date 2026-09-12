@@ -33,7 +33,6 @@ export function HomePage() {
         </div>
 
         <HomeCouponDealsRail />
-
         <HomeSeasonalBanners />
         <HomeDuoBanners />
 

@@ -36,7 +36,7 @@ type Row = {
   availableCoupons?: PublicCatalogProduct["availableCoupons"];
 };
 
-function toRow(product: PublicCatalogProduct): Row {
+export function toHomeRailRow(product: PublicCatalogProduct): Row {
   return {
     id: product.id,
     slug: product.slug,
@@ -51,7 +51,7 @@ function toRow(product: PublicCatalogProduct): Row {
   };
 }
 
-function HomeRailProductCard({ product, locale }: { product: Row; locale: LocaleKey }) {
+export function HomeRailProductCard({ product, locale }: { product: Row; locale: LocaleKey }) {
   const t = useTranslations("Homepage.store");
   const { formatPrice } = useCurrency();
   const { addItem } = useCart();
@@ -211,17 +211,17 @@ export function HomeProductRail({
   const t = useTranslations("Homepage.store");
   const isRtl = locale === "ps" || locale === "fa-AF";
   const [vendorRows, setVendorRows] = useState<Row[]>(() =>
-    sharedVendorProducts ? sharedVendorProducts.map(toRow) : []
+    sharedVendorProducts ? sharedVendorProducts.map(toHomeRailRow) : []
   );
 
   useEffect(() => {
     if (sharedVendorProducts !== undefined) {
-      setVendorRows(sharedVendorProducts.map(toRow));
+      setVendorRows(sharedVendorProducts.map(toHomeRailRow));
       return;
     }
 
     void fetchPublicCatalogProducts()
-      .then((products) => setVendorRows(products.map(toRow)))
+      .then((products) => setVendorRows(products.map(toHomeRailRow)))
       .catch(() => setVendorRows([]));
   }, [sharedVendorProducts]);
 
@@ -247,7 +247,7 @@ export function HomeProductRail({
       <HomeSectionHeader
         title={title}
         subtitle={subtitle}
-        count={count ?? (rows.length > 0 ? rows.length : undefined)}
+        count={count}
         viewAllHref={viewAllHref}
         viewAllLabel={t("viewAll")}
         isRtl={isRtl}

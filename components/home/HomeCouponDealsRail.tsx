@@ -5,16 +5,14 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import { CatalogImage } from "@/components/catalog/CatalogImage";
-import {
-  getCouponAdjustedPrices,
-  getPrimaryProductCoupon,
-} from "@/components/products/ProductCouponOffer";
 import {
   fetchPublicCatalogProducts,
   type PublicCatalogProduct,
 } from "@/lib/products/public-catalog";
-import { useCurrency } from "@/store/currency-context";
+import {
+  HomeRailProductCard,
+  toHomeRailRow,
+} from "./HomeProductRail";
 
 type LocaleKey = "en" | "ps" | "fa-AF";
 
@@ -69,71 +67,6 @@ function OfferSmileyIcon() {
   );
 }
 
-function DealProductCard({
-  product,
-  locale,
-  showDivider,
-}: {
-  product: PublicCatalogProduct;
-  locale: LocaleKey;
-  showDivider?: boolean;
-}) {
-  const { formatPrice } = useCurrency();
-  const primaryCoupon = getPrimaryProductCoupon(product.availableCoupons);
-  const prices = getCouponAdjustedPrices(
-    product.price,
-    product.currency,
-    primaryCoupon,
-    formatPrice
-  );
-  const discountLabel =
-    primaryCoupon?.discountType === "PERCENTAGE"
-      ? `${primaryCoupon.discountValue}%`
-      : primaryCoupon?.label;
-
-  return (
-    <Link
-      href={`/products/${product.id}`}
-      className="group relative flex h-[15.5rem] w-[9.25rem] shrink-0 flex-col bg-white px-3 py-4 min-[390px]:w-[10rem] sm:h-[17.5rem] sm:w-[11.75rem] sm:px-4 sm:py-5"
-    >
-      {showDivider ? (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute left-0 top-1/2 h-[72%] w-px -translate-y-1/2 bg-neutral-200"
-        />
-      ) : null}
-
-      <div className="relative mx-auto h-[6.5rem] w-full max-w-[7.5rem] shrink-0 sm:h-[7.5rem] sm:max-w-[8.5rem]">
-        <CatalogImage
-          src={product.image}
-          alt={product.name[locale]}
-          fill
-          className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
-          sizes="140px"
-        />
-      </div>
-
-      <h3 className="mt-4 line-clamp-2 min-h-10 text-left text-xs leading-5 text-neutral-600">
-        {product.name[locale]}
-      </h3>
-
-      <div className="mt-auto flex items-end justify-between gap-2 pt-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-neutral-900">{prices.current}</p>
-          {prices.original ? (
-            <p className="truncate text-xs text-neutral-400 line-through">{prices.original}</p>
-          ) : null}
-        </div>
-        {discountLabel ? (
-          <span className="shrink-0 rounded-lg bg-secondary px-2 py-1 text-xs font-bold text-white">
-            {discountLabel}
-          </span>
-        ) : null}
-      </div>
-    </Link>
-  );
-}
-
 function PromoAside({
   countdown,
   title,
@@ -178,6 +111,9 @@ function PromoAside({
   );
 }
 
+const DEAL_CELL =
+  "relative box-border w-[9.5rem] shrink-0 grow-0 px-1.5 py-2 min-[390px]:w-[10.25rem] sm:w-[12rem] sm:px-2 sm:py-2.5";
+
 function ProductRail({
   dealProducts,
   locale,
@@ -215,11 +151,11 @@ function ProductRail({
       <div
         ref={scrollRef}
         dir="ltr"
-        className="flex overflow-x-auto overscroll-x-contain scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex overflow-x-auto overscroll-x-contain scroll-smooth px-1 py-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {dealProducts.map((product, index) => (
-          <div key={product.id} data-deal-item>
-            <DealProductCard product={product} locale={locale} showDivider={index > 0} />
+        {dealProducts.map((product) => (
+          <div key={product.id} data-deal-item className={DEAL_CELL}>
+            <HomeRailProductCard product={toHomeRailRow(product)} locale={locale} />
           </div>
         ))}
       </div>
@@ -286,14 +222,9 @@ export function HomeCouponDealsRail() {
     <section className="w-full min-w-0 rounded-2xl bg-white px-3 py-4 shadow-sm sm:rounded-3xl sm:px-5 sm:py-6 lg:px-6">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-bold tracking-tight text-neutral-900 sm:text-xl lg:text-2xl">
-              {t("specialDiscounts")}
-            </h2>
-            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-              {dealProducts.length}
-            </span>
-          </div>
+          <h2 className="text-lg font-bold tracking-tight text-neutral-900 sm:text-xl lg:text-2xl">
+            {t("specialDiscounts")}
+          </h2>
           <p className="mt-1 text-xs text-gray-500 sm:text-sm">{t("specialDiscountsSubtitle")}</p>
         </div>
         <Link
