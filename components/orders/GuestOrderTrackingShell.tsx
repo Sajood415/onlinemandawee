@@ -42,10 +42,10 @@ export function GuestOrderTrackingShell({
           />
         </div>
 
-        <div className="relative mx-auto w-full max-w-[1540px] px-3.5 py-10 sm:px-6 sm:py-12 lg:py-14">
+        <div className="relative mx-auto w-full max-w-[1540px] px-3.5 py-10 text-center sm:px-6 sm:py-12 lg:py-14">
           <nav
             aria-label={copy.breadcrumb}
-            className="mb-5 flex min-w-0 flex-wrap items-center gap-2 text-sm text-white/70"
+            className="mb-5 flex min-w-0 flex-wrap items-center justify-center gap-2 text-sm text-white/70"
           >
             <Link href="/" className="transition hover:text-white hover:underline">
               {copy.home}
@@ -57,11 +57,11 @@ export function GuestOrderTrackingShell({
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
             Mandawee · {copy.eyebrow}
           </p>
-          <h1 className="mt-3 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
+          <h1 className="mx-auto mt-3 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
             {title}
           </h1>
           {subtitle ? (
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base">
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base">
               {subtitle}
             </p>
           ) : null}

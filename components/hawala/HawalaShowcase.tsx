@@ -47,14 +47,14 @@ export function HawalaShowcase() {
             className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.14),transparent_45%)]"
           />
         </div>
-        <div className="relative mx-auto w-full max-w-[1540px] px-3.5 py-10 sm:px-6 sm:py-12 lg:py-14">
+        <div className="relative mx-auto w-full max-w-[1540px] px-3.5 py-10 text-center sm:px-6 sm:py-12 lg:py-14">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
             Mandawee · {t("eyebrow")}
           </p>
-          <h1 className="mt-3 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
+          <h1 className="mx-auto mt-3 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
             {t("title")}
           </h1>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base">
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base">
             {t("subtitle")}
           </p>
         </div>

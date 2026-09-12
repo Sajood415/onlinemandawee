@@ -120,8 +120,8 @@ export function GiftsShowcase() {
           />
         </div>
 
-        <div className="relative mx-auto w-full max-w-[1540px] px-3.5 py-10 sm:px-6 sm:py-12 lg:py-14">
-          <nav className="mb-5 flex items-center gap-2 text-sm text-white/70">
+        <div className="relative mx-auto w-full max-w-[1540px] px-3.5 py-10 text-center sm:px-6 sm:py-12 lg:py-14">
+          <nav className="mb-5 flex items-center justify-center gap-2 text-sm text-white/70">
             <Link href="/" className="transition hover:text-white hover:underline">
               {t("home")}
             </Link>
@@ -132,13 +132,13 @@ export function GiftsShowcase() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
             {t("eyebrow")}
           </p>
-          <h1 className="mt-3 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
+          <h1 className="mx-auto mt-3 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
             {t("title")}
           </h1>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base">
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base">
             {t("subtitle")}
           </p>
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <a
               href="#gift-request"
               className="inline-flex min-h-11 items-center justify-center bg-white px-5 py-2.5 text-sm font-semibold text-secondary transition hover:bg-neutral-100"
