@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useState, type ReactNode } from "react";
+import { motion } from "framer-motion";
 import {
   Banknote,
-  ChevronDown,
+  ChevronRight,
   Gift,
   HelpCircle,
   Home,
@@ -15,11 +15,12 @@ import {
   ShoppingBag,
   Store,
   Tag,
-  UserCircle,
+  X,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { headerCopy } from "@/components/layout/header/header-copy";
+import { PortalOverlay } from "@/components/ui/PortalOverlay";
 import { Link as LocaleLink, usePathname, useRouter } from "@/i18n/navigation";
 import {
   CURRENCY_SYMBOLS,
@@ -36,33 +37,50 @@ type MobileNavMenuProps = {
   languages?: Array<{ code: string; label: string; flag: string }>;
 };
 
-/** Same destinations as the desktop secondary nav strip (no fake / stale links). */
-function getSecondaryNavLinks(copy: (typeof headerCopy)["en"]) {
+type NavLink = {
+  href: string;
+  label: string;
+  icon: ReactNode;
+  highlight?: boolean;
+};
+
+function getSecondaryNavLinks(copy: (typeof headerCopy)["en"]): NavLink[] {
   return [
-    { href: "/", label: copy.home, icon: <Home size={18} /> },
-    { href: "/products", label: copy.products, icon: <ShoppingBag size={18} /> },
+    { href: "/", label: copy.home, icon: <Home size={18} strokeWidth={1.75} /> },
+    {
+      href: "/products",
+      label: copy.products,
+      icon: <ShoppingBag size={18} strokeWidth={1.75} />,
+    },
     {
       href: "/deals",
       label: copy.hotDiscounts,
-      icon: <Tag size={18} />,
+      icon: <Tag size={18} strokeWidth={1.75} />,
       highlight: true,
     },
-    { href: "/orders", label: copy.trackOrder, icon: <PackageSearch size={18} /> },
+    {
+      href: "/orders",
+      label: copy.trackOrder,
+      icon: <PackageSearch size={18} strokeWidth={1.75} />,
+    },
     {
       href: "/supply-request",
       label: copy.supplyRequest,
-      icon: <PackageSearch size={18} />,
+      icon: <PackageSearch size={18} strokeWidth={1.75} />,
     },
-    { href: "/gifts", label: copy.gifts, icon: <Gift size={18} /> },
-    { href: "/hawala", label: copy.hawalaShort, icon: <Banknote size={18} /> },
-    { href: "/about", label: copy.aboutUs, icon: <Info size={18} /> },
+    { href: "/gifts", label: copy.gifts, icon: <Gift size={18} strokeWidth={1.75} /> },
     {
-      href: "/vendor/register",
-      label: copy.sellOnPlatform,
-      icon: <Store size={18} />,
+      href: "/hawala",
+      label: copy.hawalaShort,
+      icon: <Banknote size={18} strokeWidth={1.75} />,
     },
-    { href: "/contact", label: copy.support, icon: <HelpCircle size={18} /> },
-  ] as const;
+    { href: "/about", label: copy.aboutUs, icon: <Info size={18} strokeWidth={1.75} /> },
+    {
+      href: "/contact",
+      label: copy.support,
+      icon: <HelpCircle size={18} strokeWidth={1.75} />,
+    },
+  ];
 }
 
 export function MobileNavMenu({
@@ -81,17 +99,6 @@ export function MobileNavMenu({
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const navLinks = getSecondaryNavLinks(copy);
 
@@ -112,14 +119,19 @@ export function MobileNavMenu({
   const showLanguages = languages.length > 1;
   const showCurrencies = availableCurrencies.length > 1;
 
+  const closeMenu = () => {
+    setIsOpen(false);
+    closeAll();
+  };
+
   return (
-    <div className="relative flex h-9 shrink-0 items-center" ref={menuRef}>
+    <>
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => setIsOpen(true)}
         aria-expanded={isOpen}
         aria-label={copy.more}
-        className={`relative inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-2.5 py-2 text-[12px] font-medium whitespace-nowrap transition-colors ${
+        className={`relative inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl px-2.5 py-2 text-[12px] font-medium whitespace-nowrap transition-colors ${
           surface === "light"
             ? isOpen
               ? "bg-gray-100 font-semibold text-primary"
@@ -131,178 +143,211 @@ export function MobileNavMenu({
       >
         <Menu size={18} strokeWidth={2} />
         <span className="hidden sm:inline">{copy.more}</span>
-        <ChevronDown
-          size={12}
-          className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-        />
       </button>
 
-      <AnimatePresence>
-        {isOpen ? (
-          <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.96 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="absolute end-0 top-full z-[10050] mt-2 max-h-[min(70dvh,28rem)] w-72 max-w-[calc(100vw-1rem)] overflow-y-auto rounded-xl border border-gray-100 bg-white shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)]"
-            style={{ transformOrigin: isRtl ? "top left" : "top right" }}
-          >
-            <div className="p-2">
-              {showLanguages ? (
-                <div className="mb-2 border-b border-gray-100 px-1 pb-2">
-                  <p className="px-2 py-1.5 text-[10px] font-black uppercase tracking-wider text-gray-400">
-                    {tAuth("languages.select")}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 px-1">
-                    {languages.map((language) => {
-                      const active = locale === language.code;
-                      return (
-                        <button
-                          key={language.code}
-                          type="button"
-                          onClick={() => {
-                            router.replace(pathname, { locale: language.code });
-                            setIsOpen(false);
-                            closeAll();
-                          }}
-                          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold transition-colors ${
-                            active
-                              ? "bg-primary text-white"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
-                        >
-                          <span aria-hidden>{language.flag}</span>
-                          <span>{language.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
+      <PortalOverlay open={isOpen}>
+        <motion.div
+          initial={{ opacity: 0.9 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[200000] flex flex-col bg-[#f7f8fb]"
+          style={{
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            width: "100%",
+            height: "100dvh",
+            minHeight: "100svh",
+            maxHeight: "100dvh",
+          }}
+          dir={isRtl ? "rtl" : "ltr"}
+          role="dialog"
+          aria-modal="true"
+          aria-label={copy.more}
+        >
+          <header className="flex shrink-0 items-center justify-between gap-3 border-b border-neutral-200 bg-white px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+            <h2 className="text-lg font-bold tracking-tight text-secondary">
+              {copy.more}
+            </h2>
+            <button
+              type="button"
+              onClick={closeMenu}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-700 transition hover:bg-neutral-200"
+              aria-label={copy.close}
+            >
+              <X size={18} />
+            </button>
+          </header>
 
-              {showCurrencies ? (
-                <div className="mb-2 border-b border-gray-100 px-1 pb-2">
-                  <p className="px-2 py-1.5 text-[10px] font-black uppercase tracking-wider text-gray-400">
-                    {tAuth("currencies.select")}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 px-1">
-                    {availableCurrencies.map((code) => {
-                      const active = currency === code;
-                      return (
-                        <button
-                          key={code}
-                          type="button"
-                          onClick={() => {
-                            setCurrency(code as SupportedCurrency);
-                            setIsOpen(false);
-                            closeAll();
-                          }}
-                          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold transition-colors ${
-                            active
-                              ? "bg-primary text-white"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
-                        >
-                          <span>{CURRENCY_SYMBOLS[code as SupportedCurrency]}</span>
-                          <span>{code}</span>
-                        </button>
-                      );
-                    })}
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 py-3 sm:px-4">
+            {showLanguages || showCurrencies ? (
+              <section className="mb-3 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-black/[0.04] sm:p-3.5">
+                {showLanguages ? (
+                  <div className={showCurrencies ? "mb-3" : ""}>
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                      {tAuth("languages.select")}
+                    </p>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {languages.map((language) => {
+                        const active = locale === language.code;
+                        return (
+                          <button
+                            key={language.code}
+                            type="button"
+                            onClick={() => {
+                              router.replace(pathname, { locale: language.code });
+                              closeMenu();
+                            }}
+                            className={`flex flex-col items-center gap-1 rounded-xl px-1.5 py-2 text-center transition ${
+                              active
+                                ? "bg-primary text-white shadow-sm"
+                                : "bg-neutral-100 text-neutral-700"
+                            }`}
+                          >
+                            <span className="text-base leading-none" aria-hidden>
+                              {language.flag}
+                            </span>
+                            <span className="text-[11px] font-semibold leading-tight">
+                              {language.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ) : null}
+                ) : null}
 
-              {isAuthenticated ? (
-                <div className="mb-2 border-b border-gray-100 pb-2">
-                  <p className="px-3 py-2 text-[10px] font-black uppercase tracking-wider text-gray-400">
-                    {tAuth("accountMenu.label")}
-                  </p>
-                  <LocaleLink
-                    href={accountHref}
-                    onClick={() => {
-                      setIsOpen(false);
-                      closeAll();
-                    }}
-                    className="group flex items-center gap-3 rounded-lg px-3 py-3 transition-all hover:bg-gray-50 active:bg-gray-100"
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
-                      <UserCircle size={18} />
+                {showCurrencies ? (
+                  <div>
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                      {tAuth("currencies.select")}
+                    </p>
+                    <div className="flex gap-1.5">
+                      {availableCurrencies.map((code) => {
+                        const active = currency === code;
+                        return (
+                          <button
+                            key={code}
+                            type="button"
+                            onClick={() => {
+                              setCurrency(code as SupportedCurrency);
+                              closeMenu();
+                            }}
+                            className={`inline-flex min-w-0 flex-1 items-center justify-center gap-0.5 rounded-full px-1 py-2 text-[11px] font-semibold transition sm:text-xs ${
+                              active
+                                ? "bg-secondary text-white"
+                                : "bg-neutral-100 text-neutral-700"
+                            }`}
+                          >
+                            <span>
+                              {CURRENCY_SYMBOLS[code as SupportedCurrency]}
+                            </span>
+                            <span>{code}</span>
+                          </button>
+                        );
+                      })}
                     </div>
-                    <div className="min-w-0">
-                      <span className="block text-[14px] font-semibold text-gray-700">
-                        {accountLabel}
-                      </span>
-                      {user?.fullName ? (
-                        <span className="block truncate text-xs text-gray-500">
-                          {user.fullName}
-                        </span>
-                      ) : null}
-                    </div>
-                  </LocaleLink>
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
+
+            {isAuthenticated ? (
+              <section className="mb-3 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.04]">
+                <LocaleLink
+                  href={accountHref}
+                  onClick={closeMenu}
+                  className="flex items-center gap-3 px-3 py-3"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-sm font-bold text-white">
+                    {(user?.fullName?.trim().charAt(0) || "U").toUpperCase()}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-neutral-900">
+                      {user?.fullName || accountLabel}
+                    </span>
+                    <span className="block text-xs text-neutral-500">
+                      {accountLabel}
+                    </span>
+                  </span>
+                  <ChevronRight
+                    size={16}
+                    className={`text-neutral-400 ${isRtl ? "rotate-180" : ""}`}
+                  />
+                </LocaleLink>
+                <div className="border-t border-neutral-100">
                   <button
                     type="button"
                     onClick={() => {
                       logout();
-                      setIsOpen(false);
-                      closeAll();
+                      closeMenu();
                     }}
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-all hover:bg-gray-50 active:bg-gray-100"
+                    className="flex w-full items-center gap-3 px-3 py-2.5 text-start text-sm font-semibold text-red-600"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 text-red-600">
-                      <LogOut size={18} />
-                    </div>
-                    <span className="text-[14px] font-semibold text-red-600">
-                      {tAuth("accountMenu.signOut")}
-                    </span>
+                    <LogOut size={16} />
+                    {tAuth("accountMenu.signOut")}
                   </button>
                 </div>
-              ) : null}
+              </section>
+            ) : null}
 
-              <p className="px-3 py-2 text-[10px] font-black uppercase tracking-wider text-gray-400">
+            <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.04]">
+              <p className="px-3 pb-0.5 pt-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
                 {copy.quickLinks}
               </p>
-              {navLinks.map((link, index) => (
-                <motion.div
-                  key={link.href}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                >
-                  <LocaleLink
-                    href={link.href}
-                    onClick={() => {
-                      setIsOpen(false);
-                      closeAll();
-                    }}
-                    className="group flex items-center gap-3 rounded-lg px-3 py-3 transition-all hover:bg-gray-50 active:bg-gray-100"
-                  >
-                    <div
-                      className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
-                        "highlight" in link && link.highlight
-                          ? "bg-yellow-50 text-yellow-600"
-                          : "bg-gray-100 text-gray-500 group-hover:bg-primary/10 group-hover:text-primary"
-                      }`}
+              <ul className="divide-y divide-neutral-100">
+                {navLinks.map((link) => (
+                  <li key={link.href}>
+                    <LocaleLink
+                      href={link.href}
+                      onClick={closeMenu}
+                      className="flex items-center gap-2.5 px-3 py-2.5 transition active:bg-neutral-50"
                     >
-                      {link.icon}
-                    </div>
-                    <span className="text-[14px] font-semibold text-gray-700">
-                      {link.label}
-                    </span>
-                    {"highlight" in link && link.highlight ? (
                       <span
-                        className="ms-auto rounded-full px-1.5 py-0.5 text-[9px] font-black text-white"
-                        style={{ backgroundColor: "var(--yellow)" }}
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                          link.highlight
+                            ? "bg-amber-50 text-amber-600"
+                            : "bg-[#eef1f6] text-secondary"
+                        }`}
                       >
-                        {copy.hot}
+                        {link.icon}
                       </span>
-                    ) : null}
-                  </LocaleLink>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
+                      <span className="min-w-0 flex-1 text-sm font-semibold text-neutral-800">
+                        {link.label}
+                      </span>
+                      {link.highlight ? (
+                        <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold uppercase text-neutral-900">
+                          {copy.hot}
+                        </span>
+                      ) : null}
+                      <ChevronRight
+                        size={16}
+                        className={`shrink-0 text-neutral-300 ${isRtl ? "rotate-180" : ""}`}
+                      />
+                    </LocaleLink>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+
+          <footer
+            className="shrink-0 border-t border-neutral-200 bg-white px-3.5 pt-3 sm:px-4"
+            style={{
+              paddingBottom: "max(0.85rem, env(safe-area-inset-bottom, 0px))",
+            }}
+          >
+            <LocaleLink
+              href="/vendor/register"
+              onClick={closeMenu}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary/90"
+            >
+              <Store size={16} />
+              {copy.sellOnPlatform}
+            </LocaleLink>
+          </footer>
+        </motion.div>
+      </PortalOverlay>
+    </>
   );
 }
