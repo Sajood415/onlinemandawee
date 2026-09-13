@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Banknote, Home, LayoutGrid, ShoppingCart, User } from "lucide-react";
 import { useLocale } from "next-intl";
 
+import { MobileCategoriesDrawer } from "@/components/layout/MobileCategoriesDrawer";
 import { headerCopy } from "@/components/layout/header/header-copy";
 import { Link, usePathname } from "@/i18n/navigation";
 import { buildLoginRedirectPath } from "@/lib/auth/client-auth-routing";
@@ -24,6 +26,7 @@ export function MobileBottomNav() {
   const copy = headerCopy[safeLocale];
   const { isAuthenticated, user } = useAuth();
   const { itemCount } = useCart();
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
 
   const accountHref = !isAuthenticated
     ? buildLoginRedirectPath(pathname)
@@ -33,21 +36,28 @@ export function MobileBottomNav() {
         ? "/vendor/dashboard"
         : "/account";
 
+  const categoriesActive =
+    categoriesOpen ||
+    pathname.startsWith("/products") ||
+    pathname.startsWith("/category");
+
   const items = [
     {
+      key: "home",
       href: "/",
       label: copy.home,
       icon: Home,
       match: (path: string) => isActivePath(path, "/"),
     },
     {
-      href: "/products",
+      key: "categories",
+      href: null as string | null,
       label: copy.categories,
       icon: LayoutGrid,
-      match: (path: string) =>
-        path.startsWith("/products") || path.startsWith("/category"),
+      match: () => categoriesActive,
     },
     {
+      key: "cart",
       href: "/cart",
       label: copy.cart,
       icon: ShoppingCart,
@@ -55,12 +65,14 @@ export function MobileBottomNav() {
       badge: itemCount,
     },
     {
+      key: "hawala",
       href: "/hawala",
       label: copy.hawalaShort,
       icon: Banknote,
       match: (path: string) => isActivePath(path, "/hawala"),
     },
     {
+      key: "account",
       href: accountHref,
       label: copy.account,
       icon: User,
@@ -73,49 +85,88 @@ export function MobileBottomNav() {
   ] as const;
 
   return (
-    <nav
-      dir={isRtl ? "rtl" : "ltr"}
-      aria-label="Mobile primary"
-      className="fixed inset-x-0 bottom-0 z-[9990] border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
-    >
-      <ul className="mx-auto flex h-14 max-w-lg items-stretch justify-between px-1">
-        {items.map((item) => {
-          const Icon = item.icon;
-          const active = item.match(pathname);
-          const badge = "badge" in item ? item.badge : 0;
+    <>
+      <nav
+        dir={isRtl ? "rtl" : "ltr"}
+        aria-label="Mobile primary"
+        className="fixed inset-x-0 bottom-0 z-[9990] border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
+      >
+        <ul className="mx-auto flex h-14 max-w-lg items-stretch justify-between px-1">
+          {items.map((item) => {
+            const Icon = item.icon;
+            const active = item.match(pathname);
+            const badge = "badge" in item ? item.badge : 0;
 
-          return (
-            <li key={item.href} className="min-w-0 flex-1">
-              <Link
-                href={item.href}
-                className={`relative flex h-full flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
-                  active ? "text-primary" : "text-gray-500"
-                }`}
-              >
-                <span className="relative inline-flex">
-                  <Icon
-                    size={22}
-                    strokeWidth={active ? 2.4 : 2}
-                    className={active ? "text-primary" : "text-gray-500"}
-                  />
-                  {badge && badge > 0 ? (
-                    <span className="absolute -end-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-white">
-                      {badge > 99 ? "99+" : badge}
+            if (item.key === "categories") {
+              return (
+                <li key={item.key} className="min-w-0 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => setCategoriesOpen(true)}
+                    aria-expanded={categoriesOpen}
+                    className={`relative flex h-full w-full flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
+                      active ? "text-primary" : "text-gray-500"
+                    }`}
+                  >
+                    <Icon
+                      size={22}
+                      strokeWidth={active ? 2.4 : 2}
+                      className={active ? "text-primary" : "text-gray-500"}
+                    />
+                    <span
+                      className={`max-w-full truncate text-[10px] leading-tight ${
+                        active
+                          ? "font-semibold text-primary"
+                          : "font-medium text-gray-500"
+                      }`}
+                    >
+                      {item.label}
                     </span>
-                  ) : null}
-                </span>
-                <span
-                  className={`max-w-full truncate text-[10px] leading-tight ${
-                    active ? "font-semibold text-primary" : "font-medium text-gray-500"
+                  </button>
+                </li>
+              );
+            }
+
+            return (
+              <li key={item.key} className="min-w-0 flex-1">
+                <Link
+                  href={item.href!}
+                  className={`relative flex h-full flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
+                    active ? "text-primary" : "text-gray-500"
                   }`}
                 >
-                  {item.label}
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+                  <span className="relative inline-flex">
+                    <Icon
+                      size={22}
+                      strokeWidth={active ? 2.4 : 2}
+                      className={active ? "text-primary" : "text-gray-500"}
+                    />
+                    {badge && badge > 0 ? (
+                      <span className="absolute -end-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-white">
+                        {badge > 99 ? "99+" : badge}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span
+                    className={`max-w-full truncate text-[10px] leading-tight ${
+                      active
+                        ? "font-semibold text-primary"
+                        : "font-medium text-gray-500"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      <MobileCategoriesDrawer
+        open={categoriesOpen}
+        onClose={() => setCategoriesOpen(false)}
+      />
+    </>
   );
 }

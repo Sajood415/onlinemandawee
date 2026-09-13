@@ -342,7 +342,7 @@ export default function Header() {
       return catalogCategories.map((category) => ({
         id: category.id,
         slug: category.slug,
-        href: `/category/${category.slug}`,
+        href: `/products/${encodeURIComponent(category.slug)}`,
         label: resolveCategoryLabel(
           category.slug,
           category.name,
@@ -353,13 +353,16 @@ export default function Header() {
         children: (category.children ?? []).map((child) => ({
           id: child.id,
           slug: child.slug,
-          href: `/category/${child.slug}`,
+          href: `/products/${encodeURIComponent(child.slug)}`,
           label: resolveCategoryLabel(child.slug, child.name, safeLocale, child.translations),
           image: child.image,
         })),
       }));
     }
-    return getFallbackCategories(safeLocale);
+    return getFallbackCategories(safeLocale).map((category) => ({
+      ...category,
+      href: `/products/${encodeURIComponent(category.slug)}`,
+    }));
   }, [catalogCategories, safeLocale]);
 
   const vendorCategoryItems = useMemo(

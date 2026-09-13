@@ -3,15 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Baby,
   Banknote,
   ChevronDown,
   Gift,
   HelpCircle,
+  Home,
+  Info,
   LogOut,
   Menu,
   PackageSearch,
+  ShoppingBag,
   Store,
+  Tag,
   UserCircle,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -32,6 +35,35 @@ type MobileNavMenuProps = {
   surface?: "dark" | "light";
   languages?: Array<{ code: string; label: string; flag: string }>;
 };
+
+/** Same destinations as the desktop secondary nav strip (no fake / stale links). */
+function getSecondaryNavLinks(copy: (typeof headerCopy)["en"]) {
+  return [
+    { href: "/", label: copy.home, icon: <Home size={18} /> },
+    { href: "/products", label: copy.products, icon: <ShoppingBag size={18} /> },
+    {
+      href: "/deals",
+      label: copy.hotDiscounts,
+      icon: <Tag size={18} />,
+      highlight: true,
+    },
+    { href: "/orders", label: copy.trackOrder, icon: <PackageSearch size={18} /> },
+    {
+      href: "/supply-request",
+      label: copy.supplyRequest,
+      icon: <PackageSearch size={18} />,
+    },
+    { href: "/gifts", label: copy.gifts, icon: <Gift size={18} /> },
+    { href: "/hawala", label: copy.hawalaShort, icon: <Banknote size={18} /> },
+    { href: "/about", label: copy.aboutUs, icon: <Info size={18} /> },
+    {
+      href: "/vendor/register",
+      label: copy.sellOnPlatform,
+      icon: <Store size={18} />,
+    },
+    { href: "/contact", label: copy.support, icon: <HelpCircle size={18} /> },
+  ] as const;
+}
 
 export function MobileNavMenu({
   closeAll,
@@ -61,29 +93,7 @@ export function MobileNavMenu({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const navLinks: Array<{
-    href: string;
-    label: string;
-    icon: React.ReactNode;
-    highlight?: boolean;
-  }> = [
-    {
-      href: "/category/baby-care",
-      label: copy.babyCare,
-      icon: <Baby size={18} />,
-    },
-    { href: "/hawala", label: copy.hawalaShort, icon: <Banknote size={18} /> },
-    { href: "/contact", label: copy.support, icon: <HelpCircle size={18} /> },
-    { href: "/deals", label: copy.hot, icon: <span className="text-[18px] leading-none" aria-hidden>🔥</span>, highlight: true },
-    { href: "/gifts", label: copy.giftSets, icon: <Gift size={18} /> },
-    {
-      href: "/supply-request",
-      label: copy.supplyRequest,
-      icon: <PackageSearch size={18} />,
-    },
-    { href: "/vendor/register", label: copy.sellOnPlatform, icon: <Store size={18} /> },
-    { href: "/orders", label: copy.trackOrder, icon: <PackageSearch size={18} /> },
-  ];
+  const navLinks = getSecondaryNavLinks(copy);
 
   const accountHref =
     user?.role === "ADMIN"
@@ -134,7 +144,7 @@ export function MobileNavMenu({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="absolute end-0 top-full z-[10050] mt-2 max-h-[min(70dvh,28rem)] w-64 max-w-[calc(100vw-1rem)] overflow-y-auto rounded-xl border border-gray-100 bg-white shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)]"
+            className="absolute end-0 top-full z-[10050] mt-2 max-h-[min(70dvh,28rem)] w-72 max-w-[calc(100vw-1rem)] overflow-y-auto rounded-xl border border-gray-100 bg-white shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)]"
             style={{ transformOrigin: isRtl ? "top left" : "top right" }}
           >
             <div className="p-2">
@@ -256,7 +266,7 @@ export function MobileNavMenu({
                   key={link.href}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
+                  transition={{ delay: index * 0.03 }}
                 >
                   <LocaleLink
                     href={link.href}
@@ -268,7 +278,7 @@ export function MobileNavMenu({
                   >
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
-                        link.highlight
+                        "highlight" in link && link.highlight
                           ? "bg-yellow-50 text-yellow-600"
                           : "bg-gray-100 text-gray-500 group-hover:bg-primary/10 group-hover:text-primary"
                       }`}
@@ -278,9 +288,9 @@ export function MobileNavMenu({
                     <span className="text-[14px] font-semibold text-gray-700">
                       {link.label}
                     </span>
-                    {link.highlight ? (
+                    {"highlight" in link && link.highlight ? (
                       <span
-                        className="ml-auto rounded-full px-1.5 py-0.5 text-[9px] font-black text-white"
+                        className="ms-auto rounded-full px-1.5 py-0.5 text-[9px] font-black text-white"
                         style={{ backgroundColor: "var(--yellow)" }}
                       >
                         {copy.hot}
