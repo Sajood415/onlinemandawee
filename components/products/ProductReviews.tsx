@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, MessageSquareText, Star } from "lucide-react";
+import { Loader2, Star } from "lucide-react";
 
 import { fetchWithAuth } from "@/lib/http/fetch-with-auth";
 import type { SupportedLocale } from "@/lib/localization/product-vendor";
@@ -43,6 +43,8 @@ type ReviewsResponse = {
 type ProductReviewsProps = {
   productId: string;
   locale: SupportedLocale;
+  ratingAverage?: number;
+  reviewCount?: number;
   onSummaryChange?: (summary: { ratingAverage: number; reviewCount: number }) => void;
 };
 
@@ -92,7 +94,32 @@ function StarPicker({
   );
 }
 
-export function ProductReviews({ productId, locale, onSummaryChange }: ProductReviewsProps) {
+function StarsRow({ rating, size = "sm" }: { rating: number; size?: "sm" | "md" }) {
+  const cls = size === "md" ? "h-5 w-5" : "h-4 w-4";
+  return (
+    <span className="inline-flex items-center gap-0.5" aria-hidden>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <Star
+          key={index}
+          className={`${cls} ${
+            index < rating
+              ? "fill-amber-400 text-amber-400"
+              : "fill-neutral-200 text-neutral-200"
+          }`}
+          strokeWidth={1.5}
+        />
+      ))}
+    </span>
+  );
+}
+
+export function ProductReviews({
+  productId,
+  locale,
+  ratingAverage = 0,
+  reviewCount = 0,
+  onSummaryChange,
+}: ProductReviewsProps) {
   const copy = getProductReviewsCopy(locale);
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const canReview =
@@ -106,6 +133,7 @@ export function ProductReviews({ productId, locale, onSummaryChange }: ProductRe
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [avg, setAvg] = useState(ratingAverage);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -113,19 +141,24 @@ export function ProductReviews({ productId, locale, onSummaryChange }: ProductRe
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    setAvg(ratingAverage);
+  }, [ratingAverage]);
+
   const loadReviews = useCallback(
     async (targetPage: number) => {
       const response = await fetch(
-        `/api/catalog/products/${productId}/reviews?page=${targetPage}&pageSize=10`
+        `/api/catalog/products/${productId}/reviews?page=${targetPage}&pageSize=10`,
       );
       const data = await parseApiResponse<ReviewsResponse>(response);
       setReviews((current) =>
-        targetPage === 1 ? data.reviews : [...current, ...data.reviews]
+        targetPage === 1 ? data.reviews : [...current, ...data.reviews],
       );
       setPage(data.page);
       setTotalPages(data.totalPages);
       setTotal(data.total);
       if (typeof data.ratingAverage === "number" && typeof data.reviewCount === "number") {
+        setAvg(data.ratingAverage);
         onSummaryChange?.({
           ratingAverage: data.ratingAverage,
           reviewCount: data.reviewCount,
@@ -137,7 +170,7 @@ export function ProductReviews({ productId, locale, onSummaryChange }: ProductRe
         });
       }
     },
-    [onSummaryChange, productId]
+    [onSummaryChange, productId],
   );
 
   useEffect(() => {
@@ -211,20 +244,35 @@ export function ProductReviews({ productId, locale, onSummaryChange }: ProductRe
 
   const formattedDates = useMemo(
     () => new Intl.DateTimeFormat(localeForDate[locale], { dateStyle: "medium" }),
-    [locale]
+    [locale],
   );
+
+  const displayCount = total || reviewCount;
 
   return (
     <section id="reviews" className="border-t border-neutral-200 pt-8">
-      <div className="mb-5 flex items-center gap-2">
-        <MessageSquareText className="h-5 w-5 text-secondary" />
-        <h2 className="text-lg font-bold tracking-tight text-neutral-900 sm:text-xl">
-          {copy.title} {total > 0 ? `(${total})` : ""}
-        </h2>
-      </div>
+      <h2 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-[1.75rem]">
+        {copy.title}
+      </h2>
+
+      {displayCount > 0 || avg > 0 ? (
+        <div className="mt-5 flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-4xl font-bold tabular-nums text-neutral-900">
+              {avg > 0 ? avg.toFixed(1) : "—"}
+            </span>
+            <Star className="h-7 w-7 fill-amber-400 text-amber-400" />
+          </div>
+          <p className="text-sm text-neutral-600">
+            {copy.itemAverage}
+            {displayCount > 0 ? ` (${copy.reviewsCount(displayCount)})` : ""}
+          </p>
+        </div>
+      ) : null}
 
       {canReview ? (
-        <div className="mb-8 rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
+        <div className="mt-6 rounded-2xl border border-neutral-200 bg-white p-5">
+          <p className="mb-3 text-sm font-semibold text-neutral-900">{copy.writeReview}</p>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
               <p className="mb-1.5 text-sm font-medium text-neutral-700">{copy.yourRating}</p>
@@ -244,7 +292,7 @@ export function ProductReviews({ productId, locale, onSummaryChange }: ProductRe
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 rounded-xl bg-secondary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full bg-secondary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a2540] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {submitting ? copy.submitting : copy.submit}
@@ -254,56 +302,53 @@ export function ProductReviews({ productId, locale, onSummaryChange }: ProductRe
       ) : null}
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm text-neutral-500">
+        <div className="mt-6 flex items-center gap-2 text-sm text-neutral-500">
           <Loader2 className="h-4 w-4 animate-spin" />
           {copy.loading}
         </div>
       ) : reviews.length === 0 ? (
-        <p className="text-sm text-neutral-500">{copy.empty}</p>
+        <p className="mt-5 text-sm text-neutral-500">{copy.empty}</p>
       ) : (
-        <div className="space-y-5">
+        <div className="mt-6 divide-y divide-neutral-200 border-y border-neutral-200">
           {reviews.map((review) => (
-            <article key={review.id} className="border-b border-neutral-100 pb-5 last:border-0">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-0.5" aria-hidden>
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <Star
-                      key={index}
-                      className={`h-4 w-4 ${
-                        index < review.rating
-                          ? "fill-amber-400 text-amber-400"
-                          : "fill-neutral-200 text-neutral-200"
-                      }`}
-                      strokeWidth={1.5}
-                    />
-                  ))}
+            <article key={review.id} className="py-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StarsRow rating={review.rating} />
+                  <span className="text-sm font-semibold tabular-nums text-neutral-900">
+                    {review.rating}
+                  </span>
+                  <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-600">
+                    {copy.thisItem}
+                  </span>
                 </div>
-                <span className="text-sm font-semibold text-neutral-900">
-                  {review.reviewerName}
-                </span>
-                <span className="text-xs text-neutral-400">
-                  {formattedDates.format(new Date(review.createdAt))}
-                </span>
+                <div className="text-sm text-neutral-500">
+                  <span className="font-medium text-neutral-800">{review.reviewerName}</span>
+                  <span className="mx-1.5 text-neutral-300">·</span>
+                  <time dateTime={review.createdAt}>
+                    {formattedDates.format(new Date(review.createdAt))}
+                  </time>
+                </div>
               </div>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-neutral-700">
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-neutral-700">
                 {review.comment}
               </p>
             </article>
           ))}
-
-          {page < totalPages ? (
-            <button
-              type="button"
-              onClick={() => void handleLoadMore()}
-              disabled={loadingMore}
-              className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-60"
-            >
-              {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {copy.loadMore}
-            </button>
-          ) : null}
         </div>
       )}
+
+      {!loading && page < totalPages ? (
+        <button
+          type="button"
+          onClick={() => void handleLoadMore()}
+          disabled={loadingMore}
+          className="mt-5 inline-flex items-center gap-2 rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 transition hover:bg-white disabled:opacity-60"
+        >
+          {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {copy.loadMore}
+        </button>
+      ) : null}
     </section>
   );
 }

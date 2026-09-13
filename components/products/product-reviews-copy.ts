@@ -5,7 +5,12 @@ export function getProductReviewsCopy(locale: SupportedLocale) {
   const ps = locale === "ps";
 
   return {
-    title: en ? "Customer reviews" : ps ? "د پیرودونکو بیاکتنې" : "نظرات مشتریان",
+    title: en
+      ? "Reviews for this item"
+      : ps
+        ? "د دې توکي بیاکتنې"
+        : "نظرات این کالا",
+    itemAverage: en ? "Item average" : ps ? "د توکي اوسط" : "میانگین کالا",
     writeReview: en ? "Write a review" : ps ? "بیاکتنه ولیکئ" : "ثبت نظر",
     loginPrompt: en
       ? "Log in to write a review"
@@ -24,7 +29,8 @@ export function getProductReviewsCopy(locale: SupportedLocale) {
     cancel: en ? "Cancel" : ps ? "لغوه کول" : "لغو",
     loadMore: en ? "Load more reviews" : ps ? "نورې بیاکتنې وګورئ" : "مشاهده نظرات بیشتر",
     loading: en ? "Loading reviews..." : ps ? "بیاکتنې پورته کېږي..." : "در حال بارگذاری نظرات...",
-    empty: en ? "No review" : ps ? "بیاکتنه نشته" : "نظری نیست",
+    empty: en ? "No reviews yet." : ps ? "تر اوسه بیاکتنه نشته." : "هنوز نظری ثبت نشده است.",
+    thisItem: en ? "This item" : ps ? "دا توکی" : "این کالا",
     ratingRequired: en
       ? "Please select a star rating"
       : ps
